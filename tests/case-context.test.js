@@ -1,19 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCaseWorkspace } from '../frontend/src/case-context.js';
-const id = n => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
+const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
 const session = { sessionId: id(1), apiVersion: 'v3', environment: 'TEST', connected: true };
 test('known message navigation is bounded, session-scoped and contains no arbitrary payload fields', () => {
   let latest;
-  const workspace = createCaseWorkspace(records => { latest = records; });
-  workspace.remember(session, { caseId: id(2), submissionId: id(3), destinationId: id(4), secret: 'synthetic-marker' });
+  const workspace = createCaseWorkspace((records) => {
+    latest = records;
+  });
+  workspace.remember(session, {
+    caseId: id(2),
+    submissionId: id(3),
+    destinationId: id(4),
+    secret: 'synthetic-marker',
+  });
   workspace.remember(session, { caseId: id(2), replyId: id(5), data: 'private-data' });
   assert.equal(workspace.list(session).length, 2);
   assert.equal(workspace.list({ ...session, sessionId: id(9) }).length, 0);
   assert.equal(workspace.list({ ...session, apiVersion: 'v2' }).length, 0);
   assert.equal(JSON.stringify(latest).includes('synthetic-marker'), false);
   assert.equal(JSON.stringify(latest).includes('private-data'), false);
-  assert.ok(Object.isFrozen(latest)); assert.ok(Object.isFrozen(latest[0]));
+  assert.ok(Object.isFrozen(latest));
+  assert.ok(Object.isFrozen(latest[0]));
   workspace.remember(session, { caseId: id(2), replyId: id(5) });
   assert.equal(workspace.list(session).length, 2);
   workspace.remember(session, { caseId: 'bad', replyId: id(5) });
@@ -21,5 +29,6 @@ test('known message navigation is bounded, session-scoped and contains no arbitr
   assert.equal(workspace.list(session).length, 2);
   for (let i = 10; i < 120; i++) workspace.remember(session, { caseId: id(2), replyId: id(i) });
   assert.equal(workspace.list(session).length, 100);
-  workspace.clear(); assert.equal(workspace.list(session).length, 0);
+  workspace.clear();
+  assert.equal(workspace.list(session).length, 0);
 });

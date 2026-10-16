@@ -3,7 +3,7 @@ name: Alpha Windows validation
 on:
   pull_request:
   push:
-    branches: [main, develop]
+    branches: [main, develop, alpha1-work]
   workflow_dispatch:
     inputs:
       offline:
@@ -29,9 +29,17 @@ jobs:
           java-version: '25'
       - name: Install pinned Rust toolchain
         working-directory: desktop
-        run: rustup toolchain install 1.99.0 --profile minimal
+        run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt
       - name: Resolve locked frontend dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
+      - name: Check frontend style and lint
+        run: |
+          npm run lint
+          npm run format:check
+      - name: Check Rust formatting
+        run: |
+          cargo fmt --manifest-path desktop/Cargo.toml --all -- --check
+          cargo fmt --manifest-path desktop/native-contracts/Cargo.toml --all -- --check
       - name: Build and test both SDK adapters and the host
         working-directory: engine
         run: .\mvnw.cmd --batch-mode verify
@@ -43,6 +51,10 @@ jobs:
         run: npm run test:engine
       - name: Build frontend
         run: npm run build:frontend
+      - name: Install browser for synthetic UI regression tests
+        run: npx playwright install chromium
+      - name: Test application workflows in browser
+        run: npm run test:ui
       - name: Test isolated native protocol and protected profile storage
         run: cargo test --manifest-path desktop/native-contracts/Cargo.toml --locked
       - name: Test native protocol contracts
@@ -66,3 +78,12 @@ jobs:
           name: windows-alpha-unsigned-offline-setup
           path: desktop/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
+      - name: Check real TEST authentication and read operations
+        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha1-work'
+        env:
+          SENDERID: ${{ secrets.SENDERID }}
+          SENDERSECRET: ${{ secrets.SENDERSECRET }}
+          SENDERDEST: ${{ secrets.SENDERDEST }}
+          SUBSCRIBERID: ${{ secrets.SUBSCRIBERID }}
+          SUBSCRIBERSECRET: ${{ secrets.SUBSCRIBERSECRET }}
+        run: node scripts/live-readonly.mjs

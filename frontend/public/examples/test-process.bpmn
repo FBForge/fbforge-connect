@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:fc="urn:fit-connect:test-client:bpmn:1" id="DemoDefinitions" name="Fiktiver TEST-Antragsprozess" targetNamespace="urn:fit-connect:test-client:demo" fc:processModelId="urn:fit-connect:test-client:demo:process:1">
+ <bpmn:message id="Application" name="1 · Antrag" fc:messageId="application" fc:schemaUri="urn:fit-connect:test-client:demo:application:1" fc:mimeType="application/json" />
+ <bpmn:message id="RequestMore" name="2 · Nachforderung" fc:messageId="request-more" fc:schemaUri="urn:fit-connect:test-client:demo:reply:1" fc:mimeType="application/json" />
+ <bpmn:message id="Supplement" name="3 · Nachreichung" fc:messageId="supplement" fc:schemaUri="urn:fit-connect:test-client:demo:application:1" fc:mimeType="application/json" />
+ <bpmn:message id="Result" name="4 · Rückmeldung" fc:messageId="result" fc:schemaUri="urn:fit-connect:test-client:demo:reply:1" fc:mimeType="application/json" />
+ <bpmn:collaboration id="Collaboration">
+  <bpmn:participant id="OnlineService" name="Online-Dienst / Antragstellende" />
+  <bpmn:participant id="Authority" name="Fachverfahren / Behörde" />
+  <bpmn:messageFlow id="ApplicationFlow" sourceRef="OnlineService" targetRef="Authority" messageRef="Application" />
+  <bpmn:messageFlow id="RequestMoreFlow" sourceRef="Authority" targetRef="OnlineService" messageRef="RequestMore" />
+  <bpmn:messageFlow id="SupplementFlow" sourceRef="OnlineService" targetRef="Authority" messageRef="Supplement" />
+  <bpmn:messageFlow id="ResultFlow" sourceRef="Authority" targetRef="OnlineService" messageRef="Result" />
+ </bpmn:collaboration>
+ <bpmndi:BPMNDiagram id="Diagram"><bpmndi:BPMNPlane id="Plane" bpmnElement="Collaboration">
+  <bpmndi:BPMNShape id="OnlineServiceShape" bpmnElement="OnlineService" isHorizontal="true"><dc:Bounds x="80" y="80" width="880" height="120" /></bpmndi:BPMNShape>
+  <bpmndi:BPMNShape id="AuthorityShape" bpmnElement="Authority" isHorizontal="true"><dc:Bounds x="80" y="340" width="880" height="120" /></bpmndi:BPMNShape>
+  <bpmndi:BPMNEdge id="ApplicationEdge" bpmnElement="ApplicationFlow"><di:waypoint x="240" y="200"/><di:waypoint x="240" y="340"/><bpmndi:BPMNLabel><dc:Bounds x="150" y="250" width="80" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+  <bpmndi:BPMNEdge id="RequestMoreEdge" bpmnElement="RequestMoreFlow"><di:waypoint x="440" y="340"/><di:waypoint x="440" y="200"/><bpmndi:BPMNLabel><dc:Bounds x="330" y="250" width="100" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+  <bpmndi:BPMNEdge id="SupplementEdge" bpmnElement="SupplementFlow"><di:waypoint x="640" y="200"/><di:waypoint x="640" y="340"/><bpmndi:BPMNLabel><dc:Bounds x="530" y="250" width="100" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+  <bpmndi:BPMNEdge id="ResultEdge" bpmnElement="ResultFlow"><di:waypoint x="840" y="340"/><di:waypoint x="840" y="200"/><bpmndi:BPMNLabel><dc:Bounds x="740" y="250" width="90" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+ </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>

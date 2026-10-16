@@ -4,15 +4,20 @@ Der FIT-Connect Test-Client ist eine Windows-Desktop-Anwendung für Integrations
 
 ## Lokal starten und prüfen
 
-Benötigt werden Node.js ab 22.12, JDK 25 und die im Desktop-Verzeichnis festgelegte Rust-Version. Windows benötigt außerdem die Tauri-Buildvoraussetzungen. Die README beschreibt den vollständigen Windows-Build.
+Benötigt werden Node.js ab 22.13.0, JDK 25 und die im Desktop-Verzeichnis festgelegte Rust-Version. Windows benötigt außerdem die Tauri-Buildvoraussetzungen. Die README beschreibt den vollständigen Windows-Build.
 
 ```sh
 npm ci --ignore-scripts
-./engine/mvnw -f engine/pom.xml verify
+cd engine
+./mvnw verify
+cd ..
+npm run lint
+npm run format:check
 npm test
 npm run build:frontend
 npm run stage:engine
 npm run test:engine
+cargo fmt --manifest-path desktop/Cargo.toml --all -- --check
 cargo test --manifest-path desktop/native-contracts/Cargo.toml --locked
 ```
 
@@ -35,3 +40,5 @@ Neue Schreibaktionen brauchen eine native Vorschau-/Bestätigungsgrenze und Test
 Die vorhandenen SDKs übernehmen Kryptografie und FIT-Connect-Protokollverarbeitung. API v2 und v3 werden ausdrücklich getrennt geprüft. Produktionsumgebungen, eingebettete Zugangsdaten und automatische Annahme/Ablehnung gehören nicht in dieses Projekt. Farben, Schriften, Bedienelemente und Statusdarstellung kommen aus `frontend/src/site.css`; zusätzliche Styles beschreiben vor allem das Layout.
 
 Mit einem Beitrag bestätigst du die Berechtigung, ihn unter der EUPL-1.2 dieses Projekts einzureichen. Bestehende Urheberrechts- und Lizenzhinweise bleiben erhalten. Sicherheitsprobleme bitte privat gemäß [SECURITY.md](SECURITY.md) melden. Größere Beiträge externer Mitwirkender sollten vorab in einem Issue abgestimmt werden.
+
+Formatierung: `npm run format`, im Engine-Verzeichnis `./mvnw spotless:apply`, für Rust `cargo fmt --manifest-path desktop/Cargo.toml --all`. Die Compiler-Modulfreigaben in `engine/.mvn/jvm.config` gelten nur für den Build-Formatter, nicht für die ausgelieferte Laufzeit. Live-Zugänge ausschließlich über echte Secret-Speicher verwenden; siehe [Sicherheitsprüfung](SECURITY_REVIEW.md).

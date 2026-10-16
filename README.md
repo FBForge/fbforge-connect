@@ -110,3 +110,5 @@ Fehlerberichte und Beiträge sind willkommen. Hinweise für Änderungen und Test
 ## Lizenz
 
 [EUPL-1.2](LICENSE). Abhängigkeiten behalten ihre jeweiligen Lizenzen.
+
+Der Branch `alpha1-work` enthält den dev.8-Kandidaten mit geschützten Profilen/Backups, Zustellpunktanlage und Schlüsselwechsel, BPMN-Nachrichtenauswahl sowie Prozesskommunikation. Noch keine Alpha-1-Freigabe. Offene Abnahmen und aktuelle Einschränkungen stehen in [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md), der Technik-/Sicherheitsprüfung in [SECURITY_REVIEW.md](SECURITY_REVIEW.md).

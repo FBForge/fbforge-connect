@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fit-connect:test-client:demo:reply:1",
+  "title": "Fiktive TEST-Antwort",
+  "description": "Beispiel für eine fachliche Antwort oder Nachforderung. Keine technische Empfangsquittung und kein amtlicher Bescheid.",
+  "type": "object", "required": ["status", "nachricht"], "additionalProperties": false,
+  "properties": {
+    "status": {"title": "Bearbeitungsstand", "type": "string", "enum": ["eingegangen", "unterlagen_erforderlich", "abgeschlossen"], "examples": ["eingegangen"]},
+    "nachricht": {"title": "Nachricht der Sachbearbeitung", "type": "string", "minLength": 1, "maxLength": 4000, "examples": ["Der fiktive Testantrag ist eingegangen."]},
+    "geschaeftszeichen": {"title": "Geschäftszeichen", "description": "Fiktive Referenz des bearbeitenden Systems.", "type": "string", "maxLength": 100, "examples": ["TEST-001"]}
+  }
+}

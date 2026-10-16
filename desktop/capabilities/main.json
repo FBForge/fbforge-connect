@@ -85,6 +85,10 @@
     "allow-prepare-destination-cleanup",
     "allow-execute-destination-cleanup",
     "allow-cancel-destination-cleanup",
-    "allow-destination-cleanup-state"
+    "allow-destination-cleanup-state",
+    "allow-search-process-destinations",
+    "allow-export-profile-backup",
+    "allow-import-profile-backup",
+    "allow-update-profile"
   ]
 }

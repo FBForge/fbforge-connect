@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPreview, disposePreview, jsonNodes } from '../frontend/src/submission-preview.js';
 
-const utf8 = value => new TextEncoder().encode(value);
+const utf8 = (value) => new TextEncoder().encode(value);
 test('JSON tree is inert, parent-addressed and bounded before rendering', () => {
   const nodes = jsonNodes('{"__proto__":{"value":"<script>"},"items":[null,true,3]}');
   assert.equal(nodes[0].label, 'JSON');
@@ -11,7 +11,13 @@ test('JSON tree is inert, parent-addressed and bounded before rendering', () => 
   assert.equal(nodes[2].parent, 1);
   assert.equal(nodes[4].label, '[0]');
   assert.equal(nodes[4].value, 'null');
-  for (const text of ['not JSON', '['.repeat(17)+'0'+']'.repeat(17), JSON.stringify(Array(2000).fill(0)), JSON.stringify('x'.repeat(256*1024))]) assert.equal(jsonNodes(text), null);
+  for (const text of [
+    'not JSON',
+    '['.repeat(17) + '0' + ']'.repeat(17),
+    JSON.stringify(Array(2000).fill(0)),
+    JSON.stringify('x'.repeat(256 * 1024)),
+  ])
+    assert.equal(jsonNodes(text), null);
 });
 function png(width = 2, height = 3) {
   const bytes = new Uint8Array(33);
@@ -25,26 +31,56 @@ function png(width = 2, height = 3) {
 }
 
 test('JSON is formatted while XML and markup remain literal inert text', async () => {
-  const json = await createPreview(utf8('{"value":"<img src=x onerror=alert(1)>"}'), { filename: 'metadata.json' });
+  const json = await createPreview(utf8('{"value":"<img src=x onerror=alert(1)>"}'), {
+    filename: 'metadata.json',
+  });
   assert.equal(json.kind, 'text');
   assert.equal(json.text, '{\n  "value": "<img src=x onerror=alert(1)>"\n}');
   assert.equal(json.rawText, '{"value":"<img src=x onerror=alert(1)>"}');
   const xml = '<!DOCTYPE doc [<!ENTITY e SYSTEM "https://invalid.test/private">]><doc>&e;</doc>';
   assert.equal((await createPreview(utf8(xml), { filename: 'data.xml' })).text, xml);
-  assert.equal((await createPreview(utf8('<script>alert(1)</script>'), { filename: 'plain.txt' })).kind, 'text');
+  assert.equal(
+    (await createPreview(utf8('<script>alert(1)</script>'), { filename: 'plain.txt' })).kind,
+    'text',
+  );
 });
 
 test('active formats, PDF and office files remain download-only even with a text MIME', async () => {
-  for (const filename of ['test.html', 'test.svg', 'test.svgz', 'test.pdf', 'test.docx', 'test.xlsx', 'test.js']) {
-    assert.equal((await createPreview(utf8('<b>test</b>'), { filename, mimeType: 'text/plain' })).kind, 'unavailable');
-    assert.equal((await createPreview(utf8('<b>test</b>'), { filename: 'a'.repeat(200) + filename, mimeType: 'text/plain' })).kind, 'unavailable');
+  for (const filename of [
+    'test.html',
+    'test.svg',
+    'test.svgz',
+    'test.pdf',
+    'test.docx',
+    'test.xlsx',
+    'test.js',
+  ]) {
+    assert.equal(
+      (await createPreview(utf8('<b>test</b>'), { filename, mimeType: 'text/plain' })).kind,
+      'unavailable',
+    );
+    assert.equal(
+      (
+        await createPreview(utf8('<b>test</b>'), {
+          filename: 'a'.repeat(200) + filename,
+          mimeType: 'text/plain',
+        })
+      ).kind,
+      'unavailable',
+    );
   }
-  assert.equal((await createPreview(utf8('<svg/>'), { filename: 'image.xml', mimeType: 'image/svg+xml' })).kind, 'unavailable');
+  assert.equal(
+    (await createPreview(utf8('<svg/>'), { filename: 'image.xml', mimeType: 'image/svg+xml' })).kind,
+    'unavailable',
+  );
   assert.equal((await createPreview(utf8('arbitrary'), { filename: 'data.exe' })).kind, 'unavailable');
 });
 
 test('text size, invalid UTF-8 and binary control characters fail closed', async () => {
-  assert.equal((await createPreview(new Uint8Array(2 * 1024 * 1024 + 1), { filename: 'large.txt' })).kind, 'unavailable');
+  assert.equal(
+    (await createPreview(new Uint8Array(2 * 1024 * 1024 + 1), { filename: 'large.txt' })).kind,
+    'unavailable',
+  );
   assert.equal((await createPreview(Uint8Array.of(0xff), { filename: 'bad.txt' })).kind, 'unavailable');
   assert.equal((await createPreview(utf8('abc\u0000def'), { filename: 'binary.txt' })).kind, 'unavailable');
   const deepJson = '['.repeat(100) + '0' + ']'.repeat(100);
@@ -53,21 +89,45 @@ test('text size, invalid UTF-8 and binary control characters fail closed', async
 
 test('image size and header dimensions are rejected before decoding', async () => {
   let calls = 0;
-  const runtime = { createImageBitmap() { calls++; }, URL: { createObjectURL() {} } };
+  const runtime = {
+    createImageBitmap() {
+      calls++;
+    },
+    URL: { createObjectURL() {} },
+  };
   for (const bytes of [png(10000, 10000), png(0, 1), png(16385, 1), new Uint8Array(8 * 1024 * 1024 + 1)]) {
     assert.equal((await createPreview(bytes, { filename: 'image.png' }, runtime)).kind, 'unavailable');
   }
   assert.equal(calls, 0);
-  assert.equal((await createPreview(Uint8Array.of(0xff, 0xd8, 0xff, 0xc0, 0, 20), { filename: 'truncated.jpg' }, runtime)).kind, 'unavailable');
+  assert.equal(
+    (
+      await createPreview(
+        Uint8Array.of(0xff, 0xd8, 0xff, 0xc0, 0, 20),
+        { filename: 'truncated.jpg' },
+        runtime,
+      )
+    ).kind,
+    'unavailable',
+  );
 });
 
 function imageRuntime({ width = 2, height = 3, fail = false } = {}) {
   const state = { closed: 0, revoked: [], encoded: null, canvas: null };
   const runtime = {
-    createImageBitmap: async () => ({ width, height, close() { state.closed++; } }),
+    createImageBitmap: async () => ({
+      width,
+      height,
+      close() {
+        state.closed++;
+      },
+    }),
     OffscreenCanvas: class {
-      constructor() { state.canvas = this; }
-      getContext() { return { drawImage() {} }; }
+      constructor() {
+        state.canvas = this;
+      }
+      getContext() {
+        return { drawImage() {} };
+      }
       async convertToBlob(options) {
         assert.equal(options.type, 'image/png');
         if (fail) throw new Error('decoder details');
@@ -75,9 +135,14 @@ function imageRuntime({ width = 2, height = 3, fail = false } = {}) {
       }
     },
     URL: {
-      createObjectURL(blob) { state.encoded = blob; return 'blob:local-preview'; },
-      revokeObjectURL(url) { state.revoked.push(url); }
-    }
+      createObjectURL(blob) {
+        state.encoded = blob;
+        return 'blob:local-preview';
+      },
+      revokeObjectURL(url) {
+        state.revoked.push(url);
+      },
+    },
   };
   return { state, runtime };
 }

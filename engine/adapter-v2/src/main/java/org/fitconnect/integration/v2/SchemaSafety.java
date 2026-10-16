@@ -8,14 +8,20 @@ import org.fitconnect.integration.contract.SessionException;
 final class SchemaSafety {
     static String check(String text) {
         try {
-            if (text == null || text.length() > 2 * 1024 * 1024) throw new IllegalArgumentException();
+            if (text == null || text.length() > 2 * 1024 * 1024)
+                throw new IllegalArgumentException();
             if (text.stripLeading().startsWith("<")) {
-                if (java.util.regex.Pattern.compile("<!DOCTYPE|<!ENTITY", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(text).find()) throw new IllegalArgumentException();
+                if (java.util.regex.Pattern.compile(
+                                "<!DOCTYPE|<!ENTITY", java.util.regex.Pattern.CASE_INSENSITIVE)
+                        .matcher(text)
+                        .find()) throw new IllegalArgumentException();
                 return text;
             }
             JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(text);
-            if (root == null || !(root.isObject() || root.isBoolean())) throw new IllegalArgumentException();
-            var pending = new ArrayDeque<JsonNode>(); pending.add(root);
+            if (root == null || !(root.isObject() || root.isBoolean()))
+                throw new IllegalArgumentException();
+            var pending = new ArrayDeque<JsonNode>();
+            pending.add(root);
             int remaining = 20000;
             while (!pending.isEmpty()) {
                 var node = pending.removeLast();
@@ -23,14 +29,22 @@ final class SchemaSafety {
                 if (node.isObject()) {
                     for (String name : List.of("$ref", "$dynamicRef", "$recursiveRef")) {
                         var ref = node.get(name);
-                        if (ref != null && (!ref.isTextual() || ref.asText().length() > 4096)) throw new IllegalArgumentException();
+                        if (ref != null && (!ref.isTextual() || ref.asText().length() > 4096))
+                            throw new IllegalArgumentException();
                     }
                     var dialect = node.get("$schema");
-                    if (dialect != null && (!dialect.isTextual() || !dialect.asText().matches("https?://json-schema\\.org/(?:draft-(?:04|06|07)/schema#?|draft/(?:2019-09|2020-12)/schema#?)"))) throw new IllegalArgumentException();
+                    if (dialect != null
+                            && (!dialect.isTextual()
+                                    || !dialect.asText()
+                                            .matches(
+                                                    "https?://json-schema\\.org/(?:draft-(?:04|06|07)/schema#?|draft/(?:2019-09|2020-12)/schema#?)")))
+                        throw new IllegalArgumentException();
                 }
                 if (node.isObject() || node.isArray()) for (var child : node) pending.add(child);
             }
             return text;
-        } catch (Exception failure) { throw new SessionException("schema_unavailable"); }
+        } catch (Exception failure) {
+            throw new SessionException("schema_unavailable");
+        }
     }
 }
