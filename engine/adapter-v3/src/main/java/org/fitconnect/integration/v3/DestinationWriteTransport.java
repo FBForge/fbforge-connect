@@ -8,7 +8,7 @@ import java.util.Map;
 /** Only the host's confirmed one-shot destination gate may dispatch a PATCH. */
 final class DestinationWriteTransport implements HttpService {
     private final ResourceExchange authorized;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json = JsonMapper.builder().disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
     DestinationWriteTransport(ResourceExchange authorized) { this.authorized = authorized; }
     public <P,R> HttpResponse<R> patch(String url, Map<String,String> headers, P payload, Class<R> type) {
         try {

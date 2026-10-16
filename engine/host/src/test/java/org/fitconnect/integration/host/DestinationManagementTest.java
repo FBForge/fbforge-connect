@@ -36,7 +36,8 @@ class DestinationManagementTest {
             assertTrue(Set.of("name","contactInformation","metadataVersions","status").containsAll(patch.keySet()));
             patch.entrySet().forEach(entry -> documents.get(id).add(entry.getKey(), entry.getValue()));
             if (patches.size() == uncertainAt) throw new SessionException("resource_unavailable");
-            return new Response(200,documents.get(id).toString());
+            var response = documents.get(id).deepCopy(); response.addProperty("futureReadOnlyField", "retained by server");
+            return new Response(200,response.toString());
         }
     }
     @Test void bulkPreviewDoesNotWriteAndSdkPatchPreservesUntargetedConfiguration() throws Exception {
