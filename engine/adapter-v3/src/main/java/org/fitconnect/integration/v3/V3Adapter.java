@@ -70,6 +70,21 @@ public final class V3Adapter implements SdkAdapter {
                     new ConcurrencyLimiter(1), "https://test.fit-connect.fitko.dev/submission-api")
                     .getDestination(UUID.fromString(destinationId)));
         }
+        public String ownDestination(String destinationId) {
+            requireOpen();
+            return http.json(destinationsApi().getDestination(UUID.fromString(destinationId)));
+        }
+        public String patchOwnDestination(String destinationId, String patch, ResourceExchange authorized) {
+            requireOpen();
+            try {
+                var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+                var value = mapper.readValue(patch, dev.fitko.fitconnect.rest.model.destination.DestinationPatch.class);
+                var client = new DestinationApiClient(new RequestHeaders(current), new DestinationWriteTransport(authorized),
+                        "https://test.fit-connect.fitko.dev/destination-api");
+                return http.json(client.patchDestination(UUID.fromString(destinationId), value));
+            } catch (SessionException failure) { throw failure;
+            } catch (Exception failure) { throw new SessionException("resource_unavailable"); }
+        }
         public String destinationKeys(String destinationId, int offset, int limit) {
             return http.json(destinationsApi().listKeys(UUID.fromString(destinationId), offset, limit));
         }

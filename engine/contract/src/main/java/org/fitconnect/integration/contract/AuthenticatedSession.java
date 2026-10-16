@@ -8,6 +8,8 @@ public interface AuthenticatedSession extends AutoCloseable {
     default String publicSchema(String uri) { throw new SessionException("schema_unavailable"); }
     String destinations(int offset, int limit);
     String destination(String destinationId);
+    default String ownDestination(String destinationId) { throw new SessionException("invalid_input"); }
+    default String patchOwnDestination(String destinationId, String patch, ResourceExchange authorized) { throw new SessionException("invalid_input"); }
     String destinationKeys(String destinationId, int offset, int limit);
     SubmissionPage submissions(String destinationId, int offset, int limit);
     ReplyPage replies(int offset, int limit);

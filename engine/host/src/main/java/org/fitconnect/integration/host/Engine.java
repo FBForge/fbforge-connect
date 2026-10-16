@@ -26,7 +26,7 @@ final class Engine implements AutoCloseable {
                 if (!Set.of("protocolVersion", "id", "command", "apiVersion", "role", "clientId", "clientSecret", "sessionId",
                         "destinationId", "offset", "purpose", "keyDocument", "contentId", "totalBytes", "byteOffset", "chunk",
                         "sendDocument", "attemptId", "submissionId", "schemaDocument", "proofId", "receiptDocument",
-                        "caseId", "replyId", "logId", "eventId", "part", "replyDocument").contains(key)
+                        "caseId", "replyId", "logId", "eventId", "part", "replyDocument", "destinationDocument").contains(key)
                         || values.containsKey(key)) throw new IllegalArgumentException();
                 if (Set.of("protocolVersion", "offset", "totalBytes", "byteOffset").contains(key)) {
                     if (reader.peek() != JsonToken.NUMBER) throw new IllegalArgumentException();
@@ -46,6 +46,10 @@ final class Engine implements AutoCloseable {
                 case "open_session" -> expected.addAll(Set.of("role", "clientId", "clientSecret"));
                 case "check_session", "close_session" -> expected.add("sessionId");
                 case "loaded_keys", "discard_keys", "list_reply_channels" -> expected.add("sessionId");
+                case "load_managed_destination" -> expected.addAll(Set.of("sessionId", "destinationId"));
+                case "prepare_destination_update" -> expected.addAll(Set.of("sessionId", "destinationDocument"));
+                case "execute_destination_update", "cancel_destination_update" -> expected.addAll(Set.of("sessionId", "attemptId"));
+                case "destination_update_state" -> expected.add("sessionId");
                 case "list_destinations" -> expected.addAll(Set.of("sessionId", "offset"));
                 case "load_destination" -> expected.addAll(Set.of("sessionId", "destinationId"));
                 case "load_send_destination" -> expected.addAll(Set.of("sessionId", "destinationId"));
@@ -103,6 +107,8 @@ final class Engine implements AutoCloseable {
                     case "close_session" -> sessions.close(version, values.get("sessionId"));
                     case "load_send_destination", "load_send_schema", "read_send_schema" -> sessions.sendSchema(version, values.get("sessionId"),
                             command, values.get("destinationId"), values.get("schemaDocument"), values.get("contentId"), Math.toIntExact(byteOffset));
+                    case "load_managed_destination", "prepare_destination_update", "execute_destination_update", "cancel_destination_update", "destination_update_state" ->
+                        sessions.manageDestination(version, values.get("sessionId"), command, values.get("destinationId"), values.get("destinationDocument"), values.get("attemptId"));
                     case "list_destinations", "load_destination", "import_key", "loaded_keys", "discard_keys" ->
                         sessions.resource(version, values.get("sessionId"), command, values.get("destinationId"), offset,
                                 values.get("purpose"), values.get("keyDocument"));

@@ -9,6 +9,9 @@ import java.util.Map;
 /** SDK reads with independent credential-free, bounded public schema loading. */
 final class ReceiverTransport implements HttpClient {
     private final ResourceExchange read;
+    // Scoped to this verification, never shared between sessions or later refreshes.
+    private final Map<String,String> verificationKeys = new java.util.LinkedHashMap<>();
+    private int verificationKeyBytes;
     private final ReceiveSchemas schemas;
     final SchemaValidation validation;
     private boolean schemaFailed;
@@ -28,6 +31,8 @@ final class ReceiverTransport implements HttpClient {
     }
     public <R> HttpResponse<R> get(String url, Map<String,String> headers, Class<R> type) {
         try {
+            boolean trust = url.equals("https://test.fit-connect.fitko.dev/submission-api/.well-known/jwks.json")
+                    || url.matches("https://test\\.fit-connect\\.fitko\\.dev/submission-api/v[23]/destinations/[0-9a-fA-F-]{36}/keys/[^/?#]+");
             String body;
             if (type == String.class && headers.isEmpty() && schemas.get(url) != null) body = localSchema(url);
             else {
@@ -35,9 +40,15 @@ final class ReceiverTransport implements HttpClient {
                     if (type != String.class || !headers.isEmpty()) throw new SessionException("endpoint_blocked");
                     try { body = validation.sources.document(url); }
                     catch (SessionException failure) { failed(failure); throw failure; }
-                } else body = read.get(url, headers);
+                } else body = trust && verificationKeys.containsKey(url) ? verificationKeys.get(url) : read.get(url, headers);
             }
-            return new HttpResponse<>(200, type == String.class ? type.cast(body) : mapper.readValue(body, type));
+            R result = type == String.class ? type.cast(body) : mapper.readValue(body, type);
+            if (trust && !verificationKeys.containsKey(url)) {
+                int size = body.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+                if (verificationKeys.size() >= 32 || verificationKeyBytes + size > 4 * 1024 * 1024) throw new SessionException("content_limit");
+                verificationKeys.put(url, body); verificationKeyBytes += size;
+            }
+            return new HttpResponse<>(200, result);
         } catch (SessionException failure) {
             if (readFailure == null) readFailure = failure;
             throw failure;

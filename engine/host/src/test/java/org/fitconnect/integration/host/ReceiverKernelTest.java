@@ -815,6 +815,35 @@ class ReceiverKernelTest {
         }
     }
 
+    @Test void largeEventLogsReuseTrustKeysWithinOneVerificationAndRefreshOnTheNextRead() throws Exception {
+        try (var registry = registry()) {
+            for (var api : ApiVersion.values()) try (var session = open(registry, api)) {
+                var fixture = new Fixture(api, false, false);
+                var tokens = JsonParser.parseString(fixture.events).getAsJsonObject().getAsJsonArray("eventLog");
+                for (int i = 0; i < 298; i++) tokens.add(event("notify-submission", null, 0));
+                var keys = new AtomicInteger();
+                for (int repeat = 0; repeat < 2; repeat++) {
+                    try (var source = new EventLogAccess(api, CASE, SUB, (url, headers) -> {
+                        if (url.endsWith("/.well-known/jwks.json")) keys.incrementAndGet();
+                        if (!url.contains("/events?")) return fixture.get(url, headers);
+                        var params = new HashMap<String,Integer>();
+                        for (String pair : java.net.URI.create(url).getRawQuery().split("&")) {
+                            var parts = pair.split("="); params.put(parts[0], Integer.parseInt(parts[1]));
+                        }
+                        int offset = params.get("offset"), end = Math.min(tokens.size(), offset + params.get("limit"));
+                        var page = new JsonObject(); page.addProperty("offset", offset); page.addProperty("count", end-offset);
+                        page.addProperty("totalCount", tokens.size()); var items = new JsonArray();
+                        for (int i = offset; i < end; i++) items.add(tokens.get(i)); page.add("eventLog", items);
+                        return page.toString();
+                    })) {
+                        assertEquals(300, session.eventLog(UUID.fromString(DEST), UUID.fromString(CASE), UUID.fromString(SUB), source, workspace).entries().size());
+                    }
+                    assertEquals(repeat + 1, keys.get(), "One key fetch per verification, fresh keys for the next verification");
+                }
+            }
+        }
+    }
+
     private static String signingRegistration(String kid) {
         var key = JsonParser.parseString(registration).getAsJsonObject(); key.addProperty("kid", kid); key.addProperty("alg", "PS512"); key.addProperty("use", "sig");
         var ops = new JsonArray(); ops.add("verify"); key.add("key_ops", ops); return key.toString();

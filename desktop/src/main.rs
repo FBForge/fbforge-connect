@@ -69,7 +69,7 @@ async fn request<T: DeserializeOwned>(app: &tauri::AppHandle, state: &EngineStat
     }
     let id = format!("op-{}", state.sequence.fetch_add(1, Ordering::Relaxed));
     let timeout_seconds = match command.get("command").and_then(serde_json::Value::as_str) {
-        Some("load_send_schema" | "execute_send" | "execute_reply" | "verify_submission" | "verify_reply" | "prepare_receipt" | "execute_receipt" | "load_event_log") => 240,
+        Some("load_send_schema" | "execute_send" | "execute_reply" | "verify_submission" | "verify_reply" | "prepare_receipt" | "execute_receipt" | "load_event_log" | "prepare_destination_update" | "execute_destination_update") => 240,
         _ => 25,
     };
     command["protocolVersion"] = 1.into();
@@ -155,6 +155,45 @@ async fn list_destinations(app: tauri::AppHandle, state: State<'_, EngineState>,
     session_id: String, offset: u32) -> Result<SessionResource, &'static str> {
     if offset > 10000 || offset % 20 != 0 { return Err("invalid_input"); }
     resource_action(&app, &state, api_version, &session_id, serde_json::json!({"command":"list_destinations","offset":offset})).await
+}
+
+#[tauri::command]
+async fn load_managed_destination(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, destination_id: String) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&destination_id) { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"load_managed_destination","destinationId":destination_id})).await
+}
+
+#[tauri::command]
+async fn prepare_destination_update(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, destination_document: String) -> Result<SessionResource, &'static str> {
+    if destination_document.is_empty() || destination_document.len() > 24 * 1024 { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"prepare_destination_update","destinationDocument":destination_document})).await
+}
+
+#[tauri::command]
+async fn execute_destination_update(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, attempt_id: String) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&attempt_id) { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"execute_destination_update","attemptId":attempt_id})).await
+}
+
+#[tauri::command]
+async fn cancel_destination_update(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, attempt_id: String) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&attempt_id) { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"cancel_destination_update","attemptId":attempt_id})).await
+}
+
+#[tauri::command]
+async fn destination_update_state(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String) -> Result<SessionResource, &'static str> {
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"destination_update_state"})).await
 }
 
 #[tauri::command]
@@ -468,7 +507,7 @@ async fn discard_content(app: tauri::AppHandle, state: State<'_, EngineState>, a
 fn main() {
     let app = tauri::Builder::default()
         .manage(EngineState::default())
-        .invoke_handler(tauri::generate_handler![probe_engine, open_session, check_session, close_session,
+        .invoke_handler(tauri::generate_handler![load_managed_destination, prepare_destination_update, execute_destination_update, cancel_destination_update, destination_update_state, probe_engine, open_session, check_session, close_session,
             load_send_destination, load_send_schema, read_send_schema, list_destinations, load_destination, import_key, loaded_keys, discard_keys,
             begin_content, append_content, discard_content, prepare_send, execute_send, cancel_send, send_state,
             reply_target, prepare_reply, execute_reply, cancel_reply, reply_state,

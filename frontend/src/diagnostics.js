@@ -34,7 +34,7 @@ export function errorMessage(code) {
 
 // Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
 const reportableCodes = new Set([
-  'desktop_required', 'engine_not_staged', 'engine_start_failed', 'adapter_unavailable', 'engine_timeout',
+  'destination_conflict', 'destination_update_locked', 'desktop_required', 'engine_not_staged', 'engine_start_failed', 'adapter_unavailable', 'engine_timeout',
   'engine_busy', 'engine_disconnected', 'engine_protocol_error', 'invalid_credentials', 'authentication_failed',
   'auth_unavailable', 'endpoint_blocked', 'session_missing', 'invalid_resource', 'resource_denied',
   'resource_missing', 'resource_unavailable', 'key_rejected', 'key_missing', 'test_certificate_required',

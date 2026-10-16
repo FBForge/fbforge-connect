@@ -94,6 +94,20 @@ final class SendHttpTransport implements AutoCloseable {
     ResourceExchange.Response requestReply(ApiVersion version, String method, String endpoint, Map<String,String> headers, String body) {
         return exchange(allowedReply(version, method, endpoint), method, headers, body, false);
     }
+    static URI allowedDestination(ApiVersion version, String method, String endpoint) {
+        try {
+            URI uri = URI.create(endpoint);
+            if (version != ApiVersion.V3 || !"PATCH".equals(method) || !"https".equals(uri.getScheme())
+                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority()) || uri.getRawQuery() != null
+                    || uri.getRawFragment() != null || !uri.getRawPath().matches("/destination-api/v3/destinations/" + UUID))
+                throw new IllegalArgumentException();
+            return uri;
+        } catch (Exception failure) { throw new SessionException("endpoint_blocked"); }
+    }
+    ResourceExchange.Response requestDestination(ApiVersion version, String method, String endpoint, Map<String,String> headers, String body) {
+        return exchange(allowedDestination(version, method, endpoint), method, headers, body, false);
+    }
+
     private ResourceExchange.Response exchange(URI uri, String method, Map<String,String> headers, String body, boolean receipt) {
         Integer receivedStatus = null;
         try {

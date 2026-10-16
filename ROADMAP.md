@@ -22,6 +22,8 @@ Die folgenden Funktionen sind im lokalen Entwicklungsstand vorhanden. Die vollst
 * Lokale Entschlüsselung, technische Prüfung sowie Annahme und Ablehnung.
 * Inhaltsvorschau, durchsuchbare JSON-Struktur und Downloads.
 * Grundlagen für Antwortkanäle, Replies und Event Logs.
+* Erste Verwaltung vorhandener eigener Zustellpunkte: authentifizierte Detailansicht und v3-PATCH für Name, Kontakt, Metadatenversionen und Aktiv-/Inaktiv-Wechsel.
+* Bulk-Edit für bis zu zehn Zustellpunkte mit Vorschau, erneuter Zustandsprüfung, explizitem Speichern und Ergebnis je Zustellpunkt.
 
 Der Versand über API v2 wurde bereits erfolgreich gegen TEST erprobt. `0.1.0-dev.2` korrigiert den unnötigen V3-Zugriff auf die Vorgangsliste und akzeptiert die zweite offizielle TEST-Ausstelleradresse im Event Log. Roundtrip-Tests decken SDK-Versand und Empfang in allen vier v2/v3-Kombinationen mit Metadaten 2.0.0 und Anlagen ab. Fehler beim Abruf von Signaturschlüsseln bleiben als konkrete Fehlercodes erhalten. Windows-CI läuft auch auf `develop`.
 
@@ -43,7 +45,7 @@ Die erneute Live-Erprobung von V3, Empfang und Event Log ist noch offen. Der [Al
 * Replies einschließlich Empfangsbestätigungen vervollständigen.
 * Prozessnachrichten für die jeweiligen Funktionen von v2 und v3 ausbauen.
 * BPMN-Modelle darstellen und Nachrichtenaktionen über Prozessschritte anbieten.
-* Zustellpunkte auf TEST verwalten und mehrere Zustellpunkte gemeinsam bearbeiten.
+* Zustellpunktverwaltung um Anlegen, Schlüsselregistrierung, Leistungen/Schemata, Prozessnachrichten, Callbacks und Lösch-/Stilllegungsabläufe erweitern.
 * Bedienung, Barrierefreiheit und Diagnose anhand der Alpha-Rückmeldungen verbessern.
 
 Die Anwendung bleibt auf Integrationstests beschränkt. Die Produktivumgebung ist nicht vorgesehen.

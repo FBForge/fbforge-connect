@@ -69,6 +69,11 @@ public final class V2Adapter implements SdkAdapter {
         public String destination(String id) {
             requireOpen(); return http.json(submissions.getDestination(destinationId(id)));
         }
+        public String ownDestination(String destinationId) {
+            requireOpen();
+            return http.json(new dev.fitko.fitconnect.core.destination.DestinationApiService(current, http,
+                    "https://test.fit-connect.fitko.dev/destination-api").getDestination(UUID.fromString(destinationId)));
+        }
         public String destinationKeys(String id, int offset, int limit) {
             requireOpen(); page(offset, limit);
             return http.json(destinations.listKeys(destinationId(id), offset, limit));

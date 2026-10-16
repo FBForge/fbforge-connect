@@ -13,6 +13,7 @@ Die Anwendung arbeitet ausschließlich mit der FIT-Connect-Testumgebung. Sie ist
 - Fachdaten und Anlagen anzeigen oder herunterladen, JSON strukturiert durchsuchen und formatiert lesen.
 - Zustellpunkte und registrierte Testschlüssel abfragen, private Testschlüssel lokal laden.
 - Event Logs einer Einreichung verifizieren, Ereignisse durchsuchen und ihre JSON-Daten anzeigen.
+- Eigene Zustellpunkte über die Destination API laden. Über v3 Name, Kontakt, Metadatenversionen und zulässige Aktiv-/Inaktiv-Wechsel einzeln oder für bis zu zehn Zustellpunkte mit Vorschau bearbeiten.
 - Beim Versand einen FIT-Connect-Antwortkanal mit eigenem Antwortschema und sitzungsgebundenem Schlüssel anbieten. Verfügbare Antworten (Replies) und lokale Antwortkanäle auflisten. Replies mit dem zugehörigen temporären Schlüssel entschlüsseln, technisch prüfen, anzeigen und herunterladen.
 - Auf geprüfte Einreichungen mit verschlüsselten Fachdaten und Anlagen antworten, bei v3 auch als Prozessnachricht. Der Versand erfordert eine eigene Bestätigung.
 
@@ -23,6 +24,8 @@ Die Anwendung wird für eine erste Alpha vorbereitet. Automatisierte Tests verwe
 Vorgangsübergreifende Suche, Empfangsbestätigungen für Replies und interaktive BPMN-Prozessdarstellungen sind in Arbeit beziehungsweise geplant. Antwortschlüssel bleiben nur in der Sitzung verfügbar, in der das Antwortangebot versendet wurde.
 
 Beim Empfang wird die Schema-URI aus den entschlüsselten Metadaten gelesen. Nach Bestätigung können öffentliche HTTPS-Schemata einschließlich ihrer JSON-Referenzen und XRepository-XSD-Archive geladen werden. Die Abrufe enthalten keine FIT-Connect-Zugangsdaten oder Einreichungsinhalte. JSON-Schema- und XSD-Prüfung erfolgen lokal. Alternativ können lokale JSON-Schemata mit passender `$id` bereitgestellt werden. Abrufe, Dateigrößen und Archivverarbeitung sind begrenzt. Erzeugte Beispieldaten sind Entwürfe und müssen fachlich geprüft werden. Ein Malwarescan ist derzeit nicht enthalten und wird im Prüfergebnis ausgewiesen.
+
+Im Stand `0.1.0-dev.3` wurden zusätzliche Eventlog-Fehler bei großen Logs und leeren Abschlussseiten korrigiert. Die erste Zustellpunktverwaltung ist umgesetzt: v2 bietet die authentifizierte Detailansicht, v3 zusätzlich bestätigte PATCH-Änderungen und Bulk-Edit. Erstellen, Löschen, Schlüsselregistrierung sowie das Bearbeiten von Leistungen, Schemata, Prozessen und Callbacks sind noch nicht Teil dieser Verwaltungsstufe. Es wird keine Bulk-Transaktion versprochen: Bei Teilfehlern zeigt die Oberfläche den Ausgang je Zustellpunkt. Bei ungewissem Ausgang wird nicht automatisch wiederholt. Die Live-Abnahme dieser Verwaltungsfunktionen steht noch aus.
 
 ## Technische Grundlage
 

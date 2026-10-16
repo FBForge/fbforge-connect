@@ -17,6 +17,7 @@ final class SessionManager implements AutoCloseable {
     private final TestResourceTransport resourceTransport;
     private final java.util.function.Function<ApiVersion, ResourceExchange> resources;
     private final Map<Key, Entry> entries = new HashMap<>();
+    private final Map<String, DestinationManagement> management = new HashMap<>();
     private final Map<String, SendSchemas> sendSchemas = new HashMap<>();
     private final ContentStore content;
     private final ReceiveStore received = new ReceiveStore();
@@ -100,6 +101,22 @@ final class SessionManager implements AutoCloseable {
             default -> throw new SessionException("invalid_input");
         });
         return new Data<>(version.wireValue(), entry.id(), "TEST", data);
+    }
+
+    Data<?> manageDestination(ApiVersion version, String id, String command, String destination, String document, String attempt) {
+        Entry entry = find(version, id);
+        var manager = management.computeIfAbsent(id, ignored -> new DestinationManagement(version,
+                resourceTransport == null ? resources.apply(version) : resourceTransport.forDestinationManagement(version)));
+        if (command.equals("execute_destination_update")) { eventLogs.clearOwner(id); invalidateReceived(entry); }
+        Object data = registry.withSession(version, entry.session(), session -> switch (command) {
+            case "load_managed_destination" -> manager.load(session, destination);
+            case "prepare_destination_update" -> manager.prepare(session, document);
+            case "execute_destination_update" -> manager.execute(session, attempt);
+            case "cancel_destination_update" -> manager.cancel(attempt);
+            case "destination_update_state" -> manager.state();
+            default -> throw new SessionException("invalid_input");
+        });
+        return new Data<>(version.wireValue(), id, "TEST", data);
     }
 
     Data<?> content(ApiVersion version, String id, String command, String contentId, long totalBytes, long byteOffset, String chunk) {
@@ -420,6 +437,7 @@ final class SessionManager implements AutoCloseable {
         return cause instanceof SessionException known ? known : new SessionException("authentication_failed");
     }
     private void remove(Entry entry) {
+        if (entry != null) management.remove(entry.id());
         if (entry == null) return;
         var schemas = sendSchemas.remove(entry.id());
         if (schemas != null) schemas.clear();

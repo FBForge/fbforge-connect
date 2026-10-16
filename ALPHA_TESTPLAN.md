@@ -1,4 +1,4 @@
-# Alpha-Testplan · 0.1.0-dev.2
+# Alpha-Testplan · 0.1.0-dev.3
 
 Entwicklungszweig: `develop`. Dies ist ein Entwicklungsstand für die erste ausführbare Alpha. Eine erfolgreiche Simulation ersetzt keinen Live-Test gegen TEST.
 
@@ -41,3 +41,18 @@ Für jeden Fall festhalten: Build/Commit, Windows-Version, API-Version, Aktion, 
 ## Noch offen
 
 Für diese Überarbeitung stehen keine FIT-Connect-Zugangsdaten oder Fehlermeldungen aus dem vorherigen Live-Test zur Verfügung. Der konkrete bisherige Empfangsfehler ist daher noch nicht live zugeordnet. Die SDK-Roundtrips und die korrigierte Fehlerweitergabe schaffen eine reproduzierbare Grundlage für die erneute Abnahme. Live-Versand, Live-Empfang, Windows-Installation und Signierung müssen vor der Alpha-Freigabe bestätigt werden.
+
+## Zusätzliche Abnahme von dev.3
+
+Die Eventlog-Prüfung deckt nun 300 signierte Ereignisse mit beiden SDKs ab. Schlüssel werden je Prüflauf wiederverwendet und beim nächsten Prüflauf neu geladen. Eine vom SDK angeforderte leere Abschlussseite nach exakt vollen Seiten wird akzeptiert; widersprüchliche Seiten und fremde Einreichungsfilter bleiben abgelehnt.
+
+Die Zustellpunktverwaltung benötigt keinen Quellcode des früheren Portals. Sie verwendet die dokumentierten SDK-/Destination-API-Verträge. Aktueller Umfang: vorhandene eigene Zustellpunkte lesen; über v3 Name, Kontakt, Metadatenversionen und zulässige Aktiv-/Inaktiv-Wechsel ändern. Anlegen, Löschen, Schlüssel- und Leistungsverwaltung bleiben Folgearbeiten.
+
+1. Unter „Zustellpunkte“ eigene Zustellpunkte laden. Die Liste und die Detailansicht müssen zu den angemeldeten Zugangsdaten gehören. Die Detailansicht verwendet die authentifizierte Destination API, nicht die öffentliche Submission API.
+2. Einen Zustellpunkt öffnen, den Namen oder einen Kontaktwert ändern und die Vorschau erstellen. Bis zur ausdrücklichen Speicherung darf auf TEST nichts verändert sein.
+3. Zwei Zustellpunkte auswählen und die Namensvorlage `{name} – Test` vorbereiten. Vorher/Nachher für beide prüfen und explizit speichern. Nicht angehakte Felder, Schlüssel, Leistungen und Callbacks müssen erhalten bleiben.
+4. Eine Vorschau erstellen, denselben Zustellpunkt außerhalb des Clients ändern und dann bestätigen. Die Vorprüfung muss die gesamte Auswahl vor dem ersten PATCH abbrechen. Die Prüfung erfolgt unmittelbar vor den Änderungen; ohne serverseitiges If-Match ist sie keine atomare Transaktion.
+5. Bei fehlenden Schreibrechten oder Teilausfällen muss ein Ergebnis je Zustellpunkt erscheinen. Bei verlorener Antwort darf keine automatische Wiederholung stattfinden. „Ergebnis abrufen“ liest nur den lokalen Zustand. „Ansehen“ lädt den aktuellen Serverzustand auch nach ungewissem Ausgang. Für weitere Schreibversuche nach einem ungewissen Ausgang eine neue Sitzung öffnen.
+6. Mit v2 darf die Detailansicht funktionieren; die Schreiboberfläche muss ausdrücklich auf die v3-Sitzung verweisen.
+
+Die Tests verwenden synthetische API-Antworten und erzeugen keine Änderungen an echten TEST-Zustellpunkten. Eine fachliche Prüfung der Statuswechsel, Kontaktvalidierung und Schreibberechtigungen auf TEST bleibt erforderlich. Bulk-Edit ist eine Folge einzeln bestätigter Zieländerungen mit einer gemeinsamen Bestätigung, keine serverseitig atomare Transaktion.

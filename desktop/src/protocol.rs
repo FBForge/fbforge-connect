@@ -80,6 +80,8 @@ impl<T> EngineResponse<T> {
                 Some("invalid_credentials") => EngineFailure::Remote("invalid_credentials"),
                 Some("session_missing") => EngineFailure::Remote("session_missing"),
                 Some("invalid_resource") => EngineFailure::Remote("invalid_resource"),
+                Some("destination_conflict") => EngineFailure::Remote("destination_conflict"),
+                Some("destination_update_locked") => EngineFailure::Remote("destination_update_locked"),
                 Some("resource_denied") => EngineFailure::Remote("resource_denied"),
                 Some("resource_missing") => EngineFailure::Remote("resource_missing"),
                 Some("resource_unavailable") => EngineFailure::Remote("resource_unavailable"),

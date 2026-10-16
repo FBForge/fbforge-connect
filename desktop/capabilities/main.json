@@ -11,5 +11,6 @@
     "allow-verify-submission", "allow-list-received-contents", "allow-read-received-content", "allow-discard-received",
     "allow-verify-reply", "allow-list-received-reply-contents", "allow-read-received-reply-content", "allow-discard-received-reply",
     "allow-prepare-receipt", "allow-execute-receipt", "allow-cancel-receipt", "allow-receipt-state",
-    "allow-load-event-log", "allow-list-event-log", "allow-read-event-log", "allow-discard-event-log", "allow-list-replies", "allow-list-reply-channels"]
+    "allow-load-event-log", "allow-list-event-log", "allow-read-event-log", "allow-discard-event-log", "allow-list-replies", "allow-list-reply-channels",
+    "allow-load-managed-destination", "allow-prepare-destination-update", "allow-execute-destination-update", "allow-cancel-destination-update", "allow-destination-update-state"]
 }

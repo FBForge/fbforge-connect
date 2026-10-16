@@ -5,6 +5,7 @@ import { invoke } from './native.js';
 import { probeAdapter, errorMessage } from './diagnostics.js';
 import { openSession, updateSession, resetsSessions } from './sessions.js';
 import DestinationKeys from './DestinationKeys.vue';
+import DestinationManager from './DestinationManager.vue';
 import SubmissionSender from './SubmissionSender.vue';
 import SubmissionBrowser from './SubmissionBrowser.vue';
 import EventLogPanel from './EventLogPanel.vue';
@@ -115,7 +116,7 @@ async function probe(versions) {
       <div class="brand"><div class="brand-name"><strong>FIT-Connect Testclient</strong><span>Von FBForge · Integrationstests für Onlinedienste und Fachverfahren</span></div></div>
       <button class="theme-toggle" type="button" @click="toggleTheme">{{ theme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</button>
       <nav class="nav-links" aria-label="Hauptnavigation">
-        <button v-for="item in ['Senden', 'Empfangen', 'Event Log']" :key="item" type="button"
+        <button v-for="item in ['Senden', 'Empfangen', 'Event Log', 'Zustellpunkte']" :key="item" type="button"
           class="button" :class="{ secondary: section !== item }" :aria-current="section === item ? 'page' : undefined"
           @click="section = item">{{ item }}</button>
       </nav>
@@ -125,7 +126,7 @@ async function probe(versions) {
     <div class="tool-section-heading"><div><h1>{{ section }}</h1><p>API v2 und v3 · ausschließlich FIT-Connect TEST</p></div><span class="status-badge info">In Entwicklung</span></div>
     <section class="tool-section connection-panel" aria-labelledby="session-title">
       <div class="tool-section-heading"><h2 id="session-title">Verbindung zu FIT-Connect TEST</h2><span class="status-badge" :class="activeSession ? 'ok' : 'info'">{{ activeSession ? `Verbunden · ${apiVersion}` : 'Nicht verbunden' }}</span></div>
-      <p>Eine gemeinsame Verbindung für Senden, Empfangen und Event Log. Die Berechtigungen bestimmen deine Zugangsdaten.</p>
+      <p>Eine gemeinsame Verbindung für Senden, Empfangen, Event Log und Zustellpunktverwaltung. Die Berechtigungen bestimmen deine Zugangsdaten.</p>
       <label for="session-api">API-Version<select id="session-api" v-model="apiVersion" :disabled="busy"><option value="v2">API v2</option><option value="v3">API v3</option></select></label>
       <details :open="!activeSession"><summary>{{ activeSession ? 'Verbindung verwalten' : 'Verbindung herstellen' }}</summary>
       <form @submit.prevent="sessionAction('open')" autocomplete="off">
@@ -148,6 +149,8 @@ async function probe(versions) {
     <SubmissionSender v-show="section === 'Senden'" :session="activeSession" :busy="busy" @busy="resourceBusy"
       @event-log="openEventLog"
       @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)" @fatal="fatal" />
+    <DestinationManager v-show="section === 'Zustellpunkte'" :session="activeSession" :busy="busy" @busy="resourceBusy"
+      @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)" @fatal="fatal" @changed="keyRevision++" />
     <DestinationKeys v-show="section === 'Empfangen'" :session="activeSession" :busy="busy" @busy="resourceBusy"
       @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)"
       @fatal="fatal" @destination="id => selectedDestination = id" @invalidate="keyRevision++" />

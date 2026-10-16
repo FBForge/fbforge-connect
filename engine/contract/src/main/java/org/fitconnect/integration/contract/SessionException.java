@@ -6,7 +6,7 @@ public final class SessionException extends RuntimeException {
     private static final Set<String> CODES = Set.of("authentication_failed", "auth_unavailable",
             "endpoint_blocked", "session_missing", "invalid_credentials", "invalid_resource", "resource_denied",
             "resource_missing", "resource_unavailable", "key_rejected", "key_missing", "test_certificate_required", "invalid_input", "content_limit",
-            "verification_failed", "schema_unavailable", "schema_consent_required", "schema_tls_error", "schema_network_error", "schema_http_error", "schema_archive_invalid", "send_locked", "invalid_submission", "data_format_invalid");
+            "destination_conflict", "destination_update_locked", "verification_failed", "schema_unavailable", "schema_consent_required", "schema_tls_error", "schema_network_error", "schema_http_error", "schema_archive_invalid", "send_locked", "invalid_submission", "data_format_invalid");
     private final Integer httpStatus;
     private final String problemType;
     public SessionException(String code) { this(code, null, null); }

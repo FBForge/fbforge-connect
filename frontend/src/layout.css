@@ -48,3 +48,6 @@
 .file-drop-zone:focus-within, .file-drop-zone:hover { border-color: var(--accent); }
 .connection-panel > details > summary { cursor: pointer; font-weight: 600; }
 .client-fields output { overflow-wrap: anywhere; min-width: 0; }
+
+.client-fields .destination-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.destination-toggle input[type="checkbox"] { width: auto; flex: 0 0 auto; }

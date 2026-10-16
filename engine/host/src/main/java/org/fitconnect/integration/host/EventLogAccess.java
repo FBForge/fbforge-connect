@@ -9,13 +9,13 @@ import java.util.function.LongSupplier;
 /** Bounded SDK event reads independent of content availability. Does not grant receive or write authority. */
 final class EventLogAccess implements EventLogSource, AutoCloseable {
     private final ApiVersion api;
-    private final String casePath, submissionPath;
+    private final String casePath, submissionPath, submissionId;
     private final ResourceExchange remote;
     private final LongSupplier clock;
     private final long deadline;
     private int requests;
     private long bytes;
-    private boolean closed;
+    private boolean closed, terminalPage;
     private String eventPath;
     private int total = -1, nextOffset;
     private final List<String> tokens = new ArrayList<>();
@@ -24,6 +24,7 @@ final class EventLogAccess implements EventLogSource, AutoCloseable {
     }
     EventLogAccess(ApiVersion api, String caseId, String submissionId, ResourceExchange remote, LongSupplier clock) {
         this.api = Objects.requireNonNull(api); this.remote = Objects.requireNonNull(remote); this.clock = Objects.requireNonNull(clock);
+        this.submissionId = DestinationAccess.id(submissionId);
         String prefix = "/submission-api/" + api.wireValue();
         casePath = prefix + "/cases/" + DestinationAccess.id(caseId) + "/events";
         submissionPath = prefix + "/submissions/" + DestinationAccess.id(submissionId) + "/events";
@@ -35,6 +36,9 @@ final class EventLogAccess implements EventLogSource, AutoCloseable {
             if (clock.getAsLong() >= deadline) throw error("resource_unavailable");
             URI uri = allowedTransport(api, endpoint);
             boolean trust = trust(uri);
+            if (uri.getRawQuery() != null) for (String pair : uri.getRawQuery().split("&")) {
+                if (pair.startsWith("submissionId=") && !pair.equals("submissionId=" + submissionId)) throw error("endpoint_blocked");
+            }
             if (!trust && !Set.of(casePath, submissionPath).contains(uri.getRawPath())) throw error("endpoint_blocked");
             var safe = ReceiveAccess.safeHeaders(headers, trust);
             if (!trust && safe.entrySet().stream().noneMatch(item -> item.getKey().equalsIgnoreCase("authorization")
@@ -64,7 +68,7 @@ final class EventLogAccess implements EventLogSource, AutoCloseable {
         if (values == null || !values.isJsonArray() || values.getAsJsonArray().size() != count || offset != nextOffset
                 || offset != Integer.parseInt(query.get("offset")) || count > Integer.parseInt(query.get("limit"))
                 || available > 1000 || offset + count > available || count == 0 && offset < available
-                || total >= 0 && (available != total || nextOffset == total)
+                || terminalPage || total >= 0 && (available != total || nextOffset == total && count != 0)
                 || eventPath != null && !eventPath.equals(uri.getRawPath())) throw error("invalid_resource");
         eventPath = uri.getRawPath(); total = available;
         for (var value : values.getAsJsonArray()) {
@@ -78,7 +82,7 @@ final class EventLogAccess implements EventLogSource, AutoCloseable {
             }
             tokens.add(wire);
         }
-        nextOffset += count;
+        nextOffset += count; terminalPage = count == 0;
     }
     private static int number(com.google.gson.JsonObject page, String field) {
         var value = page.get(field);

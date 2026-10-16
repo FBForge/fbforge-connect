@@ -26,6 +26,13 @@ class EventLogAccessTest {
             assertEquals(2, calls.get());
         }
     }
+    @Test void caseFilterCannotSelectAForeignSubmissionEvenWhenTheCaseMatches() {
+        for (var api : ApiVersion.values()) try (var access = new EventLogAccess(api, CASE, SUB,
+                (u,h) -> { fail("Foreign filter must not dispatch"); return "{}"; })) {
+            assertEquals("endpoint_blocked", assertThrows(SessionException.class,
+                    () -> access.get(events(api,"cases",CASE) + "&submissionId=" + CASE,HEADERS)).code());
+        }
+    }
     @Test void trustReadsStripCredentialsAndRejectWrongKidWhileMutationsNeverDispatch() {
         var calls = new AtomicInteger();
         try (var access = new EventLogAccess(ApiVersion.V3, CASE, SUB, (url, headers) -> {
