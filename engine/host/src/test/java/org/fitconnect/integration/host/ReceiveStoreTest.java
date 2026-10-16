@@ -17,6 +17,16 @@ class ReceiveStoreTest {
                 "application/json", List.of(new ReceivedContent.Attachment(ATT, "Anlage.txt", "text/plain", "Synthetische Beschreibung",
                         "Anlage".getBytes(StandardCharsets.UTF_8))), List.of(new ReceivedContent.Issue("MALWARE_SCAN_NOT_CONFIGURED", false)));
     }
+    @Test void schemaSnapshotUsesTheSameApiSessionAndProofBoundaryAsTheVerifiedContent() {
+        var original = content(new byte[0]);
+        var annotated = new ReceivedContent(original.destinationId(), original.submissionId(), original.caseId(), original.metadata(), original.data(), original.mimeType(), original.attachments(), original.issues(), new SchemaSnapshot("urn:test:schema", "{}"));
+        var store = new ReceiveStore(); var summary = store.publish(ApiVersion.V3, SESSION, DEST, SUB, annotated);
+        assertEquals("urn:test:schema", store.schema(ApiVersion.V3, SESSION, summary.proofId(), 0).schemaUri());
+        assertThrows(SessionException.class, () -> store.schema(ApiVersion.V2, SESSION, summary.proofId(), 0));
+        assertThrows(SessionException.class, () -> store.schema(ApiVersion.V3, UUID.randomUUID().toString(), summary.proofId(), 0));
+        store.discard(ApiVersion.V3, SESSION, summary.proofId());
+        assertThrows(SessionException.class, () -> store.schema(ApiVersion.V3, SESSION, summary.proofId(), 0));
+    }
     @Test void summaryContainsOnlyBoundReferencesAndOriginalBytesAreReadInLimitedChunks() {
         var store = new ReceiveStore(); byte[] data = new byte[ContentStore.CHUNK_BYTES + 7]; new Random(1).nextBytes(data);
         var summary = store.publish(ApiVersion.V2, SESSION, DEST, SUB, content(data));

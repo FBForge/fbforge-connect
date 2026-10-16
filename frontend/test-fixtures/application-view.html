@@ -22,6 +22,10 @@ window.__TAURI_INTERNALS__={async invoke(command,args){
   const part=parts().find(p=>p.contentId===args.contentId), chunk=part.bytes.slice(args.byteOffset,args.byteOffset+24*1024);
   return envelope({proofId:uuid(9),contentId:args.contentId,byteOffset:args.byteOffset,totalBytes:part.bytes.length,chunk:btoa(String.fromCharCode(...chunk)),complete:args.byteOffset+chunk.length===part.bytes.length});
  }
+ if(command==='read_received_schema'){
+  const bytes=fixture.schemaPacket?textBytes(JSON.stringify(fixture.schemaPacket)):new Uint8Array();
+  return envelope({proofId:uuid(9),schemaUri:fixture.schemaPacket?.schemaUri??null,totalBytes:bytes.length,byteOffset:args.byteOffset,chunk:btoa(String.fromCharCode(...bytes.slice(args.byteOffset,args.byteOffset+12288)))});
+ }
  if(command==='reply_state')return envelope({attemptId:null,status:'idle',replyId:null,caseId:null,error:null});
  if(command==='reply_target')return envelope({proofId:uuid(9),destinationId:detail.destinationId,submissionId:detail.submissionId,caseId:detail.caseId,replyDestinationId:null,offset:0,total:1,schemas:[{schemaUri:'https://example.invalid/reply.json',mimeType:'application/json'}]});
  if(command==='discard_received')return envelope({proofId:args.proofId});

@@ -155,6 +155,30 @@ public final class SchemaSources {
         if (files == null || files.keySet().stream().noneMatch(key -> key.contains("/xsd/"))) return true;
         return name.contains("/xsd/") || files.containsKey(name.replace("/xsd_dev/", "/xsd/"));
     }
+    /** Snapshot only: these methods never authorize or perform an additional resource request. */
+    public Map<String,String> cachedDocuments() { return Map.copyOf(documents); }
+    public Map<String,String> cachedXmlFiles(String identifier) {
+        String id = documentUri(identifier);
+        var initial = archives.containsKey(id) ? preferredXmlTree(archives.get(id))
+                : documents.containsKey(id) ? Map.of(id, documents.get(id)) : Map.<String,String>of();
+        var result = new LinkedHashMap<String,String>();
+        var pending = new ArrayDeque<>(initial.keySet());
+        while (!pending.isEmpty()) {
+            String uri = pending.removeFirst();
+            if (result.containsKey(uri) || !documents.containsKey(uri)) continue;
+            String source = documents.get(uri); result.put(uri, source);
+            var root = xml(source);
+            for (String kind : List.of("include", "import", "redefine")) {
+                var refs = root.getElementsByTagNameNS(XSD, kind);
+                for (int index = 0; index < refs.getLength(); index++) {
+                    String location = ((Element) refs.item(index)).getAttribute("schemaLocation");
+                    if (!location.isBlank()) pending.add(URI.create(uri).resolve(location).toString());
+                }
+            }
+            if (pending.size() > 2048) throw new SessionException("content_limit");
+        }
+        return Map.copyOf(result);
+    }
     /** Platform XSD validation with a closed resolver. Network I/O can occur only through document(). */
     public boolean validateXml(byte[] data, String identifier) {
         try {

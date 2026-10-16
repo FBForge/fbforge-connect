@@ -74,6 +74,7 @@ final class Engine implements AutoCloseable {
                 case "load_submission" -> expected.addAll(Set.of("sessionId", "destinationId", "submissionId"));
                 case "verify_reply" -> expected.addAll(Set.of("sessionId", "caseId", "replyId", "schemaDocument"));
                 case "verify_submission" -> expected.addAll(Set.of("sessionId", "destinationId", "submissionId", "schemaDocument"));
+                case "read_received_schema", "read_received_reply_schema" -> expected.addAll(Set.of("sessionId", "proofId", "byteOffset"));
                 case "list_received_contents", "list_received_reply_contents" -> expected.addAll(Set.of("sessionId", "proofId", "offset"));
                 case "read_received_content", "read_received_reply_content" -> expected.addAll(Set.of("sessionId", "proofId", "contentId", "byteOffset"));
                 case "discard_received", "discard_received_reply" -> expected.addAll(Set.of("sessionId", "proofId"));
@@ -129,14 +130,14 @@ final class Engine implements AutoCloseable {
                     case "list_replies" -> sessions.replies(version, values.get("sessionId"), offset);
                     case "list_reply_channels" -> sessions.replyChannels(version, values.get("sessionId"));
                     case "verify_reply" -> sessions.verifyReply(version, values.get("sessionId"), values.get("caseId"), values.get("replyId"), values.get("schemaDocument"));
-                    case "list_received_reply_contents", "read_received_reply_content", "discard_received_reply" -> sessions.receivedReply(version,
+                    case "read_received_reply_schema", "list_received_reply_contents", "read_received_reply_content", "discard_received_reply" -> sessions.receivedReply(version,
                             values.get("sessionId"), command, values.get("proofId"), values.get("contentId"),
-                            command.equals("read_received_reply_content") ? Math.toIntExact(byteOffset) : offset);
+                            (command.equals("read_received_reply_content") || command.equals("read_received_reply_schema")) ? Math.toIntExact(byteOffset) : offset);
                     case "verify_submission" -> sessions.verify(version, values.get("sessionId"), values.get("destinationId"),
                             values.get("submissionId"), values.get("schemaDocument"));
-                    case "list_received_contents", "read_received_content", "discard_received" -> sessions.received(version,
+                    case "read_received_schema", "list_received_contents", "read_received_content", "discard_received" -> sessions.received(version,
                             values.get("sessionId"), command, values.get("proofId"), values.get("contentId"),
-                            command.equals("read_received_content") ? Math.toIntExact(byteOffset) : offset);
+                            (command.equals("read_received_content") || command.equals("read_received_schema")) ? Math.toIntExact(byteOffset) : offset);
                     case "load_event_log" -> sessions.loadEventLog(version, values.get("sessionId"), values.get("destinationId"),
                             values.get("caseId"), values.get("submissionId"));
                     case "list_event_log", "read_event_log", "discard_event_log" -> sessions.eventLogResource(version,

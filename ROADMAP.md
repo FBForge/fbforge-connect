@@ -44,13 +44,15 @@ Die erneute Live-Erprobung von V3, Empfang und Event Log ist noch offen. Der [Al
 
 `0.1.0-dev.5` führt den Namen **FIT-Connect Test-Client** in Oberfläche, Fenstertitel, Installer und Diagnosebericht ein. Vorhandene Installationskennung und interne Paketnamen bleiben für die Kontinuität bestehender Installationen bestehen. Die Formularansicht ist nur lesend und verwendet die vorhandenen Originalfelder. Ein fachliches Mapping oder ein Formular-Editor wird damit noch nicht versprochen.
 
+`0.1.0-dev.6` ergänzt Beschriftungen und Feldherkunft aus JSON-Schema/XSD für Empfang und Versandentwürfe. Werte werden ausschließlich aus den Originalfachdaten angezeigt. Die Schemaansicht ist begrenzt und fällt bei unvollständigen oder mehrdeutigen Zuordnungen auf Originalnamen zurück. Universelle FIM-Formulare, externe Codelisten, Beschriftungen von Antwortentwürfen und ein Formular-Editor bleiben Folgearbeiten.
+
 ## Richtung Beta
 
 ### Alpha abschließen
 
 1. Live-Abnahme von V3-Versand, Empfang, Entschlüsselung, Schema-Prüfung, Event Log und Zustellpunktänderungen abschließen; konkrete Fehler mit dem Diagnosebericht zuordnen.
 2. JSON-/XML-Antragsansicht und Anlagen mit repräsentativen echten Standards und fiktiven Daten prüfen. Große oder nicht darstellbare Dokumente müssen über Quelltext beziehungsweise Download zugänglich bleiben. Eine Vorschau darf keinen Versand, Reply oder Empfangsabschluss auslösen.
-3. Installation und Aktualisierung von dev.4 auf dev.5 auf einem frischen Windows-System, Tastaturbedienung, kleine Fenster, hohe Skalierung und Hell-/Dunkeldesign prüfen. Signierung und Verteilung klären.
+3. Installation und Aktualisierung bestehender Alpha-Stände auf dev.6 auf einem frischen Windows-System, Tastaturbedienung, kleine Fenster, hohe Skalierung und Hell-/Dunkeldesign prüfen. Signierung und Verteilung klären.
 
 ### Beta: Testarbeitsplatz einrichten
 

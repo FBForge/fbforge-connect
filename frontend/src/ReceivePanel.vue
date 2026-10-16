@@ -10,11 +10,13 @@ import ContentPreview from './ContentPreview.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
 import ReplySender from './ReplySender.vue';
 import StructuredData from './StructuredData.vue';
+import { readReceivedSchema } from './received-schema.js';
 import { STRUCTURED_BYTES, structuredFormat } from './structured-data.js';
 
 const props = defineProps({ session: Object, detail: Object, destinationId: String, busy: Boolean, keyRevision: Number, receiveRevision: Number, reply: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'verified', 'outcome', 'receive-start']);
 const diagnostic = ref('');
+const applicationSchema = ref(null);
 const application = ref(null), applicationNotice = ref(''), applicationHeading = ref(null);
 const attachments = computed(() => parts.value.filter(part => part.kind === 'attachment'));
 const proof = ref(null), parts = ref([]), schemas = ref([]), preview = ref(null), error = ref('');
@@ -59,7 +61,7 @@ async function release(operation) {
 function resetProof() {
   generation++; controller.value?.abort(); closePreview(); clearDownload();
   const previous = proof.value, owner = proofSession, reply = props.reply;
-  proof.value = null; proofSession = null; parts.value = []; application.value = null; applicationNotice.value = ''; emit('verified', false);
+  proof.value = null; proofSession = null; parts.value = []; application.value = null; applicationSchema.value = null; applicationNotice.value = ''; emit('verified', false);
   return previous && owner ? release(() => discardReceived(invoke, owner, previous.proofId, reply)) : Promise.resolve();
 }
 async function resetAll() {
@@ -123,7 +125,13 @@ function verify() {
         } finally { bytes?.fill(0); }
       }
       if (!current()) { await release(() => discardReceived(invoke, active, result.proofId, reply)); return; }
-      proofSession = active; proof.value = result; parts.value = rows; application.value = display; applicationNotice.value = notice; emit('verified', true);
+      let schemaView = null;
+      if (display) {
+        controller.value ||= new AbortController();
+        schemaView = await readReceivedSchema(invoke, active, result.proofId, { reply, signal: controller.value.signal });
+      }
+      if (!current()) { await release(() => discardReceived(invoke, active, result.proofId, reply)); return; }
+      proofSession = active; proof.value = result; parts.value = rows; applicationSchema.value = schemaView; application.value = display; applicationNotice.value = notice; emit('verified', true);
       await nextTick(); if (current()) { applicationHeading.value?.focus({ preventScroll: true }); applicationHeading.value?.scrollIntoView({ block: 'start' }); }
     } catch (cause) { await release(() => discardReceived(invoke, active, result.proofId, reply)); throw cause; }
   });
@@ -176,7 +184,7 @@ function inspect(part, download = false) {
       } else {
         const value = await createPreview(bytes, { filename: part.fileName || label(part), mimeType: part.mimeType || '' });
         if (!current() || controller.value.signal.aborted) { disposePreview(value); return; }
-        preview.value = { ...value, json: value.kind === 'text' && (/\.json$/i.test(part.fileName || '') || /json(?:;|$)/i.test(part.mimeType || '')) };
+        preview.value = { ...value, isApplication: part.kind === 'data', json: value.kind === 'text' && (/\.json$/i.test(part.fileName || '') || /json(?:;|$)/i.test(part.mimeType || '')) };
       }
     } catch (cause) {
       const code = typeof cause === 'string' ? cause : cause?.message;
@@ -213,7 +221,7 @@ function inspect(part, download = false) {
       <p class="small-note">Das SDK hat Ereignisse, Signaturen, Verschlüsselung und Inhalts-Hashes geprüft. Hinweise oben benennen verbleibende Prüfungen. Dies bestätigt noch keinen Empfang bei FIT-Connect.</p>
       <section class="received-application" :aria-labelledby="`${panelId}-application-title`">
         <div class="tool-section-heading"><div><h3 :id="`${panelId}-application-title`" ref="applicationHeading" tabindex="-1">{{ reply ? 'Antwort lesen' : 'Antrag lesen' }}</h3><p>Fachdaten aus dem lokal entschlüsselten Inhalt</p></div></div>
-        <StructuredData v-if="application" :text="application.text" :format="application.format" />
+        <StructuredData v-if="application" :text="application.text" :format="application.format" :schema-document="applicationSchema?.document" :schema-uri="applicationSchema?.schemaUri" :schema-status="applicationSchema?.status" />
         <p v-else class="small-note" role="status">{{ applicationNotice }}</p>
       </section>
       <section class="application-attachments" :aria-labelledby="`${panelId}-attachments-title`"><h3 :id="`${panelId}-attachments-title`">Anlagen ({{ attachments.length }})</h3><p v-if="!attachments.length" class="small-note">Keine zusätzlichen Anlagen.</p>
@@ -227,7 +235,7 @@ function inspect(part, download = false) {
           <td data-label="Lokale Prüfung"><span class="status-badge ok">{{ part.kind === 'metadata' ? 'JWE geprüft' : 'JWE und Hash geprüft' }}</span></td>
           <td data-label="Aktionen"><div class="client-actions"><button class="button secondary" type="button" :disabled="disabled" @click="inspect(part)">Anzeigen</button><button class="button secondary" type="button" :disabled="disabled" @click="inspect(part, true)">Herunterladen</button></div></td></tr></tbody></table></div></details>
     </template>
-    <ContentPreview v-if="preview" :preview="preview" @close="closePreview" />
+    <ContentPreview v-if="preview" :preview="preview" :schema-document="preview?.isApplication ? applicationSchema?.document : undefined" :schema-uri="preview?.isApplication ? applicationSchema?.schemaUri : undefined" @close="closePreview" />
   </section>
   <ReplySender v-if="!reply && !completed" :session="session" :proof="proof" :busy="busy || pending"
     @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @invalidate="resetProof" />

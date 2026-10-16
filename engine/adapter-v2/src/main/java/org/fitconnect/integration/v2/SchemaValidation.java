@@ -56,6 +56,35 @@ final class SchemaValidation {
         } catch (SessionException failure) { throw failure;
         } catch (Exception failure) { throw new SessionException("schema_unavailable"); }
     }
+    /** Best-effort annotation snapshot; no fetch, no effect on a successful verification. */
+    SchemaSnapshot snapshot(String uri) {
+        try {
+            var cached = sources.cachedDocuments();
+            var root = json.createObjectNode(); root.put("schemaPackage", 1); root.put("schemaUri", uri);
+            String source = cached.get(SchemaSources.documentUri(uri));
+            if (uri.startsWith("urn:xoev-de:") || source != null && source.stripLeading().startsWith("<")) {
+                var files = sources.cachedXmlFiles(uri);
+                if (files.isEmpty()) return new SchemaSnapshot(uri, null);
+                var rows = root.putArray("schemas");
+                for (var item : files.entrySet()) {
+                    var row = rows.addObject(); row.put("name", item.getKey()); row.put("text", item.getValue());
+                    row.put("primary", sources.primaryXmlFile(uri, item.getKey()));
+                }
+            } else {
+                if (source == null) return new SchemaSnapshot(uri, null);
+                var documents = root.putObject("documents");
+                var pending = new ArrayDeque<String>(); pending.add(SchemaSources.documentUri(uri));
+                while (!pending.isEmpty()) {
+                    String key = pending.removeFirst();
+                    if (documents.has(key) || !cached.containsKey(key)) continue;
+                    var value = json.readTree(SchemaSafety.check(cached.get(key))); documents.set(key, value);
+                    collect(value, URI.create(key), pending, 0, new int[]{20000});
+                }
+            }
+            return new SchemaSnapshot(uri, root.toString());
+        } catch (RuntimeException failure) { return new SchemaSnapshot(uri, null);
+        } catch (Exception failure) { return new SchemaSnapshot(uri, null); }
+    }
     private static void collect(JsonNode node, URI base, Deque<String> pending, int depth, int[] budget) {
         if (depth > 64 || --budget[0] < 0 || pending.size() > 512) throw new SessionException("content_limit");
         if (node.isObject()) {

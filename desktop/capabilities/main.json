@@ -3,7 +3,7 @@
   "description": "Only the bundled main window may run diagnostics or manage local TEST sessions.",
   "windows": ["main"],
   "permissions": ["allow-probe-engine", "allow-open-session", "allow-check-session", "allow-close-session",
-    "allow-load-send-destination", "allow-load-send-schema", "allow-read-send-schema", "allow-list-destinations", "allow-load-destination", "allow-import-key", "allow-loaded-keys", "allow-discard-keys",
+    "allow-load-send-destination", "allow-load-send-schema", "allow-read-send-schema", "allow-read-received-schema", "allow-read-received-reply-schema", "allow-list-destinations", "allow-load-destination", "allow-import-key", "allow-loaded-keys", "allow-discard-keys",
     "allow-begin-content", "allow-append-content", "allow-discard-content",
     "allow-prepare-send", "allow-execute-send", "allow-cancel-send", "allow-send-state",
     "allow-reply-target", "allow-prepare-reply", "allow-execute-reply", "allow-cancel-reply", "allow-reply-state",

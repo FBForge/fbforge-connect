@@ -4,7 +4,11 @@ import java.util.*;
 
 /** Native verified reply payload. Deliberately distinct from submission receipt evidence. */
 public record ReceivedReplyContent(UUID replyId, UUID caseId, UUID senderDestinationId, UUID channelAttemptId,
-        byte[] metadata, byte[] data, String mimeType, List<ReceivedContent.Attachment> attachments, List<ReceivedContent.Issue> issues, ReplyReceiptEvidence evidence) {
+        byte[] metadata, byte[] data, String mimeType, List<ReceivedContent.Attachment> attachments, List<ReceivedContent.Issue> issues, ReplyReceiptEvidence evidence, SchemaSnapshot schemaSnapshot) {
+    public ReceivedReplyContent(UUID replyId, UUID caseId, UUID senderDestinationId, UUID channelAttemptId,
+            byte[] metadata, byte[] data, String mimeType, List<ReceivedContent.Attachment> attachments, List<ReceivedContent.Issue> issues, ReplyReceiptEvidence evidence) {
+        this(replyId, caseId, senderDestinationId, channelAttemptId, metadata, data, mimeType, attachments, issues, evidence, null);
+    }
     public ReceivedReplyContent {
         if (replyId == null || caseId == null || channelAttemptId == null || metadata == null || metadata.length > 2 * 1024 * 1024
                 || evidence == null || !replyId.equals(evidence.replyId()) || !caseId.equals(evidence.caseId()) || !channelAttemptId.equals(evidence.channelAttemptId())

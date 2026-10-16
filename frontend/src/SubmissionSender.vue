@@ -29,6 +29,9 @@ function revealInvalid(event) {
 }
 function selectStep(index) { sendStep.value = index; stepNotice.value = ''; }
 
+const schemaDocument = shallowRef(null);
+const schemaContext = computed(() => JSON.stringify([props.session?.sessionId, props.session?.apiVersion, target.value.trim().toLowerCase(), service.value, addressing.value, modelId.value, messageId.value, schema.value, mime.value]));
+watch(schemaContext, () => { schemaDocument.value = null; }, { flush: 'sync' });
 const recipient = ref(null), schemaChoice = ref(0), processChoice = ref(0), exampleNotice = ref('');
 const selectedService = computed(() => recipient.value?.services.find(item => item.identifier === service.value));
 const selectedProcess = computed(() => recipient.value?.processes[processChoice.value]);
@@ -58,15 +61,28 @@ async function loadRecipient() {
     recipient.value = value; service.value = value.services[0]?.identifier || ''; processChoice.value = 0;
   });
 }
+async function loadLabels() {
+  if (disabled.value || !schema.value) return;
+  if (!window.confirm('Das gewählte Schema und seine Referenzen dürfen aus öffentlichen HTTPS-Quellen einschließlich XRepository geladen werden. Die Quellen sehen deine IP-Adresse. Zugangsdaten und Fachdaten werden nicht mitgesendet. Fortfahren?')) return;
+  const active = { ...props.session }, key = schemaContext.value, destination = target.value.trim().toLowerCase();
+  const selection = { serviceIdentifier: service.value, schemaUri: schema.value,
+    processModelId: addressing.value === 'process' ? modelId.value : '', messageId: addressing.value === 'process' ? messageId.value : '', allowExternalSchemas: true };
+  await act('Schema-Beschriftungen laden', async () => {
+    const document = await loadSendSchema(invoke, active, destination, selection);
+    if (schemaContext.value === key) schemaDocument.value = document;
+  });
+}
 async function createExample() {
   if (disabled.value || !schema.value) return;
   if (!window.confirm('Das gewählte Schema und seine Referenzen dürfen aus öffentlichen HTTPS-Quellen einschließlich XRepository geladen werden. Die Quellen sehen deine IP-Adresse. Zugangsdaten und Fachdaten werden nicht mitgesendet. Fortfahren?')) return;
-  const active = { ...props.session }, destination = target.value.trim().toLowerCase(), uri = schema.value, format = mime.value;
+  const active = { ...props.session }, destination = target.value.trim().toLowerCase(), uri = schema.value, format = mime.value, key = schemaContext.value;
   await act('Fiktive Fachdaten erzeugen', async () => {
     const document = await loadSendSchema(invoke, active, destination, { serviceIdentifier: service.value, schemaUri: uri,
       processModelId: addressing.value === 'process' ? modelId.value : '', messageId: addressing.value === 'process' ? messageId.value : '', allowExternalSchemas: true });
+    if (schemaContext.value !== key) return;
+    schemaDocument.value = document;
     const example = await generateExample(document, format, uri);
-    if (active.sessionId !== props.session?.sessionId || destination !== target.value.trim().toLowerCase() || uri !== schema.value || format !== mime.value) return;
+    if (schemaContext.value !== key) return;
     dataFile.value = null; dataText.value = example;
     exampleNotice.value = 'Fiktive Beispieldaten wurden aus dem gewählten Schema erzeugt. Bitte fachlich prüfen. Der Entwurf ist noch kein Nachweis einer erfolgreichen Schemaprüfung.';
   });
@@ -193,11 +209,11 @@ async function refreshState() {
           <label for="send-schema">Fachdaten-Schema<select v-if="schemaOptions.length > 1" id="send-schema" v-model="schemaChoice"><option v-for="(item, index) in schemaOptions" :key="index" :value="index">{{ item.mimeType === 'application/json' ? 'JSON' : 'XML' }} · {{ item.schemaUri }}</option></select><output v-else id="send-schema">{{ schema ? `${mime === 'application/json' ? 'JSON' : 'XML'} · ${schema}` : 'Keine unterstützten Fachdaten-Schemata ausgewählt.' }}</output><small>Wird aus der gewählten Leistung beziehungsweise Prozessnachricht übernommen.</small></label>
           <label for="send-data-file">Datei auswählen (optional)<input id="send-data-file" type="file" accept=".json,.xml,application/json,application/xml,text/xml" @change="dataFile = $event.target.files[0] || null"><small>Ohne Datei wird der Inhalt aus dem Eingabefeld verwendet.</small></label>
         </div>
-        <div class="client-actions"><button class="button secondary" type="button" :disabled="!schema" @click="createExample">Fiktive Beispieldaten erzeugen</button></div>
+        <div class="client-actions"><button class="button secondary" type="button" :disabled="!schema" @click="createExample">Fiktive Beispieldaten erzeugen</button><button class="button secondary" type="button" :disabled="disabled || !schema" @click="loadLabels">Schema-Beschriftungen laden</button></div>
         <p v-if="exampleNotice" class="small-note" role="status">{{ exampleNotice }}</p>
         <label v-if="!dataFile" for="send-data">Inhalt<textarea id="send-data" v-model="dataText" rows="8" required spellcheck="false"></textarea></label>
         <p v-else>{{ dataFile.name }} · {{ (dataFile.size / 1024).toFixed(1) }} KiB <button class="button secondary" type="button" @click="dataFile = null">Eingabefeld verwenden</button></p>
-        <DraftDataPreview :text="dataText" :file="dataFile" :mime-type="mime" :context-key="session?.sessionId" :disabled="disabled" />
+        <DraftDataPreview :schema-document="schemaDocument" :schema-uri="schema" :text="dataText" :file="dataFile" :mime-type="mime" :context-key="session?.sessionId" :disabled="disabled" />
       </fieldset>
       <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
         <legend>Antwortkanal</legend>

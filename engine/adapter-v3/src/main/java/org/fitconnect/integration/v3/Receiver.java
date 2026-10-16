@@ -50,7 +50,7 @@ final class Receiver {
             for (var issue : result.report().issues()) issues.add(new ReceivedContent.Issue(issue.stage().name(), issue.isError()));
             issues.add(new ReceivedContent.Issue("MALWARE_SCAN_NOT_CONFIGURED", false));
             var content = new ReceivedContent(result.getDestinationId(), result.submissionId(), result.caseId(), crypto.metadata(),
-                    result.getDataAsBytes(), result.getDataMimeType(), attachments, issues);
+                    result.getDataAsBytes(), result.getDataMimeType(), attachments, issues, transport.validation.snapshot(result.getDataSchemaUri().toString()));
             var tags = result.getAuthenticationTags();
             if (tags == null) throw new SessionException("verification_failed");
             evidence = new ReceiptEvidence(result.getDestinationId(), result.submissionId(), result.caseId(),

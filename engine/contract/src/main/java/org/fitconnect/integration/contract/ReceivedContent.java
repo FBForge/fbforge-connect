@@ -4,7 +4,11 @@ import java.util.*;
 
 /** Native SDK output, never a renderer response. Content is released only after successful SDK checks. */
 public record ReceivedContent(UUID destinationId, UUID submissionId, UUID caseId, byte[] metadata, byte[] data,
-        String mimeType, List<Attachment> attachments, List<Issue> issues) {
+        String mimeType, List<Attachment> attachments, List<Issue> issues, SchemaSnapshot schemaSnapshot) {
+    public ReceivedContent(UUID destinationId, UUID submissionId, UUID caseId, byte[] metadata, byte[] data,
+            String mimeType, List<Attachment> attachments, List<Issue> issues) {
+        this(destinationId, submissionId, caseId, metadata, data, mimeType, attachments, issues, null);
+    }
     public ReceivedContent {
         if (destinationId == null || submissionId == null || caseId == null || metadata == null || metadata.length > 2 * 1024 * 1024
                 || data == null || data.length > 32 * 1024 * 1024 || mimeType == null || mimeType.isBlank() || mimeType.length() > 256

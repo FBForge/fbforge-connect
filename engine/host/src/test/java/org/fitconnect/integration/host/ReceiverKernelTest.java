@@ -302,6 +302,11 @@ class ReceiverKernelTest {
                 try (var scope = new ReceiveAccess(api, DEST, SUB, fixture)) {
                     var result = registry.withSession(api, session, s -> s.receive(DEST, SUB, scope, workspace, fixture.schemas()));
                     assertArrayEquals(fixture.data, result.data());
+                    assertNotNull(result.schemaSnapshot(), api.toString());
+                    assertEquals(Fixture.SCHEMA, result.schemaSnapshot().schemaUri());
+                    var snapshot = JsonParser.parseString(result.schemaSnapshot().document()).getAsJsonObject();
+                    assertEquals(1, snapshot.get("schemaPackage").getAsInt());
+                    assertTrue(snapshot.getAsJsonObject("documents").has(Fixture.SCHEMA));
                     assertArrayEquals(fixture.metadata, result.metadata());
                     assertEquals(UUID.fromString(CASE), result.caseId());
                     assertEquals(1, result.attachments().size());
@@ -1156,6 +1161,9 @@ class ReceiverKernelTest {
                     var result = registry.withSession(api, session, s -> s.receive(DEST, SUB, scope, workspace, Map.of(Fixture.SCHEMA, "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"antrag\"><xs:complexType><xs:sequence><xs:element name=\"vorname\" type=\"xs:string\"/></xs:sequence></xs:complexType></xs:element></xs:schema>")));
                     assertArrayEquals(xml.getBytes(StandardCharsets.UTF_8), result.data());
                     assertEquals("application/xml", result.mimeType());
+                    assertEquals(Fixture.SCHEMA, result.schemaSnapshot().schemaUri());
+                    var snapshot = JsonParser.parseString(result.schemaSnapshot().document()).getAsJsonObject();
+                    assertTrue(snapshot.getAsJsonArray("schemas").get(0).getAsJsonObject().get("text").getAsString().contains("name=\"vorname\""));
                     assertFalse(result.issues().stream().anyMatch(issue -> issue.stage().equals("XML_SCHEMA_NOT_CHECKED")));
                 }
             }

@@ -2,7 +2,7 @@ fn main() {
     tauri_build::try_build(
         tauri_build::Attributes::new().app_manifest(
             tauri_build::AppManifest::new().commands(&["load_managed_destination", "prepare_destination_update", "execute_destination_update", "cancel_destination_update", "destination_update_state", "probe_engine", "open_session", "check_session", "close_session",
-                "load_send_destination", "load_send_schema", "read_send_schema", "list_destinations", "load_destination", "import_key", "loaded_keys", "discard_keys",
+                "load_send_destination", "load_send_schema", "read_send_schema", "read_received_schema", "read_received_reply_schema", "list_destinations", "load_destination", "import_key", "loaded_keys", "discard_keys",
                 "begin_content", "append_content", "discard_content", "prepare_send", "execute_send", "cancel_send", "send_state",
                 "reply_target", "prepare_reply", "execute_reply", "cancel_reply", "reply_state",
                 "list_submissions", "load_submission", "verify_submission", "list_received_contents", "read_received_content", "discard_received",

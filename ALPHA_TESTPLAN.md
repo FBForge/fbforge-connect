@@ -1,4 +1,4 @@
-# Alpha-Testplan · 0.1.0-dev.5
+# Alpha-Testplan · 0.1.0-dev.6
 
 Entwicklungszweig: `develop`. Dies ist ein Entwicklungsstand für die erste ausführbare Alpha. Eine erfolgreiche Simulation ersetzt keinen Live-Test gegen TEST.
 
@@ -79,3 +79,12 @@ Die Browserprüfung verwendet eine synthetische native Schnittstelle. Sie prüft
 7. Fachdaten über 256 KiB, tiefe und breite Strukturen prüfen. Der Hinweis auf Darstellungsgrenzen darf die Originaldatei nicht verändern. Quelltext/Download bleiben verfügbar. JSON-/XML-Antragsansicht bei 420 × 500 und im Dunkeldesign prüfen.
 
 Reproduzierbare lokale Empfangsfixture: Nach `npm run dev` die URL `/test-fixtures/application-view.html` öffnen. Sie verwendet ausschließlich synthetische Daten und eine simulierte native Schnittstelle. Die Fixture gehört nicht zum Produktions-Einstiegspunkt. XML-Parser-/Empfangs-Browserchecks und Node-Modelltests ersetzen keine Live-Abnahme mit echten TEST-Einreichungen.
+
+## Zusätzliche Abnahme von dev.6
+
+1. Einen JSON-Testantrag mit technischen Feldkennungen und einem Schema mit `title`, `description`, `$ref`, Arrays und `required` senden und empfangen. Bezeichnungen und Pflichtfeldhinweise prüfen; unter Feldherkunft müssen Originalpfad und Schemaquelle nachvollziehbar bleiben. Große Zahlen und alle Werte müssen mit dem Quelltext übereinstimmen. Nicht gesendete Felder und Schema-Defaults dürfen nicht erscheinen.
+2. Einen realen FIM-/XÖV-XSD-Standard mit fiktiven Daten erproben: XRepository-Archiv, Includes, Imports, Namensräume, Attribute und Codelisten prüfen. Nur direkt dokumentierte Enumerationen erhalten Wertbezeichnungen. `appinfo` und separat referenzierte Codelisten dürfen keine erfundenen Bezeichnungen erhalten.
+3. Beim Senden eigene Daten eingeben, „Schema-Beschriftungen laden“ bestätigen und die Formularansicht öffnen. Laden und Anzeigen dürfen weder Entwurf noch Versand ändern. Ohne Bestätigung kein Schemaabruf; beim Wechsel von Sitzung, Zustellpunkt, Leistung, Prozess oder Schema dürfen alte Beschriftungen nicht wieder erscheinen.
+4. Empfangene Daten nach erfolgreicher Prüfung ansehen. Für die Schemaansicht darf keine weitere HTTP-Anfrage erfolgen. Prüfergebnis verwerfen und Sitzung wechseln: Schemaquellen und Daten dürfen nicht mehr abrufbar sein. Dieselbe Prüfung für empfangene Replies durchführen.
+5. Fehlende Referenzen, konkurrierende `oneOf`-Beschriftungen, doppelte XSD-Typdefinitionen, DTDs und übergroße Pakete prüfen: Originalnamen beziehungsweise begrenzte Ansicht, keine frei gewählte fachliche Bedeutung. Feldwerte bleiben zugänglich. Einen optionalen XML-Block und `xs:choice` prüfen; enthaltene Felder dürfen nicht pauschal als Pflichtfelder erscheinen.
+6. Lokale Browser-Prüfseite im Entwicklungsserver: `/test-fixtures/schema-annotations.html`. Ergebnis muss eine leere Fehlerliste zeigen. Sie prüft den echten DOMParser und wird nicht in die Desktop-Anwendung gebaut. Antwortentwürfe zeigen derzeit noch die Struktur ohne gesondert geladene Antwortschema-Beschriftungen.

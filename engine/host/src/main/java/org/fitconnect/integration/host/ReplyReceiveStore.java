@@ -14,10 +14,10 @@ final class ReplyReceiveStore {
 
     record Summary(String proofId, String replyId, String caseId, String channelAttemptId, String senderDestinationId,
             int partCount, int warningCount, List<String> warnings) {}
-    private record Stored(ApiVersion api, String session, ReceivedReplyContent content, Summary summary, List<Part> parts) {}
+    private record Stored(ApiVersion api, String session, ReceivedReplyContent content, Summary summary, List<Part> parts, SchemaPages schema) {}
 
     synchronized Summary publish(ApiVersion api, String session, UUID caseId, UUID replyId, ReceivedReplyContent content) {
-        current = null;
+        clear();
         if (api == null || !uuid(session) || content == null || !content.caseId().equals(caseId)
                 || !content.replyId().equals(replyId)) throw invalid();
         var parts = new ArrayList<Part>();
@@ -35,8 +35,12 @@ final class ReplyReceiveStore {
         var summary = new Summary(UUID.randomUUID().toString(), replyId.toString(), caseId.toString(),
                 content.channelAttemptId().toString(), content.senderDestinationId() == null ? null : content.senderDestinationId().toString(), content.partCount(), content.issues().size(),
                 content.issues().stream().map(ReceivedContent.Issue::stage).distinct().limit(16).toList());
-        current = new Stored(api, session, content, summary, List.copyOf(parts));
+        current = new Stored(api, session, content, summary, List.copyOf(parts), new SchemaPages(content.schemaSnapshot()));
         return summary;
+    }
+
+    synchronized SchemaPages.Page schema(ApiVersion api, String session, String proofId, int offset) {
+        return require(api, session, proofId).schema().read(proofId, offset);
     }
 
     synchronized Summary state(ApiVersion api, String session, String proofId) { return require(api, session, proofId).summary(); }
@@ -62,12 +66,12 @@ final class ReplyReceiveStore {
 
     synchronized void discard(ApiVersion api, String session, String proofId) {
         require(api, session, proofId);
-        current = null;
+        clear();
     }
     synchronized void clearOwner(String session) {
-        if (current != null && current.session().equals(session)) current = null;
+        if (current != null && current.session().equals(session)) clear();
     }
-    synchronized void clear() { current = null; }
+    synchronized void clear() { if (current != null) current.schema().close(); current = null; }
 
     private Stored require(ApiVersion api, String session, String proofId) {
         if (current == null || current.api() != api || !current.session().equals(session)

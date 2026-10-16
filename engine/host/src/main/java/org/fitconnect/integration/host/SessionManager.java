@@ -251,6 +251,7 @@ final class SessionManager implements AutoCloseable {
     Data<?> receivedReply(ApiVersion version, String id, String command, String proofId, String contentId, int offset) {
         find(version, id);
         Object result = switch (command) {
+            case "read_received_reply_schema" -> receivedReplies.schema(version, id, proofId, offset);
             case "list_received_reply_contents" -> receivedReplies.parts(version, id, proofId, offset);
             case "read_received_reply_content" -> receivedReplies.read(version, id, proofId, contentId, offset);
             case "discard_received_reply" -> { receivedReplies.discard(version, id, proofId); yield Map.of("proofId", proofId); }
@@ -295,6 +296,7 @@ final class SessionManager implements AutoCloseable {
     Data<?> received(ApiVersion version, String id, String command, String proofId, String contentId, int offset) {
         Entry entry = find(version, id);
         Object data = switch (command) {
+            case "read_received_schema" -> received.schema(version, id, proofId, offset);
             case "list_received_contents" -> received.parts(version, id, proofId, offset);
             case "read_received_content" -> received.read(version, id, proofId, contentId, offset);
             case "discard_received" -> {

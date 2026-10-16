@@ -2,11 +2,11 @@
 import { ref, watch, onBeforeUnmount } from 'vue';
 import ContentPreview from './ContentPreview.vue';
 import { createPreview, disposePreview } from './submission-preview.js';
-const props = defineProps({ text: String, file: Object, mimeType: String, contextKey: String, disabled: Boolean });
+const props = defineProps({ text: String, file: Object, mimeType: String, contextKey: String, disabled: Boolean, schemaDocument: String, schemaUri: String });
 const preview = ref(null), loading = ref(false), notice = ref('');
 let revision = 0, alive = true;
 function close() { revision++; disposePreview(preview.value); preview.value = null; notice.value = ''; }
-watch([() => props.text, () => props.file, () => props.mimeType, () => props.contextKey], close, { flush: 'sync' });
+watch([() => props.text, () => props.file, () => props.mimeType, () => props.contextKey, () => props.schemaUri], close, { flush: 'sync' });
 onBeforeUnmount(() => { alive = false; close(); });
 async function open() {
   if (loading.value || props.disabled) return;
@@ -23,4 +23,4 @@ async function open() {
   finally { bytes?.fill(0); loading.value = false; }
 }
 </script>
-<template><div class="draft-data-preview"><button type="button" class="button secondary" :disabled="disabled || loading || (!file && !text)" @click="open">{{ loading ? 'Vorschau wird geladen …' : 'Fachdaten visuell ansehen' }}</button><p v-if="notice" class="small-note" role="status">{{ notice }}</p><ContentPreview v-if="preview" :preview="preview" @close="close" /></div></template>
+<template><div class="draft-data-preview"><button type="button" class="button secondary" :disabled="disabled || loading || (!file && !text)" @click="open">{{ loading ? 'Vorschau wird geladen …' : 'Fachdaten visuell ansehen' }}</button><p v-if="notice" class="small-note" role="status">{{ notice }}</p><ContentPreview v-if="preview" :preview="preview" :schema-document="schemaDocument" :schema-uri="schemaUri" @close="close" /></div></template>

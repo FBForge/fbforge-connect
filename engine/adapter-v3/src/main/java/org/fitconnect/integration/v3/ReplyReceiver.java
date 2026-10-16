@@ -42,7 +42,7 @@ final class ReplyReceiver {
             issues.add(new ReceivedContent.Issue("MALWARE_SCAN_NOT_CONFIGURED", false));
             return new ReceivedReplyContent(replyId, caseId, result.senderDestinationId(), selected.reference().attemptId(), services.crypto().metadata(),
                     result.getDataAsByteArray(), result.getDataMimeType(), attachments, issues,
-                    new ReplyReceiptEvidence(caseId, replyId, selected.reference().attemptId(), tags.metadata(), tags.data(), tags.attachments()));
+                    new ReplyReceiptEvidence(caseId, replyId, selected.reference().attemptId(), tags.metadata(), tags.data(), tags.attachments()), services.http().validation.snapshot(result.getDataSchemaUri().toString()));
         } catch (SessionException failure) { throw failure;
         } catch (Exception failure) { throw new SessionException("verification_failed"); }
     }

@@ -28,6 +28,13 @@ class ExternalSchemaTest {
             assertEquals(true, validate.invoke(validator, "{\"vorname\":\"Erika\"}".getBytes(StandardCharsets.UTF_8), ROOT));
             assertEquals(false, validate.invoke(validator, "{\"vorname\":\"Andere\"}".getBytes(StandardCharsets.UTF_8), ROOT));
             assertEquals(List.of(ROOT, CHILD), calls);
+            var snapshotMethod = type.getDeclaredMethod("snapshot", String.class); snapshotMethod.setAccessible(true);
+            var snapshot = (SchemaSnapshot) snapshotMethod.invoke(validator, ROOT);
+            var packet = com.google.gson.JsonParser.parseString(snapshot.document()).getAsJsonObject();
+            assertEquals(Set.of(ROOT, CHILD), packet.getAsJsonObject("documents").keySet());
+            assertEquals(List.of(ROOT, CHILD), calls, "Annotation snapshot must never fetch");
+            assertNull(((SchemaSnapshot) snapshotMethod.invoke(validator, "https://example.invalid/unused.json")).document());
+            assertEquals(List.of(ROOT, CHILD), calls);
         }
     }
     @Test void noConsentOrAFileReferenceCannotReachAnyFetcher() {
@@ -46,6 +53,8 @@ class ExternalSchemaTest {
             assertEquals("https://www.xrepository.de/api/version_standard/urn:xoev-de:test:standard:test_1.0/xmlschema", uri); return archive.clone(); });
         assertTrue(sources.validateXml("<antrag><vorname>Erika</vorname></antrag>".getBytes(StandardCharsets.UTF_8), "urn:xoev-de:test:standard:test_1.0"));
         assertFalse(sources.validateXml("<antrag><nachname>Erika</nachname></antrag>".getBytes(StandardCharsets.UTF_8), "urn:xoev-de:test:standard:test_1.0"));
+        assertEquals(2, sources.cachedXmlFiles("urn:xoev-de:test:standard:test_1.0").size());
+        assertTrue(sources.cachedXmlFiles("urn:xoev-de:test:unloaded_1.0").isEmpty());
         var traversal = new SchemaSources(Map.of(), true, uri -> "", uri -> {
             try { return zip(Map.of("../escape.xsd", root)); } catch (IOException failure) { throw new UncheckedIOException(failure); }
         });
