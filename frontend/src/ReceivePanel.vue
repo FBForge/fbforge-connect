@@ -1,5 +1,5 @@
 <script setup>
-import { ref, shallowRef, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import { verifySubmission, verifyReply, listReceivedContents, readReceivedFile, discardReceived } from './receiving.js';
 import { uploadContent, discardContent } from './content.js';
@@ -9,10 +9,14 @@ import { resetsSessions } from './sessions.js';
 import ContentPreview from './ContentPreview.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
 import ReplySender from './ReplySender.vue';
+import StructuredData from './StructuredData.vue';
+import { STRUCTURED_BYTES, structuredFormat } from './structured-data.js';
 
 const props = defineProps({ session: Object, detail: Object, destinationId: String, busy: Boolean, keyRevision: Number, receiveRevision: Number, reply: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'verified', 'outcome', 'receive-start']);
 const diagnostic = ref('');
+const application = ref(null), applicationNotice = ref(''), applicationHeading = ref(null);
+const attachments = computed(() => parts.value.filter(part => part.kind === 'attachment'));
 const proof = ref(null), parts = ref([]), schemas = ref([]), preview = ref(null), error = ref('');
 const pending = ref(false), action = ref('');
 const receiptOutcome = ref(null);
@@ -55,7 +59,7 @@ async function release(operation) {
 function resetProof() {
   generation++; controller.value?.abort(); closePreview(); clearDownload();
   const previous = proof.value, owner = proofSession, reply = props.reply;
-  proof.value = null; proofSession = null; parts.value = []; emit('verified', false);
+  proof.value = null; proofSession = null; parts.value = []; application.value = null; applicationNotice.value = ''; emit('verified', false);
   return previous && owner ? release(() => discardReceived(invoke, owner, previous.proofId, reply)) : Promise.resolve();
 }
 async function resetAll() {
@@ -105,7 +109,22 @@ function verify() {
       if (rows.length !== result.partCount || new Set(rows.map(part => part.contentId)).size !== rows.length
           || new Set(rows.filter(part => part.attachmentId).map(part => part.attachmentId)).size !== rows.length - 2
           || rows.reduce((total, part) => total + part.totalBytes, 0) > 64 * 1024 * 1024) throw new Error('engine_protocol_error');
-      proofSession = active; proof.value = result; parts.value = rows; emit('verified', true);
+      let display = null, notice = '';
+      const data = rows.find(part => part.kind === 'data');
+      const format = data && structuredFormat({ filename: data.fileName || '', mimeType: data.mimeType || '' });
+      if (!format) notice = 'Für dieses Fachdatenformat steht keine Formularansicht zur Verfügung. Die technischen Inhalte und Downloads bleiben verfügbar.';
+      else if (data.totalBytes > STRUCTURED_BYTES) notice = 'Die Fachdaten überschreiten die Formulargrenze von 256 KiB. Über die technischen Inhalte kannst du den Quelltext ansehen oder das Original herunterladen.';
+      else {
+        controller.value = new AbortController(); let bytes;
+        try {
+          bytes = await readReceivedFile(invoke, active, result.proofId, data, { signal: controller.value.signal, reply });
+          try { display = { text: new TextDecoder('utf-8', { fatal: true }).decode(bytes), format }; }
+          catch { notice = 'Die Fachdaten sind kein gültiger UTF-8-Text. Der Originaldownload bleibt verfügbar.'; }
+        } finally { bytes?.fill(0); }
+      }
+      if (!current()) { await release(() => discardReceived(invoke, active, result.proofId, reply)); return; }
+      proofSession = active; proof.value = result; parts.value = rows; application.value = display; applicationNotice.value = notice; emit('verified', true);
+      await nextTick(); if (current()) { applicationHeading.value?.focus({ preventScroll: true }); applicationHeading.value?.scrollIntoView({ block: 'start' }); }
     } catch (cause) { await release(() => discardReceived(invoke, active, result.proofId, reply)); throw cause; }
   });
 }
@@ -192,12 +211,21 @@ function inspect(part, download = false) {
       <p><span class="status-badge ok">Technische Inhaltsprüfungen abgeschlossen</span></p>
       <ul v-if="proof.warnings.length"><li v-for="stage in proof.warnings" :key="stage">{{ warning(stage) }}</li></ul>
       <p class="small-note">Das SDK hat Ereignisse, Signaturen, Verschlüsselung und Inhalts-Hashes geprüft. Hinweise oben benennen verbleibende Prüfungen. Dies bestätigt noch keinen Empfang bei FIT-Connect.</p>
+      <section class="received-application" :aria-labelledby="`${panelId}-application-title`">
+        <div class="tool-section-heading"><div><h3 :id="`${panelId}-application-title`" ref="applicationHeading" tabindex="-1">{{ reply ? 'Antwort lesen' : 'Antrag lesen' }}</h3><p>Fachdaten aus dem lokal entschlüsselten Inhalt</p></div></div>
+        <StructuredData v-if="application" :text="application.text" :format="application.format" />
+        <p v-else class="small-note" role="status">{{ applicationNotice }}</p>
+      </section>
+      <section class="application-attachments" :aria-labelledby="`${panelId}-attachments-title`"><h3 :id="`${panelId}-attachments-title`">Anlagen ({{ attachments.length }})</h3><p v-if="!attachments.length" class="small-note">Keine zusätzlichen Anlagen.</p>
+        <ul v-else class="application-attachment-list"><li v-for="part in attachments" :key="part.contentId"><div><strong>{{ label(part) }}</strong><p>{{ part.description || part.mimeType || 'Anlage' }} · {{ bytesLabel(part.totalBytes) }}</p></div><div class="client-actions"><button class="button secondary" type="button" :disabled="disabled" @click="inspect(part)">Ansehen</button><button class="button secondary" type="button" :disabled="disabled" @click="inspect(part, true)">Herunterladen</button></div></li></ul>
+      </section>
+      <details class="application-technical"><summary>Technische Inhalte und Originaldownloads ({{ parts.length }})</summary>
       <div class="client-table support-table"><table class="submission-content-table receive-content-table"><thead><tr><th scope="col">Inhalt</th><th scope="col">Format / Größe</th><th scope="col">Lokale Prüfung</th><th scope="col">Aktionen</th></tr></thead>
         <tbody><tr v-for="part in parts" :key="part.contentId"><th scope="row" data-label="Inhalt">{{ label(part) }}
           <p v-if="part.description" class="small-note">{{ part.description }}</p><details v-if="part.attachmentId"><summary>Anlagen-ID</summary><code>{{ part.attachmentId }}</code></details></th>
           <td data-label="Format / Größe">{{ part.mimeType || 'Nicht angegeben' }}<br><span class="small-note">{{ bytesLabel(part.totalBytes) }}</span></td>
           <td data-label="Lokale Prüfung"><span class="status-badge ok">{{ part.kind === 'metadata' ? 'JWE geprüft' : 'JWE und Hash geprüft' }}</span></td>
-          <td data-label="Aktionen"><div class="client-actions"><button class="button secondary" type="button" :disabled="disabled" @click="inspect(part)">Anzeigen</button><button class="button secondary" type="button" :disabled="disabled" @click="inspect(part, true)">Herunterladen</button></div></td></tr></tbody></table></div>
+          <td data-label="Aktionen"><div class="client-actions"><button class="button secondary" type="button" :disabled="disabled" @click="inspect(part)">Anzeigen</button><button class="button secondary" type="button" :disabled="disabled" @click="inspect(part, true)">Herunterladen</button></div></td></tr></tbody></table></div></details>
     </template>
     <ContentPreview v-if="preview" :preview="preview" @close="closePreview" />
   </section>

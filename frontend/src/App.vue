@@ -157,7 +157,7 @@ function clearHistory() { events.value = []; diagnosticLog.clear(); }
   <a class="skip-link" href="#main">Zum Arbeitsbereich</a>
   <div class="desktop-shell">
     <header class="app-topbar">
-      <div class="app-brand"><span class="app-mark" aria-hidden="true">F<span>↔</span></span><div><strong>FIT-Connect</strong><span>Integrationsclient</span></div></div>
+      <div class="app-brand"><span class="app-mark" aria-hidden="true">F<span>↔</span></span><div><strong>FIT-Connect</strong><span>Test-Client</span></div></div>
       <div class="topbar-context"><span class="environment-tag">TEST</span><span class="build-tag">Alpha · {{ version }}</span></div>
       <div class="topbar-actions">
         <label class="api-picker" for="session-api"><span>API</span><select id="session-api" v-model="apiVersion" :disabled="busy"><option value="v3">v3</option><option value="v2">v2</option></select></label>
@@ -206,7 +206,7 @@ function clearHistory() { events.value = []; diagnosticLog.clear(); }
             </section>
           </div>
           <div v-show="section === 'Info'" class="info-view">
-            <section class="tool-section app-info" aria-labelledby="about-title"><div class="app-mark large" aria-hidden="true">F<span>↔</span></div><div><p class="workspace-eyebrow">Desktop-Anwendung</p><h2 id="about-title">FIT-Connect Integrationsclient</h2><p>Version {{ version }} · Alpha-Entwicklung</p><p>Für Integrationstests von Onlinediensten und Fachverfahren mit FIT-Connect.</p></div></section>
+            <section class="tool-section app-info" aria-labelledby="about-title"><div class="app-mark large" aria-hidden="true">F<span>↔</span></div><div><p class="workspace-eyebrow">Desktop-Anwendung</p><h2 id="about-title">FIT-Connect Test-Client</h2><p>Version {{ version }} · Alpha-Entwicklung</p><p>Für Integrationstests von Onlinediensten und Fachverfahren mit FIT-Connect.</p></div></section>
             <section class="tool-section" aria-labelledby="scope-title"><h2 id="scope-title">Aktueller Funktionsumfang</h2><dl class="info-facts"><dt>Umgebung</dt><dd>Ausschließlich FIT-Connect TEST</dd><dt>Austausch</dt><dd>Senden, Empfangen, lokale Entschlüsselung und technische Fachdatenprüfung über API v2 und v3</dd><dt>Verwaltung</dt><dd>Vorhandene eigene Zustellpunkte ansehen; Änderungen und Bulk-Edit über API v3</dd><dt>Entwicklungsstand</dt><dd>Die Live-Abnahme gegen TEST und die Installation auf einem frischen Windows-System sind noch offen.</dd></dl></section>
             <section class="tool-section" aria-labelledby="license-title"><h2 id="license-title">Lizenz und Einordnung</h2><p>Unabhängiges Projekt. Kein offizielles Produkt von FITKO.</p><p>Diese Anwendung steht unter der European Union Public Licence 1.2 (EUPL-1.2).</p><button type="button" class="button secondary" @click="licenseDialog.showModal()">Lizenztext anzeigen</button></section>
           </div>

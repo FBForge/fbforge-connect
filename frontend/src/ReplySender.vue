@@ -1,6 +1,7 @@
 <script setup>
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
+import DraftDataPreview from './DraftDataPreview.vue';
 import { loadReplyTarget, prepareReply, executeReply, cancelReply, replyState } from './reply-sending.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
@@ -129,6 +130,7 @@ async function send() {
         </div>
         <label v-if="!file" for="reply-data">Antwortinhalt<textarea id="reply-data" v-model="text" rows="6" required spellcheck="false"></textarea></label>
         <p v-else>{{ file.name }} · {{ file.size }} Bytes <button class="button secondary" type="button" @click="file = null">Eingabefeld verwenden</button></p>
+        <DraftDataPreview :text="text" :file="file" :mime-type="format" :context-key="session?.sessionId" :disabled="disabled" />
         <template v-if="session?.apiVersion === 'v3'">
           <label class="checkbox-label"><input v-model="process" type="checkbox"> Als Prozessnachricht antworten</label>
           <div v-if="process" class="client-fields"><label for="reply-model">Prozessmodell-ID<input id="reply-model" type="text" v-model="model" required maxlength="1024"></label><label for="reply-message">Nachrichten-ID<input id="reply-message" type="text" v-model="message" required maxlength="1024"></label></div>

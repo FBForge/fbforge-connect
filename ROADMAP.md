@@ -20,7 +20,8 @@ Die folgenden Funktionen sind im lokalen Entwicklungsstand vorhanden. Die vollst
 * Versandvorbereitung, Bestätigung und Schutz vor unbemerktem Wiederholen ungewisser Übertragungen.
 * Auflisten und Abrufen von Einreichungen.
 * Lokale Entschlüsselung, technische Prüfung sowie Annahme und Ablehnung.
-* Inhaltsvorschau, durchsuchbare JSON-Struktur und Downloads.
+* Formularansicht für JSON und XML mit Feldgruppen, Suche, Feldherkunft und Originalquelltext; durchsuchbare JSON-Struktur und Downloads.
+* Antragsansicht nach dem Entschlüsseln mit separater Anlagenliste; lokale Vorschau auch vor dem Versand und beim Verfassen einer Antwort.
 * Grundlagen für Antwortkanäle, Replies und Event Logs.
 * Erste Verwaltung vorhandener eigener Zustellpunkte: authentifizierte Detailansicht und v3-PATCH für Name, Kontakt, Metadatenversionen und Aktiv-/Inaktiv-Wechsel.
 * Bulk-Edit für bis zu zehn Zustellpunkte mit Vorschau, erneuter Zustandsprüfung, explizitem Speichern und Ergebnis je Zustellpunkt.
@@ -41,12 +42,30 @@ Die erneute Live-Erprobung von V3, Empfang und Event Log ist noch offen. Der [Al
 
 `0.1.0-dev.4` ergänzt den Desktop-Aufbau und einen lokalen Diagnoseexport mit festgelegten technischen Feldern. Herstellerwerbung entfällt in der Oberfläche. V3-Verwaltung wird weitergeführt; eine zusätzliche V2-Schreibverwaltung ist nicht geplant. Die Anwendung bleibt auf TEST beschränkt.
 
+`0.1.0-dev.5` führt den Namen **FIT-Connect Test-Client** in Oberfläche, Fenstertitel, Installer und Diagnosebericht ein. Vorhandene Installationskennung und interne Paketnamen bleiben für die Kontinuität bestehender Installationen bestehen. Die Formularansicht ist nur lesend und verwendet die vorhandenen Originalfelder. Ein fachliches Mapping oder ein Formular-Editor wird damit noch nicht versprochen.
+
 ## Richtung Beta
 
+### Alpha abschließen
+
 1. Live-Abnahme von V3-Versand, Empfang, Entschlüsselung, Schema-Prüfung, Event Log und Zustellpunktänderungen abschließen; konkrete Fehler mit dem Diagnosebericht zuordnen.
-2. Installation und Aktualisierung auf einem frischen Windows-System, Tastaturbedienung, kleine Fenster, hohe Skalierung und Hell-/Dunkeldesign prüfen. Signierung und Verteilung klären.
-3. Vorhandene Zustellpunktverwaltung um Anlegen und die notwendige Schlüsselregistrierung über V3 erweitern. Mehrfach-Schlüsselwechsel benötigt vor seiner Umsetzung ein eigenes Konzept für Zuordnung, Teilausfälle und den Erhalt der Empfangsfähigkeit.
-4. Erst anschließend Replies, Prozesskommunikation und BPMN weiter ausbauen. ZBP-Adapter und Produktivumgebung gehören nicht zum aktuellen Alpha-/Beta-Arbeitsumfang.
+2. JSON-/XML-Antragsansicht und Anlagen mit repräsentativen echten Standards und fiktiven Daten prüfen. Große oder nicht darstellbare Dokumente müssen über Quelltext beziehungsweise Download zugänglich bleiben. Eine Vorschau darf keinen Versand, Reply oder Empfangsabschluss auslösen.
+3. Installation und Aktualisierung von dev.4 auf dev.5 auf einem frischen Windows-System, Tastaturbedienung, kleine Fenster, hohe Skalierung und Hell-/Dunkeldesign prüfen. Signierung und Verteilung klären.
+
+### Beta: Testarbeitsplatz einrichten
+
+* Eigene TEST-Zustellpunkte über Destination API v3 anlegen und die erforderlichen öffentlichen Schlüssel registrieren, mit Vorschau und ausdrücklicher Bestätigung.
+* Testschlüssel und selbstsignierte Testzertifikate lokal erzeugen: Verwendungszweck, Ablaufdatum und Fingerabdruck anzeigen; privaten Schlüssel lokal behalten beziehungsweise ausdrücklich exportieren, ausschließlich den öffentlichen Teil registrieren.
+* Optionale Verbindungsprofile und das Merken von Client-Secret/JWK über einen geschützten nativen Speicher vorbereiten. Keine Klartext-Geheimnisse in Browser-Speicher, Konfigurationsdateien oder Diagnoseberichten. Ohne geschützten Speicher bleibt die bisherige sitzungsgebundene Nutzung verfügbar.
+* Wiederverwendbare Testanträge und Darstellungsvorlagen je Fachdaten-Schema: Feldbeschriftung, Gruppierung und Reihenfolge explizit zuordnen. XML-Namensräume, Originalwerte und nicht zugeordnete Felder müssen erhalten bleiben. Ein Schema-gestützter Formular-Editor ist eine eigene Ausbaustufe.
+
+### Beta: Fachverfahren und Prozesse erproben
+
+* Den Ablauf „Antrag ansehen → Anlagen prüfen → Antwort vorbereiten → ausdrücklich senden“ mit repräsentativen Antwortkanälen vervollständigen. Replies einschließlich Empfangsbestätigungen prüfen.
+* Prozessnachrichten aus den angebotenen Nachrichten und Modellen auswählen und passende eigene TEST-Zustellpunkte ermitteln.
+* BPMN.io/bpmn-js für eine begrenzte BPMN-Ansicht mit auswählbaren Nachrichtenschritten integrieren. Ein Klick zeigt die passende Aktion; Übertragungen erfolgen weiterhin ausschließlich nach eigener Bestätigung. Nicht unterstützte Modelle bleiben ohne automatische Prozessausführung lesbar beziehungsweise exportierbar.
+
+Mehrfach-Schlüsselwechsel benötigt vor seiner Umsetzung ein eigenes Konzept für Zuordnung, Teilausfälle und den Erhalt der Empfangsfähigkeit. Routing-Debugger, PROD-Verwaltung und ZBP-Adapter gehören nicht zum aktuellen Alpha-/Beta-Arbeitsumfang. Der Schwerpunkt bleibt auf Testanträgen aus Sicht von Onlinediensten und Fachverfahren.
 
 ## Weitere Ausbaustufen
 

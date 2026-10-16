@@ -1,6 +1,6 @@
-# FIT-Connect Integrationsclient
+# FIT-Connect Test-Client
 
-Der **FIT-Connect Integrationsclient** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
+Der **FIT-Connect Test-Client** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
 
 Die Anwendung arbeitet ausschließlich mit der FIT-Connect-Testumgebung. Sie ist ein unabhängiges Projekt und kein offizielles Produkt von FITKO.
 
@@ -10,7 +10,7 @@ Die Anwendung arbeitet ausschließlich mit der FIT-Connect-Testumgebung. Sie ist
 - Leistungen und Fachdaten-Schemata aus dem Empfängerzustellpunkt auswählen und fiktive Beispieldaten erzeugen.
 - Verfügbare Einreichungen eines Zustellpunkts auflisten, abrufen und lokal entschlüsseln.
 - Einreichungen mit den FIT-Connect-SDKs technisch prüfen und anschließend annehmen oder ablehnen.
-- Fachdaten und Anlagen anzeigen oder herunterladen, JSON strukturiert durchsuchen und formatiert lesen.
+- JSON-/XML-Fachdaten nach dem Entschlüsseln als gegliederte, durchsuchbare Formularansicht lesen; Originalfelder, Pfade und XML-Namensräume nachvollziehen. Anlagen separat ansehen oder herunterladen. Vor dem Versand und beim Verfassen einer Antwort dieselbe lokale Vorschau nutzen. JSON zusätzlich als Baum durchsuchen und Originalquelltext lesen.
 - Zustellpunkte und registrierte Testschlüssel abfragen, private Testschlüssel lokal laden.
 - Event Logs einer Einreichung verifizieren, Ereignisse durchsuchen und ihre JSON-Daten anzeigen.
 - Eigene Zustellpunkte über die Destination API laden. Über v3 Name, Kontakt, Metadatenversionen und zulässige Aktiv-/Inaktiv-Wechsel einzeln oder für bis zu zehn Zustellpunkte mit Vorschau bearbeiten.
@@ -30,6 +30,12 @@ Im Stand `0.1.0-dev.3` wurden zusätzliche Eventlog-Fehler bei großen Logs und 
 Im Stand `0.1.0-dev.4` erhält die Anwendung einen festen Desktop-Rahmen mit seitlicher Navigation, globaler API-Auswahl, Verbindungsdialog und Statusleiste. Nur der Arbeitsbereich scrollt; Eingaben und Scrollposition bleiben beim Ansichtswechsel erhalten. Der Versand ist in Adressierung, Fachdaten sowie Anlagen/Antwortkanal gegliedert. API v3 ist die anfängliche Auswahl, v2 bleibt für Senden und Empfangen ausdrücklich wählbar. Herstellerwerbung wird in der Oberfläche nicht angezeigt; Programmversion und EUPL-Lizenz stehen unter „Info“.
 
 Unter „Diagnose“ lassen sich die lokalen SDK-Komponenten prüfen und bis zu 100 technische Aufrufe der laufenden Programmsitzung als JSON exportieren. Der Bericht enthält ausschließlich festgelegte Befehle, API-Version, Zeitpunkt, Dauer, ausgewählte Ergebniszustände und freigegebene Fehlercodes. Er enthält keine Argumente oder Antwortinhalte, Zugangsdaten, Schlüssel, Kennungen oder Dateinamen und wird nicht automatisch versendet. Datenübertragungs-Chunks werden nicht protokolliert. „Antwort erhalten“ bedeutet, dass der native Aufruf zurückgekehrt ist; es ist kein fachlicher Erfolgsnachweis. Ein ungewisser Schreibausgang bleibt ungewiss und wird durch den Diagnoseexport nicht wiederholt.
+
+Im Stand `0.1.0-dev.5` heißt die Anwendung **FIT-Connect Test-Client**. Fenstertitel, Installer, Programminformationen und Diagnoseberichte verwenden diesen Namen; die interne Installationskennung bleibt bestehen. JSON- und XML-Fachdaten können in einer nur lesenden Formularansicht betrachtet werden. Nach erfolgreicher technischer Prüfung erscheint sie direkt beim Empfang, mit separater Anlagenliste und dem bestehenden Antwortbereich. Vor dem Versand und beim Verfassen einer Antwort steht sie für Texteingabe oder ausgewählte Datei über „Fachdaten visuell ansehen“ zur Verfügung. Das Anzeigen verändert die Versanddaten nicht und löst keine Übertragung aus.
+
+Die Formularansicht gliedert vorhandene Felder und verschachtelte Gruppen, bietet Suche und Feldherkunft und erhält große JSON-Zahlen, mehrfach vorhandene JSON-Felder, XML-Namensräume, Attribute und gemischte Textinhalte. XML-Leerraum ist separat aufklappbar; Kommentare und Verarbeitungsanweisungen stehen im unveränderten Quelltext. Es gibt kein automatisch erfundenes fachliches Mapping und keine Bearbeitung von Werten in der Formularansicht. Grenzen: 256 KiB, 16 Ebenen und 2.000 Struktur-Einträge. Größere Texte bleiben bis zur allgemeinen Vorschaugrenze von 2 MiB als Quelltext und darüber als Originaldownload zugänglich. DTD-/Entity-Deklarationen werden vor dem XML-Parser abgelehnt; Inhalte werden ausschließlich als Text dargestellt und externe Verweise nicht geladen. Ein Darstellungsproblem stellt keinen zusätzlichen fachlichen Prüfnachweis dar und ersetzt die SDK-Prüfung nicht.
+
+Für die Beta sind TEST-Zustellpunkte anlegen, lokale Testschlüssel/-zertifikate mit öffentlicher Registrierung, optionale geschützte Profile und Schema-bezogene Darstellungsvorlagen vorgesehen. Replies, Prozessnachrichten und eine auswählbare BPMN-Ansicht werden darauf aufbauend erweitert. Zugangsdaten und JWKs bleiben aktuell sitzungsgebunden; die Anwendung speichert sie nicht im Klartext dauerhaft. PROD, Routing-Debugger und ZBP-Adapter sind nicht Teil dieses Ausbauplans; siehe [Roadmap](ROADMAP.md).
 
 ## Technische Grundlage
 

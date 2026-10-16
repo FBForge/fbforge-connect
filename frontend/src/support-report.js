@@ -55,7 +55,7 @@ export function observeInvoke(operation, record, clock = () => performance.now()
 export function buildSupportReport({ version, selectedApi, probes = {}, entries = [] }) {
   if (typeof version !== 'string' || !/^\d+\.\d+\.\d+(?:-[a-z0-9.]+)?$/.test(version)) throw new Error('invalid_input');
   return {
-    format: 'fit-connect-support-v1', application: 'FIT-Connect Integrationsclient', version, environment: 'TEST',
+    format: 'fit-connect-support-v1', application: 'FIT-Connect Test-Client', version, environment: 'TEST',
     selectedApi: api(selectedApi),
     localAdapters: ['v2', 'v3'].map(apiVersion => ({ apiVersion, verified: probes[apiVersion]?.isolated === true
       && probes[apiVersion]?.environment === 'TEST' && probes[apiVersion]?.apiVersion === apiVersion })),

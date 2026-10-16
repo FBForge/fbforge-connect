@@ -1,4 +1,5 @@
 import * as viewer from './json-viewer.js';
+import { structuredFormat } from './structured-data.js';
 
   const MAX_TEXT_BYTES = 2 * 1024 * 1024;
   const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -121,7 +122,7 @@ import * as viewer from './json-viewer.js';
           if (new TextEncoder().encode(formatted).byteLength <= MAX_TEXT_BYTES) text = formatted;
         } catch { /* Invalid or excessively nested JSON remains inert plain text. */ }
       }
-      return { kind: 'text', filename, text, rawText, notice: 'Nur Textansicht. Inhalte werden nicht ausgeführt und Verweise nicht geladen.' };
+      return { kind: 'text', filename, text, rawText, format: structuredFormat({ filename: originalName, mimeType }), notice: 'Lokale Vorschau. Inhalte werden nicht ausgeführt und Verweise nicht geladen.' };
     } catch {
       return unavailable('Die Datei enthält keinen gültigen UTF-8-Text.');
     }

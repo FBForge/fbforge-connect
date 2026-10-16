@@ -1,6 +1,7 @@
 <script setup>
 import { ref, shallowRef, computed, watch, nextTick } from 'vue';
 import { invoke } from './native.js';
+import DraftDataPreview from './DraftDataPreview.vue';
 import { prepareSend, executeSend, cancelSend, sendState } from './sending.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
@@ -196,6 +197,7 @@ async function refreshState() {
         <p v-if="exampleNotice" class="small-note" role="status">{{ exampleNotice }}</p>
         <label v-if="!dataFile" for="send-data">Inhalt<textarea id="send-data" v-model="dataText" rows="8" required spellcheck="false"></textarea></label>
         <p v-else>{{ dataFile.name }} · {{ (dataFile.size / 1024).toFixed(1) }} KiB <button class="button secondary" type="button" @click="dataFile = null">Eingabefeld verwenden</button></p>
+        <DraftDataPreview :text="dataText" :file="dataFile" :mime-type="mime" :context-key="session?.sessionId" :disabled="disabled" />
       </fieldset>
       <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
         <legend>Antwortkanal</legend>

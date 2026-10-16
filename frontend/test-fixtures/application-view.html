@@ -1,0 +1,35 @@
+<!doctype html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Antragsansicht · synthetische Testdaten</title></head><body><div id="app"></div><script type="module">
+import { createApp, ref, h } from 'vue';
+import ReceivePanel from '../src/ReceivePanel.vue';
+import '../src/site.css';import '../src/layout.css';import '../src/desktop.css';import '../src/application-view.css';
+const uuid = n => `${String(n).padStart(8,'0')}-1111-4111-8111-111111111111`;
+const session={sessionId:uuid(1),apiVersion:'v3',environment:'TEST',role:'online-service',connected:true};
+const detail={destinationId:uuid(2),submissionId:uuid(3),caseId:uuid(4),metadataAvailable:true,dataAvailable:true};
+const json='{"antragsteller":{"vorname":"Erika","nachname":"Musterfrau","geburtsdatum":"1985-04-12","adresse":{"strasse":"Teststraße 7","postleitzahl":"12345","ort":"Teststadt"}},"anliegen":{"leistung":"Synthetischer Testantrag","mitteilung":"Bitte prüfen Sie meinen Testantrag.","einwilligung":true},"kinder":[{"vorname":"Alex","geburtsdatum":"2015-03-08"}]}';
+const xml='<?xml version="1.0"?><a:antrag xmlns:a="urn:test:antrag" nummer="9007199254740993"><a:antragsteller><a:vorname>Erika</a:vorname><a:nachname>Musterfrau</a:nachname><a:adresse><a:strasse>Teststraße 7</a:strasse><a:ort>Teststadt</a:ort></a:adresse></a:antragsteller><a:anliegen status="neu">Ein <a:art>Testantrag</a:art> mit Anlagen.</a:anliegen><a:kind>Alex</a:kind><a:kind>Robin</a:kind></a:antrag>';
+const fixture=window.__applicationFixture={calls:[],format:'json',delayRead:false,releaseRead:null};
+const textBytes=value=>new TextEncoder().encode(value);
+const parts=()=>[ {contentId:uuid(5),kind:'metadata',attachmentId:null,fileName:'Metadaten.json',mimeType:'application/json',description:null,bytes:textBytes('{}')},
+ {contentId:uuid(6),kind:'data',attachmentId:null,fileName:`Antrag.${fixture.format==='large'?'json':fixture.format}`,mimeType:`application/${fixture.format==='large'?'json':fixture.format}`,description:null,bytes:textBytes(fixture.customText??(fixture.format==='xml'?xml:fixture.format==='large'?'x'.repeat(256*1024+1):json))},
+ {contentId:uuid(7),kind:'attachment',attachmentId:uuid(8),fileName:'Nachweis.txt',mimeType:'text/plain',description:'Fiktiver Nachweis zum Antrag',bytes:textBytes('Synthetischer Nachweis.')} ];
+const envelope=data=>({apiVersion:session.apiVersion,sessionId:session.sessionId,environment:'TEST',data});
+window.__TAURI_INTERNALS__={async invoke(command,args){
+ fixture.calls.push(command);
+ if(command==='verify_submission')return envelope({proofId:uuid(9),destinationId:detail.destinationId,submissionId:detail.submissionId,caseId:detail.caseId,partCount:3,warningCount:1,warnings:['MALWARE_SCAN_NOT_CONFIGURED']});
+ if(command==='list_received_contents')return envelope({proofId:uuid(9),offset:args.offset,total:3,parts:parts().slice(args.offset,args.offset+2).map(({bytes,...part})=>({...part,totalBytes:bytes.length}))});
+ if(command==='read_received_content'){
+  if(fixture.delayRead)await new Promise(resolve=>fixture.releaseRead=resolve);
+  const part=parts().find(p=>p.contentId===args.contentId), chunk=part.bytes.slice(args.byteOffset,args.byteOffset+24*1024);
+  return envelope({proofId:uuid(9),contentId:args.contentId,byteOffset:args.byteOffset,totalBytes:part.bytes.length,chunk:btoa(String.fromCharCode(...chunk)),complete:args.byteOffset+chunk.length===part.bytes.length});
+ }
+ if(command==='reply_state')return envelope({attemptId:null,status:'idle',replyId:null,caseId:null,error:null});
+ if(command==='reply_target')return envelope({proofId:uuid(9),destinationId:detail.destinationId,submissionId:detail.submissionId,caseId:detail.caseId,replyDestinationId:null,offset:0,total:1,schemas:[{schemaUri:'https://example.invalid/reply.json',mimeType:'application/json'}]});
+ if(command==='discard_received')return envelope({proofId:args.proofId});
+ if(command==='discard_content')return envelope({contentId:args.contentId});
+ throw 'resource_denied';
+}};
+createApp({setup(){const busy=ref(false),current=ref(detail),keys=ref(0);fixture.invalidate=()=>keys.value++;fixture.replaceDetail=()=>current.value={...detail,submissionId:uuid(10)};return()=>h('div',{class:'desktop-shell',style:'grid-template-columns:1fr'},[
+ h('header',{class:'app-topbar'},[h('strong','FIT-Connect Test-Client'),h('span',{class:'environment-tag'},'SYNTHETISCHE TESTDATEN')]),
+ h('main',{class:'workspace-scroll',style:'grid-column:1;grid-row:2'},[h('div',{class:'workspace-content'},[h(ReceivePanel,{session,detail:current.value,busy:busy.value,keyRevision:keys.value,onBusy:value=>busy.value=value})])]),
+ h('footer',{class:'app-statusbar'},'Lokale UI-Prüfung · keine FIT-Connect-Verbindung')]);}}).mount('#app');
+</script></body></html>

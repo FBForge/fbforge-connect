@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "FIT-Connect Integrationsclient",
-  "version": "0.1.0-dev.4",
+  "productName": "FIT-Connect Test-Client",
+  "version": "0.1.0-dev.5",
   "identifier": "org.fitconnect.integration-client",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -10,7 +10,7 @@
     "frontendDist": "../frontend/dist"
   },
   "app": {
-    "windows": [{ "label": "main", "title": "FIT-Connect Integrationsclient · TEST", "width": 1180, "height": 800, "minWidth": 420, "minHeight": 500, "dragDropEnabled": false }],
+    "windows": [{ "label": "main", "title": "FIT-Connect Test-Client · TEST", "width": 1180, "height": 800, "minWidth": 420, "minHeight": 500, "dragDropEnabled": false }],
     "security": {
       "capabilities": ["main"],
       "devCsp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src ipc: http://ipc.localhost http://127.0.0.1:1420 ws://127.0.0.1:1420; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'",
@@ -22,7 +22,7 @@
     "targets": ["nsis"],
     "icon": ["icons/app.png", "icons/app.ico"],
     "resources": ["resources/engine/"],
-    "shortDescription": "Unabhängiger FIT-Connect-Testclient für API v2 und v3",
+    "shortDescription": "Unabhängiger FIT-Connect Test-Client für API v2 und v3",
     "license": "EUPL-1.2",
     "windows": { "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true }, "nsis": { "installMode": "currentUser" } }
   }

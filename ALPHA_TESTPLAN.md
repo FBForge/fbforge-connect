@@ -1,4 +1,4 @@
-# Alpha-Testplan · 0.1.0-dev.4
+# Alpha-Testplan · 0.1.0-dev.5
 
 Entwicklungszweig: `develop`. Dies ist ein Entwicklungsstand für die erste ausführbare Alpha. Eine erfolgreiche Simulation ersetzt keinen Live-Test gegen TEST.
 
@@ -67,3 +67,15 @@ Die Tests verwenden synthetische API-Antworten und erzeugen keine Änderungen an
 6. Unter „Info“ Version, TEST-Beschränkung und den vollständigen EUPL-Lizenztext prüfen. Keine Herstellerwerbung im normalen Arbeitsbereich. Ein separates Fenster oder externe Webseite wird nicht geöffnet.
 
 Die Browserprüfung verwendet eine synthetische native Schnittstelle. Sie prüft Oberfläche und Export, nicht die Kommunikation mit FIT-Connect oder die tatsächliche Windows-WebView. Reply-, Prozess- und ZBP-Funktionen wurden in dev.4 nicht erweitert. PROD bleibt ausgeschlossen.
+
+## Zusätzliche Abnahme von dev.5
+
+1. Installer, Fenstertitel, Hauptnavigation/Programminformationen und Diagnosebericht müssen „FIT-Connect Test-Client“ verwenden. Installation beziehungsweise Aktualisierung von dev.4 gesondert prüfen; das Umbenennen ist kein bereits getesteter Upgrade-Nachweis.
+2. Beim Versand JSON über Eingabefeld und Datei vorbereiten. „Fachdaten visuell ansehen“ öffnen: Feldgruppen, Suche, JSON-Struktur und Quelltext prüfen. Werte und Dateiauswahl müssen nach dem Schließen unverändert sein. Öffnen/Schließen darf keine Übertragung auslösen. Für XML dasselbe prüfen.
+3. Eine JSON-Einreichung entschlüsseln und prüfen. „Antrag lesen“ muss direkt erscheinen; Namens-/Adressfelder, verschachtelte Gruppen und Listen müssen den Originaldaten entsprechen. Feldherkunft muss den Originalschlüssel und JSON-Pointer zeigen. Insbesondere große Ganzzahlen, Exponenten, leere Werte und doppelte Schlüssel prüfen.
+4. Eine XML-Einreichung mit Namensräumen, Attributen, wiederholten Elementen, Text/CDATA und Leerraum prüfen. Präfixe und Namensräume müssen unter Feldherkunft erhalten bleiben; wiederholte Elemente behalten ihren Index. Leerraum separat aufklappen. Quelltext bleibt unverändert. Ungültiges XML und DTD-/Entity-Deklarationen dürfen keine scheinbar vollständige Formularansicht ergeben.
+5. Anlage aus der separaten Anlagenliste ansehen und herunterladen. Die vorhandenen Regeln für aktive Formate bleiben bestehen: PDF, HTML, SVG und Office nur Download. Anschließend eine angebotene Antwort laden, Inhalte eingeben und lokal visuell ansehen; erst nach gesonderter Vorbereitung und Bestätigung senden.
+6. Prüfergebnis verwerfen, anderen Antrag wählen, Schlüssel wechseln oder abmelden: Formular und offene Vorschau müssen sofort verschwinden. Einen verspäteten lokalen Lesevorgang simulieren; alte Fachdaten dürfen danach nicht wieder erscheinen.
+7. Fachdaten über 256 KiB, tiefe und breite Strukturen prüfen. Der Hinweis auf Darstellungsgrenzen darf die Originaldatei nicht verändern. Quelltext/Download bleiben verfügbar. JSON-/XML-Antragsansicht bei 420 × 500 und im Dunkeldesign prüfen.
+
+Reproduzierbare lokale Empfangsfixture: Nach `npm run dev` die URL `/test-fixtures/application-view.html` öffnen. Sie verwendet ausschließlich synthetische Daten und eine simulierte native Schnittstelle. Die Fixture gehört nicht zum Produktions-Einstiegspunkt. XML-Parser-/Empfangs-Browserchecks und Node-Modelltests ersetzen keine Live-Abnahme mit echten TEST-Einreichungen.
