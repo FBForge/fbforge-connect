@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-list-replies"
+description = "Enables the list_replies command without any pre-configured scope."
+commands.allow = ["list_replies"]
+
+[[permission]]
+identifier = "deny-list-replies"
+description = "Denies the list_replies command without any pre-configured scope."
+commands.deny = ["list_replies"]

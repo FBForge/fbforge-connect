@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-verify-reply"
+description = "Enables the verify_reply command without any pre-configured scope."
+commands.allow = ["verify_reply"]
+
+[[permission]]
+identifier = "deny-verify-reply"
+description = "Denies the verify_reply command without any pre-configured scope."
+commands.deny = ["verify_reply"]
