@@ -53,7 +53,7 @@ export function annotateXmlSchema(root, packet, Parser) {
         if (!rows.some(ctx => ctx.node === node && ctx.namespace === namespace)) table.set(name, [...rows, context(node, file, namespace)]);
       }
       if (['include', 'import'].includes(node.localName)) {
-        const location = node.getAttribute('schemaLocation'), imported = node.getAttribute('namespace');
+        const location = node.getAttribute('schemaLocation'), imported = node.getAttribute('namespace') || '';
         const targets = location ? [files.get(resolveUri(location, file.uri))].filter(Boolean) : node.localName === 'import' ? [...files.values()].filter(other => other.namespace === imported) : [];
         if (!targets.length) missing = true;
         for (const target of targets) {
