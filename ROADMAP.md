@@ -1,57 +1,53 @@
 # Roadmap
 
-Stand: 15. Oktober 2026. Dies ist eine Entwicklungsplanung ohne zugesagte Veröffentlichungstermine.
+Stand: 16. Oktober 2026. Die Entwicklung erfolgt schrittweise. Veröffentlichungstermine sind noch nicht festgelegt.
 
-Abgehakte Punkte beziehen sich auf den bisherigen, noch nicht veröffentlichten Entwicklungsstand. Sie bedeuten keine vollständige Live-Abnahme oder freigegebene Beta.
+## Erste Alpha
 
-## 1. Technische Grundlage
+Die Alpha soll den grundlegenden Austausch von Einreichungen auf der FIT-Connect-Testumgebung ermöglichen. API v2 und v3 bleiben getrennt auswählbar.
 
-- [x] Eigenständige Desktop-Projektstruktur mit Tauri und Vue.
-- [x] Lokaler Java-Kern mit mitgelieferter Laufzeit.
-- [x] Getrennte SDK-Adapter für API v2 und v3.
-- [x] Lokale TEST-OAuth-Sitzungen getrennt nach API und Rolle.
-- [x] Zertifikatsprüfung für selbstsignierte RSA-Testschlüssel.
-- [x] Automatisierte Tests für SDK-Isolation, Sitzungen und Zertifikatsprüfung.
-- [ ] Vollständiger Windows-Installer-Test auf einem frischen System.
-- [ ] Live-Abnahme mit eigenen TEST-Zugangsdaten.
+### Bereits umgesetzt
 
-## 2. Schlüssel und Sitzungen
+Die folgenden Funktionen sind im lokalen Entwicklungsstand vorhanden. Die vollständige Erprobung aller Abläufe gegen die Testumgebung ist noch offen.
 
-- [ ] Registrierte Zustellpunktschlüssel direkt von der Testumgebung laden.
-- [ ] Private Schlüssel passenden geprüften Registrierungen zuordnen.
-- [ ] Schlüssel innerhalb einer Sitzung für passende weitere Einreichungen wiederverwenden.
-- [ ] Schlüssel beim Abmelden und Schließen der Anwendung verwerfen.
-- [ ] Temporäre Reply-Schlüssel getrennt und vorgangsgebunden verwalten.
+* Desktop-Oberfläche mit Vue und Tauri.
+* Lokaler Java-Kern mit getrennten SDK-Adaptern für v2 und v3.
+* Gemeinsamer Verbindungsbereich für Senden, Empfangen und Event Log.
+* Lokales Laden und Zuordnen privater Testschlüssel.
+* Mehrfachauswahl und Drag and Drop für Schlüssel und Anlagen.
+* Auswahl angebotener Leistungen und Fachdaten-Schemata über den Empfängerzustellpunkt.
+* Erzeugung fiktiver JSON- und XML-Fachdaten.
+* Versandvorbereitung, Bestätigung und Schutz vor unbemerktem Wiederholen ungewisser Übertragungen.
+* Auflisten und Abrufen von Einreichungen.
+* Lokale Entschlüsselung, technische Prüfung sowie Annahme und Ablehnung.
+* Inhaltsvorschau, durchsuchbare JSON-Struktur und Downloads.
+* Grundlagen für Antwortkanäle, Replies und Event Logs.
 
-## 3. Sender und Empfänger
+Der Versand über API v2 wurde bereits erfolgreich gegen TEST erprobt. Für andere Abläufe stehen weitere Integrationstests und Fehlerkorrekturen aus.
 
-- [ ] Einreichungen über v2 und v3 mit Fachdaten und Anlagen senden.
-- [ ] Einreichungen suchen und erneut abrufen.
-- [ ] Inhalte lokal entschlüsseln und SDK-Prüfberichte anzeigen.
-- [ ] Metadaten und Fachdaten als durchsuchbare JSON-Struktur oder formatierten Text anzeigen.
-- [ ] Anlagen mit Dateiname, Beschreibung und ID darstellen.
-- [ ] Annahme und Ablehnung mit einem Bestätigungsdialog umsetzen.
-- [ ] Ungewisse Schreibausgänge erkennen und automatisches Wiederholen verhindern.
+### Vor einer ausführbaren Alpha
 
-## 4. Vorgänge und Prozesse
+* Versand über v3 zuverlässig abschließen und gegen TEST prüfen.
+* Empfang, Entschlüsselung, Schema-Prüfung und Event Log mit repräsentativen Testfällen erproben.
+* XRepository-Auflösung und erzeugte XML-Beispiele anhand realer Standards prüfen.
+* Technische Diagnose für alle wesentlichen Abläufe vereinheitlichen und exportierbar machen.
+* Bekannte Einschränkungen dokumentieren.
+* Windows-Build und Installation auf einem frischen System prüfen.
+* Signierung und Bereitstellung des Windows-Pakets vorbereiten.
 
-- [ ] Antworten und Rückmeldungen im jeweiligen API-Funktionsumfang senden und empfangen.
-- [ ] FIT-Connect-Event-Log mit Prüfstatus und Fehlern anzeigen.
-- [ ] Prozessnachrichten der bestehenden v2-Abläufe übernehmen.
-- [ ] Prozessbasierte Kommunikation über v3 integrieren.
-- [ ] BPMN-Modelle visualisieren und Nachrichtenaktionen über Prozessschritte vorbereiten.
+## Weitere Ausbaustufen
 
-## 5. Erste öffentliche Beta
+* Einreichungen über mehrere Zustellpunkte hinweg suchen.
+* Replies einschließlich Empfangsbestätigungen vervollständigen.
+* Prozessnachrichten für die jeweiligen Funktionen von v2 und v3 ausbauen.
+* BPMN-Modelle darstellen und Nachrichtenaktionen über Prozessschritte anbieten.
+* Zustellpunkte auf TEST verwalten und mehrere Zustellpunkte gemeinsam bearbeiten.
+* Bedienung, Barrierefreiheit und Diagnose anhand der Alpha-Rückmeldungen verbessern.
 
-- [x] Projektbeschreibung und Roadmap veröffentlichen.
-- [ ] Rechtefreigabe und Lizenzhinweise übernommener Komponenten abschließen.
-- [ ] Anwendungscode mit Build- und Beitragsdokumentation veröffentlichen.
-- [ ] GitHub Actions für Windows-Builds und Tests aktivieren.
-- [ ] Private Meldemöglichkeit für Sicherheitsprobleme einrichten.
-- [ ] Vollständige TEST-Abläufe für beide API-Versionen abnehmen.
-- [ ] Bedienung in Light/Dark Mode, mit Tastatur und kleinen Fenstern prüfen.
-- [ ] Windows-Paket und bekannte Einschränkungen als Beta veröffentlichen.
+Die Anwendung bleibt auf Integrationstests beschränkt. Die Produktivumgebung ist nicht vorgesehen.
 
-## Später
+## Repository und Mitarbeit
 
-Optionale Betriebssystem-Schlüsselspeicherung, weitere Betriebssysteme und wiederholbare Stapeltests können nach der ersten Beta folgen.
+`main` enthält zunächst die Projektübersicht und diese Roadmap. Der aktuelle Anwendungscode wird nach der Veröffentlichungsprüfung auf `develop` bereitgestellt. Eine Alpha-Veröffentlichung mit Downloads folgt nach der technischen Erprobung.
+
+Fehlerberichte und Vorschläge sind über die [GitHub Issues](https://github.com/FBForge/fit-connect-testclient/issues) willkommen. Bitte ausschließlich fiktive Testdaten verwenden und keine Zugangsdaten oder privaten Schlüssel veröffentlichen.
