@@ -17,6 +17,11 @@ final class SessionManager implements AutoCloseable {
     private final TestResourceTransport resourceTransport;
     private final java.util.function.Function<ApiVersion, ResourceExchange> resources;
     private final Map<Key, Entry> entries = new HashMap<>();
+    private final Map<String, SessionArchives> archives = new HashMap<>();
+    private final Map<String, DestinationCleanup> cleanups = new HashMap<>();
+    private final Map<String, DestinationRotation> rotations = new HashMap<>();
+    private final Map<String, DestinationProvisioning> provisioning = new HashMap<>();
+    private final Map<String, LocalTestKeys> localKeys = new HashMap<>();
     private final Map<String, DestinationManagement> management = new HashMap<>();
     private final Map<String, SendSchemas> replySchemas = new HashMap<>();
     private final Map<String, SendSchemas> sendSchemas = new HashMap<>();
@@ -536,14 +541,79 @@ final class SessionManager implements AutoCloseable {
         if (!state.status().equals("prepared")) pendingReceipts.remove(id);
         return new Data<>(version.wireValue(), id, "TEST", state);
     }
+    Data<?> provisionDestination(ApiVersion version, String id, String command, String document, String attemptId, String bundleId, String destinationId) {
+        var entry = find(version, id);
+        if (version != ApiVersion.V3) throw new SessionException("invalid_input");
+        var keys = localKeys.computeIfAbsent(id, ignored -> new LocalTestKeys());
+        var creator = provisioning.computeIfAbsent(id, ignored -> new DestinationProvisioning(keys,
+                resourceTransport == null ? resources.apply(version) : resourceTransport.forDestinationLifecycle(version)));
+        if (command.equals("execute_destination_creation")) invalidateReceived(entry);
+        Object result = registry.withSession(version, entry.session(), session -> switch (command) {
+            case "prepare_destination_creation" -> creator.prepare(session, document);
+            case "mark_destination_creation_dispatch" -> creator.markDispatch(attemptId);
+            case "execute_destination_creation" -> creator.execute(session, attemptId);
+            case "cancel_destination_creation" -> creator.cancel(attemptId);
+            case "destination_creation_state" -> creator.state();
+            case "reconcile_destination_creation" -> creator.reconcile(session, bundleId, destinationId);
+            case "use_generated_keys" -> {
+                var bundle = keys.list().stream().filter(value -> value.bundleId().equals(bundleId)).findFirst().orElseThrow(() -> new SessionException("key_missing"));
+                if (!bundle.status().equals("bound") || !Objects.equals(bundle.destinationId(), destinationId)) throw new SessionException("invalid_input");
+                entry.destinations().loadOwned(session, destinationId);
+                for (String purpose : List.of("decrypt", "sign")) entry.destinations().importKey(session, destinationId, purpose, keys.key(bundleId, purpose).privateJwk());
+                yield new DestinationAccess.KeyState(session.loadedKeys());
+            }
+            default -> throw new SessionException("invalid_input");
+        });
+        return new Data<>(version.wireValue(), id, "TEST", result);
+    }
+    Data<?> cleanupDestination(ApiVersion version, String id, String command, String destinationId, String attemptId) {
+        var entry = find(version, id);
+        if (version != ApiVersion.V3) throw new SessionException("invalid_input");
+        var cleanup = cleanups.computeIfAbsent(id, ignored -> new DestinationCleanup(
+                resourceTransport == null ? resources.apply(version) : resourceTransport.forDestinationLifecycle(version)));
+        if (command.equals("execute_destination_cleanup")) invalidateReceived(entry);
+        Object result = registry.withSession(version, entry.session(), session -> switch (command) {
+            case "prepare_destination_cleanup" -> cleanup.prepare(session, destinationId);
+            case "execute_destination_cleanup" -> cleanup.execute(session, attemptId);
+            case "cancel_destination_cleanup" -> cleanup.cancel(attemptId);
+            case "destination_cleanup_state" -> cleanup.state();
+            default -> throw new SessionException("invalid_input");
+        });
+        return new Data<>(version.wireValue(), id, "TEST", result);
+    }
+    Data<?> rotateDestinationKeys(ApiVersion version, String id, String command, String document, String attemptId) {
+        var entry = find(version, id);
+        if (version != ApiVersion.V3) throw new SessionException("invalid_input");
+        var keys = localKeys.computeIfAbsent(id, ignored -> new LocalTestKeys());
+        var rotation = rotations.computeIfAbsent(id, ignored -> new DestinationRotation(keys,
+                resourceTransport == null ? resources.apply(version) : resourceTransport.forDestinationLifecycle(version)));
+        if (command.equals("execute_destination_rotation")) invalidateReceived(entry);
+        Object result = registry.withSession(version, entry.session(), session -> switch (command) {
+            case "prepare_destination_rotation" -> rotation.prepare(session, document);
+            case "mark_destination_rotation_dispatch" -> rotation.markDispatch(attemptId);
+            case "execute_destination_rotation" -> rotation.execute(session, attemptId);
+            case "cancel_destination_rotation" -> rotation.cancel(attemptId);
+            case "destination_rotation_state" -> rotation.state();
+            default -> throw new SessionException("invalid_input");
+        });
+        return new Data<>(version.wireValue(), id, "TEST", result);
+    }
+    Data<?> generatedKeys(ApiVersion version, String id, String command) {
+        var entry = find(version, id);
+        if (version != ApiVersion.V3) throw new SessionException("invalid_input");
+        var generated = localKeys.computeIfAbsent(id, ignored -> new LocalTestKeys());
+        Object result = command.equals("generate_test_keys") ? registry.withSession(version, entry.session(), generated::generate) : Map.of("bundles", generated.list());
+        return new Data<>(version.wireValue(), id, "TEST", result);
+    }
     Data<?> exportSessionItem(ApiVersion version, String id, int offset) {
         var entry = find(version, id);
-        return new Data<>(version.wireValue(), id, "TEST", registry.withSession(version, entry.session(), session -> SessionArchives.export(session, offset)));
+        return new Data<>(version.wireValue(), id, "TEST", registry.withSession(version, entry.session(), session -> archives.computeIfAbsent(id, ignored -> new SessionArchives()).export(session, localKeys.get(id), offset)));
     }
     Data<?> restoreSessionItem(ApiVersion version, String id, String document) {
         var entry = find(version, id); var item = SessionArchives.parse(document);
         registry.withSession(version, entry.session(), session -> {
-            if (item.destinationKey() != null) {
+            if (item.generatedKey() != null) localKeys.computeIfAbsent(id, ignored -> new LocalTestKeys()).restore(session, item);
+            else if (item.destinationKey() != null) {
                 var key = item.destinationKey();
                 entry.destinations().load(session, key.destinationId());
                 entry.destinations().importKey(session, key.destinationId(), key.purpose(), item.privateJwk());
@@ -587,7 +657,7 @@ final class SessionManager implements AutoCloseable {
         return cause instanceof SessionException known ? known : new SessionException("authentication_failed");
     }
     private void remove(Entry entry) {
-        if (entry != null) management.remove(entry.id());
+        if (entry != null) { management.remove(entry.id()); var archive = archives.remove(entry.id()); if (archive != null) archive.clear(); provisioning.remove(entry.id()); rotations.remove(entry.id()); cleanups.remove(entry.id()); var generated = localKeys.remove(entry.id()); if (generated != null) generated.clear(); }
         if (entry == null) return;
         var replySchema = replySchemas.remove(entry.id()); if (replySchema != null) replySchema.clear();
         var schemas = sendSchemas.remove(entry.id());

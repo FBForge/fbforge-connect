@@ -16,11 +16,11 @@ fn vault(app: &tauri::AppHandle) -> Result<Vault, &'static str> {
 struct ArchiveItem { offset: usize, total: usize, item: Option<serde_json::Value> }
 async fn archive(app: &tauri::AppHandle, state: &EngineState, api: ApiVersion, session: &str) -> Result<Vec<serde_json::Value>, &'static str> {
     let mut keys = vec![]; let mut expected = None;
-    for offset in 0..=48 {
+    for offset in 0..=176 {
         let response: SessionResource = request(app, state, serde_json::json!({"command":"export_session_item", "apiVersion":api,"sessionId":session,"offset":offset})).await?;
         if !response.validate(api, session) { return Err("engine_protocol_error"); }
         let page: ArchiveItem = serde_json::from_value(response.data).map_err(|_| "engine_protocol_error")?;
-        if page.offset != offset || page.total > 48 || expected.is_some_and(|total| total != page.total) { return Err("engine_protocol_error"); }
+        if page.offset != offset || page.total > 176 || expected.is_some_and(|total| total != page.total) { return Err("engine_protocol_error"); }
         expected = Some(page.total);
         if offset == page.total {
             if page.item.is_some() { return Err("engine_protocol_error"); }
@@ -54,6 +54,14 @@ pub async fn checkpoint(app: &tauri::AppHandle, state: &EngineState, api: ApiVer
         store.save(&profile)
     }.await;
     binding.error = result.as_ref().err().copied(); result
+}
+pub async fn require_profile(state: &EngineState, api: ApiVersion, session: &str) -> Result<(), &'static str> {
+    let bindings = state.profiles.lock().await;
+    match bindings.get(session) {
+        Some(binding) if binding.api == api && binding.error.is_none() => Ok(()),
+        Some(_) => Err("vault_pending"),
+        None => Err("vault_profile_required"),
+    }
 }
 pub async fn before_open(app: &tauri::AppHandle, state: &EngineState, api: ApiVersion, role: SessionRole) -> Result<(), &'static str> {
     let existing: Vec<String> = state.profiles.lock().await.iter().filter(|(_, item)| item.api == api && item.role == role).map(|(id,_)| id.clone()).collect();

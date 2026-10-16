@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cancel-destination-rotation"
+description = "Enables the cancel_destination_rotation command without any pre-configured scope."
+commands.allow = ["cancel_destination_rotation"]
+
+[[permission]]
+identifier = "deny-cancel-destination-rotation"
+description = "Denies the cancel_destination_rotation command without any pre-configured scope."
+commands.deny = ["cancel_destination_rotation"]

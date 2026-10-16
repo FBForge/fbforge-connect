@@ -1,23 +1,29 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
+import DestinationSetup from './DestinationSetup.vue';
+import DestinationCleanup from './DestinationCleanup.vue';
+import DestinationOffers from './DestinationOffers.vue';
+import DestinationKeyRotation from './DestinationKeyRotation.vue';
 import { invoke } from './native.js';
 import { listDestinations } from './resources.js';
 import { loadManagedDestination, prepareDestinationUpdate, executeDestinationUpdate, cancelDestinationUpdate, destinationUpdateState } from './destination-management.js';
 import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 const props = defineProps({ session: Object, busy: Boolean });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'changed']);
+const emit = defineEmits(['busy', 'activity', 'fatal', 'changed', 'receive']);
+const setupOpen = ref(false), setupNotice = ref('');
 const page = ref(null), selected = ref([]), detail = ref(null), preview = ref(null), pending = ref(false), error = ref('');
+const offersEnabled = ref(false), offers = ref({publicServices:[],processMessages:[]});
 const nameEnabled = ref(false), name = ref('{name}'), statusEnabled = ref(false), status = ref('inactive');
 const versionsEnabled = ref(false), versions = ref('2.0.0, 3.0.0');
 const contacts = ref(Object.fromEntries(['legalName', 'address', 'phone', 'email', 'unit'].map(key => [key, { enabled: false, value: '' }])));
 const disabled = computed(() => props.busy || pending.value || !props.session);
 const canEdit = computed(() => props.session?.apiVersion === 'v3');
 const locked = computed(() => preview.value?.status === 'uncertain');
-const changes = computed(() => ({ ...(nameEnabled.value ? { name: name.value } : {}), ...(statusEnabled.value ? { status: status.value } : {}),
+const changes = computed(() => ({ ...(offersEnabled.value && selected.value.length === 1 ? offers.value : {}), ...(nameEnabled.value ? { name: name.value } : {}), ...(statusEnabled.value ? { status: status.value } : {}),
   ...(versionsEnabled.value ? { metadataVersions: versions.value.split(',').map(v => v.trim()).filter(Boolean) } : {}),
   ...(Object.values(contacts.value).some(v => v.enabled) ? { contactInformation: Object.fromEntries(Object.entries(contacts.value).filter(([,v]) => v.enabled).map(([key,v]) => [key, v.value || null])) } : {}) }));
-const labels = { name: 'Name', status: 'Status', metadataVersions: 'Metadatenversionen', legalName: 'Organisation', address: 'Anschrift', phone: 'Telefon', email: 'E-Mail', unit: 'Organisationseinheit', cc: 'Kopie an' };
+const labels = { publicServices:'Leistungen und Antwortschemata',processMessages:'Prozessnachrichten', name: 'Name', status: 'Status', metadataVersions: 'Metadatenversionen', legalName: 'Organisation', address: 'Anschrift', phone: 'Telefon', email: 'E-Mail', unit: 'Organisationseinheit', cc: 'Kopie an' };
 const statuses = { prepared: 'Zur Bestätigung', unchanged: 'Unverändert', updated: 'Gespeichert', failed: 'Fehlgeschlagen', uncertain: 'Ausgang ungewiss', skipped: 'Nicht ausgeführt', completed: 'Abgeschlossen', partial: 'Teilweise abgeschlossen', conflict: 'Zwischenzeitlich geändert', expired: 'Vorschau abgelaufen', cancelled: 'Abgebrochen', running: 'Wird gespeichert', idle: 'Keine Änderung vorbereitet' };
 const messages = { destination_conflict: 'Mindestens ein Zustellpunkt wurde seit der Vorschau geändert. Es wurde nichts gespeichert. Bitte neu laden und eine neue Vorschau erstellen.',
   destination_update_locked: 'Diese Änderung kann nicht erneut ausgeführt werden. Bei ungewissem Ausgang bitte zuerst den Zustellpunkt neu laden und für weitere Änderungen eine neue Sitzung öffnen.',
@@ -49,18 +55,26 @@ async function run(action, operation) {
     emit('activity', { api: active.apiVersion, role: 'Zustellpunktverwaltung', action, status: resultStatus, started });
   }
 }
+async function openCreated(id) {
+  setupOpen.value = false; setupNotice.value = 'Zustellpunkt und öffentliche Schlüssel sind angelegt. Prüfe die Konfiguration und bestätige die Aktivierung separat.';
+  await nextTick(); await edit({ destinationId: id });
+  if (detail.value?.destinationId === id && detail.value.possibleNextStatus.includes('active')) {
+    nameEnabled.value = false; statusEnabled.value = true; status.value = 'active';
+  }
+}
 function search(offset = 0) { return run('Eigene Zustellpunkte laden', async (active, current) => {
   const result = await listDestinations(invoke, active, offset); if (current()) page.value = result;
 }); }
 function toggle(row, checked) {
   if (disabled.value || locked.value) return;
+  offersEnabled.value = false;
   if (checked && selected.value.length < 10) selected.value = [...selected.value, row];
   if (!checked) selected.value = selected.value.filter(item => item.destinationId !== row.destinationId);
 }
 function edit(row) { return run('Eigenen Zustellpunkt öffnen', async (active, current) => {
   const result = await loadManagedDestination(invoke, active, row.destinationId);
   if (!current()) return;
-  detail.value = result;
+  detail.value = result; offersEnabled.value = false; offers.value = result.offers ? structuredClone(result.offers) : {publicServices:[],processMessages:[]};
   if (locked.value) return;
   selected.value = [row]; preview.value = null;
   name.value = result.name || ''; nameEnabled.value = true;
@@ -92,6 +106,7 @@ function cancel() { const previous = preview.value; return run('Änderung abbrec
 function difference(row) {
   const result = [], show = value => value == null || value === '' ? 'Nicht gesetzt' : Array.isArray(value) ? value.join(', ') : String(value);
   for (const [key, value] of Object.entries(row.after)) {
+    if (['publicServices','processMessages'].includes(key)) continue;
     if (key === 'contactInformation') for (const [field, next] of Object.entries(value)) {
       const old = row.before.contactInformation?.[field];
       if (JSON.stringify(old ?? null) !== JSON.stringify(next)) result.push({ field: labels[field], before: show(old), after: show(next) });
@@ -103,7 +118,11 @@ function difference(row) {
 </script>
 
 <template>
-  <section class="tool-section" aria-labelledby="manager-title" :aria-busy="pending">
+  <div>
+  <div class="client-actions" aria-label="Zustellpunktaufgabe"><button type="button" class="button secondary" :aria-pressed="!setupOpen" :disabled="disabled" @click="setupOpen = false">Bestehende Zustellpunkte</button><button type="button" class="button secondary" :aria-pressed="setupOpen" :disabled="disabled || !canEdit" @click="setupOpen = true">Neuen TEST-Zustellpunkt anlegen</button></div>
+  <DestinationSetup v-show="setupOpen" :session="session" :busy="busy || pending" @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @changed="emit('changed')" @created="openCreated" @receive="id => emit('receive', id)" />
+  <section v-show="!setupOpen" class="tool-section" aria-labelledby="manager-title" :aria-busy="pending">
+    <p v-if="setupNotice" role="status">{{ setupNotice }}</p>
     <h2 id="manager-title">Eigene Zustellpunkte verwalten</h2>
     <p>Zustellpunkte der angemeldeten TEST-Zugangsdaten laden und einzeln oder gemeinsam bearbeiten. Bis zu zehn Zustellpunkte pro Änderung.</p>
     <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
@@ -135,9 +154,16 @@ function difference(row) {
           <div><label class="destination-toggle"><input v-model="versionsEnabled" type="checkbox"> Metadatenversionen ändern</label><label for="manager-versions">Neue Metadatenversionen<input id="manager-versions" v-model="versions" type="text" maxlength="256" :disabled="!versionsEnabled"></label><small>Kommagetrennt, z. B. 2.0.0, 3.0.0. Dies beeinflusst die ausgehandelte Metadatenversion.</small></div>
           <div v-for="(field, key) in contacts" :key="key"><label class="destination-toggle"><input v-model="field.enabled" type="checkbox"> {{ labels[key] }} ändern</label><label :for="`manager-${key}`">Neuer Wert<textarea v-if="key === 'address'" :id="`manager-${key}`" v-model="field.value" maxlength="2048" rows="3" :disabled="!field.enabled"></textarea><input v-else :id="`manager-${key}`" v-model="field.value" type="text" maxlength="256" :disabled="!field.enabled"></label></div>
         </div>
+        <template v-if="selected.length === 1 && detail?.destinationId === selected[0].destinationId && detail.type === 'A' && detail.offers">
+          <label class="destination-toggle"><input v-model="offersEnabled" type="checkbox"> Leistungen, Schemata und Prozessnachrichten bearbeiten</label>
+          <DestinationOffers v-if="offersEnabled" v-model="offers" :disabled="disabled || locked" prefix="manager-offer" />
+          <p v-if="offersEnabled">Diese Listen ersetzen die Angebote dieses Zustellpunkts. Entfernte Angebote stehen danach für neue Nachrichten nicht mehr zur Verfügung. Andere Einstellungen bleiben erhalten.</p>
+        </template>
         <button class="button" type="submit" :disabled="!Object.keys(changes).length">Änderungsvorschau erstellen</button>
       </fieldset>
     </form>
+    <DestinationCleanup v-if="canEdit && selected.length === 1 && detail?.destinationId === selected[0].destinationId && ['draft','created'].includes(detail.status)" :session="session" :destination="detail" :busy="busy || pending || locked || preview?.status === 'prepared'" @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @changed="emit('changed')" />
+    <DestinationKeyRotation v-if="canEdit && selected.length" :session="session" :selected="selected" :busy="busy || pending || locked || preview?.status === 'prepared'" @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @changed="emit('changed')" @receive="id => emit('receive', id)" />
     <section v-if="preview" class="tool-section" aria-labelledby="update-preview-title">
       <h3 id="update-preview-title">{{ statuses[preview.status] || preview.status }}</h3>
       <p v-if="preview.status === 'prepared'">Noch nichts gespeichert. Prüfe die Werte für jeden Zustellpunkt. Die Vorschau gilt zwei Minuten. Vor dem Speichern werden alle ausgewählten Zustellpunkte erneut auf zwischenzeitliche Änderungen geprüft.</p>
@@ -146,9 +172,11 @@ function difference(row) {
       <article v-for="row in preview.changes" :key="row.destinationId" class="tool-section">
         <h4>{{ row.name || row.destinationId }} · {{ statuses[row.status] }}</h4><p><code>{{ row.destinationId }}</code></p>
         <p v-if="row.error" role="status">{{ messages[row.error] || 'Änderung nicht bestätigt. Bitte den Zustellpunkt neu laden.' }}</p>
+        <template v-if="row.after.publicServices || row.after.processMessages"><h5>Angebote nach der Änderung</h5><DestinationOffers :model-value="{publicServices:row.after.publicServices || [],processMessages:row.after.processMessages || []}" disabled :prefix="`preview-${row.destinationId}`" /></template>
         <dl v-for="change in difference(row)" :key="change.field"><dt>{{ change.field }}</dt><dd>{{ change.before }} → <strong>{{ change.after }}</strong></dd></dl>
       </article>
       <div v-if="preview.status === 'prepared'" class="client-actions"><button class="button" :disabled="disabled || preview.changes.every(row => row.status === 'unchanged')" @click="execute">Diese Änderungen verbindlich auf TEST speichern</button><button class="button secondary" :disabled="disabled" @click="cancel">Abbrechen</button></div>
     </section>
   </section>
+  </div>
 </template>

@@ -86,6 +86,7 @@ async function confirm() {
     prepared.value = null; dialog.value?.close();
     const published = { ...result, apiVersion: active.apiVersion, sessionId: active.sessionId };
     emit('outcome', published);
+    if (resetsSessions(result.error)) emit('fatal', result.error);
     if (current()) {
       outcome.value = published;
       if (result.status === 'confirmed' || result.status === 'uncertain') emit('invalidate');

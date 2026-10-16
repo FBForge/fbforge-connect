@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-prepare-destination-cleanup"
+description = "Enables the prepare_destination_cleanup command without any pre-configured scope."
+commands.allow = ["prepare_destination_cleanup"]
+
+[[permission]]
+identifier = "deny-prepare-destination-cleanup"
+description = "Denies the prepare_destination_cleanup command without any pre-configured scope."
+commands.deny = ["prepare_destination_cleanup"]

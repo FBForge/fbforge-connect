@@ -44,7 +44,7 @@ test('foreign sessions, changed attempts, unknown properties and foreign destina
 
 test('own detail accepts only the bounded contact view and cancellation retires the preview', async () => {
   const detail = { destinationId:A,name:'Test',status:'active',metadataVersions:['2.0.0'],possibleNextStatus:['inactive'],
-    contactJson:JSON.stringify({legalName:'Test',address:null,phone:null,email:'test@example.invalid',unit:null,cc:['cc@example.invalid']}) };
+    type:'A',offersJson:'{"publicServices":[],"processMessages":[]}',contactJson:JSON.stringify({legalName:'Test',address:null,phone:null,email:'test@example.invalid',unit:null,cc:['cc@example.invalid']}) };
   assert.equal((await loadManagedDestination(async(command,args)=>{assert.equal(command,'load_managed_destination');assert.equal(args.destinationId,A);return envelope(detail);},session,A)).contact.email,'test@example.invalid');
   await assert.rejects(loadManagedDestination(async()=>envelope({...detail,contactJson:'{"clientSecret":"no"}'}),session,A));
   assert.equal((await cancelDestinationUpdate(async(command,args)=>{assert.equal(command,'cancel_destination_update');assert.equal(args.attemptId,attempt);return envelope({attemptId:attempt,status:'cancelled',changes:[]});},session,attempt)).status,'cancelled');

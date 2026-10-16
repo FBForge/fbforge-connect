@@ -42,7 +42,7 @@ impl Profile {
     pub fn validate(&self) -> Result<(), &'static str> {
         if self.version != 1 || !valid_session_id(&self.profile_id) || self.name.trim().is_empty() || self.name.len() > 120
             || self.name.chars().any(char::is_control) || self.client_id.trim().is_empty() || self.client_id.len() > 512
-            || self.client_secret.trim().is_empty() || self.client_secret.len() > 8192 || self.keys.len() > 48
+            || self.client_secret.trim().is_empty() || self.client_secret.len() > 8192 || self.keys.len() > 176
             || self.keys.iter().any(|item| !item.is_object() || serde_json::to_vec(item).map_or(true, |v| v.len() > 32768)) {
             return Err("vault_invalid");
         }

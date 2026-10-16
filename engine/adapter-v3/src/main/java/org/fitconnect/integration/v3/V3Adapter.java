@@ -80,6 +80,53 @@ public final class V3Adapter implements SdkAdapter {
             requireOpen();
             return http.json(destinationsApi().getDestination(UUID.fromString(destinationId)));
         }
+        public void checkGeneratedTestKey(String purpose, GeneratedTestKey key) {
+            requireOpen();
+            new PrivateKeys().importKey("00000000-0000-4000-8000-000000000001", purpose, key.privateJwk(), List.of(key.publicJwk()));
+        }
+        public GeneratedTestKey generateTestKey(String purpose) { requireOpen(); return TestKeys.generate(purpose); }
+        public String canonicalDestinationMutation(String kind, String document) {
+            requireOpen();
+            try {
+                var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+                Class<?> type = switch (kind) {
+                    case "create" -> dev.fitko.fitconnect.rest.model.destination.CreateDestination.class;
+                    case "patch" -> dev.fitko.fitconnect.rest.model.destination.DestinationPatch.class;
+                    case "key" -> dev.fitko.fitconnect.rest.model.jwk.ApiJwk.class;
+                    default -> throw new SessionException("invalid_input");
+                };
+                return mapper.writeValueAsString(mapper.readValue(document, type));
+            } catch (SessionException failure) { throw failure;
+            } catch (Exception failure) { throw new SessionException("invalid_input"); }
+        }
+        public String createOwnDestination(String document, ResourceExchange authorized) {
+            requireOpen();
+            try {
+                var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+                var value = mapper.readValue(document, dev.fitko.fitconnect.rest.model.destination.CreateDestination.class);
+                var client = new DestinationApiClient(new RequestHeaders(current), new DestinationWriteTransport(authorized),
+                        "https://test.fit-connect.fitko.dev/destination-api");
+                return http.json(client.createDestination(value));
+            } catch (SessionException failure) { throw failure;
+            } catch (Exception failure) { throw new SessionException("invalid_resource"); }
+        }
+        public void deleteOwnDestination(String destinationId, ResourceExchange authorized) {
+            requireOpen();
+            var client = new DestinationApiClient(new RequestHeaders(current), new DestinationWriteTransport(authorized),
+                    "https://test.fit-connect.fitko.dev/destination-api");
+            client.deleteDestination(UUID.fromString(destinationId));
+        }
+        public void registerOwnDestinationKey(String destinationId, String publicJwk, ResourceExchange authorized) {
+            requireOpen();
+            try {
+                var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+                var key = mapper.readValue(publicJwk, dev.fitko.fitconnect.rest.model.jwk.ApiJwk.class);
+                var client = new DestinationApiClient(new RequestHeaders(current), new DestinationWriteTransport(authorized),
+                        "https://test.fit-connect.fitko.dev/destination-api");
+                client.addKey(UUID.fromString(destinationId), key);
+            } catch (SessionException failure) { throw failure;
+            } catch (Exception failure) { throw new SessionException("invalid_resource"); }
+        }
         public String patchOwnDestination(String destinationId, String patch, ResourceExchange authorized) {
             requireOpen();
             try {
@@ -90,6 +137,12 @@ public final class V3Adapter implements SdkAdapter {
                 return http.json(client.patchDestination(UUID.fromString(destinationId), value));
             } catch (SessionException failure) { throw failure;
             } catch (Exception failure) { throw new SessionException("resource_unavailable"); }
+        }
+        public String ownDestinationKeys(String id, int offset, int limit) {
+            requireOpen();
+            if (offset < 0 || offset > 10000 || limit < 1 || limit > 100) throw new SessionException("invalid_input");
+            String endpoint = "https://test.fit-connect.fitko.dev/destination-api/v3/destinations/" + UUID.fromString(id) + "/keys?offset=" + offset + "&limit=" + limit;
+            return http.json(http.get(endpoint, new RequestHeaders(current).bodyless(), dev.fitko.fitconnect.rest.model.jwk.ApiJwks.class).body());
         }
         public String destinationKeys(String destinationId, int offset, int limit) {
             return http.json(destinationsApi().listKeys(UUID.fromString(destinationId), offset, limit));

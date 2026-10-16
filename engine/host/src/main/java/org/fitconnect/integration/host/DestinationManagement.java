@@ -9,7 +9,7 @@ import java.util.function.LongSupplier;
 /** Session-local previews for existing owned TEST destinations. No live write occurs during prepare. */
 final class DestinationManagement {
     record Detail(String destinationId, String name, String status, String contactJson,
-                  List<String> metadataVersions, List<String> possibleNextStatus) { }
+                  List<String> metadataVersions, List<String> possibleNextStatus, String type, String offersJson) { }
     record Change(String destinationId, String name, String beforeJson, String afterJson, String status, String error) { }
     record Preview(String attemptId, String status, List<Change> changes) { }
     private record Pending(String id, JsonObject snapshot, JsonObject patch, Change view) { }
@@ -33,7 +33,13 @@ final class DestinationManagement {
     Detail load(AuthenticatedSession session, String value) {
         String id = DestinationAccess.id(value); var current = read(session, id);
         return new Detail(id, optional(current, "name"), optional(current, "status"), contact(current).toString(),
-                strings(current.get("metadataVersions"), false), strings(current.get("possibleNextStatus"), false));
+                strings(current.get("metadataVersions"), false), strings(current.get("possibleNextStatus"), false), optional(current, "type"), offers(current));
+    }
+    private static String offers(JsonObject current) {
+        var result = new JsonObject();
+        for (String field : List.of("publicServices", "processMessages")) result.add(field,
+                current.has(field) && !current.get(field).isJsonNull() ? current.get(field).deepCopy() : new JsonArray());
+        return result.toString();
     }
     Preview prepare(AuthenticatedSession session, String document) {
         if (api != ApiVersion.V3) throw error("invalid_input");
@@ -45,12 +51,13 @@ final class DestinationManagement {
                 || !request.get("changes").isJsonObject()) throw error("invalid_input");
         var ids = request.getAsJsonArray("destinationIds"); var changes = request.getAsJsonObject("changes");
         if (ids.isEmpty() || ids.size() > 10 || changes.isEmpty()
-                || !Set.of("name", "status", "contactInformation", "metadataVersions").containsAll(changes.keySet())) throw error("invalid_input");
+                || !Set.of("name", "status", "contactInformation", "metadataVersions", "publicServices", "processMessages").containsAll(changes.keySet())) throw error("invalid_input");
         var rows = new ArrayList<Pending>(); var seen = new HashSet<String>();
         for (var value : ids) {
             String id = DestinationAccess.id(text(value, 36));
             if (!seen.add(id)) throw error("invalid_input");
             var snapshot = read(session, id); var patch = patch(snapshot, changes);
+            if (!patch.isEmpty()) patch = StrictJson.object(session.canonicalDestinationMutation("patch", patch.toString()), 24576);
             var before = new JsonObject(); patch.keySet().forEach(key -> before.add(key, snapshot.has(key) ? snapshot.get(key) : JsonNull.INSTANCE));
             var row = new Change(id, optional(snapshot, "name"), before.toString(), patch.toString(), patch.isEmpty() ? "unchanged" : "prepared", null);
             rows.add(new Pending(id, snapshot, patch, row));
@@ -90,6 +97,15 @@ final class DestinationManagement {
                 next.add(field, value);
             }
             result.add("contactInformation", next);
+        }
+        if (changes.has("publicServices") || changes.has("processMessages")) {
+            for (String field : List.of("publicServices", "processMessages")) if (changes.has(field)) {
+                DestinationConfiguration.offers(changes.get(field), field.equals("processMessages")); result.add(field, changes.get(field).deepCopy());
+            }
+            int services = (result.has("publicServices") ? result : current).getAsJsonArray("publicServices").size();
+            int messages = (result.has("processMessages") ? result : current).getAsJsonArray("processMessages").size();
+            String type = optional(current, "type");
+            if ("C".equals(type) ? services + messages != 0 : !"A".equals(type) || services + messages == 0) throw error("invalid_input");
         }
         for (String field : List.copyOf(result.keySet())) if (Objects.equals(result.get(field), current.get(field))) result.remove(field);
         return result;
@@ -148,12 +164,18 @@ final class DestinationManagement {
             try {
                 var result = StrictJson.object(session.patchOwnDestination(row.id(), row.patch().toString(), oneShot), 64 * 1024);
                 if (!dispatched[0] || !row.id().equals(optional(result, "destinationId"))) throw error("invalid_resource");
-                for (String field : row.patch().keySet()) if (!Objects.equals(row.patch().get(field), result.get(field))) throw error("invalid_resource");
+                for (String field : row.patch().keySet()) {
+                    if (Set.of("publicServices", "processMessages", "metadataVersions").contains(field)) {
+                        var projected = new JsonObject(); projected.add(field, result.get(field));
+                        if (!StrictJson.object(session.canonicalDestinationMutation("patch", projected.toString()), 65536).equals(
+                                StrictJson.object(session.canonicalDestinationMutation("patch", "{\"" + field + "\":" + row.patch().get(field) + "}"), 65536))) throw error("invalid_resource");
+                    } else if (!Objects.equals(row.patch().get(field), result.get(field))) throw error("invalid_resource");
+                }
                 rows.set(i, outcome(row.view(), "updated", null));
             } catch (Exception failure) {
                 var known = failure instanceof SessionException s ? s : error("resource_unavailable");
                 if (known.httpStatus() != null && Set.of(409, 412).contains(known.httpStatus())) known = new SessionException("destination_conflict", known.httpStatus());
-                boolean rejected = known.httpStatus() != null && known.httpStatus() >= 400 && known.httpStatus() < 500;
+                boolean rejected = DestinationWriteAccess.definitelyDeclined(known) || known.httpStatus() != null && Set.of(409, 412).contains(known.httpStatus());
                 boolean unknown = dispatched[0] && !rejected;
                 uncertain |= unknown; failed = true;
                 rows.set(i, outcome(row.view(), unknown ? "uncertain" : "failed", known.code()));

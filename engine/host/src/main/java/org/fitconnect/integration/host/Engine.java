@@ -26,7 +26,7 @@ final class Engine implements AutoCloseable {
                 if (!Set.of("protocolVersion", "id", "command", "apiVersion", "role", "clientId", "clientSecret", "sessionId",
                         "destinationId", "offset", "purpose", "keyDocument", "contentId", "totalBytes", "byteOffset", "chunk",
                         "sendDocument", "attemptId", "submissionId", "schemaDocument", "proofId", "receiptDocument",
-                        "caseId", "replyId", "logId", "eventId", "part", "replyDocument", "destinationDocument", "archiveDocument").contains(key)
+                        "caseId", "replyId", "logId", "eventId", "part", "replyDocument", "destinationDocument", "archiveDocument", "bundleId").contains(key)
                         || values.containsKey(key)) throw new IllegalArgumentException();
                 if (Set.of("protocolVersion", "offset", "totalBytes", "byteOffset").contains(key)) {
                     if (reader.peek() != JsonToken.NUMBER) throw new IllegalArgumentException();
@@ -80,6 +80,17 @@ final class Engine implements AutoCloseable {
                 case "list_received_contents", "list_received_reply_contents" -> expected.addAll(Set.of("sessionId", "proofId", "offset"));
                 case "read_received_content", "read_received_reply_content" -> expected.addAll(Set.of("sessionId", "proofId", "contentId", "byteOffset"));
                 case "discard_received", "discard_received_reply" -> expected.addAll(Set.of("sessionId", "proofId"));
+                case "prepare_destination_cleanup" -> expected.addAll(Set.of("sessionId", "destinationId"));
+                case "execute_destination_cleanup", "cancel_destination_cleanup" -> expected.addAll(Set.of("sessionId", "attemptId"));
+                case "destination_cleanup_state" -> expected.add("sessionId");
+                case "prepare_destination_rotation" -> expected.addAll(Set.of("sessionId", "destinationDocument"));
+                case "mark_destination_rotation_dispatch", "execute_destination_rotation", "cancel_destination_rotation" -> expected.addAll(Set.of("sessionId", "attemptId"));
+                case "destination_rotation_state" -> expected.add("sessionId");
+                case "prepare_destination_creation" -> expected.addAll(Set.of("sessionId", "destinationDocument"));
+                case "mark_destination_creation_dispatch", "execute_destination_creation", "cancel_destination_creation" -> expected.addAll(Set.of("sessionId", "attemptId"));
+                case "destination_creation_state" -> expected.add("sessionId");
+                case "reconcile_destination_creation", "use_generated_keys" -> expected.addAll(Set.of("sessionId", "bundleId", "destinationId"));
+                case "generate_test_keys", "list_generated_keys" -> expected.add("sessionId");
                 case "export_session_item" -> expected.addAll(Set.of("sessionId", "offset"));
                 case "restore_session_item" -> expected.addAll(Set.of("sessionId", "archiveDocument"));
                 case "load_case_event_log" -> expected.addAll(Set.of("sessionId", "caseId"));
@@ -99,7 +110,7 @@ final class Engine implements AutoCloseable {
             if (values.containsKey("attemptId")) values.put("attemptId", DestinationAccess.id(values.get("attemptId")));
             if (values.containsKey("submissionId")) values.put("submissionId", DestinationAccess.id(values.get("submissionId")));
             if (values.containsKey("proofId")) values.put("proofId", DestinationAccess.id(values.get("proofId")));
-            for (String key : List.of("caseId", "replyId", "logId", "eventId"))
+            for (String key : List.of("caseId", "replyId", "logId", "eventId", "bundleId"))
                 if (values.containsKey(key)) values.put(key, DestinationAccess.id(values.get(key)));
             int offset = values.containsKey("offset") ? Integer.parseInt(values.get("offset")) : 0;
             if (offset < 0 || offset > 10000) throw new IllegalArgumentException();
@@ -147,6 +158,11 @@ final class Engine implements AutoCloseable {
                     case "read_received_schema", "list_received_contents", "read_received_content", "discard_received" -> sessions.received(version,
                             values.get("sessionId"), command, values.get("proofId"), values.get("contentId"),
                             (command.equals("read_received_content") || command.equals("read_received_schema")) ? Math.toIntExact(byteOffset) : offset);
+                    case "mark_destination_creation_dispatch", "prepare_destination_creation", "execute_destination_creation", "cancel_destination_creation", "destination_creation_state", "reconcile_destination_creation", "use_generated_keys" -> sessions.provisionDestination(version, values.get("sessionId"), command,
+                            values.get("destinationDocument"), values.get("attemptId"), values.get("bundleId"), values.get("destinationId"));
+                    case "prepare_destination_cleanup", "execute_destination_cleanup", "cancel_destination_cleanup", "destination_cleanup_state" -> sessions.cleanupDestination(version, values.get("sessionId"), command, values.get("destinationId"), values.get("attemptId"));
+                    case "prepare_destination_rotation", "mark_destination_rotation_dispatch", "execute_destination_rotation", "cancel_destination_rotation", "destination_rotation_state" -> sessions.rotateDestinationKeys(version, values.get("sessionId"), command, values.get("destinationDocument"), values.get("attemptId"));
+                    case "generate_test_keys", "list_generated_keys" -> sessions.generatedKeys(version, values.get("sessionId"), command);
                     case "export_session_item" -> sessions.exportSessionItem(version, values.get("sessionId"), offset);
                     case "restore_session_item" -> sessions.restoreSessionItem(version, values.get("sessionId"), values.get("archiveDocument"));
                     case "load_case_event_log" -> sessions.loadCaseEventLog(version, values.get("sessionId"), values.get("caseId"));

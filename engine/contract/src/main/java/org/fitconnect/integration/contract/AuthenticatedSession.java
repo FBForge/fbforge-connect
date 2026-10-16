@@ -16,6 +16,7 @@ public interface AuthenticatedSession extends AutoCloseable {
     String destination(String destinationId);
     default String ownDestination(String destinationId) { throw new SessionException("invalid_input"); }
     default String patchOwnDestination(String destinationId, String patch, ResourceExchange authorized) { throw new SessionException("invalid_input"); }
+    default String ownDestinationKeys(String destinationId, int offset, int limit) { return destinationKeys(destinationId, offset, limit); }
     String destinationKeys(String destinationId, int offset, int limit);
     SubmissionPage submissions(String destinationId, int offset, int limit);
     ReplyPage replies(int offset, int limit);
@@ -48,6 +49,12 @@ public interface AuthenticatedSession extends AutoCloseable {
         throw new SessionException("invalid_input");
     }
     /** Private persistence bridge; these methods are not renderer IPC commands. */
+    default void checkGeneratedTestKey(String purpose, GeneratedTestKey key) { throw new SessionException("invalid_input"); }
+    default GeneratedTestKey generateTestKey(String purpose) { throw new SessionException("invalid_input"); }
+    default String canonicalDestinationMutation(String kind, String document) { throw new SessionException("invalid_input"); }
+    default String createOwnDestination(String document, ResourceExchange authorized) { throw new SessionException("invalid_input"); }
+    default void deleteOwnDestination(String destinationId, ResourceExchange authorized) { throw new SessionException("invalid_input"); }
+    default void registerOwnDestinationKey(String destinationId, String publicJwk, ResourceExchange authorized) { throw new SessionException("invalid_input"); }
     default List<SessionKeyArchive> archiveKeys() { throw new SessionException("invalid_input"); }
     default void restoreReplyKey(SessionKeyArchive item, java.nio.file.Path workspace) { throw new SessionException("invalid_input"); }
     default void prepareReplyChannel(java.util.UUID attemptId, SubmissionInput input, java.nio.file.Path workspace) { throw new SessionException("invalid_input"); }

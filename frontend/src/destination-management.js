@@ -1,3 +1,4 @@
+import { parseOffers, validOffers } from './destination-offers.js';
 import { requestResource } from './resources.js';
 
 const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -19,10 +20,14 @@ function contact(source) {
 export async function loadManagedDestination(invoke, session, destinationId) {
   destinationId = id(destinationId);
   const data = await requestResource(invoke, session, 'load_managed_destination', { destinationId });
-  if (!exact(data, ['destinationId', 'name', 'status', 'contactJson', 'metadataVersions', 'possibleNextStatus'])
+  if (!exact(data, ['destinationId', 'name', 'status', 'contactJson', 'metadataVersions', 'possibleNextStatus', 'type', 'offersJson'])
       || data.destinationId !== destinationId || !text(data.name, 512, true) || !text(data.status, 64, true)
       || typeof data.contactJson !== 'string' || data.contactJson.length > 16384 || !list(data.metadataVersions) || !list(data.possibleNextStatus)) fail();
-  return { ...data, contact: contact(data.contactJson) };
+  if (!['A', 'C'].includes(data.type) && data.type !== null) fail();
+  if (typeof data.offersJson !== 'string' || data.offersJson.length > 44000) fail();
+  let offers = null;
+  try { offers = parseOffers(data.offersJson); } catch { /* Preserve read/general editing for unsupported legacy offer shapes. */ }
+  return { ...data, contact: contact(data.contactJson), offers };
 }
 function checkedPreview(data, expectedId, expectedRows) {
   const statuses = ['idle', 'prepared', 'running', 'completed', 'partial', 'uncertain', 'conflict', 'failed', 'expired', 'cancelled'];
@@ -40,11 +45,14 @@ function checkedPreview(data, expectedId, expectedRows) {
     let before, after;
     try { before = JSON.parse(row.beforeJson); after = JSON.parse(row.afterJson); } catch { fail(); }
     if (!object(before) || !object(after) || !exact(before, Object.keys(after))
-        || Object.keys(after).some(key => !['name', 'status', 'contactInformation', 'metadataVersions'].includes(key))) fail();
+        || Object.keys(after).some(key => !['name', 'status', 'contactInformation', 'metadataVersions', 'publicServices', 'processMessages'].includes(key))) fail();
     for (const [key, value] of Object.entries(after)) {
       if (key === 'name' && (!text(value, 256) || !value.trim() || !text(before.name, 512, true))) fail();
       if (key === 'status' && (!['active', 'inactive'].includes(value) || !text(before.status, 64, true))) fail();
       if (key === 'metadataVersions' && (!list(value) || !value.length || value.length > 16 || before.metadataVersions !== null && !list(before.metadataVersions))) fail();
+      if (key === 'publicServices' || key === 'processMessages') {
+        if (!validOffers({publicServices: key === 'publicServices' ? value : [], processMessages: key === 'processMessages' ? value : []})) fail();
+      }
       if (key === 'contactInformation') {
         contact(JSON.stringify(value));
         if (before.contactInformation !== null) contact(JSON.stringify(before.contactInformation));
@@ -57,7 +65,7 @@ function checkedPreview(data, expectedId, expectedRows) {
 }
 export async function prepareDestinationUpdate(invoke, session, destinationIds, changes) {
   if (session?.apiVersion !== 'v3' || !Array.isArray(destinationIds) || !destinationIds.length || destinationIds.length > 10 || !object(changes)
-      || !Object.keys(changes).length || Object.keys(changes).some(key => !['name', 'status', 'contactInformation', 'metadataVersions'].includes(key))) throw new Error('invalid_input');
+      || !Object.keys(changes).length || Object.keys(changes).some(key => !['name', 'status', 'contactInformation', 'metadataVersions', 'publicServices', 'processMessages'].includes(key))) throw new Error('invalid_input');
   const ids = destinationIds.map(id);
   if (new Set(ids).size !== ids.length || Object.hasOwn(changes, 'name') && (!text(changes.name, 256) || !changes.name.trim())
       || Object.hasOwn(changes, 'status') && !['active', 'inactive'].includes(changes.status)
@@ -66,6 +74,8 @@ export async function prepareDestinationUpdate(invoke, session, destinationIds, 
         || changes.metadataVersions.some(value => !/^[123]\.\d{1,3}\.\d{1,3}$/.test(value)))
       || Object.hasOwn(changes, 'contactInformation') && (!object(changes.contactInformation) || !Object.keys(changes.contactInformation).length
         || Object.entries(changes.contactInformation).some(([key, value]) => !contactFields.includes(key) || !text(value, key === 'address' ? 2048 : 256, true, key === 'address')))) throw new Error('invalid_input');
+  if ((Object.hasOwn(changes, 'publicServices') || Object.hasOwn(changes, 'processMessages'))
+      && !validOffers({publicServices:changes.publicServices ?? [],processMessages:changes.processMessages ?? []})) throw new Error('invalid_input');
   const destinationDocument = JSON.stringify({ destinationIds: ids, changes });
   if (new TextEncoder().encode(destinationDocument).length > 24 * 1024) throw new Error('invalid_input');
   const result = checkedPreview(await requestResource(invoke, session, 'prepare_destination_update', { destinationDocument }), null, ids);

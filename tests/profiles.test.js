@@ -6,7 +6,7 @@ const profile = { profileId:id(1), name:'Bauamt TEST', apiVersion:'v3', role:'on
 test('profile list accepts public metadata only and rejects unexpected secrets and duplicate handles', async () => {
   const profiles = await listProfiles(async () => [profile]);
   assert.ok(Object.isFrozen(profiles)); assert.ok(Object.isFrozen(profiles[0]));
-  for (const bad of [[profile,profile],[{...profile,secret:'synthetic-marker'}],[{...profile,profileId:'../elsewhere'}],[{...profile,keyCount:49}]])
+  for (const bad of [[profile,profile],[{...profile,secret:'synthetic-marker'}],[{...profile,profileId:'../elsewhere'}],[{...profile,keyCount:177}]])
     await assert.rejects(listProfiles(async () => bad), /engine_protocol_error/);
   const unavailable = {...profile,apiVersion:null,role:null,keyCount:0,available:false};
   assert.equal((await listProfiles(async()=>[unavailable]))[0].available,false);

@@ -10,7 +10,7 @@ export async function listProfiles(invoke) {
   return Object.freeze(value.map(item => {
     if (!exact(item, ['profileId', 'name', 'apiVersion', 'role', 'keyCount', 'available']) || !uuid(item.profileId) || seen.has(item.profileId)
         || typeof item.name !== 'string' || !item.name.trim() || new TextEncoder().encode(item.name).length > 120 || /[\x00-\x1f\x7f]/.test(item.name)
-        || !Number.isSafeInteger(item.keyCount) || item.keyCount < 0 || item.keyCount > 48 || typeof item.available !== 'boolean'
+        || !Number.isSafeInteger(item.keyCount) || item.keyCount < 0 || item.keyCount > 176 || typeof item.available !== 'boolean'
         || (item.available ? !['v2', 'v3'].includes(item.apiVersion) || !['online-service', 'administrative-system'].includes(item.role)
           : item.apiVersion !== null || item.role !== null || item.keyCount !== 0)) fail();
     seen.add(item.profileId); return Object.freeze({ ...item });

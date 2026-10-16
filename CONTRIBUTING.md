@@ -29,3 +29,9 @@ Unter Windows kann `engine/mvnw.cmd` verwendet werden. Einige Java-Tests starten
 - Änderungen und Prüfergebnisse im Pull Request verständlich beschreiben. Bekannte Einschränkungen und noch ausstehende Live-Prüfungen ausdrücklich nennen.
 
 Neue Schreibaktionen brauchen eine native Vorschau-/Bestätigungsgrenze und Tests für Abbruch, falschen Kontext und einen ungewissen Übertragungsausgang. Neue Renderer-Befehle müssen in Rust, Java und den Tauri-Berechtigungen zusammenpassen. Private Archivbefehle dürfen niemals zu Renderer-Befehlen werden.
+
+## Projektregeln und Lizenz
+
+Die vorhandenen SDKs übernehmen Kryptografie und FIT-Connect-Protokollverarbeitung. API v2 und v3 werden ausdrücklich getrennt geprüft. Produktionsumgebungen, eingebettete Zugangsdaten und automatische Annahme/Ablehnung gehören nicht in dieses Projekt. Farben, Schriften, Bedienelemente und Statusdarstellung kommen aus `frontend/src/site.css`; zusätzliche Styles beschreiben vor allem das Layout.
+
+Mit einem Beitrag bestätigst du die Berechtigung, ihn unter der EUPL-1.2 dieses Projekts einzureichen. Bestehende Urheberrechts- und Lizenzhinweise bleiben erhalten. Sicherheitsprobleme bitte privat gemäß [SECURITY.md](SECURITY.md) melden. Größere Beiträge externer Mitwirkender sollten vorab in einem Issue abgestimmt werden.

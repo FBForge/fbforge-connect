@@ -12,6 +12,7 @@ import java.util.concurrent.*;
 /** Separate fixed TEST sender and receipt profiles. Host gates bind calls to one approved attempt. */
 final class SendHttpTransport implements AutoCloseable {
     private static final String UUID = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
+    private enum ResponseKind { JSON, EMPTY, SIGNED_TOKEN, OPTIONAL_JSON }
     private HttpClient http;
     SendHttpTransport() {}
     SendHttpTransport(HttpClient http) { this.http = Objects.requireNonNull(http); }
@@ -65,11 +66,11 @@ final class SendHttpTransport implements AutoCloseable {
                     || name.equals("content-type") && !value.equalsIgnoreCase("application/jose")) throw new SessionException("endpoint_blocked");
         }
         if (!names.containsAll(Set.of("authorization", "content-type"))) throw new SessionException("endpoint_blocked");
-        return exchange(uri, method, headers, body, true);
+        return exchange(uri, method, headers, body, ResponseKind.EMPTY);
     }
 
     ResourceExchange.Response request(ApiVersion version, String method, String endpoint, Map<String,String> headers, String body) {
-        return exchange(allowed(version, method, endpoint), method, headers, body, false);
+        return exchange(allowed(version, method, endpoint), method, headers, body, ResponseKind.JSON);
     }
     static URI allowedReply(ApiVersion version, String method, String endpoint) {
         try {
@@ -92,7 +93,7 @@ final class SendHttpTransport implements AutoCloseable {
         } catch (Exception failure) { throw new SessionException("endpoint_blocked"); }
     }
     ResourceExchange.Response requestReply(ApiVersion version, String method, String endpoint, Map<String,String> headers, String body) {
-        return exchange(allowedReply(version, method, endpoint), method, headers, body, false);
+        return exchange(allowedReply(version, method, endpoint), method, headers, body, ResponseKind.JSON);
     }
     static URI allowedDestination(ApiVersion version, String method, String endpoint) {
         try {
@@ -105,7 +106,7 @@ final class SendHttpTransport implements AutoCloseable {
         } catch (Exception failure) { throw new SessionException("endpoint_blocked"); }
     }
     ResourceExchange.Response requestDestination(ApiVersion version, String method, String endpoint, Map<String,String> headers, String body) {
-        return exchange(allowedDestination(version, method, endpoint), method, headers, body, false);
+        return exchange(allowedDestination(version, method, endpoint), method, headers, body, ResponseKind.JSON);
     }
 
     static URI allowedReplyReceipt(ApiVersion api, String method, String endpoint) {
@@ -119,18 +120,36 @@ final class SendHttpTransport implements AutoCloseable {
     }
     ResourceExchange.Response requestReplyReceipt(ApiVersion api, String method, String endpoint, Map<String,String> headers, String body) {
         StrictJson.object(body, 65536);
-        return exchange(allowedReplyReceipt(api, method, endpoint), method, headers, body, false, true);
+        return exchange(allowedReplyReceipt(api, method, endpoint), method, headers, body, ResponseKind.SIGNED_TOKEN);
     }
-    private ResourceExchange.Response exchange(URI uri, String method, Map<String,String> headers, String body, boolean receipt) {
-        return exchange(uri, method, headers, body, receipt, false);
+    static URI allowedDestinationLifecycle(ApiVersion api, String method, String endpoint) {
+        try {
+            var uri = URI.create(endpoint);
+            if (api != ApiVersion.V3 || !"https".equals(uri.getScheme()) || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || uri.getRawQuery() != null || uri.getRawFragment() != null) throw new IllegalArgumentException();
+            String root = "/destination-api/v3/destinations", path = uri.getRawPath();
+            boolean allowed = switch (method) {
+                case "POST" -> path.equals(root) || path.matches(root + "/" + UUID + "/keys");
+                case "PATCH", "DELETE" -> path.matches(root + "/" + UUID);
+                default -> false;
+            };
+            if (!allowed) throw new IllegalArgumentException();
+            return uri;
+        } catch (Exception failure) { throw new SessionException("endpoint_blocked"); }
     }
-    private ResourceExchange.Response exchange(URI uri, String method, Map<String,String> headers, String body, boolean receipt, boolean token) {
+    ResourceExchange.Response requestDestinationLifecycle(ApiVersion api, String method, String endpoint, Map<String,String> headers, String body) {
+        var uri = allowedDestinationLifecycle(api, method, endpoint);
+        return exchange(uri, method, headers, body, method.equals("DELETE") ? ResponseKind.EMPTY
+                : uri.getRawPath().endsWith("/keys") ? ResponseKind.OPTIONAL_JSON : ResponseKind.JSON);
+    }
+    private ResourceExchange.Response exchange(URI uri, String method, Map<String,String> headers, String body, ResponseKind format) {
         Integer receivedStatus = null;
         try {
             if (headers == null || headers.size() > 8) throw new SessionException("endpoint_blocked");
             byte[] bytes = body == null ? null : body.getBytes(StandardCharsets.UTF_8);
             int maximum = "POST".equals(method) ? 65536 : 46 * 1024 * 1024;
-            if (("GET".equals(method) && bytes != null) || (!"GET".equals(method) && bytes == null)
+            boolean bodyless = "GET".equals(method) || "DELETE".equals(method);
+            if ((bodyless && bytes != null) || (!bodyless && bytes == null)
                     || (bytes != null && bytes.length > maximum)) throw new SessionException("invalid_submission");
             var request = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(60));
             for (var entry : headers.entrySet()) {
@@ -152,14 +171,14 @@ final class SendHttpTransport implements AutoCloseable {
                                 : status == 404 ? "resource_missing" : "resource_unavailable";
                         throw new SessionException(code, status, problemType(stream));
                     }
-                    byte[] result = stream.readNBytes(receipt ? 1 : token ? 65537 : 1024 * 1024 + 1);
-                    if (result.length > (token ? 65536 : 1024 * 1024)) throw new SessionException("invalid_resource");
+                    byte[] result = stream.readNBytes(format == ResponseKind.EMPTY ? 1 : format == ResponseKind.SIGNED_TOKEN ? 65537 : 1024 * 1024 + 1);
+                    if (result.length > (format == ResponseKind.SIGNED_TOKEN ? 65536 : 1024 * 1024)) throw new SessionException("invalid_resource");
                     String text = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(result)).toString();
-                    if (receipt || status == 204) {
+                    if (format == ResponseKind.EMPTY || status == 204) {
                         if (result.length != 0) throw new SessionException("invalid_resource");
-                    } else if (token) {
+                    } else if (format == ResponseKind.SIGNED_TOKEN) {
                         if (!text.matches("[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+")) throw new SessionException("invalid_resource");
-                    } else StrictJson.object(text, 1024 * 1024);
+                    } else if (format != ResponseKind.OPTIONAL_JSON || !text.isEmpty()) StrictJson.object(text, 1024 * 1024);
                     return new ResourceExchange.Response(status, text);
                 } finally { timeout.cancel(false); }
             }

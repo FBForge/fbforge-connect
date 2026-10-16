@@ -34,17 +34,19 @@ final class DestinationAccess {
         return new Page(List.copyOf(result), offset, total);
     }
 
-    Context load(AuthenticatedSession session, String destinationId) {
+    Context load(AuthenticatedSession session, String destinationId) { return load(session, destinationId, false); }
+    Context loadOwned(AuthenticatedSession session, String destinationId) { return load(session, destinationId, true); }
+    private Context load(AuthenticatedSession session, String destinationId, boolean owned) {
         String id = id(destinationId);
         registrations.remove(id); // Failed refresh cannot leave an apparently current registration snapshot.
-        var detail = StrictJson.object(session.destination(id), 24 * 1024);
+        var detail = StrictJson.object(owned ? session.ownDestination(id) : session.destination(id), 24 * 1024);
         if (!id.equals(id(text(detail, "destinationId", 36, false)))) throw new SessionException("invalid_resource");
         var summaries = new ArrayList<Eligibility>();
         var eligible = new HashMap<String, List<String>>();
         var seen = new HashSet<String>();
         int offset = 0, bytes = 0, expectedTotal = -1;
         while (true) {
-            var page = StrictJson.object(session.destinationKeys(id, offset, 50), 1024 * 1024);
+            var page = StrictJson.object(owned ? session.ownDestinationKeys(id, offset, 50) : session.destinationKeys(id, offset, 50), 1024 * 1024);
             var keys = array(page, "keys");
             int total = integer(page, "totalCount", 128);
             if (expectedTotal < 0) expectedTotal = total;

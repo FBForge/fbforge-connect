@@ -21,6 +21,7 @@ export function errorMessage(code) {
     engine_busy: 'Es läuft bereits eine lokale Aktion.',
     engine_disconnected: 'Die Verbindung zum lokalen Java-Kern wurde beendet.',
     engine_protocol_error: 'Die Antwort des lokalen Java-Kerns ist ungültig.',
+    vault_profile_required: 'Bitte zuerst mit einem gespeicherten Windows-Profil verbinden. Die automatisch erzeugten privaten Schlüssel müssen vor der Registrierung gesichert sein.',
     vault_unavailable: 'Der geschützte Windows-Speicher ist nicht verfügbar. Bitte das Benutzerkonto und den freien Speicherplatz prüfen.',
     vault_pending: 'Der bisherige Schlüsselbestand konnte noch nicht gesichert werden. Bitte im bestehenden Profil erneut sichern, bevor du die Verbindung wechselst.',
     vault_conflict: 'Unter dieser Kennung ist bereits ein Profil gespeichert. Bitte einen neuen Profileintrag anlegen.',
@@ -41,7 +42,7 @@ export function errorMessage(code) {
 
 // Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
 const reportableCodes = new Set([
-  'vault_unavailable', 'vault_pending', 'vault_invalid', 'vault_unsupported', 'vault_conflict', 'vault_limit', 'vault_restore_failed',
+  'vault_profile_required', 'vault_unavailable', 'vault_pending', 'vault_invalid', 'vault_unsupported', 'vault_conflict', 'vault_limit', 'vault_restore_failed',
   'destination_conflict', 'destination_update_locked', 'desktop_required', 'engine_not_staged', 'engine_start_failed', 'adapter_unavailable', 'engine_timeout',
   'engine_busy', 'engine_disconnected', 'engine_protocol_error', 'invalid_credentials', 'authentication_failed',
   'auth_unavailable', 'endpoint_blocked', 'session_missing', 'invalid_resource', 'resource_denied',
@@ -53,4 +54,11 @@ const reportableCodes = new Set([
 export function diagnosticCode(cause) {
   const code = typeof cause === 'string' ? cause : cause?.message;
   return typeof code === 'string' && reportableCodes.has(code) ? code : 'unknown_error';
+}
+
+/** Preserve fatal transport failures so callers retire native session handles after an uncertain write. */
+export function uncertainOperationError(cause) {
+  const code = typeof cause === 'string' ? cause : cause?.message;
+  return ['engine_timeout', 'engine_disconnected', 'engine_protocol_error', 'engine_start_failed', 'engine_not_staged'].includes(code)
+    ? code : 'resource_unavailable';
 }

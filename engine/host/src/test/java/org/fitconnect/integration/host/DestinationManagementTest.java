@@ -33,7 +33,7 @@ class DestinationManagementTest {
             String id = url.substring(url.lastIndexOf('/')+1); calls.add("PATCH " + id); patches.add(body);
             if (patches.size() == denyAt) return new Response(deniedStatus,"{}");
             var patch = JsonParser.parseString(body).getAsJsonObject();
-            assertTrue(Set.of("name","contactInformation","metadataVersions","status").containsAll(patch.keySet()));
+            assertTrue(Set.of("name","contactInformation","metadataVersions","status","publicServices","processMessages").containsAll(patch.keySet()));
             patch.entrySet().forEach(entry -> documents.get(id).add(entry.getKey(), entry.getValue()));
             if (patches.size() == uncertainAt) throw new SessionException("resource_unavailable");
             var response = documents.get(id).deepCopy(); response.addProperty("futureReadOnlyField", "retained by server");
@@ -118,6 +118,24 @@ class DestinationManagementTest {
             var result = manager.execute(session,preview.attemptId()); assertEquals("partial",result.status());
             assertEquals("failed",result.changes().getFirst().status()); assertEquals("destination_conflict",result.changes().getFirst().error());
             assertEquals(1,remote.patches.size());
+        }
+    }
+    @Test void offersAreReplacedOnlyWhenExplicitlySelectedAndSdkCanonicalizationPreservesReplyChannels() throws Exception {
+        var remote = new Remote(); var manager = new DestinationManagement(ApiVersion.V3,remote);
+        String offers = "{\"publicServices\":[{\"identifier\":\"urn:de:fim:leika:leistung:99008001014002\",\"regions\":[\"DE\"],\"submissionSchemas\":[{\"schemaUri\":\"urn:test:application\",\"mimeType\":\"application/json\"}],\"replyChannels\":{\"fitConnect\":{\"processStandards\":[\"urn:test:reply\"]}}}],\"processMessages\":[{\"processModelId\":\"model-1\",\"messageId\":\"message-1\",\"regions\":[\"DE\"],\"schemas\":[{\"schemaUri\":\"urn:test:process\",\"mimeType\":\"application/xml\"}]}]}";
+        try (var registry = registry(); var session = session(registry,ApiVersion.V3,remote)) {
+            var preview = manager.prepare(session,request(offers,A)); assertTrue(remote.patches.isEmpty());
+            assertEquals("completed",manager.execute(session,preview.attemptId()).status());
+            var detail=manager.load(session,A);assertTrue(detail.offersJson().contains("urn:test:reply"));
+            assertTrue(remote.documents.get(A).has("callback"));assertEquals("keep-key",remote.documents.get(A).get("encryptionKid").getAsString());
+            assertThrows(SessionException.class,()->manager.prepare(session,request("{\"publicServices\":[],\"processMessages\":[]}",A)));
+        }
+    }
+    @Test void requestTimeoutDoesNotClaimDefiniteRejectionOrContinueBulkWrites() throws Exception {
+        var remote=new Remote();remote.denyAt=1;remote.deniedStatus=408;var manager=new DestinationManagement(ApiVersion.V3,remote);
+        try(var registry=registry();var session=session(registry,ApiVersion.V3,remote)) {
+            var preview=manager.prepare(session,request("{\"name\":\"Changed\"}",A,B));
+            assertEquals("uncertain",manager.execute(session,preview.attemptId()).status());assertEquals(1,remote.patches.size());
         }
     }
     @Test void v2CanReadOwnedDetailsButCannotDispatchV3Writes() throws Exception {

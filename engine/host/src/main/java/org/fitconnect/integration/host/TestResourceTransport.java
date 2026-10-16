@@ -46,6 +46,14 @@ final class TestResourceTransport implements AutoCloseable {
         };
     }
 
+    ResourceExchange forDestinationLifecycle(ApiVersion version) {
+        return new ResourceExchange() {
+            public String get(String endpoint, Map<String,String> headers) { throw new SessionException("endpoint_blocked"); }
+            public Response request(String method, String endpoint, Map<String,String> headers, String body) {
+                return sender.requestDestinationLifecycle(version, method, endpoint, headers, body);
+            }
+        };
+    }
     ResourceExchange forDestinationManagement(ApiVersion version) {
         return new ResourceExchange() {
             public String get(String endpoint, Map<String,String> headers) { throw new SessionException("endpoint_blocked"); }

@@ -59,7 +59,10 @@ async function loadChannels() {
   let status = 'Erfolgreich';
   try {
     const result = await listReplyChannels(invoke, active);
-    if (stamp === generation) channels.value = result;
+    if (stamp === generation) {
+      channels.value = result;
+      for (const item of result) if (item.status === 'bound') caseWorkspace?.remember(active, item);
+    }
     else status = 'Abgebrochen';
   } catch (cause) {
     status = 'Fehlgeschlagen';
@@ -106,6 +109,7 @@ async function loadChannels() {
         <strong>{{ ({ bound: 'Dem Vorgang zugeordnet', unresolved: 'Versandausgang ungeklärt', pending: 'Versand läuft' })[item.status] }}</strong>
         <p>Empfänger: <code>{{ item.destinationId }}</code></p>
         <p v-if="item.caseId">Vorgang: <code>{{ item.caseId }}</code><br>Einreichung: <code>{{ item.submissionId }}</code></p>
+        <button v-if="item.caseId" type="button" class="button secondary" :disabled="disabled" @click="emit('event-log', { apiVersion: session.apiVersion, sessionId: session.sessionId, caseId: item.caseId })">Gesamten Vorgang prüfen</button>
         <p v-else>Versuch: <code>{{ item.attemptId }}</code>. Noch keine bestätigte Vorgangszuordnung.</p>
       </div></li></ul>
     </section>

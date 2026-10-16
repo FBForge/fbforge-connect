@@ -1,4 +1,5 @@
 import { requestResource } from './resources.js';
+import { uncertainOperationError } from './diagnostics.js';
 
 const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
 const exact = (value, fields) => value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -56,7 +57,7 @@ export async function executeReplyReceipt(invoke, session, attempt) {
     return result;
   } catch (cause) {
     if ((typeof cause === 'string' ? cause : cause?.message) === 'engine_busy') throw cause;
-    return Object.freeze({ ...expected, status: 'uncertain', error: 'resource_unavailable' });
+    return Object.freeze({ ...expected, status: 'uncertain', error: uncertainOperationError(cause) });
   }
 }
 export async function cancelReplyReceipt(invoke, session, attemptId) {
