@@ -7,7 +7,7 @@ import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 
 const props = defineProps({ session: Object, busy: Boolean, keyRevision: Number, receiveRevision: Number });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'receive-start']);
+const emit = defineEmits(['busy', 'activity', 'fatal', 'receive-start', 'event-log']);
 const detail = ref(null), replyId = ref(''), caseId = ref('');
 const page = ref(null), channels = ref(null), error = ref(''), pending = ref(false), heading = ref(null), selectedHeading = ref(null);
 const disabled = computed(() => props.busy || pending.value || !props.session);
@@ -107,6 +107,7 @@ async function loadChannels() {
     </section>
   </section>
   <section v-if="detail" class="tool-section" aria-labelledby="reply-current-title"><h2 id="reply-current-title" ref="selectedHeading" tabindex="-1">Ausgewählte Antwort</h2>
+    <button class="button secondary" type="button" :disabled="disabled" @click="emit('event-log', {apiVersion:session.apiVersion,sessionId:session.sessionId,caseId:detail.caseId,replyId:detail.replyId})">Event Log der Antwort prüfen</button>
     <dl class="send-summary"><div><dt>Reply-ID</dt><dd><code>{{ detail.replyId }}</code></dd></div><div><dt>Vorgangs-ID</dt><dd><code>{{ detail.caseId }}</code></dd></div></dl>
   </section>
   <ReceivePanel :session="session" :detail="detail" reply :busy="busy || pending" :key-revision="keyRevision" :receive-revision="receiveRevision"

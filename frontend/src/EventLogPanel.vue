@@ -1,7 +1,7 @@
 <script setup>
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
-import { loadEventLog, listEventLog, readEventDocument, discardEventLog } from './event-log.js';
+import { loadEventLog, loadReplyEventLog, listEventLog, readEventDocument, discardEventLog } from './event-log.js';
 import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import ContentPreview from './ContentPreview.vue';
@@ -9,6 +9,7 @@ import ContentPreview from './ContentPreview.vue';
 const props = defineProps({ session: Object, busy: Boolean, target: Object, visible: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal']);
 const diagnostic = ref('');
+const mode = ref('submission'), replyId = ref('');
 const destination = ref(''), caseId = ref(''), submission = ref('');
 const result = shallowRef(null), events = shallowRef([]), preview = shallowRef(null);
 const pending = ref(false), error = ref(''), query = ref(''), page = ref(0), heading = ref(null);
@@ -34,7 +35,7 @@ function name(event) {
   return ({ 'create-submission': 'Einreichung angelegt', 'submit-submission': 'Einreichung übermittelt',
     'accept-submission': 'Einreichung angenommen', 'reject-submission': 'Einreichung abgelehnt',
     'polling-notify-submission': 'Zur Abholung bereitgestellt', 'notify-submission': 'Empfänger benachrichtigt',
-    'delete-submission': 'Einreichung gelöscht' })[type] || type;
+    'delete-submission': 'Einreichung gelöscht', 'create-reply': 'Antwort angelegt', 'submit-reply': 'Antwort übermittelt', 'notify-reply': 'Antwort zur Abholung bereit', 'accept-reply': 'Antwort angenommen', 'reject-reply': 'Antwort abgelehnt', 'delete-reply': 'Antwort gelöscht' })[type] || type;
 }
 const time = value => new Date(value).toLocaleString('de-DE');
 async function changePage(value) { page.value = value; await nextTick(); heading.value?.focus(); }
@@ -49,12 +50,13 @@ function reset() {
   return previous && active ? release(active, previous.logId) : Promise.resolve();
 }
 watch(context, () => { error.value = ''; diagnostic.value = ''; void reset(); }, { flush: 'sync' });
-watch([destination, caseId, submission], () => { error.value = ''; diagnostic.value = ''; void reset(); }, { flush: 'sync' });
+watch([mode, destination, caseId, submission, replyId], () => { error.value = ''; diagnostic.value = ''; void reset(); }, { flush: 'sync' });
 watch(query, () => { page.value = 0; });
 watch(() => props.visible, visible => { if (!visible) void reset(); });
 watch(() => props.target, async target => {
   if (!target) return;
-  destination.value = target.destinationId; caseId.value = target.caseId; submission.value = target.submissionId;
+  mode.value = target.replyId ? 'reply' : 'submission'; replyId.value = target.replyId || '';
+  destination.value = target.destinationId || ''; caseId.value = target.caseId; submission.value = target.submissionId || '';
   await nextTick();
   if (props.visible && target.apiVersion === props.session?.apiVersion && !disabled.value) void load();
 }, { immediate: true });
@@ -81,12 +83,13 @@ async function run(action, operation) {
 }
 function load() {
   if (disabled.value) return;
+  const reply = mode.value === 'reply', replyValue = replyId.value.trim().toLowerCase();
   const cleanup = reset(), ids = [destination.value.trim().toLowerCase(), caseId.value.trim().toLowerCase(), submission.value.trim().toLowerCase()];
   return run('Event Log prüfen', async (active, current) => {
     await cleanup;
     let loaded;
     try {
-      loaded = await loadEventLog(invoke, active, ...ids);
+      loaded = reply ? await loadReplyEventLog(invoke, active, ids[1], replyValue) : await loadEventLog(invoke, active, ...ids);
       const rows = [], seen = new Set(); let bytes = 0;
       for (let offset = 0; offset < loaded.total; offset += 5) {
         if (!current()) return;
@@ -124,15 +127,17 @@ async function closePreview() {
 <template>
   <section class="tool-section" aria-labelledby="event-log-title">
     <h2 id="event-log-title">Event Log prüfen</h2>
-    <p>Übermittlungsereignisse einer Einreichung aus TEST laden und mit dem gewählten SDK verifizieren. Funktioniert ohne private Schlüssel und unabhängig von der Verfügbarkeit der Inhalte.</p>
+    <p>Übermittlungsereignisse einer Einreichung oder Antwort aus TEST laden und mit dem gewählten SDK verifizieren. Funktioniert ohne private Schlüssel und unabhängig von der Verfügbarkeit der Inhalte.</p>
     <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
     <form @submit.prevent="load">
       <div class="client-fields">
-        <label for="event-destination">Zustellpunkt-ID<input id="event-destination" v-model="destination" type="text" maxlength="36" required :disabled="disabled"></label>
+        <label for="event-kind">Ereignisse für<select id="event-kind" v-model="mode" :disabled="disabled"><option value="submission">Einreichung</option><option value="reply">Antwort (Reply)</option></select></label>
+        <label v-if="mode === 'submission'" for="event-destination">Zustellpunkt-ID<input id="event-destination" v-model="destination" type="text" maxlength="36" required :disabled="disabled"></label>
         <label for="event-case">Vorgangs-ID<input id="event-case" v-model="caseId" type="text" maxlength="36" required :disabled="disabled"></label>
-        <label for="event-submission">Einreichungs-ID<input id="event-submission" v-model="submission" type="text" maxlength="36" required :disabled="disabled"></label>
+        <label v-if="mode === 'submission'" for="event-submission">Einreichungs-ID<input id="event-submission" v-model="submission" type="text" maxlength="36" required :disabled="disabled"></label>
+      <label v-else for="event-reply">Reply-ID<input id="event-reply" v-model="replyId" type="text" maxlength="36" required :disabled="disabled"></label>
       </div>
-      <div class="client-actions"><button class="button" type="submit" :disabled="disabled || !destination.trim() || !caseId.trim() || !submission.trim()">{{ result ? 'Erneut prüfen' : 'Event Log prüfen' }}</button>
+      <div class="client-actions"><button class="button" type="submit" :disabled="disabled || !caseId.trim() || (mode === 'reply' ? !replyId.trim() : !destination.trim() || !submission.trim())">{{ result ? 'Erneut prüfen' : 'Event Log prüfen' }}</button>
         <button v-if="result" class="button secondary" type="button" :disabled="disabled" @click="reset">Ergebnis verwerfen</button></div>
     </form>
     <p v-if="pending" role="status">Event Log wird verarbeitet …</p>
@@ -140,7 +145,7 @@ async function closePreview() {
     <p v-if="error && diagnostic" class="small-note">Diagnose: {{ session?.apiVersion }} · <code>{{ diagnostic }}</code>. Diesen Code kannst du im Fehlerbericht angeben.</p>
     <template v-if="result">
       <div class="tool-section-heading"><h3 ref="heading" tabindex="-1">{{ result.total }} geprüfte Ereignisse</h3><span class="status-badge ok">Event Log verifiziert</span></div>
-      <p class="small-note">Signaturen, Ereignisschema und Zuordnung zu Vorgang und Einreichung geprüft. Inhalts-Authentifizierungstags wurden nicht abgeglichen. Die Zustellpunkt-ID dient als Suchkontext.</p>
+      <p class="small-note">Signaturen, Ereignisschema und Zuordnung zu Vorgang und {{ result.replyId ? 'Antwort' : 'Einreichung' }} geprüft. Inhalts-Authentifizierungstags wurden nicht abgeglichen.</p>
       <label for="event-search" class="event-log-search">Ereignisse durchsuchen<input id="event-search" v-model="query" type="search" placeholder="Ereignis, ID, Aussteller oder Zeitpunkt" :disabled="pending"></label>
       <p aria-live="polite">{{ filtered.length }} von {{ result.total }} Ereignissen</p>
       <ol class="event-log-list" :start="page * 20 + 1">

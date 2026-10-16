@@ -65,6 +65,12 @@ public final class V2Adapter implements SdkAdapter {
             requireOpen(); page(offset, limit);
             return http.json(destinations.listDestinations(offset, limit));
         }
+        @Override public String publicSchema(String uri, Map<String,String> local, boolean allowExternal) {
+            requireOpen(); return new SchemaValidation(local, allowExternal).examplePackage(uri);
+        }
+        @Override public boolean validateDraft(SchemaSnapshot snapshot, String mimeType, byte[] data) {
+            requireOpen(); return new SchemaValidation(Map.of(), false).draft(snapshot, mimeType, data);
+        }
         @Override public String publicSchema(String uri) { requireOpen(); return new SchemaValidation(Map.of(), true).examplePackage(uri); }
         public String destination(String id) {
             requireOpen(); return http.json(submissions.getDestination(destinationId(id)));
@@ -148,6 +154,9 @@ public final class V2Adapter implements SdkAdapter {
         public VerifiedEventLog eventLog(UUID destinationId, UUID caseId, UUID submissionId, EventLogSource source, java.nio.file.Path workspace) {
             requireOpen();
             return EventLogs.read(current, destinationId, caseId, submissionId, source, workspace);
+        }
+        public VerifiedEventLog replyEventLog(UUID caseId, UUID replyId, EventLogSource source, java.nio.file.Path workspace) {
+            requireOpen(); return EventLogs.reply(current, caseId, replyId, source, workspace);
         }
         public void discardKeys() { requireOpen(); keys.clear(); receiver = null; }
         public ReceivedContent receive(String destination, String submission, ResourceExchange read, java.nio.file.Path workspace,

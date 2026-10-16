@@ -9,6 +9,7 @@ import java.util.function.LongSupplier;
 /** Bounded SDK event reads independent of content availability. Does not grant receive or write authority. */
 final class EventLogAccess implements EventLogSource, AutoCloseable {
     private final ApiVersion api;
+    private boolean reply;
     private final String casePath, submissionPath, submissionId;
     private final ResourceExchange remote;
     private final LongSupplier clock;
@@ -22,22 +23,28 @@ final class EventLogAccess implements EventLogSource, AutoCloseable {
     EventLogAccess(ApiVersion api, String caseId, String submissionId, ResourceExchange remote) {
         this(api, caseId, submissionId, remote, () -> System.nanoTime() / 1_000_000);
     }
+    EventLogAccess(ApiVersion api, String caseId, String replyId, ResourceExchange remote, boolean reply) {
+        this(api, caseId, replyId, remote, () -> System.nanoTime() / 1_000_000, reply);
+    }
     EventLogAccess(ApiVersion api, String caseId, String submissionId, ResourceExchange remote, LongSupplier clock) {
+        this(api, caseId, submissionId, remote, clock, false);
+    }
+    private EventLogAccess(ApiVersion api, String caseId, String submissionId, ResourceExchange remote, LongSupplier clock, boolean reply) {
         this.api = Objects.requireNonNull(api); this.remote = Objects.requireNonNull(remote); this.clock = Objects.requireNonNull(clock);
-        this.submissionId = DestinationAccess.id(submissionId);
+        this.reply = reply; this.submissionId = DestinationAccess.id(submissionId);
         String prefix = "/submission-api/" + api.wireValue();
         casePath = prefix + "/cases/" + DestinationAccess.id(caseId) + "/events";
-        submissionPath = prefix + "/submissions/" + DestinationAccess.id(submissionId) + "/events";
+        submissionPath = prefix + (reply ? "/replies/" : "/submissions/") + DestinationAccess.id(submissionId) + "/events";
         deadline = clock.getAsLong() + 150000;
     }
     @Override public String get(String endpoint, Map<String,String> headers) {
         try {
             if (closed) throw error("endpoint_blocked");
             if (clock.getAsLong() >= deadline) throw error("resource_unavailable");
-            URI uri = allowedTransport(api, endpoint);
+            URI uri = allowedTransport(api, endpoint, reply);
             boolean trust = trust(uri);
             if (uri.getRawQuery() != null) for (String pair : uri.getRawQuery().split("&")) {
-                if (pair.startsWith("submissionId=") && !pair.equals("submissionId=" + submissionId)) throw error("endpoint_blocked");
+                if (pair.startsWith(reply ? "replyId=" : "submissionId=") && !pair.equals((reply ? "replyId=" : "submissionId=") + submissionId)) throw error("endpoint_blocked");
             }
             if (!trust && !Set.of(casePath, submissionPath).contains(uri.getRawPath())) throw error("endpoint_blocked");
             var safe = ReceiveAccess.safeHeaders(headers, trust);
@@ -94,7 +101,10 @@ final class EventLogAccess implements EventLogSource, AutoCloseable {
         return List.copyOf(tokens);
     }
     static URI allowedTransport(ApiVersion api, String endpoint) {
-        URI uri = ReceiveAccess.allowedTransport(api, endpoint);
+        return allowedTransport(api, endpoint, false);
+    }
+    static URI allowedTransport(ApiVersion api, String endpoint, boolean reply) {
+        URI uri = reply ? ReceiveAccess.allowedReplyTransport(api, endpoint) : ReceiveAccess.allowedTransport(api, endpoint);
         if (!trust(uri) && !uri.getRawPath().endsWith("/events")) throw error("endpoint_blocked");
         return uri;
     }

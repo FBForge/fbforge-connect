@@ -10,6 +10,7 @@ export const operationLabels = Object.freeze({
   list_submissions: 'Einreichungen laden', load_submission: 'Einreichung öffnen', verify_submission: 'Einreichung entschlüsseln und prüfen', load_schema: 'Prüfschema laden',
   prepare_receipt: 'Empfangsaktion vorbereiten', execute_receipt: 'Empfangsaktion bestätigen', cancel_receipt: 'Empfangsaktion verwerfen', receipt_state: 'Empfangsstatus abrufen',
   load_event_log: 'Event Log prüfen', list_replies: 'Antworten laden', list_reply_channels: 'Antwortkanäle laden', load_reply: 'Antwort öffnen', verify_reply: 'Antwort entschlüsseln und prüfen',
+  reply_target: 'Geprüften Antwortkanal laden', load_reply_schema: 'Antwortschema laden', load_reply_event_log: 'Reply-Event-Log prüfen',
   prepare_reply: 'Antwort vorbereiten', execute_reply: 'Antwort bestätigen', cancel_reply: 'Antwort verwerfen', reply_state: 'Antwortstatus abrufen',
 });
 const states = new Set(['idle', 'prepared', 'executing', 'sent', 'failed', 'uncertain', 'cancelled', 'expired', 'completed', 'partial', 'conflict', 'accepted', 'rejected']);

@@ -12,6 +12,21 @@ class EventLogAccessTest {
     private static final Map<String,String> HEADERS = Map.of("Authorization", "Bearer synthetic", "Accept", "application/json");
     private static String events(ApiVersion api, String type, String id) { return ROOT + "/" + api.wireValue() + "/" + type + "/" + id + "/events?offset=0&limit=100"; }
 
+    @Test void replyLogScopeCannotReadSubmissionsOrAnotherReplyAndRetainsApiAndCaseBoundaries() {
+        for (var api : ApiVersion.values()) {
+            String root = ROOT + "/" + api.wireValue();
+            for (String endpoint : List.of(root + "/submissions/" + SUB + "/events?offset=0&limit=20",
+                    root + "/replies/" + CASE + "/events?offset=0&limit=20",
+                    root + "/cases/" + CASE + "/events?offset=0&limit=20&replyId=" + CASE))
+                try (var source = new EventLogAccess(api, CASE, SUB, (u,h) -> { fail("Foreign log must not dispatch"); return null; }, true)) {
+                    assertEquals("endpoint_blocked", assertThrows(SessionException.class, () -> source.get(endpoint, HEADERS)).code());
+                }
+            try (var source = new EventLogAccess(api, CASE, SUB, (u,h) -> "{\"offset\":0,\"count\":0,\"totalCount\":0,\"eventLog\":[]}", true)) {
+                source.get(root + "/replies/" + SUB + "/events?offset=0&limit=20", HEADERS);
+                assertTrue(source.completeEventTokens().isEmpty());
+            }
+        }
+    }
     @Test void readsOnlyTheBoundCaseAndSubmissionWithoutLoadingSubmissionContent() {
         for (var api : ApiVersion.values()) {
             var calls = new AtomicInteger();

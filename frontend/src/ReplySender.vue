@@ -2,25 +2,34 @@
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import DraftDataPreview from './DraftDataPreview.vue';
-import { loadReplyTarget, prepareReply, executeReply, cancelReply, replyState } from './reply-sending.js';
+import { loadReplyTarget, loadReplySchema, prepareReply, executeReply, cancelReply, replyState } from './reply-sending.js';
+import { generateExample } from './generate-example.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 
 const props = defineProps({ session: Object, proof: Object, busy: Boolean });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'invalidate']);
+const emit = defineEmits(['busy', 'activity', 'fatal', 'invalidate', 'event-log']);
 const target = ref(null), choice = ref(0), mime = ref('application/json'), process = ref(false), model = ref(''), message = ref('');
 const text = ref('{\n  "status": "erhalten"\n}'), file = shallowRef(null), attachments = ref([]);
 const prepared = ref(null), outcome = ref(null), outcomeOwner = ref(''), working = ref(false), error = ref('');
 const cleanupOwner = ref('');
+const schemaPackage = shallowRef(null), schemaFile = shallowRef(null), schemaNotice = ref('');
 const owner = shallowRef(null), dialog = ref(null), prepareButton = ref(null), resultHeading = ref(null);
 const context = computed(() => `${props.session?.apiVersion}/${props.session?.sessionId}/${props.proof?.proofId}`);
 const selected = computed(() => target.value?.schemas[choice.value]);
 const format = computed(() => selected.value?.mimeType || mime.value);
+const schemaContext = computed(() => JSON.stringify([context.value, selected.value?.schemaUri, format.value]));
+watch(schemaContext, () => { schemaPackage.value = null; schemaFile.value = null; schemaNotice.value = ''; }, { flush: 'sync' });
 const locked = computed(() => cleanupOwner.value === props.session?.sessionId || outcomeOwner.value === props.session?.sessionId
   && (outcome.value?.status === 'uncertain' || outcome.value?.error === 'content_cleanup_failed'));
 const disabled = computed(() => props.busy || working.value || !props.session || !props.proof || locked.value || Boolean(prepared.value));
 let revision = 0, alive = true;
 const messages = {
+  schema_required: 'Bitte das aktuelle Antwortschema laden. Die Vorbereitung benötigt eine native Schemaprüfung.',
+  data_schema_invalid: 'Der Antwortinhalt entspricht nicht dem ausgewählten Schema. Bitte Fachdaten und Pflichtfelder prüfen. Es wurde nichts versendet.',
+  schema_unavailable: 'Das Antwortschema oder eine benötigte Referenz ist nicht verfügbar. Alternativ eine lokale JSON-Schemadatei mit passender $id verwenden.',
+  schema_consent_required: 'Bitte das Laden öffentlicher Schemaquellen bestätigen oder ein lokales Schema auswählen.',
+  data_format_invalid: 'Der Antwortinhalt passt nicht zum gewählten JSON-/XML-Format.',
   reply_channel_missing: 'Die geprüfte Einreichung bietet keinen unterstützten FIT-Connect-Antwortkanal an.',
   verification_failed: 'Der geprüfte Antwortkanal ist nicht mehr verfügbar oder enthält widersprüchliche Angaben. Bitte die Einreichung erneut prüfen.',
   invalid_resource: 'Das Ergebnis passt nicht mehr zur aktuellen Einreichung. Bitte erneut prüfen.',
@@ -38,6 +47,7 @@ async function cancelKnown(value, active) {
   catch (cause) { if (alive && resetsSessions(cause)) emit('fatal', cause); }
 }
 function reset() {
+  schemaPackage.value = null; schemaFile.value = null; schemaNotice.value = '';
   revision++; const previous = prepared.value, active = owner.value;
   prepared.value = null; dialog.value?.close(); target.value = null; choice.value = 0; error.value = '';
   file.value = null; attachments.value = []; text.value = '{\n  "status": "erhalten"\n}'; process.value = false; model.value = ''; message.value = '';
@@ -76,15 +86,38 @@ async function load() {
     if (current()) { target.value = result; choice.value = 0; }
   });
 }
+async function loadSchema(example = false) {
+  if (disabled.value || !selected.value) return;
+  const external = !schemaFile.value;
+  if (external && !window.confirm('Das angebotene Antwortschema und seine Referenzen dürfen aus öffentlichen HTTPS-Quellen einschließlich XRepository geladen werden. Die Quellen sehen deine IP-Adresse. Zugangsdaten und Antwortinhalt werden nicht mitgesendet. Fortfahren?')) return;
+  schemaPackage.value = null; schemaNotice.value = '';
+  const proof = { ...props.proof }, key = schemaContext.value, local = schemaFile.value;
+  const selection = { schemaUri: selected.value.schemaUri, mimeType: format.value, allowExternalSchemas: external };
+  await run('Antwortschema laden', async (active, current) => {
+    const loaded = await loadReplySchema(invoke, active, proof, selection, local);
+    if (!current() || schemaContext.value !== key) return 'Abgebrochen';
+    schemaPackage.value = loaded;
+    schemaNotice.value = 'Schema geladen. Der Antwortinhalt wird beim Vorbereiten im nativen Kern geprüft.';
+    if (example) {
+      const draft = await generateExample(loaded.document, selection.mimeType, selection.schemaUri);
+      if (!current() || schemaContext.value !== key) return 'Abgebrochen';
+      file.value = null; text.value = draft; schemaNotice.value = 'Fiktiver Antwortentwurf erzeugt. Vor dem Versand werden die exakten Daten gegen das Antwortschema geprüft.';
+    }
+  });
+}
+function chooseSchemaFile(event) {
+  if (disabled.value) return;
+  schemaPackage.value = null; schemaNotice.value = ''; schemaFile.value = event.target.files?.[0] || null; event.target.value = '';
+}
 function addFiles(event) {
   if (disabled.value) return;
   for (const item of event.dataTransfer?.files || event.target.files || []) attachments.value.push({ id: crypto.randomUUID(), file: item, mimeType: item.type || 'application/octet-stream', description: '' });
   if (event.target.type === 'file') event.target.value = '';
 }
 async function prepare() {
-  if (disabled.value || !selected.value) return;
+  if (disabled.value || !selected.value || !schemaPackage.value) return;
   const proof = { ...props.proof }, schema = { ...selected.value };
-  const draft = { proofId: proof.proofId, schemaUri: schema.schemaUri, mimeType: format.value,
+  const draft = { proofId: proof.proofId, schemaId: schemaPackage.value.schemaId, schemaUri: schema.schemaUri, mimeType: format.value,
     processMessage: props.session.apiVersion === 'v3' && process.value ? { processModelId: model.value.trim(), messageId: message.value.trim() } : null };
   await run('Antwort lokal vorbereiten', async (active, current) => {
     const result = await prepareReply(invoke, active, proof, draft, file.value || new Blob([text.value]), attachments.value);
@@ -99,6 +132,10 @@ async function dismiss() {
     await cancelReply(invoke, owner.value, value.attempt.attemptId); prepared.value = null; dialog.value?.close();
   });
   await nextTick(); if (!prepareButton.value?.disabled) prepareButton.value?.focus();
+}
+function openEventLog() {
+  if (!outcome.value?.replyId || outcomeOwner.value !== props.session?.sessionId) return;
+  emit('event-log', { apiVersion: props.session.apiVersion, sessionId: props.session.sessionId, caseId: outcome.value.caseId, replyId: outcome.value.replyId });
 }
 async function send() {
   if (!prepared.value || working.value || props.busy) return;
@@ -130,7 +167,10 @@ async function send() {
         </div>
         <label v-if="!file" for="reply-data">Antwortinhalt<textarea id="reply-data" v-model="text" rows="6" required spellcheck="false"></textarea></label>
         <p v-else>{{ file.name }} · {{ file.size }} Bytes <button class="button secondary" type="button" @click="file = null">Eingabefeld verwenden</button></p>
-        <DraftDataPreview :text="text" :file="file" :mime-type="format" :context-key="session?.sessionId" :disabled="disabled" />
+        <div class="client-fields"><label for="reply-schema-file">Lokales Antwortschema (optional, JSON mit passender $id)<input id="reply-schema-file" type="file" accept=".json,application/json,application/schema+json" @change="chooseSchemaFile"><small>Maximal 2 MiB. Bei lokaler Auswahl werden keine externen Referenzen geladen.</small></label><p v-if="schemaFile">{{ schemaFile.name }} <button class="button secondary" type="button" @click="schemaFile = null; schemaPackage = null">Lokales Schema entfernen</button></p></div>
+        <div class="client-actions"><button class="button secondary" type="button" @click="loadSchema(false)">Antwortschema laden</button><button class="button secondary" type="button" @click="loadSchema(true)">Fiktiven Antwortentwurf erzeugen</button></div>
+        <p v-if="schemaNotice" class="small-note" role="status">{{ schemaNotice }}</p>
+        <DraftDataPreview :schema-document="schemaPackage?.document" :schema-uri="selected?.schemaUri" :text="text" :file="file" :mime-type="format" :context-key="context" :disabled="disabled" />
         <template v-if="session?.apiVersion === 'v3'">
           <label class="checkbox-label"><input v-model="process" type="checkbox"> Als Prozessnachricht antworten</label>
           <div v-if="process" class="client-fields"><label for="reply-model">Prozessmodell-ID<input id="reply-model" type="text" v-model="model" required maxlength="1024"></label><label for="reply-message">Nachrichten-ID<input id="reply-message" type="text" v-model="message" required maxlength="1024"></label></div>
@@ -143,12 +183,13 @@ async function send() {
           <button class="button secondary" type="button" @click="attachments = attachments.filter(value => value.id !== item.id)">Anlage entfernen</button></div>
         <p class="small-note">Höchstens 32 MiB je Datei und 64 MiB insgesamt. Schema und Format müssen zum angebotenen Antwortkanal passen.</p>
       </fieldset>
-      <button ref="prepareButton" class="button" type="submit" :disabled="disabled">Antwort vorbereiten</button>
+      <button ref="prepareButton" class="button" type="submit" :disabled="disabled || !schemaPackage">Antwort prüfen und vorbereiten</button>
     </form>
     <p v-if="working" role="status">Antwortaktion läuft …</p><p v-if="error" role="alert">{{ error }}</p>
     <p v-if="cleanupOwner === session?.sessionId" role="alert">{{ messages.content_cleanup_failed }}</p>
     <div v-if="outcome && outcomeOwner === session?.sessionId" role="status"><h3 ref="resultHeading" tabindex="-1">{{ outcome.status === 'sent' ? 'Antwort an TEST übergeben' : outcome.status === 'uncertain' ? 'Reply-Versandausgang ungewiss' : 'Reply-Versand fehlgeschlagen' }}</h3>
       <p v-if="outcome.replyId">Reply-ID: <code>{{ outcome.replyId }}</code></p><p>Vorgang: <code>{{ outcome.caseId }}</code></p>
+      <button v-if="outcome.replyId" type="button" class="button secondary" :disabled="busy || working" @click="openEventLog">Event Log der Antwort prüfen</button>
       <p v-if="outcome.status === 'uncertain'">Bitte nicht erneut senden. Der Dienst kann die Antwort bereits erhalten haben.</p><p v-if="outcome.error">{{ explain(outcome.error) }}</p></div>
     <dialog ref="dialog" class="tool-dialog receipt-dialog" aria-labelledby="reply-confirm-title" @cancel.prevent="dismiss">
       <template v-if="prepared"><h2 id="reply-confirm-title">Antwort an TEST senden?</h2>
@@ -157,6 +198,7 @@ async function send() {
           <dt>Antwortinhalt</dt><dd>{{ prepared.summary.mimeType }} · {{ prepared.summary.dataBytes }} Bytes</dd></dl>
         <p v-if="prepared.summary.processMessage">Prozess: {{ prepared.summary.processMessage.processModelId }} · Nachricht: {{ prepared.summary.processMessage.messageId }}</p>
         <ul v-if="prepared.summary.attachments.length"><li v-for="(item, index) in prepared.summary.attachments" :key="index">{{ item.fileName }} · {{ item.bytes }} Bytes<span v-if="item.description"> · {{ item.description }}</span></li></ul>
+        <p><span class="status-badge ok">Antwortschema geprüft</span> Der native Kern hat die exakten vorbereiteten Fachdaten gegen das gewählte Schema geprüft. Eine fachliche Prüfung bleibt erforderlich.</p>
         <p>Die Bestätigung gilt 60 Sekunden. Dieser Schritt versendet die verschlüsselte Antwort an FIT-Connect TEST.</p><p v-if="error" role="alert">{{ error }}</p>
         <div class="client-actions"><button class="button secondary" type="button" :disabled="working" autofocus @click="dismiss">Abbrechen</button><button class="button" type="button" :disabled="working" @click="send">{{ working ? 'Wird übertragen …' : 'Antwort jetzt senden' }}</button></div>
       </template>

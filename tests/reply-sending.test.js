@@ -6,7 +6,7 @@ const id = '11111111-1111-4111-8111-111111111111', other = '22222222-2222-4222-8
 const session = { apiVersion: 'v3', sessionId: id, environment: 'TEST', connected: true };
 const proof = { proofId: id, destinationId: other, submissionId: id, caseId: other };
 const attempt = { attemptId: id, status: 'prepared', replyId: null, caseId: other, error: null };
-const draft = { proofId: id, schemaUri: 'urn:test:answer', mimeType: 'application/json', processMessage: null };
+const draft = { proofId: id, schemaId: id, schemaUri: 'urn:test:answer', mimeType: 'application/json', processMessage: null };
 const nativeOrder = value => Array.isArray(value) ? value.map(nativeOrder)
   : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, nativeOrder(value[key])])) : value;
 const envelope = (data, active = session) => nativeOrder({ apiVersion: active.apiVersion, sessionId: active.sessionId, environment: 'TEST', data });
@@ -102,4 +102,32 @@ test('execute invokes exactly the approved attempt and never retries ambiguous a
   assert.deepEqual(await executeReply(async () => envelope(sent), session, attempt), sent);
   assert.equal((await executeReply(async () => envelope({ ...sent, caseId: id }), session, attempt)).status, 'uncertain');
   await assert.rejects(cancelReply(async () => envelope(sent), session, attempt.attemptId), /engine_protocol_error/);
+});
+
+test('reply schema paging keeps the current proof and native identifier, with local upload cleanup', async()=>{
+ const {loadReplySchema}=await import('../frontend/src/reply-sending.js');
+ const source='ä'.repeat(15000), bytes=new TextEncoder().encode(source),calls=[];
+ const result=await loadReplySchema(async(command,args)=>{
+  calls.push(command);
+  if(command==='begin_content')return envelope({contentId:other,totalBytes:2,receivedBytes:0,complete:false});
+  if(command==='append_content')return envelope({contentId:other,totalBytes:2,receivedBytes:2,complete:true});
+  if(command==='discard_content')return envelope({contentId:other});
+  assert.equal(args.proofId,proof.proofId);
+  let offset=0;
+  if(command==='load_reply_schema')assert.deepEqual(JSON.parse(args.schemaDocument),{schemaUri:draft.schemaUri,mimeType:draft.mimeType,allowExternalSchemas:false,schemaContentId:other});
+  else {assert.equal(command,'read_reply_schema');assert.equal(args.contentId,id);offset=args.byteOffset;}
+  return envelope({schemaId:id,schemaUri:draft.schemaUri,totalBytes:bytes.length,byteOffset:offset,chunk:Buffer.from(bytes.slice(offset,offset+12288)).toString('base64')});
+ },session,proof,{schemaUri:draft.schemaUri,mimeType:draft.mimeType,allowExternalSchemas:false},new Blob(['{}']));
+ assert.equal(result.document,source);assert.equal(result.schemaId,id);assert.equal(calls.at(-1),'discard_content');assert.equal(calls.filter(c=>c==='read_reply_schema').length,2);
+});
+test('reply schema malformed pages, missing consent and failed cleanup cannot authorize a draft',async()=>{
+ const {loadReplySchema}=await import('../frontend/src/reply-sending.js');
+ const selection={schemaUri:draft.schemaUri,mimeType:draft.mimeType,allowExternalSchemas:true};
+ await assert.rejects(loadReplySchema(async()=>envelope({schemaId:id,schemaUri:'urn:foreign',totalBytes:2,byteOffset:0,chunk:'e30='}),session,proof,selection),/engine_protocol_error/);
+ await assert.rejects(loadReplySchema(()=>assert.fail('No consent'),session,proof,{...selection,allowExternalSchemas:false}),/invalid_input/);
+ const calls=[];const base=preparationInvoke(calls);
+ await assert.rejects(loadReplySchema(async(command,args)=>{
+  if(command==='load_reply_schema')return envelope({schemaId:id,schemaUri:draft.schemaUri,totalBytes:2,byteOffset:0,chunk:'e30='});
+  if(command==='discard_content')throw new Error('cleanup');return base(command,args);
+ },session,proof,selection,new Blob(['{}'])),/content_cleanup_failed/);
 });

@@ -17,6 +17,14 @@ export async function loadEventLog(invoke, session, destinationId, caseId, submi
   return Object.freeze({ ...data, warnings: Object.freeze([...data.warnings]) });
 }
 
+export async function loadReplyEventLog(invoke, session, caseId, replyId) {
+  id(caseId); id(replyId);
+  const data = await requestResource(invoke, session, 'load_reply_event_log', { caseId, replyId });
+  if (!exact(data, ['logId', 'caseId', 'replyId', 'total', 'warnings']) || !uuid(data.logId)
+      || data.caseId !== caseId || data.replyId !== replyId || !count(data.total)
+      || !Array.isArray(data.warnings) || data.warnings.length !== 1 || data.warnings[0] !== 'CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED') fail();
+  return Object.freeze({ ...data, warnings: Object.freeze([...data.warnings]) });
+}
 export async function listEventLog(invoke, session, summary, offset = 0) {
   id(summary.logId);
   if (!count(summary.total) || !Number.isSafeInteger(offset) || offset < 0 || offset > summary.total || offset % 5 !== 0)
@@ -28,7 +36,7 @@ export async function listEventLog(invoke, session, summary, offset = 0) {
   const events = data.events.map(event => {
     if (!exact(event, ['eventId', 'eventType', 'issuer', 'issuedAt', 'headerBytes', 'claimsBytes']) || !uuid(event.eventId) || seen.has(event.eventId)
         || typeof event.eventType !== 'string' || event.eventType.length > 256
-        || !/^https:\/\/schema\.fitko\.de\/fit-connect\/events\/[a-z-]+-submission$/.test(event.eventType)
+        || !(summary.replyId ? /^https:\/\/schema\.fitko\.de\/fit-connect\/events\/[a-z-]+-reply$/ : /^https:\/\/schema\.fitko\.de\/fit-connect\/events\/[a-z-]+-submission$/).test(event.eventType)
         || typeof event.issuer !== 'string' || !event.issuer.trim() || event.issuer.length > 1024 || /[\x00-\x1f\x7f]/.test(event.issuer)
         || typeof event.issuedAt !== 'string' || event.issuedAt.length > 64 || !Number.isFinite(Date.parse(event.issuedAt))
         || !size(event.headerBytes, 16384) || !size(event.claimsBytes, 65536)) fail();

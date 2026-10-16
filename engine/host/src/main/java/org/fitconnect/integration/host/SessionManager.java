@@ -18,6 +18,7 @@ final class SessionManager implements AutoCloseable {
     private final java.util.function.Function<ApiVersion, ResourceExchange> resources;
     private final Map<Key, Entry> entries = new HashMap<>();
     private final Map<String, DestinationManagement> management = new HashMap<>();
+    private final Map<String, SendSchemas> replySchemas = new HashMap<>();
     private final Map<String, SendSchemas> sendSchemas = new HashMap<>();
     private final ContentStore content;
     private final ReceiveStore received = new ReceiveStore();
@@ -283,6 +284,24 @@ final class SessionManager implements AutoCloseable {
         return new Data<>(version.wireValue(), id, "TEST", eventLogs.publish(version, id, UUID.fromString(destination),
                 UUID.fromString(caseValue), UUID.fromString(submission), result));
     }
+    Data<?> loadReplyEventLog(ApiVersion version, String id, String caseId, String replyId) {
+        Entry entry = find(version, id); eventLogs.clear();
+        String caseValue = DestinationAccess.id(caseId), reply = DestinationAccess.id(replyId);
+        if (receiveCleanupFailed.contains(id)) throw new SessionException("resource_unavailable");
+        VerifiedEventLog result;
+        try {
+            result = registry.withSession(version, entry.session(), session -> {
+                try (var source = resourceTransport == null ? new EventLogAccess(version, caseValue, reply, resources.apply(version), true)
+                        : resourceTransport.forReplyEvents(version, caseValue, reply)) {
+                    return session.replyEventLog(UUID.fromString(caseValue), UUID.fromString(reply), source, content.workspace(id));
+                }
+            });
+        } finally {
+            try { content.clearWorkspace(id); }
+            catch (RuntimeException failure) { receiveCleanupFailed.add(id); entry.sender().cleanupFailed(); invalidateReceived(entry); throw failure; }
+        }
+        return new Data<>(version.wireValue(), id, "TEST", eventLogs.publishReply(version, id, UUID.fromString(caseValue), UUID.fromString(reply), result));
+    }
     Data<?> eventLogResource(ApiVersion version, String id, String command, String logId, String eventId, String part, int offset) {
         find(version, id);
         Object data = switch (command) {
@@ -319,7 +338,7 @@ final class SessionManager implements AutoCloseable {
     private void invalidateReceipt(Entry entry) {
         entry.receipts().invalidate(); pendingReceipts.remove(entry.id());
     }
-    private void invalidateReply(Entry entry) { entry.replySender().invalidatePrepared(); pendingReplies.remove(entry.id()); }
+    private void invalidateReply(Entry entry) { var schema = replySchemas.remove(entry.id()); if (schema != null) schema.clear(); entry.replySender().invalidatePrepared(); pendingReplies.remove(entry.id()); }
     private ReplyRecipient replyRecipient(Entry entry, ReceiveStore.Summary proof) {
         var recipient = registry.withSession(entry.key().version(), entry.session(), session -> session.replyRecipient(proof.destinationId(), proof.submissionId()));
         if (!recipient.caseId().toString().equals(proof.caseId())) throw new SessionException("verification_failed");
@@ -333,12 +352,46 @@ final class SessionManager implements AutoCloseable {
                 recipient.replyDestinationId() == null ? null : recipient.replyDestinationId().toString(), offset, schemas.size(),
                 schemas.subList(offset, Math.min(offset + 2, schemas.size())).stream().map(schema -> new ReplySchema(schema.schemaUri().toString(), schema.mimeType())).toList()));
     }
+    private Map<String,String> replyLocalSchema(String owner, String document) {
+        var request = StrictJson.object(document, 24 * 1024); var handle = request.get("schemaContentId");
+        if (handle == null || handle.isJsonNull()) return Map.of();
+        if (!handle.isJsonPrimitive() || !handle.getAsJsonPrimitive().isString()) throw new SessionException("invalid_input");
+        String id = DestinationAccess.id(handle.getAsString());
+        if (content.length(owner, id) > 2 * 1024 * 1024) throw new SessionException("content_limit");
+        byte[] bytes = content.read(owner, id);
+        try {
+            String source = java.nio.charset.StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .decode(java.nio.ByteBuffer.wrap(bytes)).toString();
+            var schema = StrictJson.object(source, 2 * 1024 * 1024);
+            if (!schema.has("$id") || !schema.get("$id").isJsonPrimitive() || !schema.get("$id").getAsJsonPrimitive().isString()
+                    || !SchemaSources.documentUri(schema.get("$id").getAsString()).equals(SchemaSources.documentUri(request.get("schemaUri").getAsString()))) throw new SessionException("invalid_input");
+            return Map.of(schema.get("$id").getAsString(), source);
+        } catch (SessionException failure) { throw failure;
+        } catch (Exception failure) { throw new SessionException("invalid_input");
+        } finally { Arrays.fill(bytes, (byte) 0); }
+    }
+    Data<?> replySchema(ApiVersion version, String id, String command, String proofId, String document, String schemaId, int offset) {
+        Entry entry = find(version, id); var proof = received.state(version, id, proofId);
+        Object result = registry.withSession(version, entry.session(), session -> {
+            if (command.equals("load_reply_schema")) {
+                var schema = replySchemas.computeIfAbsent(id, ignored -> new SendSchemas()); schema.clear();
+                return schema.loadReply(session, replyRecipient(entry, proof), proofId, document, replyLocalSchema(id, document));
+            }
+            var schemas = replySchemas.get(id);
+            if (!command.equals("read_reply_schema") || schemas == null) throw new SessionException("invalid_resource");
+            return schemas.readReply(proofId, schemaId, offset);
+        });
+        return new Data<>(version.wireValue(), id, "TEST", result);
+    }
     Data<?> prepareReply(ApiVersion version, String id, String document) {
         Entry entry = find(version, id);
         if (receiveCleanupFailed.contains(id)) throw new SessionException("resource_unavailable");
         var proof = received.state(version, id, ReplyDraft.proofId(document)); var recipient = replyRecipient(entry, proof);
         long reserved = entries.values().stream().mapToLong(other -> other.sender().pendingBytes() + (other == entry ? 0 : other.replySender().pendingBytes())).sum();
         var draft = ReplyDraft.resolve(document, proof, content, id, ContentStore.TOTAL_BYTES - reserved);
+        recipient.check(draft.input());
+        var schemas = replySchemas.get(id); if (schemas == null) throw new SessionException("schema_required");
+        registry.withSession(version, entry.session(), session -> { schemas.checkReply(session, proof.proofId(), draft.summary().schemaId(), draft.input()); return null; });
         var attempt = entry.replySender().prepare(draft.input(), recipient); pendingReplies.put(id, draft.summary());
         return new Data<>(version.wireValue(), id, "TEST", new PreparedReply(attempt, draft.summary()));
     }
@@ -441,6 +494,7 @@ final class SessionManager implements AutoCloseable {
     private void remove(Entry entry) {
         if (entry != null) management.remove(entry.id());
         if (entry == null) return;
+        var replySchema = replySchemas.remove(entry.id()); if (replySchema != null) replySchema.clear();
         var schemas = sendSchemas.remove(entry.id());
         if (schemas != null) schemas.clear();
         eventLogs.clearOwner(entry.id());

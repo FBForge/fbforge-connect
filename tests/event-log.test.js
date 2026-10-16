@@ -76,3 +76,17 @@ test('discard targets one owned snapshot and checks the native acknowledgement',
   }, session, logId);
   await assert.rejects(discardEventLog(async () => envelope({ logId: caseId }), session, logId), /engine_protocol_error/);
 });
+
+test('reply logs use an exact independent case/reply identity and cannot show submission events', async () => {
+  const {loadReplyEventLog}=await import('../frontend/src/event-log.js');
+  const reply={logId,caseId,replyId:submissionId,total:1,warnings:summary.warnings};
+  for(const apiVersion of ['v2','v3']){
+   const active={...session,apiVersion};
+   const loaded=await loadReplyEventLog(async(command,args)=>{assert.equal(command,'load_reply_event_log');assert.deepEqual(args,{apiVersion,sessionId:active.sessionId,caseId,replyId:submissionId});return envelope(reply,active);},active,caseId,submissionId);
+   const page={logId,offset:0,total:1,events:[{...row,eventType:'https://schema.fitko.de/fit-connect/events/submit-reply'}]};
+   assert.equal((await listEventLog(async()=>envelope(page,active),active,loaded)).events.length,1);
+   await assert.rejects(listEventLog(async()=>envelope({...page,events:[row]},active),active,loaded),/engine_protocol_error/);
+  }
+  for(const patch of [{replyId:caseId},{caseId:submissionId},{submissionId},{total:0},{warnings:[]}])
+   await assert.rejects(loadReplyEventLog(async()=>envelope({...reply,...patch}),session,caseId,submissionId),/engine_protocol_error/);
+});

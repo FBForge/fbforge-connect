@@ -36,11 +36,17 @@ export async function loadSendDestination(invoke, session, destinationId) {
 export async function loadSendSchema(invoke, session, destinationId, selection) {
   if (!uuid(destinationId) || !selection || !text(selection.schemaUri)) throw new Error('invalid_input');
   const schemaDocument = JSON.stringify(selection);
-  let page = await requestResource(invoke, session, 'load_send_schema', { destinationId, schemaDocument });
+  const page = await requestResource(invoke, session, 'load_send_schema', { destinationId, schemaDocument });
+  return (await readSchemaPackage(page, selection.schemaUri, (contentId, byteOffset) =>
+    requestResource(invoke, session, 'read_send_schema', { contentId, byteOffset }))).document;
+}
+/** Validate each native schema page and retain its identifier for exact draft checks. */
+export async function readSchemaPackage(firstPage, schemaUri, readNext) {
+  let page = firstPage;
   let bytes, expectedId, offset = 0;
   try {
     do {
-      if (!page || Object.keys(page).length !== 5 || !uuid(page.schemaId) || page.schemaUri !== selection.schemaUri
+      if (!page || Object.keys(page).length !== 5 || !uuid(page.schemaId) || page.schemaUri !== schemaUri
           || !Number.isSafeInteger(page.totalBytes) || page.totalBytes < 1 || page.totalBytes > 24 * 1024 * 1024
           || page.byteOffset !== offset || typeof page.chunk !== 'string' || page.chunk.length > 16384
           || !/^[A-Za-z0-9+/]*={0,2}$/.test(page.chunk)) fail();
@@ -49,8 +55,8 @@ export async function loadSendSchema(invoke, session, destinationId, selection) 
       const part = Uint8Array.from(atob(page.chunk), value => value.charCodeAt(0));
       if (btoa(String.fromCharCode(...part)) !== page.chunk || part.length !== Math.min(12 * 1024, bytes.length - offset)) fail();
       bytes.set(part, offset); offset += part.length;
-      if (offset < bytes.length) page = await requestResource(invoke, session, 'read_send_schema', { contentId: expectedId, byteOffset: offset });
+      if (offset < bytes.length) page = await readNext(expectedId, offset);
     } while (offset < bytes.length);
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return Object.freeze({ schemaId: expectedId, document: new TextDecoder('utf-8', { fatal: true }).decode(bytes) });
   } finally { bytes?.fill(0); }
 }

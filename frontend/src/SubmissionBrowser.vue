@@ -21,6 +21,10 @@ function recordReceipt(value) {
     page.value = { ...page.value, totalCount: page.value.totalCount - 1, submissions: page.value.submissions.filter(item => item.submissionId !== value.submissionId) };
 }
 function openEventLog(item) {
+  if (item.replyId) {
+    emit('event-log', { apiVersion: item.apiVersion || props.session?.apiVersion, sessionId: item.sessionId || props.session?.sessionId, caseId: item.caseId, replyId: item.replyId });
+    return;
+  }
   emit('event-log', { apiVersion: item.apiVersion || props.session?.apiVersion, sessionId: item.sessionId || props.session?.sessionId,
     destinationId: item.destinationId, caseId: item.caseId, submissionId: item.submissionId });
 }
@@ -127,7 +131,7 @@ function open(id = submission.value.trim()) {
   </section>
   <ReceivePanel :session="session" :detail="detail" :destination-id="destination.trim()" :busy="busy" :key-revision="keyRevision" :receive-revision="receiveRevision"
     @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)"
-    @receive-start="emit('receive-start')" @verified="value => verified = value" @outcome="recordReceipt" />
+    @event-log="openEventLog" @receive-start="emit('receive-start')" @verified="value => verified = value" @outcome="recordReceipt" />
   <section v-if="receiptHistory.length" class="tool-section" aria-labelledby="receipt-history-title">
     <h2 id="receipt-history-title">Empfangsaktionen</h2>
     <p class="small-note">Die letzten 20 Ergebnisse dieser Anwendungssitzung. Bekannte Kennungen bleiben auch bei einem ungewissen Ausgang verfügbar.</p>

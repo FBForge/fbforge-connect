@@ -149,6 +149,17 @@ class SenderKernelTest {
                     assertEquals(1, result.attachments().size()); assertEquals("Synthetische Antwortanlage", result.attachments().getFirst().description());
                     assertArrayEquals(fixture.attachment, result.readPart(2, 0, 24 * 1024));
                     assertEquals(replyMime, result.mimeType());
+                    try (var logSource = new EventLogAccess(api, CASE.toString(), fixture.replyId.toString(), fixture, true)) {
+                        var log = adapters.withSession(api, session, value -> value.replyEventLog(CASE, fixture.replyId, logSource, workspace));
+                        assertEquals(fixture.replyId, log.replyId()); assertNull(log.submissionId()); assertEquals(2, log.entries().size());
+                    }
+                    for (String attack : List.of("event-signature", "event-subject", "event-case", "duplicate-submit")) {
+                        fixture.attack = attack;
+                        try (var logSource = new EventLogAccess(api, CASE.toString(), fixture.replyId.toString(), fixture, true)) {
+                            assertThrows(SessionException.class, () -> adapters.withSession(api, session, value -> value.replyEventLog(CASE, fixture.replyId, logSource, workspace)), api + " reply log " + attack);
+                        }
+                    }
+                    fixture.attack = "";
                     assertFalse(result.issues().stream().anyMatch(item -> item.stage().equals("XML_SCHEMA_NOT_CHECKED")));
                     assertFalse(result.toString().contains("Erika"));
                     assertThrows(SessionException.class, () -> session.receiptEvidence(TARGET.toString(), SUBMISSION.toString()));
@@ -241,6 +252,7 @@ class SenderKernelTest {
         final boolean metadata3;
         final String encryptedData, encryptedMetadata, encryptedAttachment, otherSchemaMetadata, otherMimeMetadata;
         String attack = "";
+        JsonObject sdkReply; Map<String,String> sdkUploads;
         JsonObject replyReceiptPayload;
         IncomingReplyFixture(ApiVersion api, JsonObject key, String mime, boolean metadata3) throws Exception {
             this.api = api; this.key = key; this.metadata3 = metadata3;
@@ -272,7 +284,9 @@ class SenderKernelTest {
         public String get(String url, Map<String,String> headers) {
             try {
                 var base = "https://test.fit-connect.fitko.dev/submission-api/" + api.wireValue();
-                String meta = attack.equals("schema") ? otherSchemaMetadata : attack.equals("mime") ? otherMimeMetadata : encryptedMetadata;
+                if (sdkReply != null && url.endsWith("/replies/" + replyId)) return sdkReply.toString();
+                if (sdkUploads != null && url.contains("/attachments/")) return sdkUploads.get(url.substring(url.lastIndexOf('/') + 1));
+                String meta = sdkReply != null ? sdkReply.get("encryptedMetadata").getAsString() : attack.equals("schema") ? otherSchemaMetadata : attack.equals("mime") ? otherMimeMetadata : encryptedMetadata;
                 if (url.endsWith("/replies/" + replyId)) {
                     var envelope = new JsonObject(); envelope.addProperty("replyId", replyId.toString()); envelope.addProperty("caseId", CASE.toString()); envelope.addProperty("fromDestinationId", TARGET.toString());
                     var ids = new JsonArray(); ids.add(attachmentId.toString()); envelope.add("attachments", ids);
@@ -283,8 +297,8 @@ class SenderKernelTest {
                 }
                 if (url.endsWith("/attachments/" + attachmentId)) return encryptedAttachment;
                 if (java.net.URI.create(url).getPath().endsWith("/events")) {
-                    var tags = new JsonObject(); tags.addProperty("metadata", tag(meta)); tags.addProperty("data", tag(encryptedData));
-                    var at = new JsonObject(); at.addProperty(attachmentId.toString(), attack.equals("attachment-tag") ? "wrong" : tag(encryptedAttachment)); tags.add("attachments", at);
+                    var tags = new JsonObject(); tags.addProperty("metadata", tag(meta)); tags.addProperty("data", tag(sdkReply == null ? encryptedData : sdkReply.get("encryptedData").getAsString()));
+                    var at = new JsonObject(); if (sdkUploads == null) at.addProperty(attachmentId.toString(), attack.equals("attachment-tag") ? "wrong" : tag(encryptedAttachment)); else sdkUploads.forEach((id,wire) -> at.addProperty(id,tag(wire))); tags.add("attachments", at);
                     var list = new JsonArray(); list.add(event("create-reply", null)); String jwt = event("submit-reply", tags);
                     if (attack.equals("event-signature")) { var parts = jwt.split("\\."); parts[2] = (parts[2].startsWith("A") ? "B" : "A") + parts[2].substring(1); jwt = String.join(".", parts); }
                     list.add(jwt); if (attack.equals("duplicate-submit")) list.add(event("submit-reply", tags));
@@ -364,16 +378,15 @@ class SenderKernelTest {
     @Test void sentSubmissionsCanBeReceivedAndVerifiedByBothSdkAdapters() throws Exception {
         try (var adapters = registry()) {
             for (ApiVersion sending : ApiVersion.values()) {
-                var remote = new Capture(sending.wireValue()); remote.metadata = "2.0.0";
+                var remote = new Capture(sending.wireValue()); remote.metadata = "2.0.0"; remote.allowReplies = true;
                 var gate = new SendAccess(sending, remote);
                 var original = input(null, null);
                 var input = new SubmissionInput(sending == ApiVersion.V3 ? SOURCE : null, TARGET, SERVICE, original.serviceName(),
-                        original.region(), SCHEMA, original.mimeType(), DATA, original.attachments(), null, null);
+                        original.region(), SCHEMA, original.mimeType(), DATA, original.attachments(), null, null, new SubmissionInput.ReplyOffer(REPLY_SCHEMA, "application/json"));
                 try (var sender = adapters.openSession(sending, "id", "secret",
                         (u,b) -> "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}", gate)) {
                     var attempt = gate.prepare(input);
                     assertEquals("sent", gate.execute(attempt.attemptId(), sender, workspace).status());
-                }
                 var envelope = JsonParser.parseString(remote.response()).getAsJsonObject();
                 remote.submitted.entrySet().forEach(entry -> envelope.add(entry.getKey(), entry.getValue()));
                 envelope.add("publicService", remote.announce.get("publicService"));
@@ -410,10 +423,55 @@ class SenderKernelTest {
                             assertArrayEquals(DATA, result.data(), sending + " -> " + receiving);
                             assertArrayEquals(input.attachments().getFirst().data(), result.attachments().getFirst().bytes());
                             assertEquals("Anlage.txt", result.attachments().getFirst().fileName());
+                            exerciseReplyRoundtrip(adapters, sending, sender, receiving, receiver, remote);
                         }
                     }
                 }
+                }
             }
+        }
+    }
+
+    private void exerciseReplyRoundtrip(AdapterRegistry adapters, ApiVersion sending, AuthenticatedSession sender,
+            ApiVersion receiving, AuthenticatedSession receiver, Capture original) throws Exception {
+        var channel = sender.replyChannels().getFirst();
+        var metadata = JsonParser.parseString(new String(decrypt(original.submitted.get("encryptedMetadata").getAsString()), StandardCharsets.UTF_8));
+        var offered = findJsonObject(metadata, "kid", channel.keyId()).deepCopy();
+        var incoming = new IncomingReplyFixture(sending, offered, "application/json", false);
+        var uploads = new LinkedHashMap<String,String>(); var submitted = new java.util.concurrent.atomic.AtomicReference<JsonObject>();
+        var announced = new java.util.concurrent.atomic.AtomicReference<JsonArray>(); var posts = new java.util.concurrent.atomic.AtomicInteger();
+        String base = "https://test.fit-connect.fitko.dev/submission-api/" + receiving.wireValue();
+        ResourceExchange transport = new ResourceExchange() {
+            String response() { return "{\"replyId\":\"" + incoming.replyId + "\",\"caseId\":\"" + CASE + "\",\"fromDestinationId\":\"" + TARGET + "\",\"attachments\":[]}"; }
+            public String get(String url, Map<String,String> headers) { return request("GET", url, headers, null).body(); }
+            public Response request(String method, String url, Map<String,String> headers, String body) {
+                if (method.equals("GET")) {
+                    if (url.equals(base + "/cases/" + CASE)) return new Response(200,"{\"caseId\":\""+CASE+"\",\"destinationId\":\""+TARGET+"\",\"fromDestinationId\":\""+SOURCE+"\"}");
+                    if (url.contains("/destinations/") && !url.endsWith("/limits")) return new Response(200,"{\"destinationId\":\""+url.substring(url.lastIndexOf('/')+1)+"\",\"type\":\"A\",\"status\":\"active\",\"metadataVersions\":[\"2.0.0\"],\"publicServices\":[]}");
+                    if (url.endsWith("/limits") || url.contains("/limits/")) return new Response(200,"{\"attachments\":{\"reply\":{\"applicable\":"+original.limits()+"},\"applicable\":"+original.limits()+"}}");
+                }
+                if (method.equals("POST") && url.equals(base+"/replies")) { posts.incrementAndGet();announced.set(JsonParser.parseString(body).getAsJsonObject().getAsJsonArray("announcedAttachments"));return new Response(201,response()); }
+                if (method.equals("PUT") && url.contains("/attachments/")) { assertNull(uploads.put(url.substring(url.lastIndexOf('/')+1),body));return new Response(204,""); }
+                if (method.equals("PUT") && url.equals(base+"/replies/"+incoming.replyId)) { assertNull(submitted.getAndSet(JsonParser.parseString(body).getAsJsonObject()));return new Response(200,response()); }
+                throw new AssertionError("Unexpected roundtrip reply request: "+method+" "+url);
+            }
+        };
+        var reply = new ReplyInput(TARGET,SUBMISSION,CASE,REPLY_SCHEMA,"application/json",incoming.data,
+                List.of(new SubmissionInput.Attachment("Antwort.txt","text/plain","Synthetische Antwortanlage",incoming.attachment)),null);
+        var packet = new JsonObject();packet.addProperty("schemaPackage",1);packet.addProperty("schemaUri",REPLY_SCHEMA.toString());
+        var documents = new JsonObject();documents.add(REPLY_SCHEMA.toString(),JsonParser.parseString(incoming.schemas().get(REPLY_SCHEMA.toString())));packet.add("documents",documents);
+        boolean schemaValid = adapters.withSession(receiving,receiver,value->value.validateDraft(new SchemaSnapshot(REPLY_SCHEMA.toString(),packet.toString()),"application/json",incoming.data));
+        assertTrue(schemaValid);
+        var gate = new ReplyAccess(receiving,transport);var pending=gate.prepare(reply,receiver.replyRecipient(TARGET.toString(),SUBMISSION.toString()));
+        assertEquals("sent",adapters.withSession(receiving,receiver,value->gate.execute(pending.attemptId(),value,workspace,()->{})).status(),sending+" -> "+receiving+" reply send");
+        assertEquals(1,posts.get()); assertEquals(1,uploads.size());
+        incoming.sdkReply=submitted.get().deepCopy();incoming.sdkReply.addProperty("replyId",incoming.replyId.toString());incoming.sdkReply.addProperty("caseId",CASE.toString());incoming.sdkReply.addProperty("fromDestinationId",TARGET.toString());incoming.sdkReply.add("attachments",announced.get());incoming.sdkUploads=uploads;
+        try(var read=ReceiveAccess.forReply(sending,CASE.toString(),incoming.replyId.toString(),incoming)) {
+            var result=adapters.withSession(sending,sender,value->value.receiveReply(CASE,incoming.replyId,read,workspace,incoming.schemas()));
+            assertArrayEquals(incoming.data,result.data(),sending+" -> "+receiving+" -> "+sending);assertArrayEquals(incoming.attachment,result.attachments().getFirst().bytes());
+        }
+        try(var read=new EventLogAccess(sending,CASE.toString(),incoming.replyId.toString(),incoming,true)) {
+            assertEquals(2,adapters.withSession(sending,sender,value->value.replyEventLog(CASE,incoming.replyId,read,workspace)).entries().size());
         }
     }
 
@@ -746,6 +804,14 @@ class SenderKernelTest {
         var read = list.deepCopy(); read.remove("offset"); read.addProperty("command", "read_received_reply_content"); read.addProperty("byteOffset", 0);
         read.addProperty("contentId", page.getAsJsonArray("parts").get(1).getAsJsonObject().get("contentId").getAsString());
         assertArrayEquals(fixture.data, Base64.getDecoder().decode(protocolData(engine, read).get("chunk").getAsString()));
+        var logCommand = command.deepCopy(); logCommand.remove("schemaDocument"); logCommand.addProperty("command", "load_reply_event_log");
+        var logSummary = protocolData(engine, logCommand); assertEquals(fixture.replyId.toString(), logSummary.get("replyId").getAsString());
+        assertFalse(logSummary.has("submissionId")); assertFalse(logSummary.has("destinationId"));
+        var logList = logCommand.deepCopy(); logList.remove("caseId"); logList.remove("replyId"); logList.addProperty("command", "list_event_log");
+        logList.addProperty("logId", logSummary.get("logId").getAsString()); logList.addProperty("offset", 0);
+        assertEquals(2, protocolData(engine, logList).getAsJsonArray("events").size());
+        // Inspecting the independently verified reply log preserves the content proof.
+        protocolData(engine, read);
         assertEquals(proof, protocolData(engine, list).get("proofId").getAsString(), "Preview read retains verification");
         var wrong = list.deepCopy(); wrong.addProperty("command", "list_received_contents"); assertProtocolFailure(engine, wrong);
         wrong = list.deepCopy(); wrong.addProperty("offset", 1); assertProtocolFailure(engine, wrong);

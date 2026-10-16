@@ -62,6 +62,8 @@ final class Engine implements AutoCloseable {
                 case "prepare_send" -> expected.addAll(Set.of("sessionId", "sendDocument"));
                 case "execute_send", "cancel_send" -> expected.addAll(Set.of("sessionId", "attemptId"));
                 case "send_state" -> expected.add("sessionId");
+                case "load_reply_schema" -> expected.addAll(Set.of("sessionId", "proofId", "schemaDocument"));
+                case "read_reply_schema" -> expected.addAll(Set.of("sessionId", "proofId", "contentId", "byteOffset"));
                 case "reply_target" -> expected.addAll(Set.of("sessionId", "proofId", "offset"));
                 case "prepare_reply" -> expected.addAll(Set.of("sessionId", "replyDocument"));
                 case "execute_reply", "cancel_reply" -> expected.addAll(Set.of("sessionId", "attemptId"));
@@ -78,6 +80,7 @@ final class Engine implements AutoCloseable {
                 case "list_received_contents", "list_received_reply_contents" -> expected.addAll(Set.of("sessionId", "proofId", "offset"));
                 case "read_received_content", "read_received_reply_content" -> expected.addAll(Set.of("sessionId", "proofId", "contentId", "byteOffset"));
                 case "discard_received", "discard_received_reply" -> expected.addAll(Set.of("sessionId", "proofId"));
+                case "load_reply_event_log" -> expected.addAll(Set.of("sessionId", "caseId", "replyId"));
                 case "load_event_log" -> expected.addAll(Set.of("sessionId", "destinationId", "caseId", "submissionId"));
                 case "list_event_log" -> expected.addAll(Set.of("sessionId", "logId", "offset"));
                 case "read_event_log" -> expected.addAll(Set.of("sessionId", "logId", "eventId", "part", "byteOffset"));
@@ -117,6 +120,7 @@ final class Engine implements AutoCloseable {
                         sessions.content(version, values.get("sessionId"), command, values.get("contentId"), totalBytes, byteOffset, values.get("chunk"));
                     case "prepare_send" -> sessions.prepareSend(version, values.get("sessionId"), values.get("sendDocument"));
                     case "execute_send", "cancel_send", "send_state" -> sessions.send(version, values.get("sessionId"), command, values.get("attemptId"));
+                    case "load_reply_schema", "read_reply_schema" -> sessions.replySchema(version, values.get("sessionId"), command, values.get("proofId"), values.get("schemaDocument"), values.get("contentId"), Math.toIntExact(byteOffset));
                     case "reply_target" -> sessions.replyTarget(version, values.get("sessionId"), values.get("proofId"), offset);
                     case "prepare_reply" -> sessions.prepareReply(version, values.get("sessionId"), values.get("replyDocument"));
                     case "execute_reply", "cancel_reply", "reply_state" -> sessions.replySend(version, values.get("sessionId"), command, values.get("attemptId"));
@@ -138,6 +142,7 @@ final class Engine implements AutoCloseable {
                     case "read_received_schema", "list_received_contents", "read_received_content", "discard_received" -> sessions.received(version,
                             values.get("sessionId"), command, values.get("proofId"), values.get("contentId"),
                             (command.equals("read_received_content") || command.equals("read_received_schema")) ? Math.toIntExact(byteOffset) : offset);
+                    case "load_reply_event_log" -> sessions.loadReplyEventLog(version, values.get("sessionId"), values.get("caseId"), values.get("replyId"));
                     case "load_event_log" -> sessions.loadEventLog(version, values.get("sessionId"), values.get("destinationId"),
                             values.get("caseId"), values.get("submissionId"));
                     case "list_event_log", "read_event_log", "discard_event_log" -> sessions.eventLogResource(version,

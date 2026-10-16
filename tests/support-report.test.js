@@ -59,3 +59,10 @@ test('diagnostic history is bounded, immutable, observable and clearable without
   assert.equal(notifications, 120);
   assert.deepEqual(log.snapshot(), []);
 });
+
+test('reply schema and event-log diagnostics include known codes without proof, schema or field contents',async()=>{
+ const log=createDiagnosticLog();const invoke=observeInvoke(async()=>{throw new Error('data_schema_invalid');},log.record);
+ for(const command of ['load_reply_schema','load_reply_event_log','reply_target'])await assert.rejects(invoke(command,{apiVersion:'v3',proofId:marker,schemaDocument:marker,replyId:marker}),/data_schema_invalid/);
+ const report=buildSupportReport({version:'0.1.0-dev.7',selectedApi:'v3',entries:log.snapshot()});
+ assert.equal(report.operations.length,3);assert.equal(report.operations[0].code,'data_schema_invalid');assert.equal(JSON.stringify(report).includes(marker),false);
+});

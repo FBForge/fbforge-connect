@@ -38,7 +38,7 @@ const reportableCodes = new Set([
   'engine_busy', 'engine_disconnected', 'engine_protocol_error', 'invalid_credentials', 'authentication_failed',
   'auth_unavailable', 'endpoint_blocked', 'session_missing', 'invalid_resource', 'resource_denied',
   'resource_missing', 'resource_unavailable', 'key_rejected', 'key_missing', 'test_certificate_required',
-  'invalid_input', 'content_limit', 'verification_failed', 'schema_unavailable', 'schema_consent_required',
+  'invalid_input', 'content_limit', 'verification_failed', 'schema_required', 'data_schema_invalid', 'schema_unavailable', 'schema_consent_required',
   'schema_tls_error', 'schema_network_error', 'schema_http_error', 'schema_archive_invalid',
   'send_locked', 'invalid_submission', 'data_format_invalid', 'content_cleanup_failed',
 ]);

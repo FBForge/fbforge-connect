@@ -11,7 +11,7 @@ import java.util.concurrent.*;
 
 /** TEST reads and a separate attempt-gated sender transport. No renderer-selected HTTP URLs. */
 final class TestResourceTransport implements AutoCloseable {
-    private enum ReadProfile { DIRECTORY, RECEIVE, REPLY_RECEIVE, EVENTS }
+    private enum ReadProfile { DIRECTORY, RECEIVE, REPLY_RECEIVE, EVENTS, REPLY_EVENTS }
     private static final int MAX_BYTES = 1024 * 1024;
     private static final String UUID = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
     private HttpClient http;
@@ -60,6 +60,10 @@ final class TestResourceTransport implements AutoCloseable {
                 (endpoint, headers) -> get(version, endpoint, headers, ReadProfile.EVENTS));
     }
 
+    EventLogAccess forReplyEvents(ApiVersion version, String caseId, String replyId) {
+        return new EventLogAccess(version, caseId, replyId,
+                (endpoint, headers) -> get(version, endpoint, headers, ReadProfile.REPLY_EVENTS), true);
+    }
     /** ReceiptAccess must supply the confirmed case/token binding before this native HTTP profile is used. */
     ResourceExchange forReceipt(ApiVersion version) {
         return new ResourceExchange() {
@@ -119,6 +123,7 @@ final class TestResourceTransport implements AutoCloseable {
             case RECEIVE -> ReceiveAccess.allowedTransport(version, endpoint);
             case REPLY_RECEIVE -> ReceiveAccess.allowedReplyTransport(version, endpoint);
             case EVENTS -> EventLogAccess.allowedTransport(version, endpoint);
+            case REPLY_EVENTS -> EventLogAccess.allowedTransport(version, endpoint, true);
         };
         try {
             if (headers == null || headers.size() > 8) throw new SessionException("endpoint_blocked");

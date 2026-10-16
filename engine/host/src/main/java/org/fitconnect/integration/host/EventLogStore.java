@@ -10,21 +10,29 @@ final class EventLogStore {
     private static final int PAGE_SIZE = 5;
     private Stored current;
     record Summary(String logId, String destinationId, String caseId, String submissionId, int total, List<String> warnings) {}
+    record ReplySummary(String logId, String caseId, String replyId, int total, List<String> warnings) {}
     record Row(String eventId, String eventType, String issuer, String issuedAt, int headerBytes, int claimsBytes) {}
     record Page(String logId, int offset, int total, List<Row> events) {}
     record Chunk(String logId, String eventId, String part, int byteOffset, int totalBytes, String chunk, boolean complete) {}
-    private record Stored(ApiVersion api, String owner, VerifiedEventLog log, Summary summary) {}
+    private record Stored(ApiVersion api, String owner, VerifiedEventLog log, String logId) {}
 
     synchronized Summary publish(ApiVersion api, String owner, UUID destination, UUID caseId, UUID submission, VerifiedEventLog log) {
         current = null;
-        if (api == null || !uuid(owner) || log == null || !log.destinationId().equals(destination)
+        if (api == null || !uuid(owner) || log == null || log.replyId() != null || !log.destinationId().equals(destination)
                 || !log.caseId().equals(caseId) || !log.submissionId().equals(submission)) throw invalid();
         var summary = new Summary(UUID.randomUUID().toString(), destination.toString(), caseId.toString(), submission.toString(),
                 log.entries().size(), log.warnings());
-        current = new Stored(api, owner, log, summary);
+        current = new Stored(api, owner, log, summary.logId());
         return summary;
     }
 
+    synchronized ReplySummary publishReply(ApiVersion api, String owner, UUID caseId, UUID replyId, VerifiedEventLog log) {
+        current = null;
+        if (api == null || !uuid(owner) || log == null || !log.caseId().equals(caseId) || !Objects.equals(log.replyId(), replyId)
+                || log.submissionId() != null || log.destinationId() != null) throw invalid();
+        var summary = new ReplySummary(UUID.randomUUID().toString(), caseId.toString(), replyId.toString(), log.entries().size(), log.warnings());
+        current = new Stored(api, owner, log, summary.logId()); return summary;
+    }
     synchronized Page page(ApiVersion api, String owner, String logId, int offset) {
         var stored = require(api, owner, logId); var entries = stored.log().entries();
         if (offset < 0 || offset > entries.size() || offset % PAGE_SIZE != 0) throw invalid();
@@ -52,7 +60,7 @@ final class EventLogStore {
     synchronized void clearOwner(String owner) { if (current != null && current.owner().equals(owner)) current = null; }
     synchronized void clear() { current = null; }
     private Stored require(ApiVersion api, String owner, String logId) {
-        if (current == null || current.api() != api || !current.owner().equals(owner) || !current.summary().logId().equals(logId)) throw invalid();
+        if (current == null || current.api() != api || !current.owner().equals(owner) || !current.logId().equals(logId)) throw invalid();
         return current;
     }
     private static byte[] utf8(String value) { return value.getBytes(StandardCharsets.UTF_8); }

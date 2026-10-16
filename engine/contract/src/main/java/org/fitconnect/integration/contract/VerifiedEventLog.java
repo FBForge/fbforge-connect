@@ -5,7 +5,7 @@ import java.util.*;
 import java.nio.charset.StandardCharsets;
 
 /** SDK-verified transmission events. This does not verify downloaded content or compare its GCM tags. */
-public record VerifiedEventLog(UUID destinationId, UUID caseId, UUID submissionId, List<Entry> entries, List<String> warnings) {
+public record VerifiedEventLog(UUID destinationId, UUID caseId, UUID submissionId, List<Entry> entries, List<String> warnings, UUID replyId) {
     public record Entry(UUID eventId, String eventType, String issuer, Instant issuedAt, String headerJson, String claimsJson) {
         public Entry {
             if (eventId == null || issuedAt == null || eventType == null || !eventType.startsWith("https://schema.fitko.de/fit-connect/events/")
@@ -15,15 +15,21 @@ public record VerifiedEventLog(UUID destinationId, UUID caseId, UUID submissionI
                 throw new SessionException("verification_failed");
         }
     }
+    public VerifiedEventLog(UUID destination, UUID caseId, UUID submission, List<Entry> entries, List<String> warnings) {
+        this(destination, caseId, submission, entries, warnings, null);
+    }
+    public static VerifiedEventLog reply(UUID caseId, UUID replyId, List<Entry> entries) {
+        return new VerifiedEventLog(null, caseId, null, entries, List.of("CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED"), replyId);
+    }
     public VerifiedEventLog(UUID destination, UUID caseId, UUID submission, List<Entry> entries) {
         this(destination, caseId, submission, entries, List.of("CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED"));
     }
     public VerifiedEventLog {
-        if (destinationId == null || caseId == null || submissionId == null || entries == null || entries.isEmpty() || entries.size() > 1000
+        if (caseId == null || (submissionId == null) == (replyId == null) || (replyId == null ? destinationId == null : destinationId != null) || entries == null || entries.isEmpty() || entries.size() > 1000
                 || !List.of("CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED").equals(warnings)) throw new SessionException("verification_failed");
         var ids = new HashSet<UUID>(); long bytes = 0;
         for (var entry : entries) {
-            if (entry == null || !ids.add(entry.eventId())) throw new SessionException("verification_failed");
+            if (entry == null || !entry.eventType().endsWith(replyId == null ? "-submission" : "-reply") || !ids.add(entry.eventId())) throw new SessionException("verification_failed");
             bytes += entry.headerJson().getBytes(StandardCharsets.UTF_8).length + entry.claimsJson().getBytes(StandardCharsets.UTF_8).length;
         }
         if (bytes > 16L * 1024 * 1024) throw new SessionException("content_limit");

@@ -87,6 +87,8 @@ impl<T> EngineResponse<T> {
                 Some("resource_unavailable") => EngineFailure::Remote("resource_unavailable"),
                 Some("verification_failed") => EngineFailure::Remote("verification_failed"),
                 Some("schema_consent_required") => EngineFailure::Remote("schema_consent_required"),
+                Some("schema_required") => EngineFailure::Remote("schema_required"),
+                Some("data_schema_invalid") => EngineFailure::Remote("data_schema_invalid"),
                 Some("schema_unavailable") => EngineFailure::Remote("schema_unavailable"),
                 Some("schema_tls_error") => EngineFailure::Remote("schema_tls_error"),
                 Some("schema_network_error") => EngineFailure::Remote("schema_network_error"),
@@ -197,7 +199,7 @@ mod tests {
     }
     #[test] fn expected_resource_failures_do_not_destroy_unrelated_sessions() {
         for code in ["resource_denied", "resource_missing", "resource_unavailable", "invalid_resource", "key_rejected",
-            "key_missing", "test_certificate_required", "invalid_input", "content_limit", "verification_failed", "schema_unavailable", "reply_channel_missing",
+            "key_missing", "test_certificate_required", "invalid_input", "content_limit", "verification_failed", "schema_required", "data_schema_invalid", "schema_unavailable", "reply_channel_missing",
             "schema_consent_required", "schema_tls_error", "schema_network_error", "schema_http_error", "schema_archive_invalid", "data_format_invalid"] {
             let response = EngineResponse::<SessionResource> { protocol_version: 1, id: "op-1".into(),
                 ok: false, result: None, error: Some(code.into()) };

@@ -9,7 +9,7 @@ import java.util.*;
 final class SendSchemas {
     record Destination(String destinationId, String detailsJson) {}
     record Page(String schemaId, String schemaUri, int totalBytes, int byteOffset, String chunk) {}
-    private String id, uri;
+    private String id, uri, proofId, mimeType;
     private byte[] bytes;
 
     static Destination destination(AuthenticatedSession session, String destinationId) {
@@ -46,12 +46,41 @@ final class SendSchemas {
         } catch (SessionException failure) { throw failure;
         } catch (Exception failure) { throw invalid(); }
     }
+    Page loadReply(AuthenticatedSession session, ReplyRecipient recipient, String proof, String document, Map<String,String> local) {
+        clear();
+        try {
+            var request = StrictJson.object(document, 24 * 1024);
+            if (!request.keySet().equals(Set.of("schemaUri", "mimeType", "allowExternalSchemas", "schemaContentId"))) throw invalid();
+            var consent = request.get("allowExternalSchemas");
+            if (!consent.isJsonPrimitive() || !consent.getAsJsonPrimitive().isBoolean() || !consent.getAsBoolean() && local.isEmpty())
+                throw new SessionException("schema_consent_required");
+            String selected = string(request, "schemaUri"), mime = string(request, "mimeType");
+            if (!Set.of("application/json", "application/xml").contains(mime) || recipient.schemas().stream().noneMatch(schema ->
+                    selected.equals(schema.schemaUri().toString()) && (schema.mimeType() == null || mime.equals(schema.mimeType())))) throw invalid();
+            byte[] loaded = session.publicSchema(selected, local, consent.getAsBoolean()).getBytes(StandardCharsets.UTF_8);
+            if (loaded.length == 0 || loaded.length > 24 * 1024 * 1024) throw new SessionException("content_limit");
+            bytes = loaded; uri = selected; id = UUID.randomUUID().toString(); proofId = proof; mimeType = mime;
+            return read(id, 0);
+        } catch (SessionException failure) { throw failure;
+        } catch (Exception failure) { throw invalid(); }
+    }
+    Page readReply(String proof, String schemaId, int offset) {
+        if (!Objects.equals(proofId, proof)) throw invalid();
+        return read(schemaId, offset);
+    }
+    void checkReply(AuthenticatedSession session, String proof, String schemaId, ReplyInput input) {
+        if (bytes == null || !Objects.equals(proofId, proof) || !Objects.equals(id, schemaId)
+                || !Objects.equals(uri, input.schemaUri().toString()) || !Objects.equals(mimeType, input.mimeType()))
+            throw new SessionException("schema_required");
+        if (!session.validateDraft(new SchemaSnapshot(uri, new String(bytes, StandardCharsets.UTF_8)), mimeType, input.data()))
+            throw new SessionException("data_schema_invalid");
+    }
     Page read(String schemaId, int offset) {
         if (bytes == null || !Objects.equals(id, schemaId) || offset < 0 || offset > bytes.length) throw invalid();
         return new Page(id, uri, bytes.length, offset,
                 Base64.getEncoder().encodeToString(Arrays.copyOfRange(bytes, offset, Math.min(offset + 12 * 1024, bytes.length))));
     }
-    void clear() { if (bytes != null) Arrays.fill(bytes, (byte) 0); bytes = null; uri = null; id = null; }
+    void clear() { if (bytes != null) Arrays.fill(bytes, (byte) 0); bytes = null; uri = null; id = null; proofId = null; mimeType = null; }
     private static String string(JsonObject object, String name) {
         var value = object.get(name);
         if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString() || value.getAsString().length() > 4096) throw invalid();

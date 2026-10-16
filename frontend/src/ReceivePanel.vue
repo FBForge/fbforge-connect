@@ -14,11 +14,12 @@ import { readReceivedSchema } from './received-schema.js';
 import { STRUCTURED_BYTES, structuredFormat } from './structured-data.js';
 
 const props = defineProps({ session: Object, detail: Object, destinationId: String, busy: Boolean, keyRevision: Number, receiveRevision: Number, reply: Boolean });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'verified', 'outcome', 'receive-start']);
+const emit = defineEmits(['busy', 'activity', 'fatal', 'verified', 'outcome', 'receive-start', 'event-log']);
 const diagnostic = ref('');
 const applicationSchema = ref(null);
 const application = ref(null), applicationNotice = ref(''), applicationHeading = ref(null);
 const attachments = computed(() => parts.value.filter(part => part.kind === 'attachment'));
+const schemaChecked = computed(() => Boolean(proof.value) && ['application/json', 'application/xml'].includes(parts.value.find(part => part.kind === 'data')?.mimeType) && !proof.value.warnings.includes('XML_SCHEMA_NOT_CHECKED'));
 const proof = ref(null), parts = ref([]), schemas = ref([]), preview = ref(null), error = ref('');
 const pending = ref(false), action = ref('');
 const receiptOutcome = ref(null);
@@ -216,7 +217,7 @@ function inspect(part, download = false) {
     <p v-if="pending" role="status">{{ action }} …</p><p v-if="error" role="alert">{{ error }}</p>
     <p v-if="error && diagnostic" class="small-note">Diagnose: {{ session?.apiVersion }} · <code>{{ diagnostic }}</code>. Diesen Code kannst du im Fehlerbericht angeben.</p>
     <template v-if="proof">
-      <p><span class="status-badge ok">Technische Inhaltsprüfungen abgeschlossen</span></p>
+      <div class="verification-stages" aria-label="Prüfstatus"><p><span class="status-badge ok">Entschlüsselung und Integrität geprüft</span></p><p><span class="status-badge" :class="schemaChecked ? 'ok' : 'info'">{{ schemaChecked ? 'Fachdaten-Schema geprüft' : 'Schemaprüfung nicht bestätigt' }}</span></p><p><span class="status-badge info">Fachliche Prüfung: manuell offen</span></p></div>
       <ul v-if="proof.warnings.length"><li v-for="stage in proof.warnings" :key="stage">{{ warning(stage) }}</li></ul>
       <p class="small-note">Das SDK hat Ereignisse, Signaturen, Verschlüsselung und Inhalts-Hashes geprüft. Hinweise oben benennen verbleibende Prüfungen. Dies bestätigt noch keinen Empfang bei FIT-Connect.</p>
       <section class="received-application" :aria-labelledby="`${panelId}-application-title`">
@@ -238,7 +239,7 @@ function inspect(part, download = false) {
     <ContentPreview v-if="preview" :preview="preview" :schema-document="preview?.isApplication ? applicationSchema?.document : undefined" :schema-uri="preview?.isApplication ? applicationSchema?.schemaUri : undefined" @close="closePreview" />
   </section>
   <ReplySender v-if="!reply && !completed" :session="session" :proof="proof" :busy="busy || pending"
-    @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @invalidate="resetProof" />
+    @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @invalidate="resetProof" @event-log="value => emit('event-log', value)" />
   <ReceiptPanel v-if="!reply" :session="session" :detail="detail" :proof="proof" :busy="busy || pending" :key-revision="keyRevision"
     @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)"
     @outcome="value => { receiptOutcome = value; emit('outcome', value); }" @invalidate="resetProof" />

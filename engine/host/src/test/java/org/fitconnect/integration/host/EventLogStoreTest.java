@@ -18,6 +18,18 @@ class EventLogStoreTest {
                 "https://schema.fitko.de/fit-connect/events/submit-submission", issuer, Instant.parse("2026-10-16T00:00:00Z"), "{\"alg\":\"PS512\"}", claims));
         return new VerifiedEventLog(DEST, CASE, SUB, entries);
     }
+    @Test void replySummariesDoNotMasqueradeAsSubmissionsAndUseTheSameOwnerAndApiBoundary() {
+        var store = new EventLogStore(); var original = log(1, "{}", "synthetic");
+        var entries = original.entries().stream().map(entry -> new VerifiedEventLog.Entry(entry.eventId(), entry.eventType().replace("-submission", "-reply"), entry.issuer(), entry.issuedAt(), entry.headerJson(), entry.claimsJson())).toList();
+        var log = VerifiedEventLog.reply(CASE, SUB, entries);
+        var summary = store.publishReply(ApiVersion.V3, OWNER, CASE, SUB, log);
+        assertEquals(SUB.toString(), summary.replyId());
+        assertFalse(new Gson().toJson(summary).contains("submissionId"));
+        assertThrows(SessionException.class, () -> store.page(ApiVersion.V2, OWNER, summary.logId(), 0));
+        assertThrows(SessionException.class, () -> store.page(ApiVersion.V3, UUID.randomUUID().toString(), summary.logId(), 0));
+        assertThrows(SessionException.class, () -> store.publish(ApiVersion.V3, OWNER, DEST, CASE, SUB, log));
+        assertThrows(SessionException.class, () -> store.page(ApiVersion.V3, OWNER, summary.logId(), 0));
+    }
     @Test void metadataIsPagedWithoutEmbeddingJsonAndUsesPortableTimeStrings() {
         var store = new EventLogStore(); var summary = store.publish(ApiVersion.V2, OWNER, DEST, CASE, SUB, log(6, "{}", "synthetic"));
         assertEquals(6, summary.total()); assertEquals(List.of("CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED"), summary.warnings());

@@ -7,18 +7,19 @@ import java.util.*;
 
 /** Reply identity and encryption context come from the native proof, not renderer-entered IDs/keys. */
 final class ReplyDraft {
-    record Summary(String proofId, String destinationId, String submissionId, String caseId, String schemaUri, String mimeType,
+    record Summary(String proofId, String destinationId, String submissionId, String caseId, String schemaId, String schemaUri, String mimeType,
             SubmissionInput.ProcessMessage processMessage, int dataBytes, List<SubmissionDraft.FileSummary> attachments) {}
     record Resolved(ReplyInput input, Summary summary) {}
     static String proofId(String document) { return DestinationAccess.id(text(StrictJson.object(document, 24 * 1024), "proofId", false)); }
     static Resolved resolve(String document, ReceiveStore.Summary proof, ContentStore content, String owner, long availableBytes) {
         try {
             var root = StrictJson.object(document, 24 * 1024);
-            exact(root, "proofId", "schemaUri", "mimeType", "processMessage", "contentId", "attachments");
+            exact(root, "proofId", "schemaId", "schemaUri", "mimeType", "processMessage", "contentId", "attachments");
             if (!proof.proofId().equals(text(root, "proofId", false))) throw new SessionException("verification_failed");
             var process = root.get("processMessage"); SubmissionInput.ProcessMessage message = null;
             if (!process.isJsonNull()) { var item = process.getAsJsonObject(); exact(item, "processModelId", "messageId");
                 message = new SubmissionInput.ProcessMessage(text(item, "processModelId", false), text(item, "messageId", false)); }
+            String schemaId = DestinationAccess.id(text(root, "schemaId", false));
             String schema = text(root, "schemaUri", false), mime = text(root, "mimeType", false);
             URI schemaValue = URI.create(schema);
             if (!schemaValue.isAbsolute() || schema.length() > 4096 || !Set.of("application/json", "application/xml").contains(mime))
@@ -44,7 +45,7 @@ final class ReplyDraft {
             }
             var input = new ReplyInput(UUID.fromString(proof.destinationId()), UUID.fromString(proof.submissionId()), UUID.fromString(proof.caseId()),
                     schemaValue, mime, data, inputs, message);
-            return new Resolved(input, new Summary(proof.proofId(), proof.destinationId(), proof.submissionId(), proof.caseId(), schema, mime, message,
+            return new Resolved(input, new Summary(proof.proofId(), proof.destinationId(), proof.submissionId(), proof.caseId(), schemaId, schema, mime, message,
                     data.length, List.copyOf(files)));
         } catch (SessionException failure) { throw failure;
         } catch (Exception failure) { throw new SessionException("invalid_submission"); }

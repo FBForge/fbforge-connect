@@ -1,3 +1,4 @@
+import { readSchemaPackage } from './sender-options.js';
 import { requestResource, sameJsonValue } from './resources.js';
 import { uploadContent, discardContent, CONTENT_FILE_BYTES } from './content.js';
 
@@ -7,7 +8,7 @@ const exact = (value, fields) => value !== null && typeof value === 'object' && 
 const fail = () => { throw new Error('engine_protocol_error'); };
 const identities = ['proofId', 'destinationId', 'submissionId', 'caseId'];
 const formats = ['application/json', 'application/xml'];
-const draftFields = ['proofId', 'schemaUri', 'mimeType', 'processMessage'];
+const draftFields = ['proofId', 'schemaId', 'schemaUri', 'mimeType', 'processMessage'];
 const errors = new Set(['invalid_submission', 'verification_failed', 'endpoint_blocked', 'resource_denied', 'resource_missing',
   'invalid_resource', 'content_limit', 'resource_unavailable', 'confirmation_expired', 'content_cleanup_failed']);
 function absolute(value) { try { return typeof value === 'string' && value.length <= 4096 && !/[\s\u0000-\u001f\u007f]/u.test(value) && Boolean(new URL(value).protocol); } catch { return false; } }
@@ -45,6 +46,23 @@ export async function loadReplyTarget(invoke, session, proof) {
   }
   return Object.freeze({ ...first, schemas: Object.freeze(schemas) });
 }
+export async function loadReplySchema(invoke, session, proof, selection, localFile = null) {
+  checkProof(proof);
+  if (!exact(selection, ['schemaUri', 'mimeType', 'allowExternalSchemas']) || !absolute(selection.schemaUri)
+      || !formats.includes(selection.mimeType) || typeof selection.allowExternalSchemas !== 'boolean'
+      || !selection.allowExternalSchemas && !localFile || localFile && (!Number.isSafeInteger(localFile.size) || localFile.size < 1 || localFile.size > 2 * 1024 * 1024)) throw new Error('invalid_input');
+  const active = { ...session }, identity = { ...proof }, chosen = { ...selection }; let handle;
+  try {
+    if (localFile) handle = await uploadContent(invoke, active, localFile);
+    const schemaDocument = JSON.stringify({ ...chosen, schemaContentId: handle?.contentId || null });
+    const page = await requestResource(invoke, active, 'load_reply_schema', { proofId: identity.proofId, schemaDocument });
+    const result = await readSchemaPackage(page, chosen.schemaUri, (contentId, byteOffset) =>
+      requestResource(invoke, active, 'read_reply_schema', { proofId: identity.proofId, contentId, byteOffset }));
+    return Object.freeze({ ...result, schemaUri: chosen.schemaUri, mimeType: chosen.mimeType });
+  } finally {
+    if (handle) { try { await discardContent(invoke, active, handle.contentId); } catch { throw new Error('content_cleanup_failed'); } }
+  }
+}
 export async function cancelReply(invoke, session, attemptId) {
   if (!uuid(attemptId)) throw new Error('invalid_input');
   const result = state(await requestResource(invoke, session, 'cancel_reply', { attemptId }));
@@ -52,7 +70,7 @@ export async function cancelReply(invoke, session, attemptId) {
 }
 export async function prepareReply(invoke, session, proof, draft, dataFile, attachments, options = {}) {
   checkProof(proof);
-  if (!exact(draft, draftFields) || draft.proofId !== proof.proofId || !absolute(draft.schemaUri) || !formats.includes(draft.mimeType)
+  if (!exact(draft, draftFields) || draft.proofId !== proof.proofId || !uuid(draft.schemaId) || !absolute(draft.schemaUri) || !formats.includes(draft.mimeType)
       || !(draft.processMessage === null || exact(draft.processMessage, ['processModelId', 'messageId'])
         && Object.values(draft.processMessage).every(value => typeof value === 'string' && value.trim() && value.length <= 1024 && !/[\u0000-\u001f\u007f]/u.test(value)))
       || session.apiVersion === 'v2' && draft.processMessage !== null

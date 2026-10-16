@@ -19,6 +19,35 @@ final class SchemaValidation {
     SchemaValidation(SchemaSources sources) {
         this.sources = sources;
     }
+    boolean draft(SchemaSnapshot snapshot, String mime, byte[] data) {
+        try {
+            if (snapshot == null || snapshot.document() == null || data == null || data.length == 0
+                    || !Set.of("application/json", "application/xml").contains(mime)) throw new SessionException("invalid_submission");
+            if (mime.equals("application/json")) {
+                try { var parsed = json.reader().with(tools.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readTree(data);
+                    if (parsed == null || parsed.isMissingNode()) throw new SessionException("data_format_invalid"); }
+                catch (Exception invalid) { throw new SessionException("data_format_invalid"); }
+            }
+            var packet = json.readTree(snapshot.document());
+            if (packet.path("schemaPackage").asInt() != 1 || !snapshot.schemaUri().equals(packet.path("schemaUri").asText()))
+                throw new SessionException("schema_unavailable");
+            var documents = new LinkedHashMap<String,String>(); var files = new LinkedHashMap<String,String>();
+            if (packet.has("documents") && packet.get("documents").isObject()) {
+                var raw = json.readValue(packet.get("documents").toString(), java.util.Map.class);
+                for (var name : raw.keySet()) documents.put((String) name, packet.get("documents").get((String) name).toString());
+            }
+            if (packet.has("schemas") && packet.get("schemas").isArray()) for (var file : packet.get("schemas")) {
+                String name = file.path("name").asText(), source = file.path("text").asText();
+                if (files.put(name, source) != null) throw new SessionException("schema_unavailable");
+            }
+            var local = SchemaSources.snapshot(snapshot.schemaUri(), documents, files);
+            return mime.equals("application/json") ? new SchemaValidation(local).json(data, snapshot.schemaUri())
+                    : !files.isEmpty() && local.validateXml(data, snapshot.schemaUri());
+        } catch (SessionException failure) {
+            if (failure.code().equals("schema_consent_required")) throw new SessionException("schema_unavailable");
+            throw failure;
+        } catch (Exception failure) { throw new SessionException("schema_unavailable"); }
+    }
     boolean json(byte[] data, String uri) {
         try {
             var loader = new SchemaLoader(location -> () -> new ByteArrayInputStream(

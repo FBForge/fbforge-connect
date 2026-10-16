@@ -39,6 +39,16 @@ public final class SchemaSources {
         this.sdkArchive = sdkArchive;
         for (var item : local.entrySet()) if (!CONSENT.equals(item.getKey())) add(documentUri(item.getKey()), item.getValue());
     }
+    /** Rehydrate an already authorized native snapshot. Missing resources stay unavailable. */
+    public static SchemaSources snapshot(String identifier, Map<String,String> documents, Map<String,String> xmlFiles) {
+        var sources = new SchemaSources(documents, false, uri -> { throw unavailable(); }, uri -> { throw unavailable(); });
+        if (!xmlFiles.isEmpty()) {
+            var files = new LinkedHashMap<String,String>();
+            xmlFiles.forEach((uri, source) -> { xml(source); sources.add(documentUri(uri), source); files.put(documentUri(uri), source); });
+            sources.archives.put(documentUri(identifier), Map.copyOf(files));
+        }
+        return sources;
+    }
     public static String documentUri(String value) {
         try {
             URI uri = URI.create(value);
@@ -92,8 +102,8 @@ public final class SchemaSources {
     }
     private Map<String,String> initialXmlFiles(String identifier) {
         String id = documentUri(identifier);
-        if (!id.startsWith("urn:xoev-de:")) return Map.of(id, document(id));
         var cached = archives.get(id); if (cached != null) return preferredXmlTree(cached);
+        if (!id.startsWith("urn:xoev-de:")) return Map.of(id, document(id));
         if (!id.matches("urn:xoev-de:[a-zA-Z0-9._:-]{1,512}")) throw unavailable();
         permission(); if (++requests > 32) throw new SessionException("content_limit");
         if (sdkArchive != null) {

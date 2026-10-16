@@ -6,6 +6,12 @@ import java.util.List;
 public interface AuthenticatedSession extends AutoCloseable {
     void check();
     default String publicSchema(String uri) { throw new SessionException("schema_unavailable"); }
+    default String publicSchema(String uri, java.util.Map<String,String> local, boolean allowExternal) {
+        if (!local.isEmpty() || !allowExternal) throw new SessionException("schema_unavailable");
+        return publicSchema(uri);
+    }
+    /** Offline validation against an exact native-loaded schema package; no resolver may fetch. */
+    default boolean validateDraft(SchemaSnapshot snapshot, String mimeType, byte[] data) { throw new SessionException("schema_unavailable"); }
     String destinations(int offset, int limit);
     String destination(String destinationId);
     default String ownDestination(String destinationId) { throw new SessionException("invalid_input"); }
@@ -35,6 +41,9 @@ public interface AuthenticatedSession extends AutoCloseable {
     void sendReceipt(SignedReceipt receipt, ResourceExchange authorizedTransport);
     VerifiedEventLog eventLog(java.util.UUID destinationId, java.util.UUID caseId, java.util.UUID submissionId,
             EventLogSource source, java.nio.file.Path workspace);
+    default VerifiedEventLog replyEventLog(java.util.UUID caseId, java.util.UUID replyId, EventLogSource source, java.nio.file.Path workspace) {
+        throw new SessionException("invalid_input");
+    }
     void discardKeys();
     /** The host must supply a private session workspace and a write-authorized transport. */
     SendResult send(SubmissionInput input, java.nio.file.Path workspace, java.util.UUID attemptId);

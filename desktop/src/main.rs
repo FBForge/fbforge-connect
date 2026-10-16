@@ -390,6 +390,27 @@ async fn read_received_content(app: tauri::AppHandle, state: State<'_, EngineSta
 }
 
 #[tauri::command]
+async fn load_reply_event_log(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, case_id: String, reply_id: String) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&case_id) || !valid_session_id(&reply_id) { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"load_reply_event_log","caseId":case_id,"replyId":reply_id})).await
+}
+#[tauri::command]
+async fn load_reply_schema(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, proof_id: String, schema_document: String) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&proof_id) || schema_document.len() > 24 * 1024 { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"load_reply_schema","proofId":proof_id,"schemaDocument":schema_document})).await
+}
+#[tauri::command]
+async fn read_reply_schema(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, proof_id: String, content_id: String, byte_offset: u32) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&proof_id) || !valid_session_id(&content_id) || byte_offset > 24 * 1024 * 1024 { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"read_reply_schema","proofId":proof_id,"contentId":content_id,"byteOffset":byte_offset})).await
+}
+#[tauri::command]
 async fn read_received_schema(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
     session_id: String, proof_id: String, byte_offset: u32) -> Result<SessionResource, &'static str> {
     if !valid_session_id(&proof_id) || byte_offset > 24 * 1024 * 1024 { return Err("invalid_input"); }
@@ -524,7 +545,7 @@ fn main() {
     let app = tauri::Builder::default()
         .manage(EngineState::default())
         .invoke_handler(tauri::generate_handler![load_managed_destination, prepare_destination_update, execute_destination_update, cancel_destination_update, destination_update_state, probe_engine, open_session, check_session, close_session,
-            load_send_destination, load_send_schema, read_send_schema, read_received_schema, read_received_reply_schema, list_destinations, load_destination, import_key, loaded_keys, discard_keys,
+            load_send_destination, load_send_schema, read_send_schema, load_reply_schema, read_reply_schema, load_reply_event_log, read_received_schema, read_received_reply_schema, list_destinations, load_destination, import_key, loaded_keys, discard_keys,
             begin_content, append_content, discard_content, prepare_send, execute_send, cancel_send, send_state,
             reply_target, prepare_reply, execute_reply, cancel_reply, reply_state,
             list_submissions, load_submission, verify_submission, list_received_contents, read_received_content, discard_received,
