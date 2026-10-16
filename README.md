@@ -18,7 +18,7 @@ Die Anwendung arbeitet ausschließlich mit der FIT-Connect-Testumgebung. Sie ist
 
 ## Entwicklungsstand
 
-Die Anwendung wird für eine erste Alpha vorbereitet. Automatisierte Tests verwenden simulierte API-Antworten. Ein erster Versand über API v2 wurde erfolgreich gegen TEST erprobt. Der Versand über v3 und weitere Abläufe werden noch korrigiert und getestet. Die vollständige Erprobung gegen die FIT-Connect-Testumgebung steht noch aus.
+Die Anwendung wird für eine erste Alpha vorbereitet. Automatisierte Tests verwenden simulierte API-Antworten. Ein erster Versand über API v2 wurde erfolgreich gegen TEST erprobt. Im Stand `0.1.0-dev.2` wurden eine zusätzliche V3-Berechtigungsprüfung und die TEST-Ausstellerzuordnung im Event Log korrigiert. Automatisierte Roundtrip-Tests prüfen Versand, Empfang und Entschlüsselung einschließlich Anlagen mit beiden SDKs. Der erneute Live-Test von V3, Empfang und Event Log sowie die Windows-Installation stehen noch aus; siehe [Alpha-Testplan](ALPHA_TESTPLAN.md).
 
 Vorgangsübergreifende Suche, Empfangsbestätigungen für Replies und interaktive BPMN-Prozessdarstellungen sind in Arbeit beziehungsweise geplant. Antwortschlüssel bleiben nur in der Sitzung verfügbar, in der das Antwortangebot versendet wurde.
 

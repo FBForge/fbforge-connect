@@ -9,10 +9,10 @@ import java.nio.file.Path;
 /** SDK verification first, then exact requested identities and bounded public JSON. No content or private keys. */
 final class EventLogs {
     static VerifiedEventLog read(AuthorizationHeaderProvider auth, UUID destination, UUID caseId, UUID submission, EventLogSource source, Path workspace) {
+        var http = new ReceiverTransport(source, Map.of());
         try {
             if (destination == null || caseId == null || submission == null || source == null || workspace == null)
                 throw new SessionException("invalid_input");
-            var http = new ReceiverTransport(source, Map.of());
             var env = dev.fitko.fitconnect.rest.client.config.FitConnectEnvironment.TEST;
             var settings = dev.fitko.fitconnect.sdk.config.settings.SdkSettings.withDefaultSettings();
             var headers = new dev.fitko.fitconnect.rest.client.services.auth.RequestHeaders(auth);
@@ -36,7 +36,7 @@ final class EventLogs {
                 var jwt = SignedJWT.parse(wire); var claims = jwt.getJWTClaimsSet(); var eventsClaim = claims.getJSONObjectClaim("events");
                 if (!("submission:" + submission).equals(claims.getSubject()) || !("case:" + caseId).equals(claims.getStringClaim("txn"))
                         || eventsClaim == null || eventsClaim.size() != 1
-                        || !("https://test.fit-connect.fitko.dev/submission-api".equals(claims.getIssuer()) || destination.toString().equalsIgnoreCase(claims.getIssuer())))
+                        || !(TestEventIssuers.isSubmissionService(claims.getIssuer()) || destination.toString().equalsIgnoreCase(claims.getIssuer())))
                     throw new SessionException("verification_failed");
                 String event = eventsClaim.keySet().iterator().next();
                 if (dev.fitko.fitconnect.rest.model.event.Event.fromSchemaUri(event) == null || !event.endsWith("-submission")) throw new SessionException("verification_failed");
@@ -46,7 +46,10 @@ final class EventLogs {
             if (entries.stream().filter(entry -> entry.eventType().equals("https://schema.fitko.de/fit-connect/events/submit-submission")).count() != 1)
                 throw new SessionException("verification_failed");
             return new VerifiedEventLog(destination, caseId, submission, entries);
-        } catch (SessionException failure) { throw failure;
-        } catch (Exception failure) { throw new SessionException("verification_failed"); }
+        } catch (Exception failure) {
+            if (http.readFailure() != null) throw http.readFailure();
+            if (failure instanceof SessionException known) throw known;
+            throw new SessionException("verification_failed");
+        }
     }
 }

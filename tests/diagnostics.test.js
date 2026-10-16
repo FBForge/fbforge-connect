@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { probeAdapter, errorMessage } from '../frontend/src/diagnostics.js';
+import { probeAdapter, errorMessage, diagnosticCode } from '../frontend/src/diagnostics.js';
 
 test('both API versions invoke the native command without changing the requested version', async () => {
   const calls = [];
@@ -32,4 +32,13 @@ test('unexpected native errors are never displayed verbatim', () => {
     assert.equal(errorMessage(value), 'Die lokale Aktion ist fehlgeschlagen.');
   }
   assert.match(errorMessage('engine_not_staged'), /Laufzeit/);
+});
+
+test('reportable diagnostics expose stable codes and never raw errors or inherited properties', () => {
+  for (const code of ['verification_failed', 'resource_denied', 'resource_missing', 'schema_tls_error', 'endpoint_blocked']) {
+    assert.equal(diagnosticCode(code), code);
+    assert.equal(diagnosticCode(new Error(code)), code);
+  }
+  for (const cause of ['synthetic-sensitive-marker', new Error('secret in SDK message'), 'constructor', '__proto__', null, { message: {} }])
+    assert.equal(diagnosticCode(cause), 'unknown_error');
 });

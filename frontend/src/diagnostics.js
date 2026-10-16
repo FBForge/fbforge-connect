@@ -31,3 +31,18 @@ export function errorMessage(code) {
   return typeof key === 'string' && Object.hasOwn(messages, key)
     ? messages[key] : 'Die lokale Aktion ist fehlgeschlagen.';
 }
+
+// Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
+const reportableCodes = new Set([
+  'desktop_required', 'engine_not_staged', 'engine_start_failed', 'adapter_unavailable', 'engine_timeout',
+  'engine_busy', 'engine_disconnected', 'engine_protocol_error', 'invalid_credentials', 'authentication_failed',
+  'auth_unavailable', 'endpoint_blocked', 'session_missing', 'invalid_resource', 'resource_denied',
+  'resource_missing', 'resource_unavailable', 'key_rejected', 'key_missing', 'test_certificate_required',
+  'invalid_input', 'content_limit', 'verification_failed', 'schema_unavailable', 'schema_consent_required',
+  'schema_tls_error', 'schema_network_error', 'schema_http_error', 'schema_archive_invalid',
+  'send_locked', 'invalid_submission', 'data_format_invalid', 'content_cleanup_failed',
+]);
+export function diagnosticCode(cause) {
+  const code = typeof cause === 'string' ? cause : cause?.message;
+  return typeof code === 'string' && reportableCodes.has(code) ? code : 'unknown_error';
+}

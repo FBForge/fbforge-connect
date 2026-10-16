@@ -361,6 +361,95 @@ class SenderKernelTest {
         }
     }
 
+    @Test void sentSubmissionsCanBeReceivedAndVerifiedByBothSdkAdapters() throws Exception {
+        try (var adapters = registry()) {
+            for (ApiVersion sending : ApiVersion.values()) {
+                var remote = new Capture(sending.wireValue()); remote.metadata = "2.0.0";
+                var gate = new SendAccess(sending, remote);
+                var original = input(null, null);
+                var input = new SubmissionInput(sending == ApiVersion.V3 ? SOURCE : null, TARGET, SERVICE, original.serviceName(),
+                        original.region(), SCHEMA, original.mimeType(), DATA, original.attachments(), null, null);
+                try (var sender = adapters.openSession(sending, "id", "secret",
+                        (u,b) -> "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}", gate)) {
+                    var attempt = gate.prepare(input);
+                    assertEquals("sent", gate.execute(attempt.attemptId(), sender, workspace).status());
+                }
+                var envelope = JsonParser.parseString(remote.response()).getAsJsonObject();
+                remote.submitted.entrySet().forEach(entry -> envelope.add(entry.getKey(), entry.getValue()));
+                envelope.add("publicService", remote.announce.get("publicService"));
+                envelope.addProperty("region", input.region());
+                var tags = new JsonObject();
+                tags.addProperty("metadata", IncomingReplyFixture.tag(remote.submitted.get("encryptedMetadata").getAsString()));
+                tags.addProperty("data", IncomingReplyFixture.tag(remote.submitted.get("encryptedData").getAsString()));
+                var attachments = new JsonObject();
+                remote.uploads.forEach((url, wire) -> attachments.addProperty(url.substring(url.lastIndexOf('/') + 1), IncomingReplyFixture.tag(wire)));
+                tags.add("attachments", attachments);
+                var events = new JsonArray();
+                events.add(submissionEvent("create-submission", null)); events.add(submissionEvent("submit-submission", tags));
+                String eventPage = "{\"offset\":0,\"count\":2,\"totalCount\":2,\"eventLog\":" + events + "}";
+                for (ApiVersion receiving : ApiVersion.values()) {
+                    String base = "https://test.fit-connect.fitko.dev/submission-api/" + receiving.wireValue();
+                    ResourceExchange read = (url, headers) -> {
+                        if (url.equals(base + "/submissions/" + SUBMISSION)) return envelope.toString();
+                        if (url.contains("/events?")) return eventPage;
+                        if (url.endsWith("/.well-known/jwks.json")) {
+                            var server = publicKey.deepCopy(); server.addProperty("kid", "synthetic-server"); server.addProperty("alg", "PS512");
+                            server.remove("x5c"); server.remove("use"); var ops = new JsonArray(); ops.add("verify"); server.add("key_ops", ops);
+                            return "{\"keys\":[" + server + "]}";
+                        }
+                        if (url.contains("/attachments/")) return remote.uploads.get(url.replace(base, remote.BASE));
+                        return remote.get(url.replace(base, remote.BASE), headers);
+                    };
+                    try (var receiver = adapters.openSession(receiving, "id", "secret",
+                            (u,b) -> "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}", read)) {
+                        String pem = "-----BEGIN PRIVATE KEY-----\n" + Base64.getEncoder().encodeToString(privateKey.getEncoded()) + "\n-----END PRIVATE KEY-----";
+                        receiver.importKey(TARGET.toString(), "decrypt", pem, List.of(publicKey.toString()));
+                        try (var scope = new ReceiveAccess(receiving, TARGET.toString(), SUBMISSION.toString(), read)) {
+                            var result = adapters.withSession(receiving, receiver,
+                                    session -> session.receive(TARGET.toString(), SUBMISSION.toString(), scope, workspace, Map.of(SCHEMA.toString(), "{\"type\":\"object\"}")));
+                            assertArrayEquals(DATA, result.data(), sending + " -> " + receiving);
+                            assertArrayEquals(input.attachments().getFirst().data(), result.attachments().getFirst().bytes());
+                            assertEquals("Anlage.txt", result.attachments().getFirst().fileName());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static String submissionEvent(String name, JsonObject tags) throws Exception {
+        var claims = new JsonObject(); claims.addProperty("$schema", "https://schema.fitko.de/fit-connect/set-payload/1.2.2/set-payload.schema.json");
+        claims.addProperty("iss", "https://submission-api-testing.fit-connect.fitko.dev");
+        claims.addProperty("jti", UUID.randomUUID().toString()); claims.addProperty("iat", java.time.Instant.now().getEpochSecond() - 1);
+        claims.addProperty("sub", "submission:" + SUBMISSION); claims.addProperty("txn", "case:" + CASE);
+        var events = new JsonObject(); var body = new JsonObject(); if (tags != null) body.add("authenticationTags", tags);
+        events.add("https://schema.fitko.de/fit-connect/events/" + name, body); claims.add("events", events);
+        var b64 = Base64.getUrlEncoder().withoutPadding();
+        String payload = b64.encodeToString("{\"alg\":\"PS512\",\"kid\":\"synthetic-server\",\"typ\":\"secevent+jwt\"}".getBytes(StandardCharsets.UTF_8))
+                + "." + b64.encodeToString(claims.toString().getBytes(StandardCharsets.UTF_8));
+        var signature = Signature.getInstance("RSASSA-PSS"); signature.setParameter(new PSSParameterSpec("SHA-512", "MGF1", MGF1ParameterSpec.SHA512, 64, 1));
+        signature.initSign(privateKey); signature.update(payload.getBytes(StandardCharsets.US_ASCII));
+        return payload + "." + b64.encodeToString(signature.sign());
+    }
+
+    @Test void v3SendDoesNotRequirePermissionToListUnrelatedCases() throws Exception {
+        var remote = new Capture("v3");
+        var gate = new SendAccess(ApiVersion.V3, new ResourceExchange() {
+            public String get(String url, Map<String,String> headers) { return remote.get(url, headers); }
+            public Response request(String method, String url, Map<String,String> headers, String body) {
+                if (url.contains("/cases?")) return new Response(403, "{}");
+                return remote.request(method, url, headers, body);
+            }
+        });
+        try (var adapters = registry(); var session = adapters.openSession(ApiVersion.V3, "id", "secret",
+                (u,b) -> "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}", gate)) {
+            var attempt = gate.prepare(input(null, null));
+            var result = gate.execute(attempt.attemptId(), session, workspace);
+            assertEquals("sent", result.status(), result.toString());
+            assertEquals(1, remote.posts);
+        }
+    }
+
     @Test void metadataOneAndUnadvertisedServicesCannotAnnounceASubmission() throws Exception {
         try (var adapters = registry()) {
             for (boolean oldMetadata : List.of(true, false)) {

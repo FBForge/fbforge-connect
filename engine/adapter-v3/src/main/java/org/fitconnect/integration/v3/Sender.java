@@ -1,6 +1,18 @@
 package org.fitconnect.integration.v3;
 
-import dev.fitko.fitconnect.sdk.FitConnectSdk;
+import dev.fitko.fitconnect.rest.client.services.auth.AuthorizationHeaderProvider;
+import dev.fitko.fitconnect.rest.client.services.auth.RequestHeaders;
+import dev.fitko.fitconnect.rest.client.services.submission.impl.*;
+import dev.fitko.fitconnect.core.common.concurrent.ConcurrencyLimiter;
+import dev.fitko.fitconnect.core.crypto.impl.JWECryptoService;
+import dev.fitko.fitconnect.sdk.config.credentials.ActingDestination;
+import dev.fitko.fitconnect.sdk.services.transfer.*;
+import dev.fitko.fitconnect.sdk.services.attachment.impl.AttachmentTransferService;
+import dev.fitko.fitconnect.sdk.services.validation.ValidationService;
+import dev.fitko.fitconnect.sdk.services.keys.SignatureKeyProvider;
+import dev.fitko.fitconnect.sdk.validation.validators.key.PublicKeyValidator;
+import dev.fitko.fitconnect.sdk.schema.SchemaResolver;
+import dev.fitko.fitconnect.virusscanner.impl.noop.NoOpVirusScanner;
 import dev.fitko.fitconnect.sdk.api.*;
 import dev.fitko.fitconnect.sdk.config.settings.SdkSettings;
 import dev.fitko.fitconnect.sdk.storage.impl.FileSystemStorageProvider;
@@ -12,20 +24,41 @@ import java.util.*;
 
 /** Pinned SDK4 sender. No SDK default HTTP client or global temporary storage is used. */
 final class Sender {
-    private final FitConnectSdk sdk;
+    private final AuthorizationHeaderProvider auth;
+    private final Path workspace;
     private final SenderTransport http;
     final ReplyKeys replyKeys = new ReplyKeys();
     private final Map<UUID, SentSubmission> sent = new LinkedHashMap<>();
 
-    Sender(String encodedClientId, String encodedSecret, TokenExchange tokens, ResourceExchange resources, Path workspace) {
+    Sender(AuthorizationHeaderProvider auth, TokenExchange tokens, ResourceExchange resources, Path workspace) {
+        this.auth = Objects.requireNonNull(auth);
+        this.workspace = Objects.requireNonNull(workspace);
         http = new SenderTransport(tokens, resources);
-        sdk = FitConnectSdk.fromConfigBuilder().environment(FitConnectEnvironment.TEST)
-                .credentials(encodedClientId, encodedSecret)
-                .settings(SdkSettings.builder().concurrentAttachmentStreams(1)
-                        .attachmentChunkingConfig(dev.fitko.fitconnect.sdk.config.settings.AttachmentChunkingConfig.builder()
-                                .attachmentStoragePath(workspace).chunkAllAttachments(true).chunkSizeInMB(4).build()).build())
-                .customization().withCustomHttpService(http)
-                .withCustomStorageProvider(new FileSystemStorageProvider(workspace.toString())).build();
+    }
+
+    /** Wire the same pinned SDK transfer services without DestinationFactory's unrelated GET /cases probe.
+     * The native SendAccess still verifies the acting destination and gates every write; TEST authorizes
+     * the actual announce/finalize requests with the current session token.
+     */
+    private OutgoingTransferService transfers(UUID destination) {
+        var env = FitConnectEnvironment.TEST;
+        var settings = SdkSettings.builder().concurrentAttachmentStreams(1)
+                .attachmentChunkingConfig(dev.fitko.fitconnect.sdk.config.settings.AttachmentChunkingConfig.builder()
+                        .attachmentStoragePath(workspace).chunkAllAttachments(true).chunkSizeInMB(4).build()).build();
+        var headers = new RequestHeaders(auth);
+        var limiter = new ConcurrencyLimiter(1);
+        var base = env.submissionApiUrl();
+        var submissions = new SubmissionApiClient(headers, http, limiter, base);
+        var replies = new ReplyApiClient(headers, http, limiter, base);
+        var cases = new CaseApiClient(headers, http, base);
+        var crypto = new JWECryptoService();
+        var storage = new FileSystemStorageProvider(workspace.toString());
+        var validation = new ValidationService(settings.validationConfig(), env,
+                new SchemaResolver(settings.validationConfig(), http), new SignatureKeyProvider(http, env),
+                new PublicKeyValidator(settings.httpConfig().proxyConfig()), new NoOpVirusScanner(), storage);
+        var context = new TransferContext(submissions, replies, cases, crypto, validation, ActingDestination.sendOnly(destination));
+        return new OutgoingTransferService(context,
+                new AttachmentTransferService(settings.attachmentChunkingConfig(), crypto, storage), null);
     }
 
     SendResult send(SubmissionInput input, UUID attemptId) {
@@ -42,14 +75,12 @@ final class Sender {
                 List.of(new dev.fitko.fitconnect.rest.model.metadata.v2.DataSetSchema(input.replyOffer().schemaUri().toString(), input.replyOffer().mimeType()))));
         for (var item : input.attachments()) outgoing.addAttachment(Attachment.builder().fromBytes(item.data())
                 .fileName(item.fileName()).mimeType(item.mimeType()).description(item.description()).build());
-        // The SDK verifies the acting destination type before sending.
+        // Validate the acting destination before wiring its SDK transfer service.
         var source = http.get("https://test.fit-connect.fitko.dev/submission-api/v3/destinations/" + input.fromDestinationId(),
                 Map.of(), dev.fitko.fitconnect.rest.model.destination.PublicDestination.class).body();
         if (source == null || !input.fromDestinationId().equals(source.destinationId()) || source.type() == null)
             throw new SessionException("invalid_submission");
-        SentSubmission result = source.type() == dev.fitko.fitconnect.rest.model.destination.DestinationType.ONLINE_SERVICE
-                ? sdk.onlineService(input.fromDestinationId()).send(outgoing.build())
-                : sdk.organisation(input.fromDestinationId()).send(outgoing.build());
+        SentSubmission result = transfers(input.fromDestinationId()).send(outgoing.build());
         if (result == null || result.submissionId() == null || result.caseId() == null
                 || !input.destinationId().equals(result.destinationId()) || !input.fromDestinationId().equals(result.fromDestinationId()))
             throw new SessionException("resource_unavailable");
@@ -65,7 +96,12 @@ final class Sender {
             if (input.processMessage() != null) outgoing.forProcessMessage(input.processMessage().processModelId(), input.processMessage().messageId());
             for (var item : input.attachments()) outgoing.addAttachment(Attachment.builder().fromBytes(item.data())
                     .fileName(item.fileName()).mimeType(item.mimeType()).description(item.description()).build());
-            var result = sdk.organisation(recipient.destinationId()).send(outgoing.build());
+            var source = http.get(FitConnectEnvironment.TEST.submissionApiUrl() + "/v3/destinations/" + recipient.destinationId(),
+                    Map.of(), dev.fitko.fitconnect.rest.model.destination.PublicDestination.class).body();
+            if (source == null || !recipient.destinationId().equals(source.destinationId()) || source.type() == null
+                    || source.type() == dev.fitko.fitconnect.rest.model.destination.DestinationType.ONLINE_SERVICE)
+                throw new SessionException("invalid_submission");
+            var result = transfers(recipient.destinationId()).send(outgoing.build());
             if (result == null || !recipient.caseId().equals(result.caseId()) || !recipient.destinationId().equals(result.fromDestinationId()))
                 throw new SessionException("invalid_resource");
             return new ReplyResult(result.replyId(), result.caseId(), result.fromDestinationId());

@@ -23,7 +23,9 @@ Die folgenden Funktionen sind im lokalen Entwicklungsstand vorhanden. Die vollst
 * Inhaltsvorschau, durchsuchbare JSON-Struktur und Downloads.
 * Grundlagen für Antwortkanäle, Replies und Event Logs.
 
-Der Versand über API v2 wurde bereits erfolgreich gegen TEST erprobt. Für andere Abläufe stehen weitere Integrationstests und Fehlerkorrekturen aus.
+Der Versand über API v2 wurde bereits erfolgreich gegen TEST erprobt. `0.1.0-dev.2` korrigiert den unnötigen V3-Zugriff auf die Vorgangsliste und akzeptiert die zweite offizielle TEST-Ausstelleradresse im Event Log. Roundtrip-Tests decken SDK-Versand und Empfang in allen vier v2/v3-Kombinationen mit Metadaten 2.0.0 und Anlagen ab. Fehler beim Abruf von Signaturschlüsseln bleiben als konkrete Fehlercodes erhalten. Windows-CI läuft auch auf `develop`.
+
+Die erneute Live-Erprobung von V3, Empfang und Event Log ist noch offen. Der [Alpha-Testplan](ALPHA_TESTPLAN.md) enthält die Schritte und Abnahmekriterien.
 
 ### Vor einer ausführbaren Alpha
 

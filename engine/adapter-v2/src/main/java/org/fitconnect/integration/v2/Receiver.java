@@ -63,8 +63,11 @@ final class Receiver {
                 }
             } catch (Exception failure) { replyFailure = "verification_failed"; }
             return content;
-        } catch (SessionException failure) { throw failure;
-        } catch (Exception failure) { throw new SessionException(transport.schemaFailed() ? transport.schemaFailureCode : "verification_failed"); }
+        } catch (Exception failure) {
+            if (transport.readFailure() != null) throw transport.readFailure();
+            if (failure instanceof SessionException known) throw known;
+            throw new SessionException(transport.schemaFailed() ? transport.schemaFailureCode : "verification_failed");
+        }
     }
     ReceiptEvidence evidence(String destination, String submission) {
         if (evidence == null || !evidence.destinationId().toString().equals(destination) || !evidence.submissionId().toString().equals(submission))

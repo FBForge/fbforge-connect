@@ -30,8 +30,10 @@ final class Receiver {
     ReceivedContent receive(AuthorizationHeaderProvider auth, List<RSAKey> keys, String destination, String submission,
             ResourceExchange read, Path workspace, Map<String,String> schemas) {
         evidence = null; replyRecipient = null; replyFailure = "reply_channel_missing";
+        ReceiverTransport transport = null;
         try {
             var services = compose(auth, keys, destination, read, workspace, schemas, null, ignored -> {});
+            transport = services.http();
             var receiver = services.receiver(); var crypto = services.crypto();
             var result = receiver.openSubmission(UUID.fromString(submission));
             if (!UUID.fromString(destination).equals(result.getDestinationId()) || !UUID.fromString(submission).equals(result.submissionId()))
@@ -73,8 +75,11 @@ final class Receiver {
                 }
             } catch (Exception failure) { replyFailure = "verification_failed"; }
             return content;
-        } catch (SessionException failure) { throw failure;
-        } catch (Exception failure) { throw new SessionException("verification_failed"); }
+        } catch (Exception failure) {
+            if (transport != null && transport.readFailure() != null) throw transport.readFailure();
+            if (failure instanceof SessionException known) throw known;
+            throw new SessionException("verification_failed");
+        }
     }
     record Components(IncomingTransferService receiver, ReceiveCrypto crypto, ReceiverTransport http) { }
     static Components compose(AuthorizationHeaderProvider auth, List<RSAKey> keys, String destination, ResourceExchange read,

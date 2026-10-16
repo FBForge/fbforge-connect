@@ -4,7 +4,7 @@ import { invoke } from './native.js';
 import { verifySubmission, verifyReply, listReceivedContents, readReceivedFile, discardReceived } from './receiving.js';
 import { uploadContent, discardContent } from './content.js';
 import { createPreview, disposePreview } from './submission-preview.js';
-import { errorMessage } from './diagnostics.js';
+import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import ContentPreview from './ContentPreview.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
@@ -12,6 +12,7 @@ import ReplySender from './ReplySender.vue';
 
 const props = defineProps({ session: Object, detail: Object, destinationId: String, busy: Boolean, keyRevision: Number, receiveRevision: Number, reply: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'verified', 'outcome', 'receive-start']);
+const diagnostic = ref('');
 const proof = ref(null), parts = ref([]), schemas = ref([]), preview = ref(null), error = ref('');
 const pending = ref(false), action = ref('');
 const receiptOutcome = ref(null);
@@ -62,21 +63,24 @@ async function resetAll() {
   await resetProof();
   for (const file of files) await release(() => discardContent(invoke, file.owner, file.contentId));
 }
-watch(context, () => { error.value = ''; void resetAll(); }, { flush: 'sync' });
-watch([() => props.detail, () => props.keyRevision, () => props.receiveRevision], () => { error.value = ''; void resetProof(); }, { flush: 'sync' });
+watch(context, () => { error.value = ''; diagnostic.value = ''; void resetAll(); }, { flush: 'sync' });
+watch([() => props.detail, () => props.keyRevision, () => props.receiveRevision], () => { error.value = ''; diagnostic.value = ''; void resetProof(); }, { flush: 'sync' });
 onBeforeUnmount(() => { alive = false; void resetAll(); });
 
 async function run(name, operation) {
   if (disabled.value) return;
   const active = { ...props.session }, stamp = generation, started = performance.now();
   const current = () => alive && stamp === generation;
-  pending.value = true; action.value = name; error.value = ''; emit('busy', true);
+  pending.value = true; action.value = name; error.value = ''; diagnostic.value = ''; emit('busy', true);
   let status = 'Erfolgreich';
   try { await operation(active, current); if (!current()) status = 'Abgebrochen'; }
   catch (cause) {
     const code = typeof cause === 'string' ? cause : cause?.message;
     status = code === 'content_cancelled' ? 'Abgebrochen' : 'Fehlgeschlagen';
-    if (current() && code !== 'content_cancelled') error.value = (messages[code] || errorMessage(cause)).replaceAll('Einreichung', subject.value);
+    if (current() && code !== 'content_cancelled') {
+      error.value = (messages[code] || errorMessage(cause)).replaceAll('Einreichung', subject.value);
+      diagnostic.value = diagnosticCode(cause);
+    }
     if (resetsSessions(cause)) emit('fatal', cause);
   } finally {
     controller.value = null; pending.value = false; action.value = ''; emit('busy', false);
@@ -159,6 +163,7 @@ function inspect(part, download = false) {
       const code = typeof cause === 'string' ? cause : cause?.message;
       if (current() && code !== 'content_cancelled') {
         error.value = (messages[code] || errorMessage(cause)).replaceAll('Einreichung', subject.value);
+        diagnostic.value = diagnosticCode(cause);
         void resetProof();
       }
       throw cause;
@@ -182,6 +187,7 @@ function inspect(part, download = false) {
       <button v-if="proof" class="button secondary" type="button" :disabled="disabled" @click="resetProof">Prüfergebnis verwerfen</button>
       <button v-if="pending && controller" class="button secondary" type="button" @click="controller.abort()">Übertragung abbrechen</button></div>
     <p v-if="pending" role="status">{{ action }} …</p><p v-if="error" role="alert">{{ error }}</p>
+    <p v-if="error && diagnostic" class="small-note">Diagnose: {{ session?.apiVersion }} · <code>{{ diagnostic }}</code>. Diesen Code kannst du im Fehlerbericht angeben.</p>
     <template v-if="proof">
       <p><span class="status-badge ok">Technische Inhaltsprüfungen abgeschlossen</span></p>
       <ul v-if="proof.warnings.length"><li v-for="stage in proof.warnings" :key="stage">{{ warning(stage) }}</li></ul>

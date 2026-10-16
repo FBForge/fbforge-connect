@@ -12,6 +12,9 @@ final class ReceiverTransport implements HttpClient {
     private final ReceiveSchemas schemas;
     final SchemaValidation validation;
     private boolean schemaFailed;
+    // SDK key validation may catch a failed read and try again. Keep the original bounded host error.
+    private SessionException readFailure;
+    SessionException readFailure() { return readFailure; }
     String schemaFailureCode = "schema_unavailable";
     void failed(SessionException failure) { schemaFailed = true; schemaFailureCode = failure.code(); }
     boolean schemaFailed() { return schemaFailed; }
@@ -35,8 +38,13 @@ final class ReceiverTransport implements HttpClient {
                 } else body = read.get(url, headers);
             }
             return new HttpResponse<>(200, type == String.class ? type.cast(body) : mapper.readValue(body, type));
-        } catch (SessionException failure) { throw failure;
-        } catch (Exception failure) { throw new SessionException("invalid_resource"); }
+        } catch (SessionException failure) {
+            if (readFailure == null) readFailure = failure;
+            throw failure;
+        } catch (Exception failure) {
+            if (readFailure == null) readFailure = new SessionException("invalid_resource");
+            throw readFailure;
+        }
     }
     public <P,R> HttpResponse<R> post(String u, Map<String,String> h, P p, Class<R> t) { throw blocked(); }
     public <P,R> HttpResponse<R> put(String u, Map<String,String> h, P p, Class<R> t) { throw blocked(); }

@@ -2,12 +2,13 @@
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import { loadEventLog, listEventLog, readEventDocument, discardEventLog } from './event-log.js';
-import { errorMessage } from './diagnostics.js';
+import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import ContentPreview from './ContentPreview.vue';
 
 const props = defineProps({ session: Object, busy: Boolean, target: Object, visible: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal']);
+const diagnostic = ref('');
 const destination = ref(''), caseId = ref(''), submission = ref('');
 const result = shallowRef(null), events = shallowRef([]), preview = shallowRef(null);
 const pending = ref(false), error = ref(''), query = ref(''), page = ref(0), heading = ref(null);
@@ -47,8 +48,8 @@ function reset() {
   result.value = null; owner = null; events.value = []; query.value = ''; page.value = 0;
   return previous && active ? release(active, previous.logId) : Promise.resolve();
 }
-watch(context, () => { error.value = ''; void reset(); }, { flush: 'sync' });
-watch([destination, caseId, submission], () => { error.value = ''; void reset(); }, { flush: 'sync' });
+watch(context, () => { error.value = ''; diagnostic.value = ''; void reset(); }, { flush: 'sync' });
+watch([destination, caseId, submission], () => { error.value = ''; diagnostic.value = ''; void reset(); }, { flush: 'sync' });
 watch(query, () => { page.value = 0; });
 watch(() => props.visible, visible => { if (!visible) void reset(); });
 watch(() => props.target, async target => {
@@ -63,13 +64,15 @@ async function run(action, operation) {
   if (disabled.value) return;
   const active = { ...props.session }, stamp = generation, started = performance.now();
   const current = () => alive && stamp === generation;
-  pending.value = true; error.value = ''; emit('busy', true);
+  pending.value = true; error.value = ''; diagnostic.value = ''; emit('busy', true);
   let status = 'Erfolgreich';
   try { await operation(active, current); if (!current()) status = 'Abgebrochen'; }
   catch (cause) {
     const code = typeof cause === 'string' ? cause : cause?.message;
     status = code === 'content_cancelled' ? 'Abgebrochen' : 'Fehlgeschlagen';
-    if (current() && code !== 'content_cancelled') error.value = messages[code] || errorMessage(cause);
+    if (current() && code !== 'content_cancelled') {
+      error.value = messages[code] || errorMessage(cause); diagnostic.value = diagnosticCode(cause);
+    }
     if (resetsSessions(cause)) emit('fatal', cause);
   } finally {
     controller = null; pending.value = false; emit('busy', false);
@@ -134,6 +137,7 @@ async function closePreview() {
     </form>
     <p v-if="pending" role="status">Event Log wird verarbeitet …</p>
     <p v-if="error" role="alert">{{ error }}</p>
+    <p v-if="error && diagnostic" class="small-note">Diagnose: {{ session?.apiVersion }} · <code>{{ diagnostic }}</code>. Diesen Code kannst du im Fehlerbericht angeben.</p>
     <template v-if="result">
       <div class="tool-section-heading"><h3 ref="heading" tabindex="-1">{{ result.total }} geprüfte Ereignisse</h3><span class="status-badge ok">Event Log verifiziert</span></div>
       <p class="small-note">Signaturen, Ereignisschema und Zuordnung zu Vorgang und Einreichung geprüft. Inhalts-Authentifizierungstags wurden nicht abgeglichen. Die Zustellpunkt-ID dient als Suchkontext.</p>

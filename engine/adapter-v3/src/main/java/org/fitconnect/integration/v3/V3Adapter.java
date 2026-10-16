@@ -39,22 +39,19 @@ public final class V3Adapter implements SdkAdapter {
         String encodedSecret = URLEncoder.encode(clientSecret, StandardCharsets.UTF_8);
         var provider = new OAuthProvider(http, new ClientCredentials(encodedId, encodedSecret),
                 TestTokenTransport.ENDPOINT);
-        return new TokenSession(provider, http, encodedId, encodedSecret, transport, resources);
+        return new TokenSession(provider, http, transport, resources);
     }
     private static final class TokenSession implements AuthenticatedSession {
         private OAuthProvider current;
         private OAuthTransport http;
         private final PrivateKeys keys = new PrivateKeys();
-        private String encodedId;
-        private String encodedSecret;
         private TokenExchange tokens;
         private ResourceExchange resources;
         private Sender sender;
         private Receiver receiver;
         private java.nio.file.Path senderWorkspace;
-        TokenSession(OAuthProvider provider, OAuthTransport http, String encodedId, String encodedSecret,
-                     TokenExchange tokens, ResourceExchange resources) {
-            current = provider; this.http = http; this.encodedId = encodedId; this.encodedSecret = encodedSecret;
+        TokenSession(OAuthProvider provider, OAuthTransport http, TokenExchange tokens, ResourceExchange resources) {
+            current = provider; this.http = http;
             this.tokens = tokens; this.resources = resources;
         }
         private void requireOpen() { if (current == null) throw new SessionException("session_missing"); }
@@ -198,7 +195,7 @@ public final class V3Adapter implements SdkAdapter {
             if (input == null || workspace == null || authorized == null) throw new SessionException("invalid_input");
             var recipient = replyRecipient(input.destinationId().toString(), input.submissionId().toString());
             recipient.check(input);
-            return new Sender(encodedId, encodedSecret, tokens, authorized, workspace).sendReply(recipient, input);
+            return new Sender(current, tokens, authorized, workspace).sendReply(recipient, input);
         }
         public List<ReplyChannelReference> replyChannels() { requireOpen(); return sender == null ? List.of() : sender.replyKeys.references(); }
         public void completeReplyChannel(UUID attemptId, UUID caseId, UUID submissionId, boolean retain) {
@@ -211,7 +208,7 @@ public final class V3Adapter implements SdkAdapter {
             if (attemptId == null) throw new SessionException("invalid_input");
             if (workspace == null || input == null) throw new SessionException("invalid_submission");
             if (sender == null) {
-                sender = new Sender(encodedId, encodedSecret, tokens, resources, workspace);
+                sender = new Sender(current, tokens, resources, workspace);
                 senderWorkspace = workspace;
             } else if (!senderWorkspace.equals(workspace)) throw new SessionException("invalid_submission");
             return sender.send(input, attemptId);
@@ -224,7 +221,7 @@ public final class V3Adapter implements SdkAdapter {
             if (sender != null) sender.replyKeys.clear();
             keys.clear(); current = null; http = null; sender = null; senderWorkspace = null;
             receiver = null;
-            encodedId = null; encodedSecret = null; tokens = null; resources = null;
+            tokens = null; resources = null;
         }
     }
 }
