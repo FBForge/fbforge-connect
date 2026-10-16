@@ -48,6 +48,6 @@ Die Anwendung bleibt auf Integrationstests beschränkt. Die Produktivumgebung is
 
 ## Repository und Mitarbeit
 
-`main` enthält zunächst die Projektübersicht und diese Roadmap. Der aktuelle Anwendungscode wird nach der Veröffentlichungsprüfung auf `develop` bereitgestellt. Eine Alpha-Veröffentlichung mit Downloads folgt nach der technischen Erprobung.
+`main` enthält die Projektübersicht und diese Roadmap. Der aktuelle Anwendungscode mit Build-Anleitung und Tests liegt auf [develop](https://github.com/FBForge/fit-connect-testclient/tree/develop). Eine Alpha-Veröffentlichung mit Downloads folgt nach der technischen Erprobung.
 
 Fehlerberichte und Vorschläge sind über die [GitHub Issues](https://github.com/FBForge/fit-connect-testclient/issues) willkommen. Bitte ausschließlich fiktive Testdaten verwenden und keine Zugangsdaten oder privaten Schlüssel veröffentlichen.
