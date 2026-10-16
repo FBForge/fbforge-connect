@@ -8,7 +8,7 @@ Das Projekt ist unabhängig von FITKO und unterstützt ausschließlich die Testu
 
 Wir arbeiten an der ersten Alpha. Der Funktionsumfang wird schrittweise erweitert und gegen die FIT-Connect-Testumgebung erprobt. Ein erster Versand über API v2 wurde erfolgreich getestet. Für API v3 und weitere Abläufe laufen noch Fehlerbehebung und Integrationstests.
 
-Dieser Branch enthält die öffentliche Projektübersicht. Der Anwendungscode soll nach Abschluss der Veröffentlichungsprüfung auf `develop` bereitgestellt werden. Dort wird anschließend der aktuelle Entwicklungsstand gepflegt. Eine veröffentlichte Alpha und ausführbare Downloads stehen noch nicht bereit.
+Dieser Branch enthält die öffentliche Projektübersicht. Der aktuelle Anwendungscode liegt auf [develop](https://github.com/FBForge/fit-connect-testclient/tree/develop). Die nächsten Schritte stehen in der [Roadmap](ROADMAP.md). Eine veröffentlichte Alpha und ausführbare Downloads stehen noch nicht bereit.
 
 ## Ziel der Alpha
 
@@ -30,8 +30,8 @@ Zugangsdaten werden vom Benutzer eingegeben und standardmäßig nicht dauerhaft 
 
 Fehlerberichte, Anwendungsfälle und Verbesserungsvorschläge sind über die [GitHub Issues](https://github.com/FBForge/fit-connect-testclient/issues) willkommen.
 
-Bitte keine Zugangsdaten, privaten Schlüssel oder echten Einreichungsdaten veröffentlichen. Build- und Installationsanleitungen folgen mit dem Anwendungscode.
+Bitte keine Zugangsdaten, privaten Schlüssel oder echten Einreichungsdaten veröffentlichen. Build- und Installationsanleitungen stehen in der [README auf develop](https://github.com/FBForge/fit-connect-testclient/blob/develop/README.md).
 
 ## Lizenz
 
-Die veröffentlichten Dokumentationstexte stehen unter [EUPL-1.2](LICENSE). Für den Anwendungscode ist dieselbe Lizenz vorgesehen. Die Rechte an übernommenen Komponenten werden vor dessen Veröffentlichung geklärt. Abhängigkeiten behalten ihre jeweiligen Lizenzen.
+Das Projekt steht unter [EUPL-1.2](LICENSE). Abhängigkeiten behalten ihre jeweiligen Lizenzen.
