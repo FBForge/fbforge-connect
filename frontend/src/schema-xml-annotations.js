@@ -74,7 +74,9 @@ export function annotateXmlSchema(root, packet, Parser) {
     const language = node => node.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang') || '';
     const selected = docs.find(node => /^de(?:-|$)/i.test(language(node))) || docs.find(node => !language(node)) || docs[0];
     const description = selected && cleanText(selected.textContent, 4000);
-    const title = !typeOnly && description ? cleanText(description.split(/\r?\n/).map(line => line.trim()).find(Boolean), 160) : null;
+    const firstLine = description?.split(/\r?\n/).map(line => line.trim()).find(Boolean);
+    // XSD documentation is often a whole paragraph, not a field title. Keep that as help text.
+    const title = !typeOnly && firstLine && firstLine.length <= 120 && !/[.!?]$/.test(firstLine) ? firstLine : null;
     return { rank, title, description: description !== title ? description : null, type, format: null, valueLabel: null, source: source(ctx) };
   }
   function reference(ctx, category) { return ctx.node.getAttribute('ref') ? lookup(category, schemaName(ctx, ctx.node.getAttribute('ref'))) : ctx; }
