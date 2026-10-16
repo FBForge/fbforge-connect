@@ -1,4 +1,5 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
+import { createDiagnosticLog, observeInvoke } from './support-report.js';
 
 /** One native engine connection. Cleanup and context watchers must not overlap another IPC exchange. */
 export function serialInvoke(operation) {
@@ -9,4 +10,5 @@ export function serialInvoke(operation) {
     return result;
   };
 }
-export const invoke = serialInvoke(tauriInvoke);
+export const diagnosticLog = createDiagnosticLog();
+export const invoke = serialInvoke(observeInvoke(tauriInvoke, diagnosticLog.record));

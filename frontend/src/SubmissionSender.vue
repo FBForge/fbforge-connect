@@ -15,6 +15,19 @@ const offerReplies = ref(false), replySchema = ref(''), replyMime = ref('applica
 const dataText = ref('{\n  "vorname": "Erika",\n  "nachname": "Musterfrau"\n}');
 const dataFile = shallowRef(null), attachments = ref([]), prepared = ref(null), outcome = ref(null), working = ref(false), error = ref('');
 const dialog = ref(null), progress = ref(''), history = ref([]);
+const sendStep = ref(0), stepNotice = ref('');
+const sendSections = ['Adressierung', 'Fachdaten', 'Anlagen & Antwortkanal'];
+let invalidTarget;
+function revealInvalid(event) {
+  event.preventDefault();
+  if (invalidTarget) return;
+  invalidTarget = event.target;
+  sendStep.value = Number(event.target.closest('fieldset')?.dataset.sendStep || 0);
+  stepNotice.value = 'Bitte vervollständige die markierten Pflichtfelder in diesem Abschnitt.';
+  nextTick(() => { invalidTarget?.focus(); invalidTarget = null; });
+}
+function selectStep(index) { sendStep.value = index; stepNotice.value = ''; }
+
 const recipient = ref(null), schemaChoice = ref(0), processChoice = ref(0), exampleNotice = ref('');
 const selectedService = computed(() => recipient.value?.services.find(item => item.identifier === service.value));
 const selectedProcess = computed(() => recipient.value?.processes[processChoice.value]);
@@ -155,8 +168,10 @@ async function refreshState() {
     <h2 id="send-title">Einreichung senden</h2>
     <p>Fachdaten und Anlagen werden lokal vorbereitet. Das Java-SDK verschlüsselt sie für den Empfänger und überträgt sie nach deiner Bestätigung an TEST.</p>
     <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
-    <form class="send-form" @submit.prevent="prepare">
-      <fieldset :disabled="disabled">
+    <form class="send-form" @submit.prevent="prepare" @invalid.capture="revealInvalid">
+      <div class="send-sections" role="group" aria-label="Versandabschnitte"><button v-for="(title, index) in sendSections" :key="title" type="button" :aria-pressed="sendStep === index" @click="selectStep(index)"><span aria-hidden="true">{{ index + 1 }}</span>{{ title }}</button></div>
+      <p v-if="stepNotice" role="alert" class="step-notice">{{ stepNotice }}</p>
+      <fieldset v-show="sendStep === 0" data-send-step="0" :disabled="disabled">
         <legend>Adressierung</legend>
         <div class="client-fields">
           <label v-if="session?.apiVersion === 'v3'" for="send-source">Absenderzustellpunkt<input id="send-source" type="text" v-model="source" required maxlength="36" placeholder="Zustellpunkt-ID deiner TEST-Zugangsdaten"><small>Der Absender kann innerhalb deiner Berechtigungen gewählt werden.</small></label>
@@ -171,7 +186,7 @@ async function refreshState() {
         </div>
         <p v-if="session?.apiVersion === 'v2'">API v2 bestimmt den Absender über die Zugangsdaten. Prozessadressierung steht mit API v3 zur Verfügung.</p>
       </fieldset>
-      <fieldset :disabled="disabled">
+      <fieldset v-show="sendStep === 1" data-send-step="1" :disabled="disabled">
         <legend>Fachdaten</legend>
         <div class="client-fields">
           <label for="send-schema">Fachdaten-Schema<select v-if="schemaOptions.length > 1" id="send-schema" v-model="schemaChoice"><option v-for="(item, index) in schemaOptions" :key="index" :value="index">{{ item.mimeType === 'application/json' ? 'JSON' : 'XML' }} · {{ item.schemaUri }}</option></select><output v-else id="send-schema">{{ schema ? `${mime === 'application/json' ? 'JSON' : 'XML'} · ${schema}` : 'Keine unterstützten Fachdaten-Schemata ausgewählt.' }}</output><small>Wird aus der gewählten Leistung beziehungsweise Prozessnachricht übernommen.</small></label>
@@ -182,7 +197,7 @@ async function refreshState() {
         <label v-if="!dataFile" for="send-data">Inhalt<textarea id="send-data" v-model="dataText" rows="8" required spellcheck="false"></textarea></label>
         <p v-else>{{ dataFile.name }} · {{ (dataFile.size / 1024).toFixed(1) }} KiB <button class="button secondary" type="button" @click="dataFile = null">Eingabefeld verwenden</button></p>
       </fieldset>
-      <fieldset :disabled="disabled">
+      <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
         <legend>Antwortkanal</legend>
         <label class="checkbox-label"><input v-model="offerReplies" type="checkbox" :disabled="!replyOptions.length"> Antworten über FIT-Connect anbieten</label><p v-if="!replyOptions.length" class="small-note">Für die gewählte Leistung ist kein unterstütztes Antwortschema hinterlegt.</p>
         <div v-if="offerReplies" class="client-fields">
@@ -191,7 +206,7 @@ async function refreshState() {
         </div>
         <p v-if="offerReplies" class="small-note">Das SDK erzeugt einen eigenen temporären Antwortschlüssel. Er bleibt ausschließlich in dieser lokalen Sitzung verfügbar. Nach Abmelden oder Beenden können damit verschlüsselte Antworten nicht mehr entschlüsselt werden. Die Leistung muss den Antwortkanal unterstützen.</p>
       </fieldset>
-      <fieldset :disabled="disabled">
+      <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
         <legend>Anlagen</legend>
         <div class="file-drop-zone" @dragover.prevent @drop.prevent="addFiles"><label for="send-attachments">Eine oder mehrere Anlagen hier ablegen oder auswählen<input id="send-attachments" type="file" multiple @change="addFiles"></label></div>
         <div v-for="item in attachments" :key="item.id" class="client-fields">
@@ -202,7 +217,7 @@ async function refreshState() {
         <p v-if="!attachments.length">Keine zusätzlichen Anlagen ausgewählt.</p>
         <p>Höchstens 32 MiB je Datei, 64 MiB insgesamt und 39 zusätzliche Anlagen. Die Grenzen des Zustellpunkts werden zusätzlich vom SDK geprüft.</p>
       </fieldset>
-      <div class="client-actions"><button class="button" type="submit" :disabled="disabled">Versand vorbereiten</button></div>
+      <div class="client-actions send-step-actions"><button v-if="sendStep > 0" class="button secondary" type="button" @click="selectStep(sendStep - 1)">Zurück</button><span>Abschnitt {{ sendStep + 1 }} von {{ sendSections.length }}</span><button v-if="sendStep < 2" class="button" type="button" @click="selectStep(sendStep + 1)">Weiter: {{ sendSections[sendStep + 1] }}</button><button v-else class="button" type="submit" :disabled="disabled">Versand vorbereiten</button></div>
     </form>
     <p v-if="progress" role="status">{{ progress }}</p>
     <p v-if="error" role="alert">{{ error }}</p>

@@ -1,4 +1,4 @@
-# Alpha-Testplan · 0.1.0-dev.3
+# Alpha-Testplan · 0.1.0-dev.4
 
 Entwicklungszweig: `develop`. Dies ist ein Entwicklungsstand für die erste ausführbare Alpha. Eine erfolgreiche Simulation ersetzt keinen Live-Test gegen TEST.
 
@@ -56,3 +56,14 @@ Die Zustellpunktverwaltung benötigt keinen Quellcode des früheren Portals. Sie
 6. Mit v2 darf die Detailansicht funktionieren; die Schreiboberfläche muss ausdrücklich auf die v3-Sitzung verweisen.
 
 Die Tests verwenden synthetische API-Antworten und erzeugen keine Änderungen an echten TEST-Zustellpunkten. Eine fachliche Prüfung der Statuswechsel, Kontaktvalidierung und Schreibberechtigungen auf TEST bleibt erforderlich. Bulk-Edit ist eine Folge einzeln bestätigter Zieländerungen mit einer gemeinsamen Bestätigung, keine serverseitig atomare Transaktion.
+
+## Zusätzliche Abnahme von dev.4
+
+1. Bei 1180 × 800, 800 × 600 sowie der Mindestgröße 420 × 500 prüfen: Navigation, Kopfzeile und Statusleiste bleiben sichtbar. Es gibt keine äußere Seitenscrollleiste; längere Inhalte scrollen im Arbeitsbereich. Tabellen dürfen eine eigene horizontale Scrollfläche benötigen.
+2. Die Anwendung startet mit API v3. Unter „Verbinden“ anmelden, den Dialog schließen, Zugangsdatenfelder auf Leerung prüfen und zwischen den Arbeitsbereichen wechseln. API v2 ausdrücklich auswählen; die v3-Sitzung darf dadurch nicht in v2 verwendet werden. Die API-Auswahl bleibt während einer Aktion gesperrt.
+3. Versandadressierung und Fachdaten eingeben. Zwischen allen drei Versandabschnitten und anderen Arbeitsbereichen wechseln. Eingaben müssen erhalten bleiben. Bei „Versand vorbereiten“ mit fehlenden Pflichtfeldern muss der entsprechende Abschnitt mit fokussiertem Eingabefeld erscheinen; es darf keine Übertragung stattfinden.
+4. Unter „Diagnose“ beide Komponenten prüfen. Berichtsvorschau öffnen und JSON speichern. Version, TEST und lokale Komponentenprüfungen müssen stimmen. Nach einer fehlgeschlagenen Aktion muss ein freigegebener Fehlercode oder `unknown_error` sichtbar sein. Bericht enthält keine Geheimnisse, Einreichungsinhalte, Kennungen oder Dateinamen; er wird ausschließlich lokal gespeichert. Verlauf leeren, anschließend prüfen, dass keine vorherigen Aufrufe im nächsten Export stehen.
+5. Hell-/Dunkeldesign wechseln und Anwendung neu starten. Nur die Darstellungseinstellung wird gespeichert. Navigation und beide Dialoge per Tastatur bedienen; Escape schließt Dialoge und gibt den Fokus an den Auslöser zurück. Während einer laufenden Sitzungsaktion darf der Verbindungsdialog nicht geschlossen werden.
+6. Unter „Info“ Version, TEST-Beschränkung und den vollständigen EUPL-Lizenztext prüfen. Keine Herstellerwerbung im normalen Arbeitsbereich. Ein separates Fenster oder externe Webseite wird nicht geöffnet.
+
+Die Browserprüfung verwendet eine synthetische native Schnittstelle. Sie prüft Oberfläche und Export, nicht die Kommunikation mit FIT-Connect oder die tatsächliche Windows-WebView. Reply-, Prozess- und ZBP-Funktionen wurden in dev.4 nicht erweitert. PROD bleibt ausgeschlossen.

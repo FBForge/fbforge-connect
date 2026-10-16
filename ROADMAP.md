@@ -10,7 +10,7 @@ Die Alpha soll den grundlegenden Austausch von Einreichungen auf der FIT-Connect
 
 Die folgenden Funktionen sind im lokalen Entwicklungsstand vorhanden. Die vollständige Erprobung aller Abläufe gegen die Testumgebung ist noch offen.
 
-* Desktop-Oberfläche mit Vue und Tauri.
+* Desktop-Oberfläche mit Vue und Tauri: feste Navigation, globale Verbindung, Statusleiste, gegliederter Versand und getrennte Diagnose-/Informationsansichten.
 * Lokaler Java-Kern mit getrennten SDK-Adaptern für v2 und v3.
 * Gemeinsamer Verbindungsbereich für Senden, Empfangen und Event Log.
 * Lokales Laden und Zuordnen privater Testschlüssel.
@@ -34,10 +34,19 @@ Die erneute Live-Erprobung von V3, Empfang und Event Log ist noch offen. Der [Al
 * Versand über v3 zuverlässig abschließen und gegen TEST prüfen.
 * Empfang, Entschlüsselung, Schema-Prüfung und Event Log mit repräsentativen Testfällen erproben.
 * XRepository-Auflösung und erzeugte XML-Beispiele anhand realer Standards prüfen.
-* Technische Diagnose für alle wesentlichen Abläufe vereinheitlichen und exportierbar machen.
+* Diagnoseexport anhand der Live-Abnahme bewerten; fachliche Prüfresultate und detaillierte Versanddiagnose bei Bedarf gezielt ergänzen.
 * Bekannte Einschränkungen dokumentieren.
 * Windows-Build und Installation auf einem frischen System prüfen.
 * Signierung und Bereitstellung des Windows-Pakets vorbereiten.
+
+`0.1.0-dev.4` ergänzt den Desktop-Aufbau und einen lokalen Diagnoseexport mit festgelegten technischen Feldern. Herstellerwerbung entfällt in der Oberfläche. V3-Verwaltung wird weitergeführt; eine zusätzliche V2-Schreibverwaltung ist nicht geplant. Die Anwendung bleibt auf TEST beschränkt.
+
+## Richtung Beta
+
+1. Live-Abnahme von V3-Versand, Empfang, Entschlüsselung, Schema-Prüfung, Event Log und Zustellpunktänderungen abschließen; konkrete Fehler mit dem Diagnosebericht zuordnen.
+2. Installation und Aktualisierung auf einem frischen Windows-System, Tastaturbedienung, kleine Fenster, hohe Skalierung und Hell-/Dunkeldesign prüfen. Signierung und Verteilung klären.
+3. Vorhandene Zustellpunktverwaltung um Anlegen und die notwendige Schlüsselregistrierung über V3 erweitern. Mehrfach-Schlüsselwechsel benötigt vor seiner Umsetzung ein eigenes Konzept für Zuordnung, Teilausfälle und den Erhalt der Empfangsfähigkeit.
+4. Erst anschließend Replies, Prozesskommunikation und BPMN weiter ausbauen. ZBP-Adapter und Produktivumgebung gehören nicht zum aktuellen Alpha-/Beta-Arbeitsumfang.
 
 ## Weitere Ausbaustufen
 

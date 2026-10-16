@@ -1,6 +1,6 @@
-# FIT-Connect Testclient
+# FIT-Connect Integrationsclient
 
-Der **FIT-Connect Testclient** von **FBForge** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
+Der **FIT-Connect Integrationsclient** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
 
 Die Anwendung arbeitet ausschließlich mit der FIT-Connect-Testumgebung. Sie ist ein unabhängiges Projekt und kein offizielles Produkt von FITKO.
 
@@ -26,6 +26,10 @@ Vorgangsübergreifende Suche, Empfangsbestätigungen für Replies und interaktiv
 Beim Empfang wird die Schema-URI aus den entschlüsselten Metadaten gelesen. Nach Bestätigung können öffentliche HTTPS-Schemata einschließlich ihrer JSON-Referenzen und XRepository-XSD-Archive geladen werden. Die Abrufe enthalten keine FIT-Connect-Zugangsdaten oder Einreichungsinhalte. JSON-Schema- und XSD-Prüfung erfolgen lokal. Alternativ können lokale JSON-Schemata mit passender `$id` bereitgestellt werden. Abrufe, Dateigrößen und Archivverarbeitung sind begrenzt. Erzeugte Beispieldaten sind Entwürfe und müssen fachlich geprüft werden. Ein Malwarescan ist derzeit nicht enthalten und wird im Prüfergebnis ausgewiesen.
 
 Im Stand `0.1.0-dev.3` wurden zusätzliche Eventlog-Fehler bei großen Logs und leeren Abschlussseiten korrigiert. Die erste Zustellpunktverwaltung ist umgesetzt: v2 bietet die authentifizierte Detailansicht, v3 zusätzlich bestätigte PATCH-Änderungen und Bulk-Edit. Erstellen, Löschen, Schlüsselregistrierung sowie das Bearbeiten von Leistungen, Schemata, Prozessen und Callbacks sind noch nicht Teil dieser Verwaltungsstufe. Es wird keine Bulk-Transaktion versprochen: Bei Teilfehlern zeigt die Oberfläche den Ausgang je Zustellpunkt. Bei ungewissem Ausgang wird nicht automatisch wiederholt. Die Live-Abnahme dieser Verwaltungsfunktionen steht noch aus.
+
+Im Stand `0.1.0-dev.4` erhält die Anwendung einen festen Desktop-Rahmen mit seitlicher Navigation, globaler API-Auswahl, Verbindungsdialog und Statusleiste. Nur der Arbeitsbereich scrollt; Eingaben und Scrollposition bleiben beim Ansichtswechsel erhalten. Der Versand ist in Adressierung, Fachdaten sowie Anlagen/Antwortkanal gegliedert. API v3 ist die anfängliche Auswahl, v2 bleibt für Senden und Empfangen ausdrücklich wählbar. Herstellerwerbung wird in der Oberfläche nicht angezeigt; Programmversion und EUPL-Lizenz stehen unter „Info“.
+
+Unter „Diagnose“ lassen sich die lokalen SDK-Komponenten prüfen und bis zu 100 technische Aufrufe der laufenden Programmsitzung als JSON exportieren. Der Bericht enthält ausschließlich festgelegte Befehle, API-Version, Zeitpunkt, Dauer, ausgewählte Ergebniszustände und freigegebene Fehlercodes. Er enthält keine Argumente oder Antwortinhalte, Zugangsdaten, Schlüssel, Kennungen oder Dateinamen und wird nicht automatisch versendet. Datenübertragungs-Chunks werden nicht protokolliert. „Antwort erhalten“ bedeutet, dass der native Aufruf zurückgekehrt ist; es ist kein fachlicher Erfolgsnachweis. Ein ungewisser Schreibausgang bleibt ungewiss und wird durch den Diagnoseexport nicht wiederholt.
 
 ## Technische Grundlage
 
