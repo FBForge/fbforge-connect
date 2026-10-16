@@ -7,7 +7,7 @@ import org.fitconnect.integration.contract.*;
 final class SessionManager implements AutoCloseable {
     private record Key(ApiVersion version, SessionRole role) {}
     record Data<T>(String apiVersion, String sessionId, String environment, T data) {}
-    private record Entry(Key key, String id, AuthenticatedSession session, DestinationAccess destinations, SendAccess sender, ReceiptAccess receipts, ReplyAccess replySender) {
+    private record Entry(Key key, String id, AuthenticatedSession session, DestinationAccess destinations, SendAccess sender, ReceiptAccess receipts, ReplyAccess replySender, ReplyReceiptAccess replyReceipts) {
         SessionSnapshot snapshot(boolean connected) {
             return new SessionSnapshot(id, key.version().wireValue(), key.role().wireValue(), "TEST", connected);
         }
@@ -28,6 +28,8 @@ final class SessionManager implements AutoCloseable {
     private record PendingReceipt(ReceiptRequest request, String proofId) {}
     record PreparedReceipt(ReceiptAccess.State attempt, String reason, String description, String attachmentId, List<String> warnings) {}
     private final Map<String, PendingReceipt> pendingReceipts = new HashMap<>();
+    private final Map<String, ReplyReceiptDraft> pendingReplyReceipts = new HashMap<>();
+    record PreparedReplyAction(ReplyReceiptAccess.State attempt, String reason, String description, String attachmentId, List<String> warnings) {}
     private final Map<String, ReplyDraft.Summary> pendingReplies = new HashMap<>();
     record ReplySchema(String schemaUri, String mimeType) {}
     record ReplyTarget(String proofId, String destinationId, String submissionId, String caseId, String replyDestinationId,
@@ -61,7 +63,8 @@ final class SessionManager implements AutoCloseable {
             registry.checkSession(version, candidate);
             var receipts = new ReceiptAccess(version, resourceTransport == null ? resources.apply(version) : resourceTransport.forReceipt(version));
             var replySender = new ReplyAccess(version, resourceTransport == null ? resources.apply(version) : resourceTransport.forReply(version));
-            var entry = new Entry(key, UUID.randomUUID().toString(), candidate, new DestinationAccess(), sender, receipts, replySender);
+            var entry = new Entry(key, UUID.randomUUID().toString(), candidate, new DestinationAccess(), sender, receipts, replySender,
+                    new ReplyReceiptAccess(version, resourceTransport == null ? resources.apply(version) : resourceTransport.forReplyReceipt(version)));
             entries.put(key, entry);
             return entry.snapshot(true);
         } catch (Exception | LinkageError e) {
@@ -255,10 +258,50 @@ final class SessionManager implements AutoCloseable {
             case "read_received_reply_schema" -> receivedReplies.schema(version, id, proofId, offset);
             case "list_received_reply_contents" -> receivedReplies.parts(version, id, proofId, offset);
             case "read_received_reply_content" -> receivedReplies.read(version, id, proofId, contentId, offset);
-            case "discard_received_reply" -> { receivedReplies.discard(version, id, proofId); yield Map.of("proofId", proofId); }
+            case "discard_received_reply" -> { entryReplyReceiptInvalidate(version, id); receivedReplies.discard(version, id, proofId); yield Map.of("proofId", proofId); }
             default -> throw new SessionException("invalid_input");
         };
         return new Data<>(version.wireValue(), id, "TEST", result);
+    }
+    private void entryReplyReceiptInvalidate(ApiVersion version, String id) {
+        find(version, id).replyReceipts().invalidate(); pendingReplyReceipts.remove(id);
+    }
+    Data<?> prepareReplyReceipt(ApiVersion version, String id, ReplyReceiptDraft draft) {
+        var entry = find(version, id); entryReplyReceiptInvalidate(version, id);
+        var evidence = replyReceiptEvidence(entry, draft);
+        var prepared = registry.withSession(version, entry.session(), session -> session.prepareReplyReceipt(draft.request(), evidence));
+        var state = entry.replyReceipts().prepare(prepared); pendingReplyReceipts.put(id, draft);
+        var request = draft.request();
+        var warnings = draft.proofId() == null ? List.<String>of() : receivedReplies.state(version, id, draft.proofId()).warnings();
+        return new Data<>(version.wireValue(), id, "TEST", new PreparedReplyAction(state, request.reason(), request.description(),
+                request.attachmentId() == null ? null : request.attachmentId().toString(), warnings));
+    }
+    private ReplyReceiptEvidence replyReceiptEvidence(Entry entry, ReplyReceiptDraft draft) {
+        if (receiveCleanupFailed.contains(entry.id())) throw new SessionException("resource_unavailable");
+        if (draft.request().action().equals("reject")) return null;
+        var evidence = receivedReplies.evidence(entry.key().version(), entry.id(), draft.proofId());
+        if (!evidence.caseId().equals(draft.request().caseId()) || !evidence.replyId().equals(draft.request().replyId()))
+            throw new SessionException("verification_failed");
+        return evidence;
+    }
+    Data<?> replyReceipt(ApiVersion version, String id, String command, String attemptId) {
+        var entry = find(version, id);
+        if (command.equals("execute_reply_receipt")) {
+            var draft = pendingReplyReceipts.get(id);
+            if (draft == null) throw new SessionException("send_locked");
+            try {
+                registry.withSession(version, entry.session(), session -> entry.replyReceipts().execute(attemptId, session, content.workspace(id),
+                        () -> replyReceiptEvidence(entry, draft)));
+            } finally {
+                try { content.clearWorkspace(id); }
+                catch (RuntimeException failure) { receiveCleanupFailed.add(id); entry.sender().cleanupFailed(); invalidateReceived(entry); throw failure; }
+            }
+            if (entry.replyReceipts().state().status().equals("confirmed")) receivedReplies.clearOwner(id);
+        } else if (command.equals("cancel_reply_receipt")) entry.replyReceipts().cancel(attemptId);
+        else if (!command.equals("reply_receipt_state")) throw new SessionException("invalid_input");
+        var state = entry.replyReceipts().state();
+        if (!state.status().equals("prepared")) pendingReplyReceipts.remove(id);
+        return new Data<>(version.wireValue(), id, "TEST", state);
     }
     Data<?> loadEventLog(ApiVersion version, String id, String destinationId, String caseId, String submissionId) {
         Entry entry = find(version, id);
@@ -284,6 +327,24 @@ final class SessionManager implements AutoCloseable {
         return new Data<>(version.wireValue(), id, "TEST", eventLogs.publish(version, id, UUID.fromString(destination),
                 UUID.fromString(caseValue), UUID.fromString(submission), result));
     }
+    Data<?> loadCaseEventLog(ApiVersion version, String id, String caseId) {
+        Entry entry = find(version, id); eventLogs.clear();
+        String caseValue = DestinationAccess.id(caseId);
+        if (receiveCleanupFailed.contains(id)) throw new SessionException("resource_unavailable");
+        VerifiedCaseEventLog result;
+        try {
+            result = registry.withSession(version, entry.session(), session -> {
+                try (var source = resourceTransport == null ? EventLogAccess.forCase(version, caseValue, resources.apply(version))
+                        : resourceTransport.forCaseEvents(version, caseValue)) {
+                    return session.caseEventLog(UUID.fromString(caseValue), source, content.workspace(id));
+                }
+            });
+        } finally {
+            try { content.clearWorkspace(id); }
+            catch (RuntimeException failure) { receiveCleanupFailed.add(id); entry.sender().cleanupFailed(); invalidateReceived(entry); throw failure; }
+        }
+        return new Data<>(version.wireValue(), id, "TEST", eventLogs.publishCase(version, id, UUID.fromString(caseValue), result));
+    }
     Data<?> loadReplyEventLog(ApiVersion version, String id, String caseId, String replyId) {
         Entry entry = find(version, id); eventLogs.clear();
         String caseValue = DestinationAccess.id(caseId), reply = DestinationAccess.id(replyId);
@@ -305,6 +366,7 @@ final class SessionManager implements AutoCloseable {
     Data<?> eventLogResource(ApiVersion version, String id, String command, String logId, String eventId, String part, int offset) {
         find(version, id);
         Object data = switch (command) {
+            case "list_case_event_log" -> eventLogs.casePage(version, id, logId, offset);
             case "list_event_log" -> eventLogs.page(version, id, logId, offset);
             case "read_event_log" -> eventLogs.read(version, id, logId, eventId, part, offset);
             case "discard_event_log" -> { eventLogs.discard(version, id, logId); yield Map.of("logId", logId); }
@@ -337,6 +399,7 @@ final class SessionManager implements AutoCloseable {
     }
     private void invalidateReceipt(Entry entry) {
         entry.receipts().invalidate(); pendingReceipts.remove(entry.id());
+        entry.replyReceipts().invalidate(); pendingReplyReceipts.remove(entry.id());
     }
     private void invalidateReply(Entry entry) { var schema = replySchemas.remove(entry.id()); if (schema != null) schema.clear(); entry.replySender().invalidatePrepared(); pendingReplies.remove(entry.id()); }
     private ReplyRecipient replyRecipient(Entry entry, ReceiveStore.Summary proof) {
@@ -473,19 +536,51 @@ final class SessionManager implements AutoCloseable {
         if (!state.status().equals("prepared")) pendingReceipts.remove(id);
         return new Data<>(version.wireValue(), id, "TEST", state);
     }
+    Data<?> exportSessionItem(ApiVersion version, String id, int offset) {
+        var entry = find(version, id);
+        return new Data<>(version.wireValue(), id, "TEST", registry.withSession(version, entry.session(), session -> SessionArchives.export(session, offset)));
+    }
+    Data<?> restoreSessionItem(ApiVersion version, String id, String document) {
+        var entry = find(version, id); var item = SessionArchives.parse(document);
+        registry.withSession(version, entry.session(), session -> {
+            if (item.destinationKey() != null) {
+                var key = item.destinationKey();
+                entry.destinations().load(session, key.destinationId());
+                entry.destinations().importKey(session, key.destinationId(), key.purpose(), item.privateJwk());
+                if (!session.loadedKeys().contains(key)) throw new SessionException("key_rejected");
+            } else session.restoreReplyKey(item, content.workspace(id));
+            return null;
+        });
+        return new Data<>(version.wireValue(), id, "TEST", Map.of("restored", true));
+    }
+    private void discardPendingChannel(Entry entry, String attemptId) {
+        if (attemptId == null) return;
+        registry.withSession(entry.key().version(), entry.session(), session -> {
+            if (session.replyChannels().stream().anyMatch(item -> item.attemptId().toString().equals(attemptId) && item.status().equals("pending")))
+                session.completeReplyChannel(UUID.fromString(attemptId), null, null, false);
+            return null;
+        });
+    }
     Data<?> prepareSend(ApiVersion version, String id, String document) {
         Entry entry = find(version, id);
         long reserved = entries.values().stream().mapToLong(other -> other.replySender().pendingBytes() + (other == entry ? 0 : other.sender().pendingBytes())).sum();
         var draft = SubmissionDraft.resolve(document, content, entry.id(), ContentStore.TOTAL_BYTES - reserved);
-        return new Data<>(version.wireValue(), id, "TEST", new Prepared(entry.sender().prepare(draft.input()), draft.summary()));
+                discardPendingChannel(entry, entry.sender().state().attemptId());
+        var attempt = entry.sender().prepare(draft.input());
+        if (draft.input().replyOffer() != null) {
+            try { registry.withSession(version, entry.session(), session -> { session.prepareReplyChannel(UUID.fromString(attempt.attemptId()), draft.input(), content.workspace(id)); return null; }); }
+            catch (RuntimeException failure) { entry.sender().cancel(attempt.attemptId()); throw failure; }
+        }
+        return new Data<>(version.wireValue(), id, "TEST", new Prepared(attempt, draft.summary()));
     }
     Data<?> send(ApiVersion version, String id, String command, String attemptId) {
         Entry entry = find(version, id);
         if (command.equals("execute_send")) {
             registry.withSession(version, entry.session(), session -> entry.sender().execute(attemptId, session, content.workspace(id)));
             try { content.clearWorkspace(id); } catch (SessionException failure) { entry.sender().cleanupFailed(); }
-        } else if (command.equals("cancel_send")) entry.sender().cancel(attemptId);
+        } else if (command.equals("cancel_send")) { entry.sender().cancel(attemptId); discardPendingChannel(entry, attemptId); }
         else if (!command.equals("send_state")) throw new SessionException("invalid_input");
+        if (Set.of("failed", "cancelled").contains(entry.sender().state().status())) discardPendingChannel(entry, entry.sender().state().attemptId());
         return new Data<>(version.wireValue(), id, "TEST", entry.sender().state());
     }
     private static SessionException safe(Throwable cause) {
@@ -502,6 +597,7 @@ final class SessionManager implements AutoCloseable {
         receiveCleanupFailed.remove(entry.id());
         entry.sender().close();
         entry.receipts().close(); pendingReceipts.remove(entry.id());
+        entry.replyReceipts().close(); pendingReplyReceipts.remove(entry.id());
         entry.replySender().close(); pendingReplies.remove(entry.id());
         try { entry.session().close(); }
         finally { content.releaseSession(entry.id()); }

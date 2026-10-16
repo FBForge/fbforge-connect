@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-prepare-reply-receipt"
+description = "Enables the prepare_reply_receipt command without any pre-configured scope."
+commands.allow = ["prepare_reply_receipt"]
+
+[[permission]]
+identifier = "deny-prepare-reply-receipt"
+description = "Denies the prepare_reply_receipt command without any pre-configured scope."
+commands.deny = ["prepare_reply_receipt"]

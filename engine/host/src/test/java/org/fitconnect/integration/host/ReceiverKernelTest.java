@@ -682,6 +682,47 @@ class ReceiverKernelTest {
         }
     }
 
+    @Test void caseLogsVerifyMultipleSubjectsAndNeverRequireContentOrPrivateKeys() throws Exception {
+        try (var registry = registry()) {
+            for (var api : ApiVersion.values()) try (var session = open(registry, api)) {
+                var fixture = new Fixture(api, false, false);
+                var original = JsonParser.parseString(fixture.events).getAsJsonObject().getAsJsonArray("eventLog");
+                var decoded = JsonParser.parseString(new String(Base64.getUrlDecoder().decode(original.get(1).getAsString().split("\\.")[1]), StandardCharsets.UTF_8)).getAsJsonObject();
+                var tags = decoded.getAsJsonObject("events").entrySet().iterator().next().getValue().getAsJsonObject().getAsJsonObject("authenticationTags");
+                String reply = UUID.randomUUID().toString();
+                for (String attack : List.of("", "case", "signature", "subject", "empty")) {
+                    var tokens = original.deepCopy();
+                    tokens.add(event("create-reply", null, 0, "reply:" + reply, CASE));
+                    String token = event("submit-reply", tags, 0, (attack.equals("subject") ? "submission:" : "reply:") + reply,
+                            attack.equals("case") ? UUID.randomUUID().toString() : CASE);
+                    if (attack.equals("signature")) {
+                        var parts = token.split("\\."); parts[2] = (parts[2].startsWith("A") ? "B" : "A") + parts[2].substring(1); token = String.join(".", parts);
+                    }
+                    tokens.add(token);
+                    if (attack.equals("empty")) tokens = new JsonArray();
+                    var page = new JsonObject(); page.addProperty("offset", 0); page.addProperty("count", tokens.size());
+                    page.addProperty("totalCount", tokens.size()); page.add("eventLog", tokens);
+                    try (var source = EventLogAccess.forCase(api, CASE, (url, headers) -> {
+                        if (url.contains("/events?")) return page.toString();
+                        assertTrue(url.contains("/keys/") || url.endsWith("/.well-known/jwks.json"), "Case logs must not read content");
+                        return fixture.get(url, headers);
+                    })) {
+                        if (attack.isEmpty() || attack.equals("empty")) {
+                            var log = registry.withSession(api, session, value -> value.caseEventLog(UUID.fromString(CASE), source, workspace));
+                            assertEquals(attack.isEmpty() ? 4 : 0, log.entries().size());
+                            if (attack.isEmpty()) {
+                                assertEquals("submission", log.entries().getFirst().subjectType());
+                                assertEquals("reply", log.entries().getLast().subjectType());
+                                assertEquals(UUID.fromString(reply), log.entries().getLast().subjectId());
+                            }
+                        } else assertThrows(SessionException.class, () -> registry.withSession(api, session,
+                                value -> value.caseEventLog(UUID.fromString(CASE), source, workspace)), api + ": " + attack);
+                    }
+                }
+            }
+        }
+    }
+
     @Test void bothSdksVerifyEventLogsWithoutPrivateKeysOrSubmissionContent() throws Exception {
         try (var registry = registry()) {
             for (var api : ApiVersion.values()) try (var session = open(registry, api)) {
@@ -1311,9 +1352,12 @@ class ReceiverKernelTest {
         return protectedHeader + "." + b64(rsa.doFinal(key)) + "." + b64(iv) + "." + b64(Arrays.copyOf(sealed, sealed.length - 16)) + "." + b64(Arrays.copyOfRange(sealed, sealed.length - 16, sealed.length));
     }
     private static String event(String event, JsonObject tags, int secondsAgo) throws Exception {
+        return event(event, tags, secondsAgo, "submission:" + SUB, CASE);
+    }
+    private static String event(String event, JsonObject tags, int secondsAgo, String subject, String caseId) throws Exception {
         var claims = new JsonObject(); claims.addProperty("$schema", "https://schema.fitko.de/fit-connect/set-payload/1.2.2/set-payload.schema.json");
         claims.addProperty("iss", "https://test.fit-connect.fitko.dev/submission-api"); claims.addProperty("jti", UUID.randomUUID().toString());
-        claims.addProperty("iat", java.time.Instant.now().getEpochSecond() - secondsAgo); claims.addProperty("sub", "submission:" + SUB); claims.addProperty("txn", "case:" + CASE);
+        claims.addProperty("iat", java.time.Instant.now().getEpochSecond() - secondsAgo); claims.addProperty("sub", subject); claims.addProperty("txn", "case:" + caseId);
         var events = new JsonObject(); var body = new JsonObject(); if (tags != null) body.add("authenticationTags", tags);
         if (event.equals("notify-submission")) body.addProperty("notifyType", "polling");
         events.add("https://schema.fitko.de/fit-connect/events/" + event, body); claims.add("events", events);

@@ -1,6 +1,8 @@
 <script setup>
-import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
+import { inject, ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
+import { caseWorkspaceKey } from './case-context.js';
+const caseWorkspace = inject(caseWorkspaceKey, null);
 import DraftDataPreview from './DraftDataPreview.vue';
 import { loadReplyTarget, loadReplySchema, prepareReply, executeReply, cancelReply, replyState } from './reply-sending.js';
 import { generateExample } from './generate-example.js';
@@ -142,6 +144,7 @@ async function send() {
   const value = prepared.value, active = owner.value;
   await run('Antwort an TEST senden', async (_, current) => {
     const result = await executeReply(invoke, active, value.attempt);
+    if (result.replyId && result.caseId) caseWorkspace?.remember(active, result);
     prepared.value = null; dialog.value?.close();
     if (current()) { outcome.value = result; outcomeOwner.value = active.sessionId; await nextTick(); resultHeading.value?.focus(); }
     if (result.error === 'content_cleanup_failed') { cleanupOwner.value = active.sessionId; emit('invalidate'); }

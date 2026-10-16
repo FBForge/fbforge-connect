@@ -107,6 +107,10 @@ final class PrivateKeys {
         }
     }
 
+    List<org.fitconnect.integration.contract.SessionKeyArchive> archive() {
+        return keys.entrySet().stream().map(item -> new org.fitconnect.integration.contract.SessionKeyArchive(item.getKey(), null, null,
+                item.getValue().toJSONString(), null, null)).toList();
+    }
     List<KeyReference> references() { return List.copyOf(keys.keySet()); }
     void retainRegistered(String destination, List<String> registrations) {
         try {

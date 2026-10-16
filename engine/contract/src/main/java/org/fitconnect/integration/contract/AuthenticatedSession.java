@@ -44,6 +44,13 @@ public interface AuthenticatedSession extends AutoCloseable {
     default VerifiedEventLog replyEventLog(java.util.UUID caseId, java.util.UUID replyId, EventLogSource source, java.nio.file.Path workspace) {
         throw new SessionException("invalid_input");
     }
+    default VerifiedCaseEventLog caseEventLog(java.util.UUID caseId, EventLogSource source, java.nio.file.Path workspace) {
+        throw new SessionException("invalid_input");
+    }
+    /** Private persistence bridge; these methods are not renderer IPC commands. */
+    default List<SessionKeyArchive> archiveKeys() { throw new SessionException("invalid_input"); }
+    default void restoreReplyKey(SessionKeyArchive item, java.nio.file.Path workspace) { throw new SessionException("invalid_input"); }
+    default void prepareReplyChannel(java.util.UUID attemptId, SubmissionInput input, java.nio.file.Path workspace) { throw new SessionException("invalid_input"); }
     void discardKeys();
     /** The host must supply a private session workspace and a write-authorized transport. */
     SendResult send(SubmissionInput input, java.nio.file.Path workspace, java.util.UUID attemptId);

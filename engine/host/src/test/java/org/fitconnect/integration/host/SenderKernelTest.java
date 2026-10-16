@@ -132,6 +132,11 @@ class SenderKernelTest {
                         input.region(), input.schemaUri(), input.mimeType(), input.data(), input.attachments(), input.caseId(), input.processMessage(),
                         new SubmissionInput.ReplyOffer(REPLY_SCHEMA, replyMime));
                 var first = gate.prepare(input);
+                var frozenInput = input;
+                adapters.withSession(api, session, value -> { value.prepareReplyChannel(UUID.fromString(first.attemptId()), frozenInput, workspace); return null; });
+                var pendingArchive = session.archiveKeys().getFirst();
+                assertEquals("pending", pendingArchive.replyChannel().status());
+                assertEquals("SessionKeyArchive[private material omitted]", pendingArchive.toString());
                 assertEquals("sent", adapters.withSession(api, session, value -> gate.execute(first.attemptId(), value, workspace)).status());
                 var firstReference = session.replyChannels().getFirst();
                 var metadata = JsonParser.parseString(new String(decrypt(remote.submitted.get("encryptedMetadata").getAsString()), StandardCharsets.UTF_8));
@@ -164,6 +169,19 @@ class SenderKernelTest {
                     assertFalse(result.toString().contains("Erika"));
                     assertThrows(SessionException.class, () -> session.receiptEvidence(TARGET.toString(), SUBMISSION.toString()));
                     assertTrue(session.loadedKeys().isEmpty(), "Ephemeral reply receive needs no imported destination key");
+                    if (replyMime.equals("application/json") && !metadata3) {
+                        var archived = session.archiveKeys(); assertEquals(2, archived.size());
+                        Path restartedWorkspace = Files.createDirectories(workspace.resolve("restarted-" + api));
+                        try (var restarted = adapters.openSession(api, "id", "secret", (u,b) -> "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}", fixture)) {
+                            for (var item : archived) adapters.withSession(api, restarted, value -> { value.restoreReplyKey(item, restartedWorkspace); return null; });
+                            try (var restoredRead = ReceiveAccess.forReply(api, CASE.toString(), fixture.replyId.toString(), fixture)) {
+                                var restored = adapters.withSession(api, restarted, value -> value.receiveReply(CASE, fixture.replyId, restoredRead, restartedWorkspace, fixture.schemas()));
+                                assertArrayEquals(result.data(), restored.data()); assertEquals(result.channelAttemptId(), restored.channelAttemptId());
+                            }
+                            assertThrows(SessionException.class, () -> restarted.receiptEvidence(TARGET.toString(), SUBMISSION.toString()));
+                            assertThrows(SessionException.class, () -> adapters.withSession(api, restarted, value -> { value.restoreReplyKey(archived.getFirst(), restartedWorkspace); return null; }));
+                        }
+                    }
                     for (String action : List.of("accept", "reject")) {
                         var request = new ReplyReceiptRequest(CASE, fixture.replyId, action, action.equals("reject") ? "technical-error" : null,
                                 action.equals("reject") ? "Synthetische technische Rückmeldung" : null, null);
@@ -173,6 +191,14 @@ class SenderKernelTest {
                         var transport = new ReplyReceiptCapture(fixture, prepared);
                         assertNotNull(adapters.withSession(api, session, value -> value.sendReplyReceipt(prepared, transport, workspace)));
                         assertEquals(1, transport.puts);
+                        var confirmedTransport = new ReplyReceiptCapture(fixture, prepared);
+                        try (var confirmation = new ReplyReceiptAccess(api, confirmedTransport)) {
+                            var attempt = confirmation.prepare(prepared);
+                            var completed = adapters.withSession(api, session, value -> confirmation.execute(attempt.attemptId(), value, workspace, () -> {}));
+                            assertEquals("confirmed", completed.status(), api + ": " + completed);
+                            assertEquals(1, confirmedTransport.puts); assertNotNull(completed.eventId());
+                            assertThrows(SessionException.class, () -> confirmation.prepare(prepared));
+                        }
                         for (String malformed : List.of("signature", "event-case", "event-subject", "event-action", "tags", "empty")) {
                             var invalid = new ReplyReceiptCapture(fixture, prepared); invalid.ackAttack = malformed;
                             assertThrows(SessionException.class, () -> adapters.withSession(api, session, value -> value.sendReplyReceipt(prepared, invalid, workspace)), api + " " + action + " " + malformed);

@@ -1,6 +1,8 @@
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue';
+import { inject, ref, computed, watch, nextTick } from 'vue';
 import { invoke } from './native.js';
+import { caseWorkspaceKey } from './case-context.js';
+const caseWorkspace = inject(caseWorkspaceKey, null);
 import ReceivePanel from './ReceivePanel.vue';
 import { listSubmissions, loadSubmission } from './submissions.js';
 import { errorMessage } from './diagnostics.js';
@@ -62,11 +64,12 @@ async function run(action, operation, apply) {
 }
 function search(offset = 0) {
   detail.value = null; emit('receive-start');
-  run('Einreichungen laden', active => listSubmissions(invoke, active, destination.value.trim(), offset), result => { page.value = result; });
+  run('Einreichungen laden', active => listSubmissions(invoke, active, destination.value.trim(), offset), result => { page.value = result; for (const item of result.submissions) caseWorkspace?.remember(props.session, item); });
 }
 function open(id = submission.value.trim()) {
   detail.value = null; emit('receive-start');
   run('Einreichungsinformationen abrufen', active => loadSubmission(invoke, active, destination.value.trim(), id), async result => {
+    caseWorkspace?.remember(props.session, result);
     detail.value = result; submission.value = result.submissionId;
     await nextTick(); heading.value?.focus();
   });

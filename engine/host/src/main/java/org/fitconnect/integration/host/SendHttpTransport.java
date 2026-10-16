@@ -108,7 +108,23 @@ final class SendHttpTransport implements AutoCloseable {
         return exchange(allowedDestination(version, method, endpoint), method, headers, body, false);
     }
 
+    static URI allowedReplyReceipt(ApiVersion api, String method, String endpoint) {
+        try {
+            var uri = URI.create(endpoint);
+            if (!"PUT".equals(method) || !"https".equals(uri.getScheme()) || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || uri.getRawQuery() != null || uri.getRawFragment() != null
+                    || !uri.getRawPath().matches("/submission-api/" + api.wireValue() + "/replies/" + UUID + "/(?:accept|reject)")) throw new IllegalArgumentException();
+            return uri;
+        } catch (Exception failure) { throw new SessionException("endpoint_blocked"); }
+    }
+    ResourceExchange.Response requestReplyReceipt(ApiVersion api, String method, String endpoint, Map<String,String> headers, String body) {
+        StrictJson.object(body, 65536);
+        return exchange(allowedReplyReceipt(api, method, endpoint), method, headers, body, false, true);
+    }
     private ResourceExchange.Response exchange(URI uri, String method, Map<String,String> headers, String body, boolean receipt) {
+        return exchange(uri, method, headers, body, receipt, false);
+    }
+    private ResourceExchange.Response exchange(URI uri, String method, Map<String,String> headers, String body, boolean receipt, boolean token) {
         Integer receivedStatus = null;
         try {
             if (headers == null || headers.size() > 8) throw new SessionException("endpoint_blocked");
@@ -136,11 +152,13 @@ final class SendHttpTransport implements AutoCloseable {
                                 : status == 404 ? "resource_missing" : "resource_unavailable";
                         throw new SessionException(code, status, problemType(stream));
                     }
-                    byte[] result = stream.readNBytes(receipt ? 1 : 1024 * 1024 + 1);
-                    if (result.length > 1024 * 1024) throw new SessionException("invalid_resource");
+                    byte[] result = stream.readNBytes(receipt ? 1 : token ? 65537 : 1024 * 1024 + 1);
+                    if (result.length > (token ? 65536 : 1024 * 1024)) throw new SessionException("invalid_resource");
                     String text = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(result)).toString();
                     if (receipt || status == 204) {
                         if (result.length != 0) throw new SessionException("invalid_resource");
+                    } else if (token) {
+                        if (!text.matches("[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+")) throw new SessionException("invalid_resource");
                     } else StrictJson.object(text, 1024 * 1024);
                     return new ResourceExchange.Response(status, text);
                 } finally { timeout.cancel(false); }

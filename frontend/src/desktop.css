@@ -177,3 +177,5 @@ button, a, input, select, textarea, summary { -webkit-tap-highlight-color: trans
 .workspace-content .send-form { display: block; }
 .workspace-content .send-form > fieldset > label { display: grid; gap: 5px; font-size: 12px; font-weight: 550; }
 .workspace-content .send-form > fieldset { margin: 12px 0; }
+
+.storage-warning { position: fixed; bottom: 2.8rem; left: 50%; transform: translateX(-50%); z-index: 20; max-width: min(42rem, calc(100vw - 2rem)); padding: .75rem 1rem; border: 2px solid currentColor; border-radius: .5rem; background: var(--surface, #fff); color: var(--text, #172b4d); box-shadow: 0 4px 18px #0003; }

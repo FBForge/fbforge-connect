@@ -21,6 +21,13 @@ export function errorMessage(code) {
     engine_busy: 'Es läuft bereits eine lokale Aktion.',
     engine_disconnected: 'Die Verbindung zum lokalen Java-Kern wurde beendet.',
     engine_protocol_error: 'Die Antwort des lokalen Java-Kerns ist ungültig.',
+    vault_unavailable: 'Der geschützte Windows-Speicher ist nicht verfügbar. Bitte das Benutzerkonto und den freien Speicherplatz prüfen.',
+    vault_pending: 'Der bisherige Schlüsselbestand konnte noch nicht gesichert werden. Bitte im bestehenden Profil erneut sichern, bevor du die Verbindung wechselst.',
+    vault_conflict: 'Unter dieser Kennung ist bereits ein Profil gespeichert. Bitte einen neuen Profileintrag anlegen.',
+    vault_invalid: 'Das gespeicherte Profil ist beschädigt oder hat ein nicht unterstütztes Format. Die vorhandene Datei wurde nicht ersetzt.',
+    vault_unsupported: 'Geschütztes Speichern wird in diesem Entwicklungsstand nur unter Windows unterstützt. Bitte ohne Speichern verbinden.',
+    vault_limit: 'Es können höchstens 32 TEST-Profile gespeichert werden. Bitte ein nicht mehr benötigtes Profil entfernen.',
+    vault_restore_failed: 'Gespeicherte Schlüssel konnten nicht vollständig wiederhergestellt oder gegen TEST geprüft werden. Das Profil bleibt erhalten. Du kannst zunächst nur seine Zugangsdaten verwenden und die Schlüsselzuordnung prüfen.',
     invalid_credentials: 'Bitte eine Client-ID und ein Client-Secret innerhalb der zulässigen Länge eingeben.',
     authentication_failed: 'Die TEST-Anmeldung ist fehlgeschlagen. Bitte Client-ID und Client-Secret prüfen.',
     auth_unavailable: 'Der TEST-Anmeldedienst konnte nicht sicher erreicht werden. Bitte erneut versuchen.',
@@ -34,6 +41,7 @@ export function errorMessage(code) {
 
 // Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
 const reportableCodes = new Set([
+  'vault_unavailable', 'vault_pending', 'vault_invalid', 'vault_unsupported', 'vault_conflict', 'vault_limit', 'vault_restore_failed',
   'destination_conflict', 'destination_update_locked', 'desktop_required', 'engine_not_staged', 'engine_start_failed', 'adapter_unavailable', 'engine_timeout',
   'engine_busy', 'engine_disconnected', 'engine_protocol_error', 'invalid_credentials', 'authentication_failed',
   'auth_unavailable', 'endpoint_blocked', 'session_missing', 'invalid_resource', 'resource_denied',

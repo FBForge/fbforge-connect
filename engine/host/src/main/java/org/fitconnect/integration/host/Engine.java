@@ -26,7 +26,7 @@ final class Engine implements AutoCloseable {
                 if (!Set.of("protocolVersion", "id", "command", "apiVersion", "role", "clientId", "clientSecret", "sessionId",
                         "destinationId", "offset", "purpose", "keyDocument", "contentId", "totalBytes", "byteOffset", "chunk",
                         "sendDocument", "attemptId", "submissionId", "schemaDocument", "proofId", "receiptDocument",
-                        "caseId", "replyId", "logId", "eventId", "part", "replyDocument", "destinationDocument").contains(key)
+                        "caseId", "replyId", "logId", "eventId", "part", "replyDocument", "destinationDocument", "archiveDocument").contains(key)
                         || values.containsKey(key)) throw new IllegalArgumentException();
                 if (Set.of("protocolVersion", "offset", "totalBytes", "byteOffset").contains(key)) {
                     if (reader.peek() != JsonToken.NUMBER) throw new IllegalArgumentException();
@@ -68,9 +68,9 @@ final class Engine implements AutoCloseable {
                 case "prepare_reply" -> expected.addAll(Set.of("sessionId", "replyDocument"));
                 case "execute_reply", "cancel_reply" -> expected.addAll(Set.of("sessionId", "attemptId"));
                 case "reply_state" -> expected.add("sessionId");
-                case "prepare_receipt" -> expected.addAll(Set.of("sessionId", "receiptDocument"));
-                case "execute_receipt", "cancel_receipt" -> expected.addAll(Set.of("sessionId", "attemptId"));
-                case "receipt_state" -> expected.add("sessionId");
+                case "prepare_receipt", "prepare_reply_receipt" -> expected.addAll(Set.of("sessionId", "receiptDocument"));
+                case "execute_receipt", "cancel_receipt", "execute_reply_receipt", "cancel_reply_receipt" -> expected.addAll(Set.of("sessionId", "attemptId"));
+                case "receipt_state", "reply_receipt_state" -> expected.add("sessionId");
                 case "list_submissions" -> expected.addAll(Set.of("sessionId", "destinationId", "offset"));
                 case "list_replies" -> expected.addAll(Set.of("sessionId", "offset"));
                 case "load_submission" -> expected.addAll(Set.of("sessionId", "destinationId", "submissionId"));
@@ -80,9 +80,12 @@ final class Engine implements AutoCloseable {
                 case "list_received_contents", "list_received_reply_contents" -> expected.addAll(Set.of("sessionId", "proofId", "offset"));
                 case "read_received_content", "read_received_reply_content" -> expected.addAll(Set.of("sessionId", "proofId", "contentId", "byteOffset"));
                 case "discard_received", "discard_received_reply" -> expected.addAll(Set.of("sessionId", "proofId"));
+                case "export_session_item" -> expected.addAll(Set.of("sessionId", "offset"));
+                case "restore_session_item" -> expected.addAll(Set.of("sessionId", "archiveDocument"));
+                case "load_case_event_log" -> expected.addAll(Set.of("sessionId", "caseId"));
                 case "load_reply_event_log" -> expected.addAll(Set.of("sessionId", "caseId", "replyId"));
                 case "load_event_log" -> expected.addAll(Set.of("sessionId", "destinationId", "caseId", "submissionId"));
-                case "list_event_log" -> expected.addAll(Set.of("sessionId", "logId", "offset"));
+                case "list_event_log", "list_case_event_log" -> expected.addAll(Set.of("sessionId", "logId", "offset"));
                 case "read_event_log" -> expected.addAll(Set.of("sessionId", "logId", "eventId", "part", "byteOffset"));
                 case "discard_event_log" -> expected.addAll(Set.of("sessionId", "logId"));
                 default -> throw new IllegalArgumentException();
@@ -124,6 +127,8 @@ final class Engine implements AutoCloseable {
                     case "reply_target" -> sessions.replyTarget(version, values.get("sessionId"), values.get("proofId"), offset);
                     case "prepare_reply" -> sessions.prepareReply(version, values.get("sessionId"), values.get("replyDocument"));
                     case "execute_reply", "cancel_reply", "reply_state" -> sessions.replySend(version, values.get("sessionId"), command, values.get("attemptId"));
+                    case "prepare_reply_receipt" -> sessions.prepareReplyReceipt(version, values.get("sessionId"), ReplyReceiptDraft.resolve(values.get("receiptDocument")));
+                    case "execute_reply_receipt", "cancel_reply_receipt", "reply_receipt_state" -> sessions.replyReceipt(version, values.get("sessionId"), command, values.get("attemptId"));
                     case "prepare_receipt" -> {
                         var draft = ReceiptDraft.resolve(values.get("receiptDocument"));
                         yield sessions.prepareReceipt(version, values.get("sessionId"), draft.request(), draft.proofId());
@@ -142,10 +147,13 @@ final class Engine implements AutoCloseable {
                     case "read_received_schema", "list_received_contents", "read_received_content", "discard_received" -> sessions.received(version,
                             values.get("sessionId"), command, values.get("proofId"), values.get("contentId"),
                             (command.equals("read_received_content") || command.equals("read_received_schema")) ? Math.toIntExact(byteOffset) : offset);
+                    case "export_session_item" -> sessions.exportSessionItem(version, values.get("sessionId"), offset);
+                    case "restore_session_item" -> sessions.restoreSessionItem(version, values.get("sessionId"), values.get("archiveDocument"));
+                    case "load_case_event_log" -> sessions.loadCaseEventLog(version, values.get("sessionId"), values.get("caseId"));
                     case "load_reply_event_log" -> sessions.loadReplyEventLog(version, values.get("sessionId"), values.get("caseId"), values.get("replyId"));
                     case "load_event_log" -> sessions.loadEventLog(version, values.get("sessionId"), values.get("destinationId"),
                             values.get("caseId"), values.get("submissionId"));
-                    case "list_event_log", "read_event_log", "discard_event_log" -> sessions.eventLogResource(version,
+                    case "list_case_event_log", "list_event_log", "read_event_log", "discard_event_log" -> sessions.eventLogResource(version,
                             values.get("sessionId"), command, values.get("logId"), values.get("eventId"), values.get("part"),
                             command.equals("read_event_log") ? Math.toIntExact(byteOffset) : offset);
                     default -> throw new IllegalArgumentException();

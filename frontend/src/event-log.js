@@ -25,21 +25,33 @@ export async function loadReplyEventLog(invoke, session, caseId, replyId) {
       || !Array.isArray(data.warnings) || data.warnings.length !== 1 || data.warnings[0] !== 'CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED') fail();
   return Object.freeze({ ...data, warnings: Object.freeze([...data.warnings]) });
 }
+export async function loadCaseEventLog(invoke, session, caseId) {
+  id(caseId);
+  const data = await requestResource(invoke, session, 'load_case_event_log', { caseId });
+  if (!exact(data, ['logId', 'caseId', 'scope', 'total', 'warnings']) || !uuid(data.logId)
+      || data.caseId !== caseId || data.scope !== 'case' || !Number.isSafeInteger(data.total) || data.total < 0 || data.total > 1000
+      || !Array.isArray(data.warnings) || data.warnings.length !== 1 || data.warnings[0] !== 'CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED') fail();
+  return Object.freeze({ ...data, warnings: Object.freeze([...data.warnings]) });
+}
+
 export async function listEventLog(invoke, session, summary, offset = 0) {
   id(summary.logId);
-  if (!count(summary.total) || !Number.isSafeInteger(offset) || offset < 0 || offset > summary.total || offset % 5 !== 0)
+  const caseLog = summary.scope === 'case';
+  if (!(caseLog ? Number.isSafeInteger(summary.total) && summary.total >= 0 && summary.total <= 1000 : count(summary.total)) || !Number.isSafeInteger(offset) || offset < 0 || offset > summary.total || offset % 5 !== 0)
     throw new Error('invalid_input');
-  const data = await requestResource(invoke, session, 'list_event_log', { logId: summary.logId, offset });
+  const data = await requestResource(invoke, session, caseLog ? 'list_case_event_log' : 'list_event_log', { logId: summary.logId, offset });
   if (!exact(data, ['logId', 'offset', 'total', 'events']) || data.logId !== summary.logId || data.offset !== offset || data.total !== summary.total
       || !Array.isArray(data.events) || data.events.length !== Math.min(5, data.total - offset)) fail();
   const seen = new Set();
   const events = data.events.map(event => {
-    if (!exact(event, ['eventId', 'eventType', 'issuer', 'issuedAt', 'headerBytes', 'claimsBytes']) || !uuid(event.eventId) || seen.has(event.eventId)
+    if (!exact(event, ['eventId', 'eventType', 'issuer', 'issuedAt', 'headerBytes', 'claimsBytes', ...(caseLog ? ['subjectType', 'subjectId'] : [])]) || !uuid(event.eventId) || seen.has(event.eventId)
         || typeof event.eventType !== 'string' || event.eventType.length > 256
-        || !(summary.replyId ? /^https:\/\/schema\.fitko\.de\/fit-connect\/events\/[a-z-]+-reply$/ : /^https:\/\/schema\.fitko\.de\/fit-connect\/events\/[a-z-]+-submission$/).test(event.eventType)
+        || !(caseLog ? /^https:\/\/schema\.fitko\.de\/fit-connect\/events\/[a-z-]+-(?:submission|reply|case)$/ : summary.replyId ? /^https:\/\/schema\.fitko\.de\/fit-connect\/events\/[a-z-]+-reply$/ : /^https:\/\/schema\.fitko\.de\/fit-connect\/events\/[a-z-]+-submission$/).test(event.eventType)
         || typeof event.issuer !== 'string' || !event.issuer.trim() || event.issuer.length > 1024 || /[\x00-\x1f\x7f]/.test(event.issuer)
         || typeof event.issuedAt !== 'string' || event.issuedAt.length > 64 || !Number.isFinite(Date.parse(event.issuedAt))
         || !size(event.headerBytes, 16384) || !size(event.claimsBytes, 65536)) fail();
+    if (caseLog && (!['submission', 'reply', 'case'].includes(event.subjectType) || !uuid(event.subjectId)
+        || !event.eventType.endsWith(`-${event.subjectType}`) || event.subjectType === 'case' && event.subjectId !== summary.caseId)) fail();
     seen.add(event.eventId);
     return Object.freeze({ ...event });
   });

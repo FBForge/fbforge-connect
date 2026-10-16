@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { ref, shallowRef, provide, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { isTauri } from '@tauri-apps/api/core';
 import { invoke, diagnosticLog } from './native.js';
 import { buildSupportReport, operationLabels } from './support-report.js';
@@ -14,7 +14,12 @@ import SubmissionSender from './SubmissionSender.vue';
 import SubmissionBrowser from './SubmissionBrowser.vue';
 import EventLogPanel from './EventLogPanel.vue';
 import ReplyBrowser from './ReplyBrowser.vue';
+import { listProfiles, openSavedProfile, forgetProfile, profileStatus, saveProfileState } from './profiles.js';
+import { createCaseWorkspace, caseWorkspaceKey } from './case-context.js';
 
+const caseRecords = shallowRef([]);
+const caseWorkspace = createCaseWorkspace(records => { caseRecords.value = records; });
+provide(caseWorkspaceKey, caseWorkspace);
 const section = ref('Senden');
 const apiVersion = ref('v3');
 let savedTheme;
@@ -29,6 +34,7 @@ const events = ref([]);
 const role = 'online-service';
 const clientId = ref('');
 const clientSecret = ref('');
+const rememberProfile = ref(false), profileName = ref(''), profiles = shallowRef([]), storageStatus = shallowRef(null), profileError = ref(''), forgetCandidate = shallowRef(null), forgetDialog = ref(null);
 const sessions = ref({});
 const selectedDestination = ref('');
 const keyRevision = ref(0);
@@ -37,8 +43,8 @@ const eventTarget = ref(null);
 const activeSession = computed(() => sessions.value[apiVersion.value]);
 document.documentElement.dataset.theme = theme.value;
 watch(apiVersion, () => { clientId.value = ''; clientSecret.value = ''; error.value = ''; });
-watch(() => activeSession.value?.sessionId, () => { selectedDestination.value = ''; });
-function fatal(cause) { sessions.value = {}; error.value = errorMessage(cause); }
+watch(() => activeSession.value?.sessionId, () => { selectedDestination.value = ''; storageStatus.value = null; void refreshStorageStatus(); });
+function fatal(cause) { sessions.value = {}; caseWorkspace.clear(); error.value = errorMessage(cause); }
 
 function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark';
@@ -52,6 +58,7 @@ function openEventLog(target) {
   eventTarget.value = { ...target, requestId: crypto.randomUUID() };
 }
 function addEvent(api, action, status, started, role = '—') {
+  void refreshStorageStatus();
   events.value = [{ id: crypto.randomUUID(), time: new Date().toLocaleTimeString('de-DE'),
     api, role, action, status, duration: Math.round(performance.now() - started) }, ...events.value].slice(0, 100);
 }
@@ -73,16 +80,16 @@ async function sessionAction(action) {
     if (!isTauri()) throw new Error('desktop_required');
     delete sessions.value[key];
     const result = action === 'open'
-      ? await openSession(invoke, version, selectedRole, credentials.clientId, credentials.clientSecret)
+      ? await openSession(invoke, version, selectedRole, credentials.clientId, credentials.clientSecret, rememberProfile.value ? { profileId: crypto.randomUUID(), name: profileName.value.trim() } : null)
       : await updateSession(invoke, current, action === 'check');
     if (result.connected) {
       sessions.value[key] = result;
-      if (action === 'open') connectionDialog.value?.close();
+      if (action === 'open') { connectionDialog.value?.close(); void refreshProfiles(); }
     }
   } catch (cause) {
     status = 'Fehlgeschlagen';
     const code = typeof cause === 'string' ? cause : cause?.message;
-    if (current && ['engine_busy', 'invalid_credentials', 'desktop_required'].includes(code)) sessions.value[key] = current;
+    if (current && (['engine_busy', 'invalid_credentials', 'invalid_input', 'desktop_required', 'vault_pending'].includes(code) || action !== 'open' && code?.startsWith('vault_'))) sessions.value[key] = current;
     if (resetsSessions(cause)) sessions.value = {};
     error.value = errorMessage(cause);
   } finally {
@@ -120,7 +127,7 @@ const version = packageInfo.version;
 const navigation = [
   { name: 'Senden', icon: 'send', description: 'Einreichungen mit Fachdaten und Anlagen vorbereiten und an TEST übermitteln.' },
   { name: 'Empfangen', icon: 'receive', description: 'Einreichungen abrufen, lokal entschlüsseln und technisch prüfen.' },
-  { name: 'Event Log', icon: 'events', description: 'Signierte Ereignisse einer Einreichung prüfen und nachvollziehen.' },
+  { name: 'Event Log', icon: 'events', description: 'Den Verlauf von Vorgängen, Einreichungen und Antworten nachvollziehen.' },
   { name: 'Zustellpunkte', icon: 'destinations', description: 'Eigene Zustellpunkte ansehen und über API v3 verwalten.' },
   { name: 'Diagnose', icon: 'diagnostics', description: 'Lokale Komponenten prüfen und einen technischen Bericht für die Fehleranalyse speichern.' },
   { name: 'Info', icon: 'info', description: 'Programmversion, Funktionsumfang und Lizenzinformationen.' },
@@ -136,8 +143,51 @@ async function navigate(name) {
   if (workspace.value) workspace.value.scrollTop = scrollPositions.get(name) || 0;
   viewHeading.value?.focus({ preventScroll: true });
 }
-function showConnection() { if (!connectionDialog.value?.open) connectionDialog.value?.showModal(); }
+function showConnection() { void refreshProfiles(); if (!connectionDialog.value?.open) connectionDialog.value?.showModal(); }
 function closeConnection() { if (!['open', 'check', 'close'].includes(pendingAction.value)) connectionDialog.value?.close(); }
+async function refreshProfiles() {
+  if (!isTauri()) return;
+  try { profiles.value = await listProfiles(invoke); profileError.value = ''; }
+  catch (cause) { profileError.value = errorMessage(cause); }
+}
+async function refreshStorageStatus() {
+  const active = activeSession.value;
+  if (!isTauri() || !active) return;
+  try {
+    const status = await profileStatus(invoke, active.sessionId);
+    if (activeSession.value?.sessionId === active.sessionId) storageStatus.value = status;
+  } catch { /* A failed status read must not change a completed FIT-Connect operation. */ }
+}
+async function connectProfile(profile, restoreKeys) {
+  if (busy.value) return;
+  busy.value = true; pendingAction.value = 'open'; error.value = ''; clientId.value = ''; clientSecret.value = '';
+  delete sessions.value[profile.apiVersion];
+  const started = performance.now(); let status = 'Erfolgreich';
+  try {
+    const connected = await openSavedProfile(invoke, profile, restoreKeys);
+    apiVersion.value = connected.apiVersion; sessions.value[connected.apiVersion] = connected;
+    connectionDialog.value?.close(); keyRevision.value++; await refreshStorageStatus();
+  } catch (cause) { status = 'Fehlgeschlagen'; error.value = errorMessage(cause); if (resetsSessions(cause)) sessions.value = {}; }
+  finally { busy.value = false; pendingAction.value = ''; addEvent(profile.apiVersion, 'Mit gespeichertem Profil anmelden', status, started); }
+}
+async function askRemoveProfile(profile) {
+  if (busy.value) return;
+  forgetCandidate.value = profile; await nextTick(); forgetDialog.value?.showModal();
+}
+async function removeProfile(profile) {
+  if (busy.value || !profile) return;
+  busy.value = true;
+  try { await forgetProfile(invoke, profile.profileId); await refreshProfiles(); await refreshStorageStatus(); }
+  catch (cause) { profileError.value = errorMessage(cause); }
+  finally { busy.value = false; forgetDialog.value?.close(); forgetCandidate.value = null; }
+}
+async function retryProfileSave() {
+  if (busy.value || !activeSession.value) return;
+  busy.value = true;
+  try { await saveProfileState(invoke, activeSession.value); await refreshStorageStatus(); }
+  catch (cause) { profileError.value = errorMessage(cause); }
+  finally { busy.value = false; }
+}
 const trace = ref(diagnosticLog.snapshot());
 let unsubscribe, downloadUrl, downloadTimer;
 onMounted(() => { unsubscribe = diagnosticLog.subscribe(entries => { trace.value = entries; }); });
@@ -185,7 +235,7 @@ function clearHistory() { events.value = []; diagnosticLog.clear(); }
           <DestinationManager v-show="section === 'Zustellpunkte'" :session="activeSession" :busy="busy" @busy="resourceBusy" @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)" @fatal="fatal" @changed="keyRevision++" />
           <DestinationKeys v-show="section === 'Empfangen'" :session="activeSession" :busy="busy" @busy="resourceBusy" @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)" @fatal="fatal" @destination="id => selectedDestination = id" @invalidate="keyRevision++" />
           <SubmissionBrowser v-show="section === 'Empfangen'" :session="activeSession" :busy="busy" :destination-id="selectedDestination" :key-revision="keyRevision" :receive-revision="submissionRevision" @receive-start="replyRevision++" @event-log="openEventLog" @busy="resourceBusy" @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)" @fatal="fatal" />
-          <EventLogPanel v-show="section === 'Event Log'" :session="activeSession" :busy="busy" :target="eventTarget" :visible="section === 'Event Log'" @busy="resourceBusy" @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)" @fatal="fatal" />
+          <EventLogPanel :known-targets="caseRecords" v-show="section === 'Event Log'" :session="activeSession" :busy="busy" :target="eventTarget" :visible="section === 'Event Log'" @busy="resourceBusy" @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)" @fatal="fatal" />
           <ReplyBrowser @event-log="openEventLog" v-show="section === 'Empfangen'" :session="activeSession" :busy="busy" :key-revision="keyRevision" :receive-revision="replyRevision" @receive-start="submissionRevision++" @busy="resourceBusy" @activity="event => addEvent(event.api, event.action, event.status, event.started, event.role)" @fatal="fatal" />
           <div v-show="section === 'Diagnose'" class="diagnostic-view">
             <section class="tool-section" aria-labelledby="setup-title">
@@ -213,6 +263,7 @@ function clearHistory() { events.value = []; diagnosticLog.clear(); }
         </div>
       </main>
     </div>
+    <div v-if="storageStatus?.error" class="storage-warning" role="alert">Schlüsselbestand noch nicht gesichert. Bitte unter „Verbinden“ erneut sichern.</div>
     <footer class="app-statusbar"><span class="status-connection"><span class="connection-dot" :class="{ connected: activeSession }" aria-hidden="true"></span>{{ busy ? 'Aktion läuft …' : activeSession ? 'Bei TEST angemeldet' : 'Nicht verbunden' }}</span><span>TEST · API {{ apiVersion }}</span><button type="button" @click="navigate('Diagnose')">{{ trace.length }} technische Aufrufe</button></footer>
   </div>
   <dialog ref="connectionDialog" class="tool-dialog connection-dialog" aria-labelledby="session-title" @cancel.prevent="closeConnection" @close="clientId = ''; clientSecret = ''">
@@ -222,10 +273,19 @@ function clearHistory() { events.value = []; diagnosticLog.clear(); }
     <p v-if="error" role="alert" class="status-badge error">{{ error }}</p>
     <form @submit.prevent="sessionAction('open')" autocomplete="off">
       <div class="client-fields"><label for="client-id">Client-ID<input id="client-id" v-model="clientId" type="text" maxlength="512" autocomplete="off" :disabled="busy" required></label><label for="client-secret">Client-Secret<input id="client-secret" v-model="clientSecret" type="password" maxlength="8192" autocomplete="off" :disabled="busy" required></label></div>
-      <p class="small-note">Zugangsdaten werden nicht dauerhaft gespeichert. Das Secret wird nach der Übergabe und beim Schließen aus dem Eingabefeld geleert. Tokens verbleiben im lokalen Anwendungskern.</p>
+      <label class="checkbox-label"><input v-model="rememberProfile" type="checkbox" :disabled="busy"> Zugangsdaten und Testschlüssel auf diesem Windows-Benutzerkonto geschützt speichern</label>
+      <label v-if="rememberProfile" for="profile-name">Profilname<input id="profile-name" v-model="profileName" maxlength="80" required :disabled="busy" placeholder="Zum Beispiel: Testarbeitsplatz Bauamt"></label>
+      <p class="small-note">Ohne Speichern gelten Zugangsdaten und Schlüssel nur für diese Sitzung. Mit Speichern bleiben auch Antwortschlüssel für spätere Replies erhalten. Windows schützt sie für dein Benutzerkonto. Zugangstokens werden nicht gespeichert. Das Secret wird nach der Übergabe aus dem Eingabefeld geleert.</p>
       <div class="client-actions"><button class="button" type="submit" :disabled="busy || !clientId.trim() || !clientSecret.trim()">{{ activeSession ? 'Mit anderen Zugangsdaten anmelden' : 'Bei TEST anmelden' }}</button><button class="button secondary" type="button" :disabled="busy || !activeSession" @click="sessionAction('check')">Sitzung prüfen</button><button class="button secondary" type="button" :disabled="busy || !activeSession" @click="sessionAction('close')">Abmelden</button></div>
     </form>
+    <section v-if="profiles.length" aria-labelledby="saved-profiles-title"><h3 id="saved-profiles-title">Gespeicherte TEST-Profile</h3><ul class="send-history-list"><li v-for="profile in profiles" :key="profile.profileId"><div><strong>{{ profile.name }}</strong><p>{{ profile.available ? `${profile.apiVersion} · ${profile.keyCount} gespeicherte Schlüssel / Antwortkanäle` : 'Unter diesem Benutzerkonto nicht lesbar' }}</p><div class="client-actions"><button type="button" class="button" :disabled="busy || !profile.available" @click="connectProfile(profile, true)">Mit Profil verbinden</button><button v-if="profile.keyCount" type="button" class="button secondary" :disabled="busy || !profile.available" @click="connectProfile(profile, false)">Nur Zugangsdaten verwenden</button><button type="button" class="button secondary" :disabled="busy" @click="askRemoveProfile(profile)">Gespeichertes Profil entfernen</button></div></div></li></ul><p class="small-note">„Nur Zugangsdaten verwenden“ öffnet eine Sitzung ohne gespeicherte Schlüssel und verändert deren Sicherung nicht.</p></section>
+    <p v-if="profileError" role="alert">{{ profileError }}</p>
+    <p v-if="storageStatus?.profileId" class="small-note">{{ storageStatus.saved ? 'Diese Sitzung speichert Zugangsdaten und Schlüssel geschützt im gewählten Profil.' : 'Der aktuelle Schlüsselbestand konnte nicht gesichert werden. Bitte die Anwendung geöffnet lassen und erneut speichern.' }}</p>
+    <button v-if="storageStatus?.error" type="button" class="button secondary" :disabled="busy" @click="retryProfileSave">Schlüsselbestand erneut sichern</button>
     <p v-if="activeSession" class="small-note">Eine Sitzungsprüfung prüft die OAuth-Anmeldung. Zugriffsrechte werden beim jeweiligen Abruf geprüft.</p>
+  </dialog>
+  <dialog v-if="forgetCandidate" ref="forgetDialog" class="tool-dialog" aria-labelledby="forget-profile-title" @cancel.prevent="forgetCandidate = null">
+    <h2 id="forget-profile-title">Gespeichertes Profil entfernen?</h2><p>„{{ forgetCandidate.name }}“ und seine gespeicherten Schlüssel werden von diesem Rechner entfernt. Aktuell geladene Sitzungsschlüssel bleiben bis zum Abmelden verfügbar.</p><p>Ohne weitere Sicherung können spätere Antworten und bereits verschlüsselte Nachrichten unter Umständen nicht mehr entschlüsselt werden.</p><div class="client-actions"><button type="button" class="button secondary" autofocus :disabled="busy" @click="forgetCandidate = null">Abbrechen</button><button type="button" class="button" :disabled="busy" @click="removeProfile(forgetCandidate)">Profil und gespeicherte Schlüssel entfernen</button></div>
   </dialog>
   <dialog ref="licenseDialog" class="tool-dialog license-dialog" aria-labelledby="license-dialog-title"><div class="tool-section-heading"><h2 id="license-dialog-title">European Union Public Licence 1.2</h2><button type="button" class="icon-button" aria-label="Lizenztext schließen" @click="licenseDialog.close()"><AppIcon name="close" /></button></div><pre>{{ licenseText }}</pre></dialog>
 </template>

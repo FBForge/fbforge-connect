@@ -43,6 +43,9 @@ final class ReplyReceiveStore {
         return require(api, session, proofId).schema().read(proofId, offset);
     }
 
+    synchronized ReplyReceiptEvidence evidence(ApiVersion api, String session, String proofId) {
+        return require(api, session, proofId).content().evidence();
+    }
     synchronized Summary state(ApiVersion api, String session, String proofId) { return require(api, session, proofId).summary(); }
 
     synchronized Page parts(ApiVersion api, String session, String proofId, int offset) {

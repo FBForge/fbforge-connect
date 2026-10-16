@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadEventLog, listEventLog, readEventDocument, discardEventLog } from '../frontend/src/event-log.js';
+import { loadEventLog, loadCaseEventLog, listEventLog, readEventDocument, discardEventLog } from '../frontend/src/event-log.js';
 
 const destinationId = '11111111-1111-4111-8111-111111111111', submissionId = '22222222-2222-4222-8222-222222222222';
 const caseId = '33333333-3333-4333-8333-333333333333', logId = '44444444-4444-4444-8444-444444444444';
@@ -89,4 +89,27 @@ test('reply logs use an exact independent case/reply identity and cannot show su
   }
   for(const patch of [{replyId:caseId},{caseId:submissionId},{submissionId},{total:0},{warnings:[]}])
    await assert.rejects(loadReplyEventLog(async()=>envelope({...reply,...patch}),session,caseId,submissionId),/engine_protocol_error/);
+});
+
+
+test('case logs accept empty results and multiple typed subjects while preserving strict bindings', async () => {
+  for (const apiVersion of ['v2', 'v3']) {
+    const active = { ...session, apiVersion };
+    const data = { logId, caseId, scope: 'case', total: 2, warnings: summary.warnings };
+    const result = await loadCaseEventLog(async (command, args) => {
+      assert.equal(command, 'load_case_event_log'); assert.deepEqual(args, { apiVersion, sessionId: active.sessionId, caseId });
+      return envelope(data, active);
+    }, active, caseId);
+    const events = [{ ...row, subjectType: 'submission', subjectId: submissionId },
+      { ...row, eventId: submissionId, eventType: 'https://schema.fitko.de/fit-connect/events/submit-reply', subjectType: 'reply', subjectId: destinationId }];
+    const invoke = async (command) => { assert.equal(command, 'list_case_event_log'); return envelope({ logId, offset: 0, total: 2, events }, active); };
+    assert.deepEqual((await listEventLog(invoke, active, result)).events, events);
+    for (const patch of [{ subjectType: 'reply' }, { subjectId: 'bad' }, { subjectType: 'case', eventType: 'https://schema.fitko.de/fit-connect/events/create-case' }]) {
+      const bad = [{ ...events[0], ...patch }, events[1]];
+      await assert.rejects(listEventLog(async () => envelope({ logId, offset: 0, total: 2, events: bad }, active), active, result), /engine_protocol_error/);
+    }
+    const empty = await loadCaseEventLog(async () => envelope({ ...data, total: 0 }, active), active, caseId);
+    assert.equal((await listEventLog(async () => envelope({ logId, offset: 0, total: 0, events: [] }, active), active, empty)).events.length, 0);
+    await assert.rejects(loadCaseEventLog(async () => envelope({ ...data, caseId: submissionId }, active), active, caseId), /engine_protocol_error/);
+  }
 });

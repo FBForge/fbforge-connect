@@ -10,11 +10,14 @@ function validate(result, apiVersion, role, connected, sessionId) {
   return { sessionId: result.sessionId, apiVersion, role, environment: 'TEST', connected };
 }
 
-export async function openSession(invoke, apiVersion, role, clientId, clientSecret) {
+export async function openSession(invoke, apiVersion, role, clientId, clientSecret, profile = null) {
   if (!versions.has(apiVersion) || !roles.has(role) || typeof clientId !== 'string'
       || !clientId.trim() || clientId.length > 512 || typeof clientSecret !== 'string'
       || !clientSecret.trim() || clientSecret.length > 8192) throw new Error('invalid_credentials');
-  return validate(await invoke('open_session', { apiVersion, role, clientId, clientSecret }), apiVersion, role, true);
+  if (profile !== null && (!sessionIdPattern.test(profile.profileId) || typeof profile.name !== 'string' || !profile.name.trim()
+      || new TextEncoder().encode(profile.name).length > 120 || /[\x00-\x1f\x7f]/.test(profile.name))) throw new Error('invalid_input');
+  return validate(await invoke('open_session', { apiVersion, role, clientId, clientSecret,
+    ...(profile ? { profileId: profile.profileId, profileName: profile.name } : {}) }), apiVersion, role, true);
 }
 
 export async function updateSession(invoke, session, connected) {

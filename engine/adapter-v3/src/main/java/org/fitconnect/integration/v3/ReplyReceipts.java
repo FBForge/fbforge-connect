@@ -58,7 +58,7 @@ final class ReplyReceipts {
         if (wire == null || wire.length() > 65536 || !wire.matches("[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+")) throw new SessionException("verification_failed");
         var token = SignedJWT.parse(wire); var claims = token.getJWTClaimsSet();
         long age = java.time.Instant.now().getEpochSecond() - claims.getIssueTime().toInstant().getEpochSecond();
-        if (!"https://test.fit-connect.fitko.dev/submission-api".equals(claims.getIssuer()) || !("case:" + request.caseId()).equals(claims.getStringClaim("txn"))
+        if (!TestEventIssuers.isSubmissionService(claims.getIssuer()) || !("case:" + request.caseId()).equals(claims.getStringClaim("txn"))
                 || !("reply:" + request.replyId()).equals(claims.getSubject()) || age < -60 || age > 300
                 || !claims.getJSONObjectClaim("events").keySet().equals(Set.of("https://schema.fitko.de/fit-connect/events/" + request.action() + "-reply")))
             throw new SessionException("verification_failed");

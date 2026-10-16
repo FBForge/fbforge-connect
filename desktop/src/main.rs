@@ -1,6 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod protocol;
+mod vault;
+mod profiles;
+use profiles::{list_profiles, forget_profile, open_saved_profile, profile_status, save_profile_state};
 use protocol::{ApiVersion, EngineResponse, EngineFailure, ProbeResult, SessionRole, SessionSnapshot, SessionResource, valid_session_id, MAX_FRAME_BYTES};
 use serde::de::DeserializeOwned;
 use std::{path::PathBuf, process::Stdio, sync::atomic::{AtomicU64, Ordering}, time::Duration};
@@ -9,7 +12,7 @@ use tokio::{io::{AsyncReadExt, AsyncWriteExt}, process::{Child, ChildStdin, Chil
 
 struct EngineProcess { child: Child, stdin: Option<ChildStdin>, stdout: ChildStdout }
 #[derive(Default)]
-struct EngineState { process: Mutex<Option<EngineProcess>>, sequence: AtomicU64 }
+struct EngineState { process: Mutex<Option<EngineProcess>>, sequence: AtomicU64, profiles: Mutex<profiles::Bindings> }
 
 impl Drop for EngineProcess {
     fn drop(&mut self) { let _ = self.child.start_kill(); }
@@ -47,8 +50,9 @@ impl EngineProcess {
         if length == 0 || length > MAX_FRAME_BYTES { return Err(EngineFailure::Fatal("engine_protocol_error")); }
         let mut body = vec![0; length];
         self.stdout.read_exact(&mut body).await.map_err(|_| EngineFailure::Fatal("engine_disconnected"))?;
-        serde_json::from_slice::<EngineResponse<T>>(&body).map_err(|_| EngineFailure::Fatal("engine_protocol_error"))?
-            .payload(id)
+        let response = serde_json::from_slice::<EngineResponse<T>>(&body).map_err(|_| EngineFailure::Fatal("engine_protocol_error"));
+        body.fill(0);
+        response?.payload(id)
     }
 
     async fn shutdown(mut self) -> Result<(), &'static str> {
@@ -69,7 +73,7 @@ async fn request<T: DeserializeOwned>(app: &tauri::AppHandle, state: &EngineStat
     }
     let id = format!("op-{}", state.sequence.fetch_add(1, Ordering::Relaxed));
     let timeout_seconds = match command.get("command").and_then(serde_json::Value::as_str) {
-        Some("load_send_schema" | "execute_send" | "execute_reply" | "verify_submission" | "verify_reply" | "prepare_receipt" | "execute_receipt" | "load_event_log" | "prepare_destination_update" | "execute_destination_update") => 240,
+        Some("load_send_schema" | "execute_send" | "execute_reply" | "verify_submission" | "verify_reply" | "prepare_receipt" | "execute_receipt" | "execute_reply_receipt" | "load_event_log" | "load_reply_event_log" | "load_case_event_log" | "prepare_destination_update" | "execute_destination_update") => 240,
         _ => 25,
     };
     command["protocolVersion"] = 1.into();
@@ -100,15 +104,26 @@ async fn probe_engine(app: tauri::AppHandle, state: State<'_, EngineState>, api_
 
 #[tauri::command]
 async fn open_session(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
-    role: SessionRole, client_id: String, client_secret: String) -> Result<SessionSnapshot, &'static str> {
+    role: SessionRole, client_id: String, client_secret: String, profile_id: Option<String>, profile_name: Option<String>) -> Result<SessionSnapshot, &'static str> {
     if client_id.trim().is_empty() || client_id.len() > 512 || client_secret.trim().is_empty() || client_secret.len() > 8192 {
         return Err("invalid_credentials");
     }
+    if profile_id.is_some() != profile_name.is_some() || profile_id.as_ref().is_some_and(|id| !valid_session_id(id)) { return Err("invalid_input"); }
+    if profile_id.is_some() && !cfg!(windows) { return Err("vault_unsupported"); }
+    if profile_name.as_ref().is_some_and(|name| name.trim().is_empty() || name.len() > 120 || name.chars().any(char::is_control)) { return Err("invalid_input"); }
+    profiles::before_open(&app, &state, api_version, role).await.map_err(|_| "vault_pending")?;
     let value: SessionSnapshot = request(&app, &state, serde_json::json!({"command":"open_session",
         "apiVersion":api_version, "role":role, "clientId":client_id, "clientSecret":client_secret})).await?;
     if !value.validate(api_version, Some(role), None, true) {
         *state.process.lock().await = None;
         return Err("engine_protocol_error");
+    }
+    profiles::opened(&state, api_version, role).await;
+    if let (Some(id), Some(name)) = (profile_id, profile_name) {
+        if let Err(code) = profiles::save_opened(&app, &state, &value, id, name, client_id, client_secret).await {
+            let _: Result<SessionSnapshot, _> = request(&app, &state, serde_json::json!({"command":"close_session", "apiVersion":api_version,"sessionId":value.session_id})).await;
+            return Err(code);
+        }
     }
     Ok(value)
 }
@@ -128,12 +143,14 @@ async fn close_session(app: tauri::AppHandle, state: State<'_, EngineState>, api
 async fn session_action(app: &tauri::AppHandle, state: &EngineState, version: ApiVersion, id: &str, connected: bool)
     -> Result<SessionSnapshot, &'static str> {
     if !valid_session_id(id) { return Err("session_missing"); }
+    if !connected { profiles::checkpoint(app, state, version, id).await?; }
     let command = if connected { "check_session" } else { "close_session" };
     let value: SessionSnapshot = request(app, state, serde_json::json!({"command":command,"apiVersion":version,"sessionId":id})).await?;
     if !value.validate(version, None, Some(id), connected) {
         *state.process.lock().await = None;
         return Err("engine_protocol_error");
     }
+    if !connected { state.profiles.lock().await.remove(id); }
     Ok(value)
 }
 
@@ -142,10 +159,23 @@ async fn resource_action(app: &tauri::AppHandle, state: &EngineState, version: A
     if !valid_session_id(id) { return Err("session_missing"); }
     command["apiVersion"] = serde_json::to_value(version).map_err(|_| "invalid_input")?;
     command["sessionId"] = id.into();
+    let operation = command["command"].as_str().unwrap_or("").to_string();
     let value: SessionResource = request(app, state, command).await?;
     if !value.validate(version, id) {
         *state.process.lock().await = None;
         return Err("engine_protocol_error");
+    }
+    if matches!(operation.as_str(), "prepare_send" | "execute_send" | "cancel_send" | "import_key" | "discard_keys") {
+        if let Err(code) = profiles::checkpoint(app, state, version, id).await {
+            if operation == "prepare_send" {
+                // A reply key must be durable before its offer can be dispatched.
+                if let Some(attempt) = value.data.get("attempt").and_then(|v| v.get("attemptId")).and_then(|v| v.as_str()) {
+                    let _: Result<SessionResource,_> = request(app, state, serde_json::json!({"command":"cancel_send","apiVersion":version,"sessionId":id,"attemptId":attempt})).await;
+                }
+                return Err(code);
+            }
+            // Preserve the actual send outcome; profile_status reports a failed checkpoint separately.
+        }
     }
     Ok(value)
 }
@@ -390,6 +420,46 @@ async fn read_received_content(app: tauri::AppHandle, state: State<'_, EngineSta
 }
 
 #[tauri::command]
+async fn prepare_reply_receipt(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, receipt_document: String) -> Result<SessionResource, &'static str> {
+    if receipt_document.len() > 16384 { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"prepare_reply_receipt","receiptDocument":receipt_document})).await
+}
+#[tauri::command]
+async fn execute_reply_receipt(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, attempt_id: String) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&attempt_id) { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"execute_reply_receipt","attemptId":attempt_id})).await
+}
+#[tauri::command]
+async fn cancel_reply_receipt(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, attempt_id: String) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&attempt_id) { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"cancel_reply_receipt","attemptId":attempt_id})).await
+}
+#[tauri::command]
+async fn reply_receipt_state(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String) -> Result<SessionResource, &'static str> {
+    resource_action(&app, &state, api_version, &session_id, serde_json::json!({"command":"reply_receipt_state"})).await
+}
+#[tauri::command]
+async fn load_case_event_log(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, case_id: String) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&case_id) { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"load_case_event_log","caseId":case_id})).await
+}
+#[tauri::command]
+async fn list_case_event_log(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
+    session_id: String, log_id: String, offset: u32) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&log_id) || offset > 1000 || offset % 5 != 0 { return Err("invalid_input"); }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"list_case_event_log","logId":log_id,"offset":offset})).await
+}
+#[tauri::command]
 async fn load_reply_event_log(app: tauri::AppHandle, state: State<'_, EngineState>, api_version: ApiVersion,
     session_id: String, case_id: String, reply_id: String) -> Result<SessionResource, &'static str> {
     if !valid_session_id(&case_id) || !valid_session_id(&reply_id) { return Err("invalid_input"); }
@@ -544,8 +614,8 @@ async fn discard_content(app: tauri::AppHandle, state: State<'_, EngineState>, a
 fn main() {
     let app = tauri::Builder::default()
         .manage(EngineState::default())
-        .invoke_handler(tauri::generate_handler![load_managed_destination, prepare_destination_update, execute_destination_update, cancel_destination_update, destination_update_state, probe_engine, open_session, check_session, close_session,
-            load_send_destination, load_send_schema, read_send_schema, load_reply_schema, read_reply_schema, load_reply_event_log, read_received_schema, read_received_reply_schema, list_destinations, load_destination, import_key, loaded_keys, discard_keys,
+        .invoke_handler(tauri::generate_handler![list_profiles, forget_profile, open_saved_profile, profile_status, save_profile_state, load_managed_destination, prepare_destination_update, execute_destination_update, cancel_destination_update, destination_update_state, probe_engine, open_session, check_session, close_session,
+            load_send_destination, load_send_schema, read_send_schema, load_reply_schema, read_reply_schema, load_reply_event_log, load_case_event_log, list_case_event_log, prepare_reply_receipt, execute_reply_receipt, cancel_reply_receipt, reply_receipt_state, read_received_schema, read_received_reply_schema, list_destinations, load_destination, import_key, loaded_keys, discard_keys,
             begin_content, append_content, discard_content, prepare_send, execute_send, cancel_send, send_state,
             reply_target, prepare_reply, execute_reply, cancel_reply, reply_state,
             list_submissions, load_submission, verify_submission, list_received_contents, read_received_content, discard_received,

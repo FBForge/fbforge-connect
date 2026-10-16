@@ -12,7 +12,13 @@ final class ReplyKeys {
     private final Map<UUID, Stored> keys = new LinkedHashMap<>();
     JWK offer(UUID attempt, SubmissionInput input) {
         if (attempt == null || input == null || input.replyOffer() == null) throw error();
-        if (keys.containsKey(attempt)) throw new SessionException("send_locked");
+        if (keys.containsKey(attempt)) {
+            var stored = keys.get(attempt);
+            if (!stored.reference().status().equals("pending") || !stored.reference().destinationId().equals(input.destinationId())
+                    || !Objects.equals(stored.reference().fromDestinationId(), input.fromDestinationId())
+                    || !Objects.equals(stored.expectedCase(), input.caseId()) || !stored.offer().equals(input.replyOffer())) throw new SessionException("send_locked");
+            return stored.publicKey();
+        }
         if (keys.size() >= 32) throw new SessionException("content_limit");
         var pair = dev.fitko.fitconnect.sdk.util.EncryptionKeyPairGenerator.generate("reply-key:" + attempt);
         var publicKey = pair.publicKey(); var privateKey = pair.privateKey();
@@ -52,6 +58,34 @@ final class ReplyKeys {
             if (matches.size() != 1) throw new SessionException("key_rejected");
             var item = matches.getFirst();
             return new Selected(item.reference(), item.privateKey().toRSAKey(), item.offer());
+        } catch (SessionException failure) { throw failure;
+        } catch (Exception failure) { throw new SessionException("key_rejected"); }
+    }
+    List<SessionKeyArchive> archive() {
+        return keys.values().stream().map(item -> new SessionKeyArchive(null, item.reference(), item.expectedCase(),
+                item.privateKey().toJSONString(), item.offer().schemaUri(), item.offer().mimeType())).toList();
+    }
+    void restore(SessionKeyArchive item) {
+        try {
+            if (item == null || item.replyChannel() == null || keys.size() >= 32) throw error();
+            var reference = item.replyChannel();
+            if (keys.containsKey(reference.attemptId())) throw error();
+            var key = com.nimbusds.jose.jwk.RSAKey.parse(item.privateJwk());
+            if (!key.isPrivate() || key.size() != 4096 || !Objects.equals(reference.keyId(), key.getKeyID())
+                    || !reference.keyId().equals("reply-key:" + reference.attemptId())
+                    || key.getAlgorithm() != null && !key.getAlgorithm().getName().equals("RSA-OAEP-256")
+                    || key.getKeyUse() != null && !key.getKeyUse().equals(com.nimbusds.jose.jwk.KeyUse.ENCRYPTION)) throw error();
+            // Validate the actual key pair, rather than trusting serialized private CRT components.
+            var challenge = new com.nimbusds.jose.JWEObject(new com.nimbusds.jose.JWEHeader(com.nimbusds.jose.JWEAlgorithm.RSA_OAEP_256,
+                    com.nimbusds.jose.EncryptionMethod.A256GCM), new com.nimbusds.jose.Payload("restore:" + reference.attemptId()));
+            challenge.encrypt(new com.nimbusds.jose.crypto.RSAEncrypter(key.toRSAPublicKey()));
+            challenge.decrypt(new com.nimbusds.jose.crypto.RSADecrypter(key.toRSAPrivateKey()));
+            if (!challenge.getPayload().toString().equals("restore:" + reference.attemptId())) throw error();
+            // A pending write from a previous process is unresolved, never resumed automatically.
+            if (reference.status().equals("pending")) reference = new ReplyChannelReference(reference.attemptId(), reference.destinationId(),
+                    reference.fromDestinationId(), null, null, reference.keyId(), "unresolved");
+            keys.put(reference.attemptId(), new Stored(reference, item.expectedCase(), key.toPublicJWK(), key,
+                    new SubmissionInput.ReplyOffer(item.schemaUri(), item.mimeType())));
         } catch (SessionException failure) { throw failure;
         } catch (Exception failure) { throw new SessionException("key_rejected"); }
     }

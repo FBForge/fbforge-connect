@@ -12,6 +12,20 @@ class EventLogAccessTest {
     private static final Map<String,String> HEADERS = Map.of("Authorization", "Bearer synthetic", "Accept", "application/json");
     private static String events(ApiVersion api, String type, String id) { return ROOT + "/" + api.wireValue() + "/" + type + "/" + id + "/events?offset=0&limit=100"; }
 
+    @Test void caseScopeRejectsOtherCasesSubjectFiltersAndNonCaseRoutesBeforeDispatch() {
+        for (var api : ApiVersion.values()) {
+            String root = ROOT + "/" + api.wireValue();
+            for (String path : List.of("/cases/" + SUB + "/events?offset=0&limit=20", "/submissions/" + SUB + "/events?offset=0&limit=20",
+                    "/replies/" + SUB + "/events?offset=0&limit=20", "/cases/" + CASE + "/events?offset=0&limit=20&submissionId=" + SUB))
+                try (var source = EventLogAccess.forCase(api, CASE, (u,h) -> { fail("Foreign scope dispatched"); return null; })) {
+                    assertEquals("endpoint_blocked", assertThrows(SessionException.class, () -> source.get(root + path, HEADERS)).code());
+                }
+            try (var source = EventLogAccess.forCase(api, CASE, (u,h) -> "{\"offset\":0,\"count\":0,\"totalCount\":0,\"eventLog\":[]}")) {
+                source.get(events(api, "cases", CASE), HEADERS);
+                assertTrue(source.completeEventTokens().isEmpty());
+            }
+        }
+    }
     @Test void replyLogScopeCannotReadSubmissionsOrAnotherReplyAndRetainsApiAndCaseBoundaries() {
         for (var api : ApiVersion.values()) {
             String root = ROOT + "/" + api.wireValue();

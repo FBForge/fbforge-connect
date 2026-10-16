@@ -11,10 +11,13 @@ final class EventLogStore {
     private Stored current;
     record Summary(String logId, String destinationId, String caseId, String submissionId, int total, List<String> warnings) {}
     record ReplySummary(String logId, String caseId, String replyId, int total, List<String> warnings) {}
+    record CaseSummary(String logId, String caseId, String scope, int total, List<String> warnings) {}
+    record CaseRow(String eventId, String eventType, String issuer, String issuedAt, int headerBytes, int claimsBytes, String subjectType, String subjectId) {}
+    record CasePage(String logId, int offset, int total, List<CaseRow> events) {}
     record Row(String eventId, String eventType, String issuer, String issuedAt, int headerBytes, int claimsBytes) {}
     record Page(String logId, int offset, int total, List<Row> events) {}
     record Chunk(String logId, String eventId, String part, int byteOffset, int totalBytes, String chunk, boolean complete) {}
-    private record Stored(ApiVersion api, String owner, VerifiedEventLog log, String logId) {}
+    private record Stored(ApiVersion api, String owner, List<VerifiedEventLog.Entry> entries, List<VerifiedCaseEventLog.Entry> caseEntries, String logId) {}
 
     synchronized Summary publish(ApiVersion api, String owner, UUID destination, UUID caseId, UUID submission, VerifiedEventLog log) {
         current = null;
@@ -22,7 +25,7 @@ final class EventLogStore {
                 || !log.caseId().equals(caseId) || !log.submissionId().equals(submission)) throw invalid();
         var summary = new Summary(UUID.randomUUID().toString(), destination.toString(), caseId.toString(), submission.toString(),
                 log.entries().size(), log.warnings());
-        current = new Stored(api, owner, log, summary.logId());
+        current = new Stored(api, owner, log.entries(), null, summary.logId());
         return summary;
     }
 
@@ -31,10 +34,31 @@ final class EventLogStore {
         if (api == null || !uuid(owner) || log == null || !log.caseId().equals(caseId) || !Objects.equals(log.replyId(), replyId)
                 || log.submissionId() != null || log.destinationId() != null) throw invalid();
         var summary = new ReplySummary(UUID.randomUUID().toString(), caseId.toString(), replyId.toString(), log.entries().size(), log.warnings());
-        current = new Stored(api, owner, log, summary.logId()); return summary;
+        current = new Stored(api, owner, log.entries(), null, summary.logId()); return summary;
+    }
+    synchronized CaseSummary publishCase(ApiVersion api, String owner, UUID caseId, VerifiedCaseEventLog log) {
+        current = null;
+        if (api == null || !uuid(owner) || log == null || !log.caseId().equals(caseId)) throw invalid();
+        var summary = new CaseSummary(UUID.randomUUID().toString(), caseId.toString(), "case", log.entries().size(),
+                List.of("CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED"));
+        current = new Stored(api, owner, log.entries().stream().map(VerifiedCaseEventLog.Entry::event).toList(), log.entries(), summary.logId());
+        return summary;
+    }
+    synchronized CasePage casePage(ApiVersion api, String owner, String logId, int offset) {
+        var stored = require(api, owner, logId);
+        if (stored.caseEntries() == null || offset < 0 || offset > stored.entries().size() || offset % PAGE_SIZE != 0) throw invalid();
+        var entries = stored.caseEntries();
+        var rows = entries.subList(offset, Math.min(offset + PAGE_SIZE, entries.size())).stream().map(item -> {
+            var entry = item.event();
+            return new CaseRow(entry.eventId().toString(), entry.eventType(), entry.issuer(), entry.issuedAt().toString(),
+                    utf8(entry.headerJson()).length, utf8(entry.claimsJson()).length, item.subjectType(), item.subjectId().toString());
+        }).toList();
+        return new CasePage(logId, offset, entries.size(), rows);
     }
     synchronized Page page(ApiVersion api, String owner, String logId, int offset) {
-        var stored = require(api, owner, logId); var entries = stored.log().entries();
+        var stored = require(api, owner, logId);
+        if (stored.caseEntries() != null) throw invalid();
+        var entries = stored.entries();
         if (offset < 0 || offset > entries.size() || offset % PAGE_SIZE != 0) throw invalid();
         var rows = entries.subList(offset, Math.min(offset + PAGE_SIZE, entries.size())).stream().map(entry ->
                 new Row(entry.eventId().toString(), entry.eventType(), entry.issuer(), entry.issuedAt().toString(),
@@ -45,7 +69,7 @@ final class EventLogStore {
     synchronized Chunk read(ApiVersion api, String owner, String logId, String eventId, String part, int offset) {
         var stored = require(api, owner, logId);
         if (!"header".equals(part) && !"claims".equals(part)) throw invalid();
-        for (var entry : stored.log().entries()) {
+        for (var entry : stored.entries()) {
             if (!entry.eventId().toString().equals(eventId)) continue;
             byte[] original = utf8(part.equals("header") ? entry.headerJson() : entry.claimsJson());
             if (offset < 0 || offset > original.length) throw invalid();

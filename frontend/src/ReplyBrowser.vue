@@ -1,7 +1,9 @@
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue';
+import { inject, ref, computed, watch, nextTick } from 'vue';
 import ReceivePanel from './ReceivePanel.vue';
 import { invoke } from './native.js';
+import { caseWorkspaceKey } from './case-context.js';
+const caseWorkspace = inject(caseWorkspaceKey, null);
 import { listReplies, listReplyChannels } from './replies.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
@@ -23,6 +25,7 @@ function open(item = { replyId: replyId.value.trim().toLowerCase(), caseId: case
   if (disabled.value) return;
   const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
   if (!uuid(item.replyId) || !uuid(item.caseId)) { error.value = 'Bitte gültige Reply- und Vorgangs-IDs eingeben.'; return; }
+  caseWorkspace?.remember(props.session, item);
   detail.value = { replyId: item.replyId, caseId: item.caseId }; replyId.value = item.replyId; caseId.value = item.caseId; error.value = '';
   const stamp = generation;
   void nextTick(() => { if (stamp === generation) selectedHeading.value?.focus(); });
@@ -36,6 +39,7 @@ async function load(offset = 0) {
     const result = await listReplies(invoke, active, offset);
     if (stamp !== generation) { status = 'Abgebrochen'; return; }
     page.value = result;
+    for (const item of result.replies) caseWorkspace?.remember(active, item);
     await nextTick(); if (stamp === generation) heading.value?.focus();
   } catch (cause) {
     status = 'Fehlgeschlagen';
@@ -73,8 +77,8 @@ async function loadChannels() {
   <div class="submission-workspace">
   <section class="tool-section" aria-labelledby="reply-search-title">
     <h2 id="reply-search-title">Antworten (Replies)</h2>
-    <p>Antworten auf versendete Einreichungen abrufen, mit dem temporären Antwortschlüssel entschlüsseln und prüfen.</p>
-    <p class="small-note">Das ursprüngliche Antwortangebot muss in dieser Sitzung versendet worden sein. Nach dem Abmelden oder Beenden stehen dessen private Antwortschlüssel nicht mehr zur Verfügung.</p>
+    <p>Antworten auf versendete Einreichungen abrufen, mit dem zugehörigen Antwortschlüssel entschlüsseln und prüfen.</p>
+    <p class="small-note">Zum Entschlüsseln muss der passende Antwortkanal in dieser Sitzung vorhanden sein. Mit einem gespeicherten Profil können dessen Schlüssel nach einem Neustart wiederhergestellt werden. Ohne Speicherung gehen sie beim Abmelden oder Beenden verloren.</p>
     <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
     <form @submit.prevent="open()"><div class="client-fields">
       <label for="reply-lookup-case">Vorgangs-ID<input id="reply-lookup-case" v-model="caseId" type="text" maxlength="36" :disabled="disabled"></label>
@@ -96,7 +100,7 @@ async function loadChannels() {
     </template>
     <section v-if="channels" aria-labelledby="reply-channels-title">
       <h3 id="reply-channels-title">Antwortkanäle dieser Sitzung ({{ channels.length }})</h3>
-      <p class="small-note">Private Antwortschlüssel bleiben im nativen Kern und werden beim Abmelden oder Beenden verworfen. Diese Übersicht zeigt nur öffentliche Kennungen.</p>
+      <p class="small-note">Private Antwortschlüssel bleiben im nativen Kern. Bei aktiviertem Profil werden sie zusätzlich geschützt gespeichert; ohne Profil gelten sie nur für die Sitzung. Diese Übersicht zeigt nur öffentliche Kennungen.</p>
       <p v-if="!channels.length">In dieser Sitzung wurde noch kein Antwortkanal beim Versand angelegt.</p>
       <ul v-else class="send-history-list"><li v-for="item in channels" :key="item.attemptId"><div>
         <strong>{{ ({ bound: 'Dem Vorgang zugeordnet', unresolved: 'Versandausgang ungeklärt', pending: 'Versand läuft' })[item.status] }}</strong>
@@ -111,6 +115,6 @@ async function loadChannels() {
     <dl class="send-summary"><div><dt>Reply-ID</dt><dd><code>{{ detail.replyId }}</code></dd></div><div><dt>Vorgangs-ID</dt><dd><code>{{ detail.caseId }}</code></dd></div></dl>
   </section>
   <ReceivePanel :session="session" :detail="detail" reply :busy="busy || pending" :key-revision="keyRevision" :receive-revision="receiveRevision"
-    @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @receive-start="emit('receive-start')" />
+    @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @receive-start="emit('receive-start')" @event-log="value => emit('event-log', value)" />
   </div>
 </template>

@@ -18,6 +18,21 @@ class EventLogStoreTest {
                 "https://schema.fitko.de/fit-connect/events/submit-submission", issuer, Instant.parse("2026-10-16T00:00:00Z"), "{\"alg\":\"PS512\"}", claims));
         return new VerifiedEventLog(DEST, CASE, SUB, entries);
     }
+    @Test void caseSnapshotsPreserveSubjectsAndCannotBeReadAsSingleMessageLogs() {
+        var original = log(1, "{}", "synthetic");
+        var entry = new VerifiedCaseEventLog.Entry("submission", SUB, original.entries().getFirst());
+        var store = new EventLogStore();
+        var summary = store.publishCase(ApiVersion.V3, OWNER, CASE, new VerifiedCaseEventLog(CASE, List.of(entry)));
+        assertEquals("case", summary.scope());
+        var row = store.casePage(ApiVersion.V3, OWNER, summary.logId(), 0).events().getFirst();
+        assertEquals(SUB.toString(), row.subjectId()); assertEquals("submission", row.subjectType());
+        assertThrows(SessionException.class, () -> store.page(ApiVersion.V3, OWNER, summary.logId(), 0));
+        assertThrows(SessionException.class, () -> store.casePage(ApiVersion.V2, OWNER, summary.logId(), 0));
+        assertThrows(SessionException.class, () -> store.casePage(ApiVersion.V3, UUID.randomUUID().toString(), summary.logId(), 0));
+        var empty = store.publishCase(ApiVersion.V3, OWNER, CASE, new VerifiedCaseEventLog(CASE, List.of()));
+        assertEquals(0, store.casePage(ApiVersion.V3, OWNER, empty.logId(), 0).total());
+        assertThrows(SessionException.class, () -> store.read(ApiVersion.V3, OWNER, summary.logId(), row.eventId(), "claims", 0));
+    }
     @Test void replySummariesDoNotMasqueradeAsSubmissionsAndUseTheSameOwnerAndApiBoundary() {
         var store = new EventLogStore(); var original = log(1, "{}", "synthetic");
         var entries = original.entries().stream().map(entry -> new VerifiedEventLog.Entry(entry.eventId(), entry.eventType().replace("-submission", "-reply"), entry.issuer(), entry.issuedAt(), entry.headerJson(), entry.claimsJson())).toList();

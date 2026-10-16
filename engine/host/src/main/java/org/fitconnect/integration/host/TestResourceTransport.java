@@ -60,11 +60,23 @@ final class TestResourceTransport implements AutoCloseable {
                 (endpoint, headers) -> get(version, endpoint, headers, ReadProfile.EVENTS));
     }
 
+    EventLogAccess forCaseEvents(ApiVersion version, String caseId) {
+        return EventLogAccess.forCase(version, caseId,
+                (endpoint, headers) -> get(version, endpoint, headers, ReadProfile.EVENTS));
+    }
     EventLogAccess forReplyEvents(ApiVersion version, String caseId, String replyId) {
         return new EventLogAccess(version, caseId, replyId,
                 (endpoint, headers) -> get(version, endpoint, headers, ReadProfile.REPLY_EVENTS), true);
     }
     /** ReceiptAccess must supply the confirmed case/token binding before this native HTTP profile is used. */
+    ResourceExchange forReplyReceipt(ApiVersion version) {
+        return new ResourceExchange() {
+            public String get(String endpoint, Map<String,String> headers) { return TestResourceTransport.this.get(version, endpoint, headers, ReadProfile.REPLY_RECEIVE); }
+            public Response request(String method, String endpoint, Map<String,String> headers, String body) {
+                return sender.requestReplyReceipt(version, method, endpoint, headers, body);
+            }
+        };
+    }
     ResourceExchange forReceipt(ApiVersion version) {
         return new ResourceExchange() {
             public String get(String endpoint, Map<String,String> headers) { throw new SessionException("endpoint_blocked"); }

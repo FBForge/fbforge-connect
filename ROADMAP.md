@@ -1,6 +1,10 @@
 # Roadmap
 
-Stand: 16. Oktober 2026. Die Entwicklung erfolgt schrittweise. Veröffentlichungstermine sind noch nicht festgelegt.
+Stand: 16. Oktober 2026.
+
+Der freigegebene [Alpha-1-Arbeitsplan](ALPHA1_GOAL.md) ist das aktuelle Work-Goal. Er erweitert die Alpha ausdrücklich um geschützte Profile/Schlüssel, eigene TEST-Zustellpunktanlage und BPMN-Prozesskommunikation. Die nachfolgenden älteren Alpha-/Beta-Zuordnungen werden paketweise nachgeführt. Wartbarkeit und intuitive, barrierearme UX sind Teil jeder Abnahme; direkte Dokumentationslinks in der Anwendung sind nicht vorgesehen.
+
+ Die Entwicklung erfolgt schrittweise. Veröffentlichungstermine sind noch nicht festgelegt.
 
 ## Erste Alpha
 

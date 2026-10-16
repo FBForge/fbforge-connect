@@ -1,6 +1,8 @@
 <script setup>
-import { ref, shallowRef, computed, watch, nextTick } from 'vue';
+import { inject, ref, shallowRef, computed, watch, nextTick } from 'vue';
 import { invoke } from './native.js';
+import { caseWorkspaceKey } from './case-context.js';
+const caseWorkspace = inject(caseWorkspaceKey, null);
 import DraftDataPreview from './DraftDataPreview.vue';
 import { prepareSend, executeSend, cancelSend, sendState } from './sending.js';
 import { errorMessage } from './diagnostics.js';
@@ -169,6 +171,7 @@ async function send() {
   await act('Einreichung an TEST senden', async () => {
     const result = await executeSend(invoke, confirmedSession, prepared.value.attempt);
     outcome.value = result;
+    if (result.submissionId && result.caseId) caseWorkspace?.remember(confirmedSession, { ...result, destinationId: prepared.value.summary.destinationId });
     history.value = [{ ...result, api: confirmedSession.apiVersion, sessionId: confirmedSession.sessionId,
       destinationId: prepared.value.summary.destinationId }, ...history.value].slice(0, 20);
     prepared.value = null; dialog.value.close();
@@ -222,7 +225,7 @@ async function refreshState() {
           <label for="send-reply-schema">Antwortschema<select id="send-reply-schema" v-model="replySchema" required><option v-for="item in replyOptions" :key="item.schemaUri" :value="item.schemaUri">{{ item.schemaUri }}</option></select></label>
           <label for="send-reply-mime">Antwortformat<select id="send-reply-mime" v-model="replyMime"><option value="application/json">JSON</option><option value="application/xml">XML</option></select></label>
         </div>
-        <p v-if="offerReplies" class="small-note">Das SDK erzeugt einen eigenen temporären Antwortschlüssel. Er bleibt ausschließlich in dieser lokalen Sitzung verfügbar. Nach Abmelden oder Beenden können damit verschlüsselte Antworten nicht mehr entschlüsselt werden. Die Leistung muss den Antwortkanal unterstützen.</p>
+        <p v-if="offerReplies" class="small-note">Das SDK erzeugt einen eigenen Antwortschlüssel. Bei aktiviertem Profil wird er vor dem Versand geschützt gesichert und kann nach einem Neustart wiederhergestellt werden. Ohne Profil gilt er nur für diese Sitzung. Die Leistung muss den Antwortkanal unterstützen.</p>
       </fieldset>
       <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
         <legend>Anlagen</legend>

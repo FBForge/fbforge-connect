@@ -8,6 +8,7 @@ import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import ContentPreview from './ContentPreview.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
+import ReplyReceiptPanel from './ReplyReceiptPanel.vue';
 import ReplySender from './ReplySender.vue';
 import StructuredData from './StructuredData.vue';
 import { readReceivedSchema } from './received-schema.js';
@@ -203,7 +204,7 @@ function inspect(part, download = false) {
 <template>
   <div v-if="detail" class="receive-workspace"><section v-if="!completed" class="tool-section" :aria-labelledby="`${panelId}-title`" :aria-busy="pending">
     <div class="tool-section-heading"><div><h2 :id="`${panelId}-title`">{{ reply ? 'Antwortinhalte prüfen' : 'Inhalte prüfen' }}</h2>
-      <p v-if="reply">Mit dem beim Versand erzeugten Antwortschlüssel lokal entschlüsseln. Er wird automatisch über Vorgang und Schlüssel-ID zugeordnet und bleibt nur für diese Sitzung verfügbar.</p>
+      <p v-if="reply">Mit dem beim Versand erzeugten Antwortschlüssel lokal entschlüsseln. Er wird automatisch über Vorgang und Schlüssel-ID zugeordnet. Ein gespeichertes Profil kann den Schlüssel nach einem Neustart wiederherstellen.</p>
       <p v-else>Mit dem geladenen privaten Testschlüssel lokal entschlüsseln. Schlüssel bleiben für weitere passende Einreichungen in dieser Sitzung verfügbar.</p></div></div>
     <details><summary>Lokale Fachdaten-Schemata ({{ schemas.length }})</summary>
       <p>Zuerst entschlüsselt das SDK die Metadaten und liest daraus die Schema-URI. Öffentlich erreichbare HTTPS-Schemata werden automatisch ohne Zugangsdaten geladen. Optional kannst du eine lokale JSON-Schemadatei mit passender <code>$id</code> hinzufügen. Nach deiner Bestätigung werden auch externe Referenzen und XRepository-XSDs kontrolliert geladen.</p>
@@ -240,6 +241,9 @@ function inspect(part, download = false) {
   </section>
   <ReplySender v-if="!reply && !completed" :session="session" :proof="proof" :busy="busy || pending"
     @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)" @invalidate="resetProof" @event-log="value => emit('event-log', value)" />
+  <ReplyReceiptPanel v-if="reply" :session="session" :detail="detail" :proof="proof" :parts="parts" :busy="busy || pending"
+    @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)"
+    @outcome="value => emit('outcome', value)" @invalidate="resetProof" @event-log="value => emit('event-log', value)" />
   <ReceiptPanel v-if="!reply" :session="session" :detail="detail" :proof="proof" :busy="busy || pending" :key-revision="keyRevision"
     @busy="value => emit('busy', value)" @activity="value => emit('activity', value)" @fatal="value => emit('fatal', value)"
     @outcome="value => { receiptOutcome = value; emit('outcome', value); }" @invalidate="resetProof" />

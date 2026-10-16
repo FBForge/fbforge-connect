@@ -43,6 +43,8 @@ jobs:
         run: npm run test:engine
       - name: Build frontend
         run: npm run build:frontend
+      - name: Test isolated native protocol and protected profile storage
+        run: cargo test --manifest-path desktop/native-contracts/Cargo.toml --locked
       - name: Test native protocol contracts
         working-directory: desktop
         run: cargo test --locked

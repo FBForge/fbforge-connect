@@ -171,8 +171,27 @@ public final class V3Adapter implements SdkAdapter {
             requireOpen();
             return EventLogs.read(current, destinationId, caseId, submissionId, source, workspace);
         }
+        public VerifiedCaseEventLog caseEventLog(UUID caseId, EventLogSource source, java.nio.file.Path workspace) {
+            requireOpen(); return EventLogs.caseLog(current, caseId, source, workspace);
+        }
         public VerifiedEventLog replyEventLog(UUID caseId, UUID replyId, EventLogSource source, java.nio.file.Path workspace) {
             requireOpen(); return EventLogs.reply(current, caseId, replyId, source, workspace);
+        }
+        public List<SessionKeyArchive> archiveKeys() {
+            requireOpen(); var result = new java.util.ArrayList<>(keys.archive());
+            if (sender != null) result.addAll(sender.replyKeys.archive());
+            return List.copyOf(result);
+        }
+        private void ensureSender(java.nio.file.Path workspace) {
+            requireOpen();
+            if (sender == null) { sender = new Sender(current, tokens, resources, workspace); senderWorkspace = workspace; }
+            else if (!senderWorkspace.equals(workspace)) throw new SessionException("invalid_submission");
+        }
+        public void prepareReplyChannel(UUID attemptId, SubmissionInput input, java.nio.file.Path workspace) {
+            ensureSender(workspace); sender.replyKeys.offer(attemptId, input);
+        }
+        public void restoreReplyKey(SessionKeyArchive item, java.nio.file.Path workspace) {
+            ensureSender(workspace); sender.replyKeys.restore(item);
         }
         public void discardKeys() { requireOpen(); keys.clear(); receiver = null; }
         public ReceivedContent receive(String destination, String submission, ResourceExchange read, java.nio.file.Path workspace,
@@ -231,10 +250,7 @@ public final class V3Adapter implements SdkAdapter {
             requireOpen();
             if (attemptId == null) throw new SessionException("invalid_input");
             if (workspace == null || input == null) throw new SessionException("invalid_submission");
-            if (sender == null) {
-                sender = new Sender(current, tokens, resources, workspace);
-                senderWorkspace = workspace;
-            } else if (!senderWorkspace.equals(workspace)) throw new SessionException("invalid_submission");
+            ensureSender(workspace);
             return sender.send(input, attemptId);
         }
         public void check() {

@@ -104,7 +104,7 @@ watch([identity, () => props.busy], () => {
 
 <template>
   <section class="tool-section" aria-labelledby="destination-keys-title" :aria-busy="pending">
-    <h2 id="destination-keys-title">Zustellpunkt und Testschlüssel</h2>
+    <h2 id="destination-keys-title">Zustellpunkt und Testschlüssel</h2><p class="small-note">Bei aktiviertem Profil wird der geladene Schlüsselbestand geschützt gespeichert. „Schlüssel verwerfen“ entfernt ihn auch aus dem aktiven Profil; Antwortkanäle werden separat verwaltet.</p>
     <p v-if="!session">Melde dich bei TEST an, um Zustellpunkte und ihre registrierten Testschlüssel zu prüfen.</p>
     <template v-else>
       <p>Schlüssel bleiben während dieser Sitzung im lokalen Java-Kern erhalten. Ein Wechsel der Ansicht löscht sie nicht.</p>
