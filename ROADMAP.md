@@ -6,7 +6,7 @@ Der vollständige [Alpha-1-Arbeitsplan](https://github.com/FBForge/fbforge-conne
 
 Im Kandidaten umgesetzt: v2/v3-Einreichungen und Replies, technische Prüfung und Quittierung, Case-/Submission-/Reply-Logs, optionale geschützte Windows-Profile, eigene v3-Zustellpunkte mit Schlüsselerzeugung/Rotation sowie anklickbare BPMN-Nachrichtenauswahl. Reale TEST-Austausche und die Windows-Installation samt dev.7-Upgrade sind erfolgreich geprüft.
 
-Vor der Freigabe werden die ergänzten Screenreader-/Skalierungsprüfungen dokumentiert, Zielgerätebedingungen bewertet, der private Sicherheitskontakt bestätigt und die Signierung mit dem noch ausstehenden Certum-Zertifikat eingerichtet. Kandidatenartefakte sind ausdrücklich unsigniert.
+Die zusätzlichen Skalierungs-Browserprüfungen und der ausgewählte NVDA-Ablauf sind erfolgreich geprüft; Umfang und Grenzen stehen in den [Installationsnachweisen](https://github.com/FBForge/fbforge-connect/blob/alpha1-work/INSTALLATION_TESTS.md). Vor der Freigabe bleiben reale Zielgeräte-/Screenreader-Bedienung und Monitor-DPI, die abschließende Release-Bewertung sowie die Signierung mit dem noch ausstehenden Certum-Zertifikat. Der [private GitHub-Sicherheitsmeldeweg](SECURITY.md) ist aktiviert. Kandidatenartefakte sind ausdrücklich unsigniert.
 
 ## Richtung Beta
 
