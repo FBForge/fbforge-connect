@@ -33,17 +33,13 @@ const save = (filename, lines) => writeFile(join(directory, filename), lines.joi
 await save('Home.md', [
   '# FBForge Connect · Anleitung',
   '',
-  '**Integrationstests für FIT-Connect.**',
+  'Anleitung für FIT-Connect TEST. Verwenden Sie eigene Testzugänge und fiktive Daten. Kein offizielles Produkt der FITKO.',
   '',
-  'Hier finden Sie die bebilderte Anleitung für Entwickler, Integratoren und Mitarbeitende der öffentlichen Verwaltung. FBForge Connect ist ein unabhängiges Open-Source-Testwerkzeug und kein offizielles Produkt der FITKO.',
-  '',
-  'Verwenden Sie ausschließlich die TEST-Umgebung und fiktive Daten. Die Anwendung befindet sich in Entwicklung; diese Anleitung ist keine Alpha-Freigabe.',
-  '',
-  `Die Texte und Abbildungen entsprechen der integrierten Offline-Hilfe von **${version}**. Die Bildausschnitte zeigen fiktive Beispiele. Klicken Sie auf ein Bild, um es vollständig zu öffnen.`,
+  `Stand ${version}. Die Hilfe ist auch in der Anwendung verfügbar. Bilder lassen sich durch Anklicken vergrößern.`,
   '',
   '## Einstieg',
   '',
-  `1. Laden Sie den geprüften Entwicklungsbau über die [Projekt-Startseite](${repository}#einstieg).`,
+  `1. Laden Sie das Windows-Paket über die [Projektseite](${repository}#einstieg).`,
   '2. Beginnen Sie mit dem [Schnellstart](Schnellstart) und [Verbinden und Profile](Verbinden-und-Profile).',
   '3. Testen Sie anschließend [Versand](Einreichung-senden), [Empfang](Antrag-empfangen-und-pruefen) und gegebenenfalls [Antworten](Antworten-testen).',
   '',
@@ -53,14 +49,12 @@ await save('Home.md', [
   '',
   '## Rückfragen und Sicherheit',
   '',
-  `Fehler und Verbesserungsvorschläge können Sie in den [GitHub-Issues](${repository}/issues) melden. Beschreiben Sie Version, API und den betroffenen Ablauf; veröffentlichen Sie keine Secrets, privaten Schlüssel oder echten Antragsdaten.`,
+  `Fehler bitte als [Issue](${repository}/issues) mit Version, API und Reproduktionsschritten melden. Keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten veröffentlichen.`,
   '',
-  `Sicherheitsprobleme bitte über den [privaten Meldeweg](${repository}/blob/main/SECURITY.md) melden. Die [Projektlizenz](${repository}/blob/main/LICENSE) gilt auch für diese Anleitung.`,
+  `Sicherheitslücken bitte [privat melden](${repository}/blob/main/SECURITY.md). Lizenz: [EUPL-1.2](${repository}/blob/main/LICENSE).`,
 ]);
 await save('_Sidebar.md', ['[**FBForge Connect · Anleitung**](Home)', '', ...navigation]);
-await save('_Footer.md', [
-  `[Startseite](Home) · [Projekt](${repository}) · Stand ${version} · Die Hilfe ist auch offline in der Anwendung verfügbar.`,
-]);
+await save('_Footer.md', [`[Startseite](Home) · [Projekt](${repository}) · ${version}`]);
 for (const [index, topic] of helpTopics.entries()) {
   if (!/^[a-z0-9-]+$/.test(topic.image)) throw new Error('Ungültiger Bildname.');
   const image = `${imageRoot}/${topic.image}.png`;
@@ -87,7 +81,7 @@ for (const [index, topic] of helpTopics.entries()) {
     ...(index + 1 < helpTopics.length
       ? [`[Weiter: ${helpTopics[index + 1].title}](${pageNames[index + 1]})`, '']
       : []),
-    `Stand ${version}. Inhalt und Abbildung stammen aus der integrierten Anwendungshilfe.`,
+    `Stand ${version}.`,
   ]);
 }
 const imageNames = new Set(helpTopics.map((topic) => topic.image));

@@ -1,13 +1,7 @@
 # Roadmap
 
-## Alpha 1 · Windows
+**Alpha 1:** Windows-Abnahme und signiertes Paket.
 
-Die Kernfunktionen sind implementiert. Vor der Veröffentlichung folgen die abschließende Bedienungsabnahme auf Windows, Prüfung des endgültigen signierten Pakets sowie Lizenz- und Lieferkettenprüfung. Es gibt noch keine Alpha-Freigabe.
+**Beta:** Bedienbarkeit und Barrierefreiheit verbessern, weitere Fachdaten-Schemata und Testszenarien ergänzen. macOS/Linux-Unterstützung prüfen.
 
-## Richtung Beta
-
-- Bedienbarkeit und Barrierefreiheit anhand des Anwenderfeedbacks verbessern.
-- Weitere Fachdaten-Schemata und wiederverwendbare Testszenarien unterstützen.
-- macOS und Linux mit sicherer Schlüsselspeicherung und eigenen Paketprüfungen ergänzen.
-
-Der Schwerpunkt bleibt ein einfaches Testwerkzeug. PROD-Unterstützung und ein vollständiger BPMN-Editor oder Prozessmotor sind nicht vorgesehen.
+PROD-Unterstützung und ein BPMN-Prozessmotor sind nicht geplant.

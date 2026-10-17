@@ -1,9 +1,9 @@
-# Kompatible Windows-Produktumbenennung
+# Windows-Installer
 
-Der Anzeigename lautet ab dev.8 **FBForge Connect**. Die bestehenden Dev-Installationen verwenden den Namen **FIT-Connect Test-Client** auch als technische NSIS-Registry-Identität. Tauri leitet diese Identität standardmäßig aus `productName` ab; ein bloßer Namenswechsel würde zwei Installationseinträge erzeugen und den bisherigen Installationsort übersehen.
+Die NSIS-Vorlage stammt aus Tauri-CLI 2.12.3. `UNINSTKEY` und `MANUPRODUCTKEY` behalten die frühere technische Identität „FIT-Connect Test-Client“, damit Updates bestehende Installationen erkennen. Anzeigename und Herausgeber sind FBForge Connect und FBForge.
 
-Die NSIS-Vorlage ist deshalb unverändert aus der gepinnten Tauri-CLI 2.12.3 übernommen, mit genau zwei Ersetzungen: `UNINSTKEY` und `MANUPRODUCTKEY` verwenden weiter die frühere technische Identität. Der alte Herstelleranteil `fitconnect` wurde von Tauri aus der unveränderten App-ID abgeleitet; der sichtbare Herausgeber ist nun ausdrücklich `FBForge`. Sichtbarer Produktname, Installer, Deinstallationsanzeige und neue Verknüpfungen tragen den neuen Namen. `compatibility.nsh` entfernt nur alte Verknüpfungen, deren Ziel exakt auf die ersetzte Anwendung zeigt. App-ID, Binärname und Profilformat bleiben unverändert. Weitere Änderungen der technischen Identität brauchen eine eigene Migration.
+`compatibility.nsh` entfernt alte Verknüpfungen nur bei passendem Ziel. App-ID, Binärname und Profilformat bleiben kompatibel.
 
-`upstream.json` hält Herkunft und SHA-256 der Originalvorlage fest. `tests/installer-template.test.js` rekonstruiert aus der angepassten Datei das Original und prüft den Hash sowie die gesperrte CLI-Version. Bei einem Tauri-CLI-Update die Vorlage aus dem neuen passenden Tag erneut übernehmen, die beiden Registry-Ersetzungen prüfen und den echten Windows-Upgrade-Test ausführen. Keine weiteren Anpassungen unbemerkt in diese Vorlage aufnehmen.
+Bei einem CLI-Update die Originalvorlage aus dem passenden Tag übernehmen, beide Registry-Anpassungen prüfen und den Windows-Upgrade-Test ausführen. Herkunft und Originalhash: `upstream.json`. Test: `tests/installer-template.test.js`.
 
-Lizenz: MIT oder Apache-2.0, Copyright (c) 2017 - Present Tauri Apps Contributors. Der MIT-Text liegt unter `licenses/tauri-MIT.txt`; Apache-2.0 unter `licenses/Apache-2.0.txt`.
+Copyright (c) 2017 - Present Tauri Apps Contributors. MIT oder Apache-2.0; Lizenztexte unter `licenses/tauri-MIT.txt` und `licenses/Apache-2.0.txt`.
