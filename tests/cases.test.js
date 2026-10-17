@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { listCases, caseParts, readCaseFile } from '../frontend/src/cases.js';
+import { listCases, caseParts, readCaseFile, caseStorageNotice } from '../frontend/src/cases.js';
 const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
 const session = { apiVersion: 'v3', sessionId: id(1), environment: 'TEST', connected: true };
 const envelope = (data) => ({ ...session, connected: undefined, data });
@@ -77,5 +77,33 @@ test('case metadata and paginated parts reject foreign, unbounded and duplicate 
       id(2),
     ),
     /engine_protocol_error/,
+  );
+});
+
+test('post-send checkpoint errors are visible without converting a completed write or retrying', async () => {
+  let calls = 0;
+  const notice = await caseStorageNotice(
+    invokeFor((args) => {
+      calls++;
+      assert.equal(args.operation, 'status');
+      return { persistent: true, storageError: 'vault_limit' };
+    }),
+    session,
+  );
+  assert.match(notice, /Serveraktion ist abgeschlossen/);
+  assert.match(notice, /nicht erneut/);
+  assert.equal(calls, 1);
+  assert.equal(
+    await caseStorageNotice(
+      invokeFor(() => ({ persistent: false, storageError: null })),
+      session,
+    ),
+    '',
+  );
+  assert.match(
+    await caseStorageNotice(async () => {
+      throw new Error('engine_disconnected');
+    }, session),
+    /Speicherstatus konnte/,
   );
 });

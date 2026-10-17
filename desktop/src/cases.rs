@@ -206,6 +206,21 @@ pub async fn case_workspace(
     // Always validate the current session, even when serving an archived copy.
     let mut live = live(&app, &state, api_version, &session_id).await?;
     let store = disk(&app, &state, api_version, &session_id).await?;
+    if operation == "status" {
+        let enabled_result = store.as_ref().map(|s| s.enabled()).transpose();
+        let storage_error = enabled_result.as_ref().err().copied().or(state
+            .case_errors
+            .lock()
+            .await
+            .get(&session_id)
+            .copied());
+        return Ok(SessionResource {
+            api_version,
+            session_id,
+            environment: "TEST".into(),
+            data: json!({"persistent":enabled_result.ok().flatten().unwrap_or(false),"storageError":storage_error}),
+        });
+    }
     if operation == "storage" {
         let store = store.as_ref().ok_or("vault_profile_required")?;
         store.enable(persistent.ok_or("invalid_input")?)?;

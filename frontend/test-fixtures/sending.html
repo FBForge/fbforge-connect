@@ -66,6 +66,8 @@
               chunk: btoa(String.fromCharCode(...bytes)),
             });
           }
+          if (command === 'case_workspace' && args.operation === 'status')
+            return envelope({ persistent: false, storageError: null });
           if (command === 'begin_content') {
             const contentId = crypto.randomUUID();
             files.set(contentId, { total: args.totalBytes, received: 0 });

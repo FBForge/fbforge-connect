@@ -97,7 +97,7 @@ final class CaseRepository implements AutoCloseable {
                 scope,
                 "submission",
                 "received",
-                info.serviceName() == null
+                info.serviceName() == null || info.serviceName().isBlank()
                         ? "Abgerufene Einreichung"
                         : info.serviceName()
                                 .substring(0, Math.min(256, info.serviceName().length())),
@@ -157,7 +157,11 @@ final class CaseRepository implements AutoCloseable {
                 scope,
                 "submission",
                 "received",
-                title(data.metadata(), "Empfangene Einreichung"),
+                title(
+                        data.metadata(),
+                        existing == null
+                                ? "Empfangene Einreichung"
+                                : records.get(existing).summary().title()),
                 "verified",
                 id(data.caseId()),
                 id(data.submissionId()),

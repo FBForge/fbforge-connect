@@ -1,6 +1,8 @@
 <script setup>
 import { inject, ref, shallowRef, computed, watch, nextTick } from 'vue';
 import { invoke } from './native.js';
+import { caseStorageNotice } from './cases.js';
+const storageWarning = ref('');
 import { processWorkspaceKey } from './process-context.js';
 const processWorkspace = inject(processWorkspaceKey, null);
 import { caseWorkspaceKey } from './case-context.js';
@@ -318,6 +320,7 @@ watch(
     if (props.session?.apiVersion !== 'v3') addressing.value = 'service';
     if (next) {
       outcome.value = null;
+      storageWarning.value = '';
       error.value = '';
     }
   },
@@ -437,6 +440,10 @@ async function send() {
     prepared.value = null;
     dialog.value.close();
     if (resetsSessions(result.error)) emit('fatal');
+    if (result.status === 'sent') {
+      const warning = await caseStorageNotice(invoke, confirmedSession);
+      if (props.session?.sessionId === confirmedSession.sessionId) storageWarning.value = warning;
+    }
   });
 }
 async function refreshState() {
@@ -743,6 +750,7 @@ async function refreshState() {
       </div>
     </form>
     <p v-if="progress" role="status">{{ progress }}</p>
+    <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
     <p v-if="error" role="alert">{{ error }}</p>
     <div v-if="outcome" role="status">
       <p>

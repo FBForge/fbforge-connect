@@ -161,3 +161,20 @@ export function caseErrorMessage(cause) {
       'Die geschützte Vorgangsablage ist nicht verfügbar. Prüfe das Benutzerkonto, Dateizugriffsrechte und den freien Speicherplatz.',
   }[code];
 }
+
+/** A completed remote write stays completed even if its optional local checkpoint failed. */
+export async function caseStorageNotice(invoke, session) {
+  try {
+    const result = await caseRequest(invoke, session, 'status');
+    if (
+      typeof result.persistent !== 'boolean' ||
+      (result.storageError !== null && typeof result.storageError !== 'string')
+    )
+      throw new Error('engine_protocol_error');
+    return result.storageError
+      ? 'Die Serveraktion ist abgeschlossen, aber die dauerhafte Vorgangssicherung ist fehlgeschlagen. Lass die Anwendung geöffnet und prüfe unter „Vorgänge“ den Speicherstatus. Sende die Nachricht deshalb nicht erneut.'
+      : '';
+  } catch {
+    return 'Die Serveraktion ist abgeschlossen. Der lokale Speicherstatus konnte danach nicht geprüft werden. Prüfe deine Kopie unter „Vorgänge“, bevor du die Anwendung beendest.';
+  }
+}
