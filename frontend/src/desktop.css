@@ -992,6 +992,8 @@ summary {
   display: block;
   width: 100%;
   height: auto;
+  max-height: 360px;
+  object-fit: contain;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
 }

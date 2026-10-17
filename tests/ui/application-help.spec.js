@@ -34,6 +34,13 @@ test('bundled illustrated help covers every workflow without external documentat
       .poll(() => page.locator('.help-article img').evaluate((img) => img.complete && img.naturalWidth > 0))
       .toBe(true);
   }
+  await page.getByRole('button', { name: 'Abbildung vergrößern', exact: true }).click();
+  const illustration = page.getByRole('dialog', { name: 'Lokale Vorschau', exact: true });
+  await expect(illustration.getByRole('img')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Abbildung vergrößern', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Alle Hilfethemen', exact: true }).click();
+  await expect(page.getByLabel('Anleitung durchsuchen')).toBeFocused();
   await page.getByLabel('Anleitung durchsuchen').fill('PDF');
   await expect(
     navigation.getByRole('button', { name: 'PDF, Bilder und Dateien', exact: true }),

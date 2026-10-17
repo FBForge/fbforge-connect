@@ -489,7 +489,6 @@ final class SessionManager implements AutoCloseable {
             }
         }
         try {
-            cases.receive(caseScopes.get(id), result);
             var summary =
                     received.publish(
                             version,
@@ -497,6 +496,8 @@ final class SessionManager implements AutoCloseable {
                             UUID.fromString(destination),
                             UUID.fromString(submission),
                             result);
+            // Validate the requested destination/submission binding before retaining a local copy.
+            cases.receive(caseScopes.get(id), result);
             return new Data<>(version.wireValue(), id, "TEST", summary);
         } catch (RuntimeException failure) {
             invalidateReceived(entry);
@@ -582,9 +583,11 @@ final class SessionManager implements AutoCloseable {
             String caseId,
             String replyId,
             ReceivedReplyContent result) {
+        var summary =
+                receivedReplies.publish(
+                        version, id, UUID.fromString(caseId), UUID.fromString(replyId), result);
         cases.receive(caseScopes.get(id), result);
-        return receivedReplies.publish(
-                version, id, UUID.fromString(caseId), UUID.fromString(replyId), result);
+        return summary;
     }
 
     Data<?> bindCases(ApiVersion version, String id, String profileId) {

@@ -1,11 +1,14 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
 import { helpTopics } from './help/topics.js';
+import ContentPreview from './ContentPreview.vue';
 const props = defineProps({ topic: { type: String, default: 'start' } });
 const emit = defineEmits(['navigate']);
 const query = ref(''),
   selectedId = ref(props.topic),
-  heading = ref(null);
+  heading = ref(null),
+  searchInput = ref(null),
+  illustration = ref(null);
 const images = import.meta.glob('./help/screenshots/*.png', {
   eager: true,
   query: '?url',
@@ -33,6 +36,19 @@ async function open(id) {
   heading.value?.focus({ preventScroll: true });
   heading.value?.scrollIntoView({ block: 'start' });
 }
+function showTopics() {
+  searchInput.value?.focus({ preventScroll: true });
+  searchInput.value?.scrollIntoView({ block: 'center' });
+}
+function enlarge() {
+  illustration.value = {
+    kind: 'image',
+    url: images[`./help/screenshots/${selected.value.image}.png`],
+    filename: selected.value.title,
+    notice: selected.value.caption,
+    footer: 'Abbildung mit fiktiven Testdaten. Bedienelemente innerhalb des Bildes sind Teil der Anleitung.',
+  };
+}
 </script>
 <template>
   <div class="application-help">
@@ -43,6 +59,7 @@ async function open(id) {
         Anleitung durchsuchen
         <input
           id="help-search"
+          ref="searchInput"
           v-model="query"
           type="search"
           placeholder="Zum Beispiel: Antworten, Schlüssel oder PDF"
@@ -65,6 +82,7 @@ async function open(id) {
       </p>
     </section>
     <article class="tool-section help-article" aria-labelledby="help-topic-title">
+      <button class="button secondary" type="button" @click="showTopics">Alle Hilfethemen</button>
       <h2 id="help-topic-title" ref="heading" tabindex="-1">{{ selected.title }}</h2>
       <p>{{ selected.intro }}</p>
       <figure v-if="images[`./help/screenshots/${selected.image}.png`]">
@@ -74,6 +92,7 @@ async function open(id) {
           loading="lazy"
         />
         <figcaption>{{ selected.caption }}</figcaption>
+        <button class="button secondary" type="button" @click="enlarge">Abbildung vergrößern</button>
       </figure>
       <h3>Schritt für Schritt</h3>
       <ol>
@@ -92,5 +111,6 @@ async function open(id) {
         Zum Bereich {{ selected.section }}
       </button>
     </article>
+    <ContentPreview v-if="illustration" :preview="illustration" @close="illustration = null" />
   </div>
 </template>
