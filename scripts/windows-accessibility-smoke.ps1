@@ -43,6 +43,15 @@ public static class AccessibilityKeys {
         }
         return GetForegroundWindow() == window;
     }
+    [DllImport("user32.dll")] private static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] private static extern void mouse_event(uint flags, uint x, uint y, uint data, UIntPtr extra);
+    public static void ActivateInput(int x, int y) {
+        if (!SetCursorPos(x, y)) throw new InvalidOperationException("a11y_pointer_failed");
+        mouse_event(2, 0, 0, 0, UIntPtr.Zero);
+        System.Threading.Thread.Sleep(60);
+        mouse_event(4, 0, 0, 0, UIntPtr.Zero);
+        System.Threading.Thread.Sleep(300);
+    }
     [DllImport("user32.dll")] private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
     [DllImport("user32.dll")] private static extern uint MapVirtualKey(uint key, uint mode);
     private static void Key(byte key, bool released) {
@@ -176,7 +185,11 @@ automaticUpdates = disabled
     $editType = [System.Windows.Automation.ControlType]::Edit
     $connect = Check-Spoken 'Verbinden' $buttonType
     Invoke-Control $connect
-    $null = Check-Spoken 'Client-ID' $editType
+    $clientField = Check-Spoken 'Client-ID' $editType
+    # UIA SetFocus can focus the DOM without activating the native WebView input host.
+    # One real click in this empty field activates it; Tab/Escape remain actual keys.
+    $point = $clientField.GetClickablePoint()
+    [AccessibilityKeys]::ActivateInput([int]$point.X, [int]$point.Y)
     [AccessibilityKeys]::Press(0x09)
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Client-Secret' } 'native_tab_order_invalid'
     $null = Check-Spoken 'Client-Secret' $editType
@@ -193,7 +206,7 @@ automaticUpdates = disabled
     Invoke-Control $demo
     $null = Check-Spoken 'Modell einpassen' $buttonType
     Write-Output ('Actual NVDA 2026.2 speech observation, ' + $checks.Count + ' control labels, protected field, native Tab order and Escape focus restoration passed')
-    $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; installerSha256 = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant(); harnessCommit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; candidate = $(if ($ExpectedBinaryPath) { 'current build' } else { 'pinned previously verified installer' }); scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); keyboardTab = 'passed'; modalFocusRestoration = 'passed' }
+    $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; installerSha256 = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant(); harnessCommit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; candidate = $(if ($ExpectedBinaryPath) { 'current build' } else { 'pinned previously verified installer' }); scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); initialWebViewActivation = 'one pointer click in empty Client-ID field'; keyboardTab = 'passed'; modalFocusRestoration = 'passed' }
     [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'fbforge-accessibility-result.json'), ($report | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 } catch {
     # The test never enters credentials. Log only known synthetic control names.
