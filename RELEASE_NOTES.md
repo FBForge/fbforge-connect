@@ -1,5 +1,13 @@
 # Versionshinweise
 
+## 0.1.0-alpha.1.rc.1
+
+Prüfkandidat für Alpha 1. Noch keine endgültige Alpha-Freigabe.
+
+- Einheitliche Sie-Anrede in Oberfläche, Hinweisen, Hilfe und Dokumentation.
+- Verständlichere Hinweise zum Verbinden und Senden; Anleitung an die tatsächlichen Bedienelemente angepasst.
+- Bebilderte Anleitung im GitHub-Wiki und offline in der Anwendung.
+
 ## 0.1.0-dev.9
 
 Entwicklungsbau für Windows x64 und FIT-Connect TEST. Noch keine Alpha-1-Freigabe; der Installer ist unsigniert.

@@ -378,8 +378,8 @@ async function closePreview() {
         </label>
       </div>
       <p class="small-note">
-        Die Vorgangs-ID (Case ID) findest du nach dem Versand oder bei einer empfangenen Nachricht. „Gesamter
-        Vorgang“ zeigt alle Ereignisse, die deine Zugangsdaten lesen dürfen. Die Kennungen werden beim Öffnen
+        Die Vorgangs-ID (Case ID) finden Sie nach dem Versand oder bei einer empfangenen Nachricht. „Gesamter
+        Vorgang“ zeigt alle Ereignisse, die Ihre Zugangsdaten lesen dürfen. Die Kennungen werden beim Öffnen
         aus einer Nachricht automatisch übernommen.
       </p>
       <div class="client-actions">
@@ -406,7 +406,7 @@ async function closePreview() {
     <p v-if="error && diagnostic" class="small-note">
       Diagnose: {{ session?.apiVersion }} ·
       <code>{{ diagnostic }}</code>
-      . Diesen Code kannst du im Fehlerbericht angeben.
+      . Diesen Code können Sie im Fehlerbericht angeben.
     </p>
     <template v-if="result">
       <div class="tool-section-heading">

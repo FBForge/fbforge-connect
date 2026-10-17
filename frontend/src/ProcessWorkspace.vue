@@ -200,7 +200,7 @@ function persist() {
   } catch {
     remember.value = false;
     notice.value =
-      'Die lokale Zuordnung konnte nicht gespeichert werden. Du kannst sie als Datei exportieren.';
+      'Die lokale Zuordnung konnte nicht gespeichert werden. Sie können sie als Datei exportieren.';
   }
 }
 function apply() {
@@ -344,7 +344,7 @@ function send(row) {
         :visible="visible"
         @select="select"
       />
-      <p v-else>Dieses Modell hat keine Diagrammkoordinaten. Wähle eine Nachricht in der Liste.</p>
+      <p v-else>Dieses Modell hat keine Diagrammkoordinaten. Wählen Sie eine Nachricht in der Liste.</p>
       <label class="process-message-search" for="bpmn-search">
         Nachricht oder BPMN-ID in diesem Modell suchen
         <input id="bpmn-search" v-model="search" type="search" maxlength="256" />
@@ -370,7 +370,7 @@ function send(row) {
         </p>
         <p>
           BPMN-IDs und Anzeigenamen sind keine automatisch gültigen FIT-Connect-Kennungen. Die Demo verwendet
-          ausdrücklich hinterlegte Testkennungen; bei eigenen Modellen musst du die vereinbarten Kennungen
+          ausdrücklich hinterlegte Testkennungen; bei eigenen Modellen müssen Sie die vereinbarten Kennungen
           prüfen oder ergänzen.
         </p>
         <label class="checkbox-label">
@@ -436,8 +436,8 @@ function send(row) {
           </fieldset>
         </form>
         <p v-if="mappingDirty" role="status">
-          Die eingegebenen Kennungen sind noch nicht übernommen. Bitte die Zuordnung bestätigen, bevor du
-          Empfänger suchst.
+          Die eingegebenen Kennungen sind noch nicht übernommen. Bitte die Zuordnung bestätigen, bevor Sie
+          nach Empfängern suchen.
         </p>
         <p v-if="currentMapping && !mappingDirty">
           Diese Auswahl steht auch beim Antworten auf eine geprüfte Einreichung bereit. Der angebotene

@@ -206,7 +206,7 @@ function openEvents() {
   <section class="tool-section" aria-labelledby="reply-receipt-title" :aria-busy="working">
     <h2 id="reply-receipt-title">Antwortempfang abschließen</h2>
     <p>
-      Mit einer Annahme bestätigst du den Empfang dieser Antwort. Das ist keine fachliche Antwort an den
+      Mit einer Annahme bestätigen Sie den Empfang dieser Antwort. Das ist keine fachliche Antwort an den
       Absender. Erst die Bestätigung im nächsten Schritt überträgt die Aktion an TEST.
     </p>
     <form v-if="!locked" @submit.prevent="prepare">

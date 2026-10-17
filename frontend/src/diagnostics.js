@@ -20,9 +20,9 @@ export async function probeAdapter(invoke, apiVersion) {
 export function errorMessage(code) {
   const messages = {
     case_limit:
-      'Die lokale Vorgangsablage ist voll. Lösche unter „Vorgänge“ nicht mehr benötigte Kopien und bereite die Aktion erneut vor. Es wurden keine Serverdaten verändert.',
+      'Die lokale Vorgangsablage ist voll. Löschen Sie unter „Vorgänge“ nicht mehr benötigte Kopien und bereiten Sie die Aktion erneut vor. Es wurden keine Serverdaten verändert.',
     case_storage_pending:
-      'Die Vorgangskopie konnte noch nicht geschützt gespeichert werden. Prüfe unter „Vorgänge“ den Speicherstatus und den freien Speicherplatz, bevor du den Empfang bestätigst.',
+      'Die Vorgangskopie konnte noch nicht geschützt gespeichert werden. Prüfen Sie unter „Vorgänge“ den Speicherstatus und den freien Speicherplatz, bevor Sie den Empfang bestätigen.',
     desktop_required: 'Diese Funktion ist nur in der Desktop-Anwendung verfügbar.',
     engine_not_staged: 'Die lokale Java-Laufzeit fehlt. Bitte zuerst den Java-Kern bauen und bereitstellen.',
     engine_start_failed: 'Der lokale Java-Kern konnte nicht gestartet werden.',
@@ -37,7 +37,7 @@ export function errorMessage(code) {
     vault_unavailable:
       'Der geschützte Windows-Speicher ist nicht verfügbar. Bitte das Benutzerkonto und den freien Speicherplatz prüfen.',
     vault_pending:
-      'Der bisherige Schlüsselbestand konnte noch nicht gesichert werden. Bitte im bestehenden Profil erneut sichern, bevor du die Verbindung wechselst.',
+      'Der bisherige Schlüsselbestand konnte noch nicht gesichert werden. Bitte im bestehenden Profil erneut sichern, bevor Sie die Verbindung wechseln.',
     vault_conflict:
       'Dieses Profil ist bereits gespeichert und wird nicht überschrieben. Für eine bewusste Wiederherstellung zuerst den aktuellen Stand sichern und den vorhandenen Profileintrag entfernen.',
     vault_invalid:
@@ -47,7 +47,7 @@ export function errorMessage(code) {
     vault_limit:
       'Es können höchstens 32 TEST-Profile gespeichert werden. Bitte ein nicht mehr benötigtes Profil entfernen.',
     vault_restore_failed:
-      'Gespeicherte Schlüssel konnten nicht vollständig wiederhergestellt oder gegen TEST geprüft werden. Das Profil bleibt erhalten. Du kannst zunächst nur seine Zugangsdaten verwenden und die Schlüsselzuordnung prüfen.',
+      'Gespeicherte Schlüssel konnten nicht vollständig wiederhergestellt oder gegen TEST geprüft werden. Das Profil bleibt erhalten. Sie können zunächst nur seine Zugangsdaten verwenden und die Schlüsselzuordnung prüfen.',
     invalid_credentials:
       'Bitte eine Client-ID und ein Client-Secret innerhalb der zulässigen Länge eingeben.',
     reply_metadata_required:

@@ -27,7 +27,7 @@ const emptyLabel = (type) =>
   >
     <summary>
       <strong>{{ node.label }}</strong>
-      <span>{{ node.children.length }} Einträge</span>
+      <span>{{ node.children.length }} {{ node.children.length === 1 ? 'Eintrag' : 'Einträge' }}</span>
       <span v-if="node.duplicate" class="application-duplicate">Mehrfaches JSON-Feld</span>
     </summary>
     <div v-if="query || expanded" class="application-group-body">

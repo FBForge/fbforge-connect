@@ -91,11 +91,11 @@ const messages = {
   test_certificate_required:
     'Für diesen Zustellpunkt fehlt eine gültige Registrierung mit selbstsigniertem Testzertifikat.',
   verification_failed:
-    'Die technische Prüfung der Einreichung ist fehlgeschlagen. Prüfe Schlüssel, Event Log und Inhalte. Es liegt kein vollständiges Prüfergebnis vor.',
+    'Die technische Prüfung der Einreichung ist fehlgeschlagen. Prüfen Sie Schlüssel, Event Log und Inhalte. Es liegt kein vollständiges Prüfergebnis vor.',
   schema_consent_required:
     'Das Schema benötigt eine öffentliche Quelle. Bitte die Freigabe öffentlicher Schemaquellen aktivieren oder eine passende lokale Schemadatei hinzufügen und erneut prüfen.',
   schema_unavailable:
-    'Die Schema-URI wurde aus den Metadaten gelesen. Das Schema oder eine seiner Referenzen konnte jedoch nicht vollständig geladen oder aufgelöst werden. Es liegt noch keine vollständige Inhaltsprüfung vor. Bei nicht öffentlich erreichbaren Schemata kannst du eine lokale Datei mit passender $id hinzufügen.',
+    'Die Schema-URI wurde aus den Metadaten gelesen. Das Schema oder eine seiner Referenzen konnte jedoch nicht vollständig geladen oder aufgelöst werden. Es liegt noch keine vollständige Inhaltsprüfung vor. Bei nicht öffentlich erreichbaren Schemata können Sie eine lokale Datei mit passender $id hinzufügen.',
   invalid_input:
     'Bitte eine UTF-8-JSON-Schemadatei mit eindeutiger absoluter $id und höchstens 2 MiB auswählen.',
   content_limit:
@@ -280,7 +280,7 @@ function verify() {
           'Für dieses Fachdatenformat steht keine Formularansicht zur Verfügung. Die technischen Inhalte und Downloads bleiben verfügbar.';
       else if (data.totalBytes > STRUCTURED_BYTES)
         notice =
-          'Die Fachdaten überschreiten die Formulargrenze von 256 KiB. Über die technischen Inhalte kannst du den Quelltext ansehen oder das Original herunterladen.';
+          'Die Fachdaten überschreiten die Formulargrenze von 256 KiB. Über die technischen Inhalte können Sie den Quelltext ansehen oder das Original herunterladen.';
       else {
         controller.value = new AbortController();
         let bytes;
@@ -472,7 +472,7 @@ function inspect(part, download = false) {
         <summary>Lokale Fachdaten-Schemata ({{ schemas.length }})</summary>
         <p>
           Zuerst entschlüsselt das SDK die Metadaten und liest daraus die Schema-URI. Öffentlich erreichbare
-          HTTPS-Schemata werden nur mit aktivierter Freigabe ohne Zugangsdaten geladen. Optional kannst du
+          HTTPS-Schemata werden nur mit aktivierter Freigabe ohne Zugangsdaten geladen. Optional können Sie
           eine lokale JSON-Schemadatei mit passender
           <code>$id</code>
           hinzufügen. Mit aktivierter Freigabe werden auch externe Referenzen und XRepository-XSDs
@@ -529,7 +529,7 @@ function inspect(part, download = false) {
       <p v-if="error && diagnostic" class="small-note">
         Diagnose: {{ session?.apiVersion }} ·
         <code>{{ diagnostic }}</code>
-        . Diesen Code kannst du im Fehlerbericht angeben.
+        . Diesen Code können Sie im Fehlerbericht angeben.
       </p>
       <template v-if="proof">
         <div class="verification-stages" aria-label="Prüfstatus">

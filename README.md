@@ -6,7 +6,7 @@
 
 FBForge Connect ist eine Desktop-Anwendung für Entwickler, Integratoren und Mitarbeitende der öffentlichen Verwaltung. Sie simuliert Onlinedienste und Fachverfahren, um den Nachrichtenaustausch mit FIT-Connect zu testen.
 
-Das unabhängige Open-Source-Projekt unterstützt ausschließlich die **FIT-Connect-Testumgebung** und ist kein offizielles Produkt von FITKO.
+Das unabhängige Open-Source-Projekt unterstützt ausschließlich die **FIT-Connect-Testumgebung** und ist kein offizielles Produkt der FITKO.
 
 ## Funktionen
 
@@ -25,7 +25,7 @@ Aktuell verfügbar: **0.1.0-dev.9, Alpha-Kandidat für Windows x64**. Die öffen
 
 Den [geprüften Windows-Installer herunterladen](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538/artifacts/12112642005) und die Hilfe in der Anwendung öffnen. Das Downloadpaket enthält die Prüfsumme und Build-Informationen. Für den Actions-Download ist eine GitHub-Anmeldung erforderlich.
 
-Verwende eigene Testzugänge und fiktive Daten. Die bebilderte Anleitung wird im [GitHub-Wiki](https://github.com/FBForge/fbforge-connect/wiki) und offline in der Anwendung gepflegt. Änderungen stehen in den [Versionshinweisen](RELEASE_NOTES.md).
+Verwenden Sie eigene Testzugänge und fiktive Daten. Die bebilderte Anleitung wird im [GitHub-Wiki](https://github.com/FBForge/fbforge-connect/wiki) und offline in der Anwendung gepflegt. Änderungen stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 
 ## Mitwirken
 

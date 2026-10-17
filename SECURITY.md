@@ -8,11 +8,11 @@ Bitte keine ausnutzbaren Sicherheitslücken, Zugangsdaten, privaten Schlüssel o
 
 Sicherheitslücken bitte über [GitHubs privaten Sicherheitsmeldeweg](https://github.com/FBForge/fbforge-connect/security/advisories/new) melden. Die private Meldung ist für dieses Repository aktiviert. Dafür wird ein GitHub-Konto benötigt. Allgemeine Bedienfragen und Fehler ohne Sicherheitsbezug gehören in die normalen Issues.
 
-Beschreibe betroffene Version, Betriebssystem, Auswirkungen und eine möglichst kleine Reproduktion mit fiktiven Daten. Keine echten Zugangsdaten, privaten Schlüssel oder fremden Einreichungen beifügen.
+Beschreiben Sie betroffene Version, Betriebssystem, Auswirkungen und eine möglichst kleine Reproduktion mit fiktiven Daten. Keine echten Zugangsdaten, privaten Schlüssel oder fremden Einreichungen beifügen.
 
 ## Umgang mit Testdaten
 
-Verwende fiktive Einreichungsdaten und eigene Testzugänge. Zugangsdaten und private Schlüssel werden lokal verarbeitet und standardmäßig nicht dauerhaft gespeichert. Das Entfernen einer Sitzung widerruft kein bereits ausgestelltes Token beim Dienst.
+Verwenden Sie fiktive Einreichungsdaten und eigene Testzugänge. Zugangsdaten und private Schlüssel werden lokal verarbeitet und standardmäßig nicht dauerhaft gespeichert. Das Entfernen einer Sitzung widerruft kein bereits ausgestelltes Token beim Dienst.
 
 Optional gespeicherte Profile, Schlüssel und separat aktivierte Vorgangskopien werden unter Windows benutzergebunden mit DPAPI verschlüsselt. Es gibt keinen Klartext-Fallback. Profilsicherungen sind an die Windows-Benutzerschlüssel gebunden und enthalten keine Vorgangsablage. OAuth-Tokens und historische Empfangsnachweise werden nicht dauerhaft als Berechtigungen gespeichert.
 

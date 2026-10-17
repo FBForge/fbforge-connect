@@ -97,7 +97,7 @@ function execute() {
     </p>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="preview?.status === 'removed'" role="status">
-      Der TEST-Zustellpunkt wurde entfernt. Lade die Liste neu.
+      Der TEST-Zustellpunkt wurde entfernt. Laden Sie die Liste neu.
     </p>
     <p v-if="preview?.status === 'uncertain'" role="alert">
       Die Entfernung wurde nicht sicher bestätigt. Bitte die Liste neu laden und den Serverzustand klären. Es

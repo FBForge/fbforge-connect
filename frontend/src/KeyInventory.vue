@@ -133,7 +133,7 @@ async function remove() {
   <details class="tool-section" v-if="session">
     <summary>Schlüsselbestand dieser Verbindung</summary>
     <p>
-      Hier siehst du importierte Zustellpunktschlüssel, erzeugte Schlüsselpaare und Antwortschlüssel. Private
+      Hier sehen Sie importierte Zustellpunktschlüssel, erzeugte Schlüsselpaare und Antwortschlüssel. Private
       Schlüssel werden nicht angezeigt. Fingerabdrücke dienen dem Vergleich; sie sind SHA-256-Werte des
       öffentlichen Schlüssels.
     </p>

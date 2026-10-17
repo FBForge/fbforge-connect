@@ -60,7 +60,7 @@ function revealInvalid(event) {
   if (invalidTarget) return;
   invalidTarget = event.target;
   sendStep.value = Number(event.target.closest('fieldset')?.dataset.sendStep || 0);
-  stepNotice.value = 'Bitte vervollständige die markierten Pflichtfelder in diesem Abschnitt.';
+  stepNotice.value = 'Bitte vervollständigen Sie die markierten Pflichtfelder in diesem Abschnitt.';
   nextTick(() => {
     invalidTarget?.focus();
     invalidTarget = null;
@@ -457,8 +457,8 @@ async function refreshState() {
   <section class="tool-section" aria-labelledby="send-title">
     <h2 id="send-title">Einreichung senden</h2>
     <p>
-      Fachdaten und Anlagen werden lokal vorbereitet. Das Java-SDK verschlüsselt sie für den Empfänger und
-      überträgt sie nach deiner Bestätigung an TEST.
+      Fachdaten und Anlagen werden lokal vorbereitet. Erst nach Ihrer Bestätigung wird die Einreichung
+      verschlüsselt an den TEST-Empfänger übermittelt.
     </p>
     <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
     <div
@@ -498,10 +498,10 @@ async function refreshState() {
               v-model="source"
               required
               maxlength="36"
-              placeholder="Zustellpunkt-ID deiner TEST-Zugangsdaten"
+              placeholder="Zustellpunkt-ID Ihrer TEST-Zugangsdaten"
             />
             <small>
-              Der Absender muss zu deinen Zugangsdaten gehören. Für Replies dort Metadatenversion 2.0.0 oder
+              Der Absender muss zu Ihren Zugangsdaten gehören. Für Replies dort Metadatenversion 2.0.0 oder
               3.0.0 freigeben; Prozessantworten benötigen 3.0.0.
             </small>
           </label>
@@ -765,7 +765,7 @@ async function refreshState() {
         </span>
       </p>
       <p v-if="outcome.status === 'uncertain'">
-        Bitte nicht erneut senden. Prüfe zunächst die Einreichungen und das Event Log. Ein Teil der
+        Bitte nicht erneut senden. Prüfen Sie zunächst die Einreichungen und das Event Log. Ein Teil der
         Übertragung kann bereits abgeschlossen sein.
       </p>
       <p v-if="outcome.error">{{ explain(outcome.error) }}</p>

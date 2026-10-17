@@ -55,6 +55,7 @@ Zur Veröffentlichung zuerst das vorhandene Wiki mit `git clone https://github.c
 - Öffentliche Verträge und relevante Invarianten erklären. Kommentare sollen insbesondere Gründe und Sicherheitsgrenzen erklären.
 - Verhaltensänderungen mit einem aussagekräftigen Test absichern. Kosmetische Änderungen brauchen keinen Test, der nur den Quelltext nachbildet.
 - Vollständige Anwenderaufgaben prüfen: klare Sprache, Tastaturbedienung, Fokus und Fehlerhilfe. Eine Erklärung darf nicht ausschließlich bei Maus-Hover erreichbar sein.
+- Oberfläche, Hilfe und Dokumentation verwenden die Sie-Anrede und kurze, sachliche Erklärungen. Der Bezug zur Organisation lautet „der FITKO“; FBForge Connect bleibt als unabhängiges Projekt erkennbar.
 - Keine Zugangsdaten, privaten Schlüssel, Nutzdaten oder vollständigen SDK-Fehlertexte in Logs, Screenshots, Issues oder Testartefakte übernehmen.
 - Änderungen und Prüfergebnisse im Pull Request verständlich beschreiben. Bekannte Einschränkungen und noch ausstehende Live-Prüfungen ausdrücklich nennen.
 
@@ -64,7 +65,7 @@ Neue Schreibaktionen brauchen eine native Vorschau-/Bestätigungsgrenze und Test
 
 Die vorhandenen SDKs übernehmen Kryptografie und FIT-Connect-Protokollverarbeitung. API v2 und v3 werden ausdrücklich getrennt geprüft. Produktionsumgebungen, eingebettete Zugangsdaten und automatische Annahme/Ablehnung gehören nicht in dieses Projekt. Farben, Schriften, Bedienelemente und Statusdarstellung kommen aus `frontend/src/site.css`; zusätzliche Styles beschreiben vor allem das Layout.
 
-Mit einem Beitrag bestätigst du die Berechtigung, ihn unter der EUPL-1.2 dieses Projekts einzureichen. Bestehende Urheberrechts- und Lizenzhinweise bleiben erhalten. Sicherheitsprobleme bitte privat gemäß [SECURITY.md](SECURITY.md) melden. Größere Beiträge externer Mitwirkender sollten vorab in einem Issue abgestimmt werden.
+Mit einem Beitrag bestätigen Sie die Berechtigung, ihn unter der EUPL-1.2 dieses Projekts einzureichen. Bestehende Urheberrechts- und Lizenzhinweise bleiben erhalten. Sicherheitsprobleme bitte privat gemäß [SECURITY.md](SECURITY.md) melden. Größere Beiträge externer Mitwirkender sollten vorab in einem Issue abgestimmt werden.
 
 Formatierung: `npm run format`, im Engine-Verzeichnis `./mvnw spotless:apply`, für Rust `cargo fmt --manifest-path desktop/Cargo.toml --all`. Die Compiler-Modulfreigaben in `engine/.mvn/jvm.config` gelten nur für den Build-Formatter, nicht für die ausgelieferte Laufzeit.
 

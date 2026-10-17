@@ -33,7 +33,7 @@ const messages = {
     'Bitte eine gültige Zustellpunkt-ID und höchstens 16 Schlüsseldateien mit jeweils maximal 32 KiB auswählen.',
   content_limit: 'Die zulässige Anzahl oder Gesamtgröße der Schlüssel ist erreicht.',
   resource_denied:
-    'Für diese Anfrage fehlen die Berechtigungen. Du kannst einen Zustellpunkt auch direkt über seine ID laden.',
+    'Für diese Anfrage fehlen die Berechtigungen. Sie können einen Zustellpunkt auch direkt über seine ID laden.',
   resource_missing: 'Der Zustellpunkt wurde in TEST nicht gefunden.',
   resource_unavailable: 'Die TEST-Daten konnten nicht geladen werden. Bitte erneut versuchen.',
   key_rejected:
@@ -182,7 +182,7 @@ watch(
       entfernt ihn auch aus dem aktiven Profil; Antwortkanäle werden separat verwaltet.
     </p>
     <p v-if="!session">
-      Melde dich bei TEST an, um Zustellpunkte und ihre registrierten Testschlüssel zu prüfen.
+      Melden Sie sich bei TEST an, um Zustellpunkte und ihre registrierten Testschlüssel zu prüfen.
     </p>
     <template v-else>
       <p>

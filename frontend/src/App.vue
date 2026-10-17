@@ -513,7 +513,7 @@ function clearHistory() {
       </div>
       <div class="topbar-context">
         <span class="environment-tag">TEST</span>
-        <span class="build-tag">Alpha · {{ version }}</span>
+        <span class="build-tag">{{ version }}</span>
       </div>
       <div class="topbar-actions">
         <label class="api-picker" for="session-api">
@@ -594,7 +594,7 @@ function clearHistory() {
             <div>
               <strong>Mit FIT-Connect TEST verbinden</strong>
               <p>
-                Mit deinen TEST-Zugangsdaten stehen dir die Funktionen deiner Berechtigungen zur Verfügung.
+                Mit Ihren TEST-Zugangsdaten stehen Ihnen die Funktionen Ihrer Berechtigungen zur Verfügung.
               </p>
             </div>
             <button type="button" class="button secondary" @click="showConnection">
@@ -769,7 +769,8 @@ function clearHistory() {
                 </button>
               </div>
               <p v-if="!trace.length" class="empty-state">
-                Noch keine technischen Aufrufe. Starte eine Komponentenprüfung oder melde dich bei TEST an.
+                Noch keine technischen Aufrufe. Starten Sie eine Komponentenprüfung oder melden Sie sich bei
+                TEST an.
               </p>
               <div v-else class="client-table">
                 <table class="submission-result-table">
@@ -826,7 +827,7 @@ function clearHistory() {
               <div>
                 <p class="workspace-eyebrow">Desktop-Anwendung</p>
                 <h2 id="about-title">{{ productName }}</h2>
-                <p>Version {{ version }} · Alpha-Entwicklung</p>
+                <p>Version {{ version }} · Alpha 1 RC1</p>
                 <p>{{ productPurpose }}.</p>
               </div>
             </section>
@@ -843,14 +844,14 @@ function clearHistory() {
                 <dd>Vorhandene eigene Zustellpunkte ansehen; Änderungen und Bulk-Edit über API v3</dd>
                 <dt>Entwicklungsstand</dt>
                 <dd>
-                  Alpha-1-Kandidat für Integrationstests. Installation und Verhalten auf deinen Zielgeräten
-                  vor dem Einsatz prüfen.
+                  Alpha 1 RC1 für Integrationstests. Installation und Verhalten auf Ihren Zielgeräten vor dem
+                  Einsatz prüfen.
                 </dd>
               </dl>
             </section>
             <section class="tool-section" aria-labelledby="license-title">
               <h2 id="license-title">Lizenz und Einordnung</h2>
-              <p>Unabhängiges Projekt. Kein offizielles Produkt von FITKO.</p>
+              <p>Unabhängiges Projekt. Kein offizielles Produkt der FITKO.</p>
               <p>Diese Anwendung steht unter der European Union Public Licence 1.2 (EUPL-1.2).</p>
               <button type="button" class="button secondary" @click="licenseDialog.showModal()">
                 Lizenztext anzeigen
@@ -900,7 +901,9 @@ function clearHistory() {
         <AppIcon name="close" />
       </button>
     </div>
-    <p>Die Verbindung gilt für alle Arbeitsbereiche. Die Berechtigungen bestimmen deine Zugangsdaten.</p>
+    <p>
+      Die Verbindung gilt für alle Arbeitsbereiche. Ihre Zugangsdaten bestimmen die verfügbaren Funktionen.
+    </p>
     <p>
       <span class="status-badge" :class="activeSession ? 'ok' : 'info'">
         {{
@@ -957,7 +960,7 @@ function clearHistory() {
       </label>
       <p class="small-note">
         Ohne Speichern gelten Zugangsdaten und Schlüssel nur für diese Sitzung. Mit Speichern bleiben auch
-        Antwortschlüssel für spätere Replies erhalten. Windows schützt sie für dein Benutzerkonto.
+        Antwortschlüssel für spätere Replies erhalten. Windows schützt sie für Ihr Benutzerkonto.
         Zugangstokens werden nicht gespeichert. Das Secret wird nach der Übergabe aus dem Eingabefeld geleert.
       </p>
       <div class="client-actions">
