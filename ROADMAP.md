@@ -2,7 +2,7 @@
 
 ## Alpha 1 · Windows
 
-Die Kernfunktionen sind umgesetzt: Einreichungen und Replies über v2/v3, Ereignissuche, geschützte Profile, v3-Zustellpunkte mit Testschlüsseln sowie BPMN-Nachrichtenauswahl. Als [Folgepaket](planning/case-workspace.md) sind eine Vorgangsübersicht mit optionaler geschützter Ablage, weniger Leseschritte und eine PDF-Vorschau vorgesehen.
+Die Kernfunktionen sind umgesetzt: Einreichungen und Replies über v2/v3, Ereignissuche, geschützte Profile, v3-Zustellpunkte mit Testschlüsseln sowie BPMN-Nachrichtenauswahl. Das [Folgepaket](planning/case-workspace.md) ergänzt eine Vorgangsübersicht mit optionaler geschützter Ablage, weniger Leseschritte, eine lokale PDF-Vorschau und die bebilderte Offline-Hilfe.
 
 Vor der Veröffentlichung stehen noch an:
 

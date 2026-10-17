@@ -4,7 +4,7 @@ Die automatisierten Protokoll-, Installations- und ausgewählten NVDA-Prüfungen
 
 ## Vorbereitung
 
-Den [geprüften dev.8-Kandidaten](https://github.com/FBForge/fbforge-connect/actions/runs/39054324070/artifacts/12108794327) herunterladen und die enthaltene Prüfsumme vergleichen. Der Installer ist unsigniert. Für den Austausch werden ein Onlinedienstzugang und ein Fachverfahrenszugang mit den erforderlichen TEST-Berechtigungen benötigt. Der Ablauf ist in [BEDIENUNG.md](BEDIENUNG.md) erklärt.
+Den [geprüften dev.9-Kandidaten](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538/artifacts/12112642005) herunterladen und die enthaltene Prüfsumme vergleichen. Der Installer ist unsigniert. Für den Austausch werden ein Onlinedienstzugang und ein Fachverfahrenszugang mit den erforderlichen TEST-Berechtigungen benötigt. Der Ablauf ist in [BEDIENUNG.md](BEDIENUNG.md) erklärt.
 
 ## Prüfliste
 
@@ -27,3 +27,14 @@ Einen eigens angelegten Testzustellpunkt nach Abschluss wieder deaktivieren. Die
 Je Schritt „bestanden“ oder eine kurze Reproduktion festhalten: App-Version/Commit, Windows-Version, Skalierung und gegebenenfalls Screenreader-Version sowie erwartetes und tatsächliches Verhalten. Keine Secrets, privaten Schlüssel oder echten Antragsdaten in Screenshots oder Issues übernehmen. Sicherheitsprobleme gemäß [SECURITY.md](SECURITY.md) privat melden.
 
 Die Bedienungsabnahme ist bestanden, wenn alle Schritte funktionieren und kein Fehler den Austausch, Schlüsselerhalt oder die Bedienung blockiert. Die Veröffentlichung folgt erst nach den verbleibenden Paket-, Signierungs- und Lizenzprüfungen aus [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md). Wird das Paket danach geändert oder signiert, sind Installation/Upgrade und die betroffenen Abläufe am endgültigen Paket erneut zu prüfen.
+
+## Vorgänge und Hilfe in dev.9
+
+- Eine empfangene Einreichung über „Öffnen und prüfen“ direkt lesen; fehlende Schlüssel/Schemata gezielt ergänzen.
+- Nach Annahme beziehungsweise Ablehnung unter „Vorgänge“ dieselben Fachdaten und Anlagen erneut öffnen. Gesendete Anträge und Replies anhand ihrer Kennungen suchen.
+- PDF-Seiten und auslesbaren Text prüfen, Bilder/JSON/XML ansehen und Originaldownloads vergleichen. HTML/SVG/Office erhalten ausschließlich Downloads.
+- Dauerhafte Aufbewahrung bewusst einschalten, Anwendung neu starten und das Profil wieder öffnen. Eine lokale Kopie allein darf keine Empfangsaktion oder Antwort autorisieren.
+- Einzelne Kopie und bestätigten Gesamtverlauf löschen; andere Profile, Schlüssel und Serverbestand bleiben erhalten. Speicherfehler müssen sichtbar bleiben.
+- Unter „Hilfe“ ein Thema suchen, Abbildung vergrößern, mit Escape schließen und zur Themenübersicht zurückkehren.
+
+Automatisierte Paket-/NVDA-Nachweise und ihre Grenzen stehen in [planning/dev9-verification.md](planning/dev9-verification.md). Die abschließende eigene Bedienungsabnahme und eine Alpha-Freigabe werden daraus nicht automatisch abgeleitet.

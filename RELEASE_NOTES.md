@@ -26,9 +26,9 @@ Die frühere Anzeige „FIT-Connect Test-Client“ wird ersetzt. Interne App-Ken
 
 Das Windows-Actions-Artefakt enthält nach erfolgreicher Installationsprüfung den Setup-Installer, `SHA256SUMS.txt` und `build-info.json` mit Version, Commit und Workflow-Lauf. Eine Prüfsumme bestätigt Dateigleichheit und ersetzt keine Herausgebersignatur. Eine Anleitung für den ersten Testvorgang steht in [BEDIENUNG.md](BEDIENUNG.md).
 
-## Bisheriger geprüfter Download (dev.8)
+## Geprüfter Entwicklungsbau
 
-[Vollständiger Prüflauf 39054324070](https://github.com/FBForge/fbforge-connect/actions/runs/39054324070), Quellstand `ea856f6137abee8a5b16174ad714b822f165891a`. Das [Installer-Artefakt](https://github.com/FBForge/fbforge-connect/actions/runs/39054324070/artifacts/12108794327) enthält Setup, Prüfsumme und Build-Manifest. Der unabhängige Downloadabgleich bestätigt 54.636.300 Installerbytes und SHA-256 `759fc857cad5beb17c9042eb582bec53b450c8e809d15a5c9cc3c4202af80499`. Der NVDA-Bericht ist an dieselbe Datei gebunden. Windows-Installation, dev.7-Upgrade und Profil-Erhalt sind bestanden; die reale API-Leseprüfung einschließlich authentifizierter Prozesssuche läuft getrennt mit denselben SDK-Adaptern. Der Nachweis gilt für genau diesen Quellstand und Installer.
+[Windows-Prüfbau dev.9](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538/artifacts/12112642005) aus dem [vollständig erfolgreichen Lauf 39063273538](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538). Neuinstallation, Upgrade von dev.7, Profil-Erhalt, beide SDKs und der erweiterte NVDA-Lauf sind bestanden. Das Paket enthält Setup, Prüfsumme und Build-Manifest. Der unabhängige Downloadabgleich und die Grenzen der Prüfung sind in [planning/dev9-verification.md](planning/dev9-verification.md) dokumentiert.
 
 ## Bekannte Grenzen
 
