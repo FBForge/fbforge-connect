@@ -233,6 +233,10 @@ automaticUpdates = disabled
         Write-Host ('Accessibility failure focus: ' + $label + '; role=' + $focused.Current.ControlType.ProgrammaticName + '; foreground=' + $foreground)
     }
     Write-Host ('Observed capture records: ' + @(Read-Capture).Count)
+    # This flow enters no values and reads only our own credential-free UI.
+    foreach ($record in @(Read-Capture | Where-Object { $_.PSObject.Properties.Name -contains 'text' } | Select-Object -Last 8)) {
+        Write-Host ('Observed NVDA speech: ' + ($record | ConvertTo-Json -Compress))
+    }
     foreach ($record in @(Read-Capture | Where-Object { $_.PSObject.Properties.Name -contains 'key' } | Select-Object -Last 12)) { Write-Host ('Observed NVDA key: ' + ($record | ConvertTo-Json -Compress)) }
     throw
 } finally {

@@ -53,7 +53,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         # Capture only NVDA-generated text for this window, never command objects.
         text = " ".join(part for part in speechSequence if isinstance(part, str))[:2048]
         if text.strip():
-            self.write({"text": text})
+            name = api.getFocusObject().name
+            known = {"Verbinden", "Client-ID", "Client-Secret", "Verbindungsdialog schließen", "Senden", "Empfangen", "Prozesse", "Fiktiven Demo-Prozess öffnen", "Modell einpassen"}
+            self.write({"text": text, "focus": name if name in known else "(other control)"})
 
     def terminate(self):
         pre_speech.unregister(self.observe)
