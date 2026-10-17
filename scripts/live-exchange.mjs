@@ -12,7 +12,8 @@ const requireCheck = (value, code = 'acceptance_check_failed') => {
   if (!value) throw new Error(code);
 };
 requireCheck(process.platform === 'win32', 'windows_required');
-for (const name of secretNames) requireCheck(Boolean(process.env[name]), 'actions_secret_missing');
+for (const secretName of secretNames)
+  requireCheck(Boolean(process.env[secretName]), 'actions_secret_missing');
 const root = fileURLToPath(new URL('../', import.meta.url));
 const bridge = join(root, 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe');
 const directory = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), 'fitconnect-live-'));
@@ -54,7 +55,7 @@ function protectedBridge(mode, profileId, value) {
     input?.fill(0);
   }
 }
-async function open(label, api) {
+async function openNativeSession(label, api) {
   const native = new NativeEngine();
   engines.add(native);
   const role = label === 'sender' ? 'online-service' : 'administrative-system';
@@ -164,7 +165,7 @@ async function readEventually(operation) {
     }
   }
 }
-async function verifiedLog(engine, command, fields) {
+async function verifiedLog(engine, command, fields, expectedEvent = null) {
   const result = await engine.call(command, fields);
   requireCheck(
     result.total > 0 &&
@@ -172,11 +173,19 @@ async function verifiedLog(engine, command, fields) {
       result.warnings[0] === 'CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED',
     'signed_event_log_failed',
   );
+  if (expectedEvent) {
+    let found = false;
+    for (let offset = 0; offset < result.total; offset += 5) {
+      const page = await engine.call('list_event_log', { logId: result.logId, offset });
+      found ||= page.events.some((entry) => entry.eventType === expectedEvent);
+    }
+    requireCheck(found, 'receipt_event_missing');
+  }
 }
-async function exchange(api, format, process = false) {
-  stage = `${api}_${process ? 'process' : format}`;
-  let sender = await open('sender', api);
-  const receiver = api === 'v3' ? receiverV3 : await open('subscriber', api);
+async function exchange(api, format, withProcess = false, receiptAction = 'accept') {
+  stage = `${api}_${withProcess ? 'process' : format}${receiptAction === 'reject' ? '_reject' : ''}`;
+  let sender = await openNativeSession('sender', api);
+  const receiver = api === 'v3' ? receiverV3 : await openNativeSession('subscriber', api);
   if (api === 'v2') await restore(receiver, 'subscriber-v3', (item) => Boolean(item.destinationKey));
   const xml = format === 'xml';
   const schemaUri = xml ? xmlUri : applicationUri,
@@ -204,11 +213,11 @@ async function exchange(api, format, process = false) {
     schemaUri,
     mimeType,
     caseId: null,
-    processMessage: process ? requestMessage : null,
+    processMessage: withProcess ? requestMessage : null,
     replyOffer: {
       schemaUri: replyUri,
       mimeType: 'application/json',
-      processMessages: process ? [responseMessage] : [],
+      processMessages: withProcess ? [responseMessage] : [],
     },
     contentId: await upload(sender, data),
     attachments: [
@@ -245,7 +254,7 @@ async function exchange(api, format, process = false) {
     'received_bytes_differ',
   );
   requireCheck(
-    JSON.stringify(proof.processMessage || null) === JSON.stringify(process ? requestMessage : null),
+    JSON.stringify(proof.processMessage || null) === JSON.stringify(withProcess ? requestMessage : null),
     'process_mapping_invalid',
   );
   await verifiedLog(receiver, 'load_event_log', {
@@ -275,7 +284,7 @@ async function exchange(api, format, process = false) {
     schemaId: schema.schemaId,
     schemaUri: replyUri,
     mimeType: 'application/json',
-    processMessage: process ? responseMessage : null,
+    processMessage: withProcess ? responseMessage : null,
     contentId: await upload(receiver, replyData),
     attachments: [],
   };
@@ -284,7 +293,7 @@ async function exchange(api, format, process = false) {
   requireCheck(reply.status === 'sent', `reply_${reply.status}`);
   sender.native.close();
   engines.delete(sender.native);
-  sender = await open('sender', api);
+  sender = await openNativeSession('sender', api);
   await restore(sender);
   const replyProof = await readEventually(() =>
     sender.call('verify_reply', {
@@ -301,7 +310,8 @@ async function exchange(api, format, process = false) {
     'reply_verification_failed',
   );
   requireCheck(
-    JSON.stringify(replyProof.processMessage || null) === JSON.stringify(process ? responseMessage : null),
+    JSON.stringify(replyProof.processMessage || null) ===
+      JSON.stringify(withProcess ? responseMessage : null),
     'reply_process_mapping_invalid',
   );
   await verifiedLog(sender, 'load_reply_event_log', { caseId: sent.caseId, replyId: reply.replyId });
@@ -309,11 +319,11 @@ async function exchange(api, format, process = false) {
     receiptDocument: JSON.stringify({
       caseId: sent.caseId,
       replyId: reply.replyId,
-      action: 'accept',
-      reason: null,
-      description: null,
+      action: receiptAction,
+      reason: receiptAction === 'reject' ? 'technical-error' : null,
+      description: receiptAction === 'reject' ? 'Fiktive technische Ablehnung für die Alpha-Abnahme' : null,
       attachmentId: null,
-      proofId: replyProof.proofId,
+      proofId: receiptAction === 'accept' ? replyProof.proofId : null,
     }),
   });
   requireCheck(
@@ -326,17 +336,33 @@ async function exchange(api, format, process = false) {
       destinationId: destination,
       submissionId: sent.submissionId,
       caseId: sent.caseId,
-      action: 'accept',
+      action: receiptAction,
       signingKid: null,
-      reason: null,
-      description: null,
+      reason: receiptAction === 'reject' ? 'technical-error' : null,
+      description: receiptAction === 'reject' ? 'Fiktive technische Ablehnung für die Alpha-Abnahme' : null,
       attachmentId: null,
-      proofId: proof.proofId,
+      proofId: receiptAction === 'accept' ? proof.proofId : null,
     }),
   });
   requireCheck(
     (await receiver.call('execute_receipt', { attemptId: receipt.attempt.attemptId })).status === 'confirmed',
     'submission_receipt_failed',
+  );
+  await verifiedLog(
+    sender,
+    'load_reply_event_log',
+    { caseId: sent.caseId, replyId: reply.replyId },
+    `https://schema.fitko.de/fit-connect/events/${receiptAction}-reply`,
+  );
+  await verifiedLog(
+    receiver,
+    'load_event_log',
+    {
+      destinationId: destination,
+      caseId: sent.caseId,
+      submissionId: sent.submissionId,
+    },
+    `https://schema.fitko.de/fit-connect/events/${receiptAction}-submission`,
   );
   console.log(
     `${stage}: decrypted bytes/attachment, schema, signed submission/case/reply logs, reply after restart and both receipts passed`,
@@ -377,8 +403,8 @@ async function cleanup() {
       'cleanup_failed',
     );
   } else {
-    // QA-only teardown, intentionally not a product/renderer capability: deactivate our exact fixture,
-    // freshly authenticate, read its unique name again and delete only the recorded generated ID.
+    // An activated destination has a server-enforced retention period. Deactivate our
+    // exact fixture and read that policy; do not try to bypass it with a DELETE.
     if (detail.status === 'active') {
       const p = await receiverV3.call('prepare_destination_update', {
         destinationDocument: JSON.stringify({
@@ -407,20 +433,37 @@ async function cleanup() {
     const result = await fetch(
       `https://test.fit-connect.fitko.dev/destination-api/v3/destinations/${destination}`,
       {
-        method: 'DELETE',
+        method: 'GET',
         headers: { Authorization: `Bearer ${token.access_token}` },
         signal: AbortSignal.timeout(30000),
         redirect: 'error',
       },
     );
     requireCheck(result.ok, `cleanup_http_${result.status}`);
+    const retained = await result.json();
+    const until = Date.parse(retained.canBeDecommissionedAt);
+    requireCheck(
+      retained.destinationId === destination &&
+        retained.name === runName &&
+        retained.type === 'A' &&
+        retained.status === 'inactive' &&
+        retained.publicForRouting === false &&
+        Number.isFinite(until) &&
+        until > Date.now(),
+      'cleanup_retention_unconfirmed',
+    );
+    console.log(
+      `Temporary owned TEST destination inactive; server retention until ${new Date(until).toISOString()}; ID ${destination}`,
+    );
+    destination = null;
+    return;
   }
   console.log('Temporary owned TEST destination removed');
   destination = null;
 }
 try {
   stage = 'destination_setup';
-  receiverV3 = await open('subscriber', 'v3');
+  receiverV3 = await openNativeSession('subscriber', 'v3');
   const keys = await receiverV3.call('generate_test_keys');
   creationBundle = keys.bundleId;
   await checkpoint(receiverV3);
@@ -466,7 +509,7 @@ try {
   await checkpoint(receiverV3);
   receiverV3.native.close();
   engines.delete(receiverV3.native);
-  receiverV3 = await open('subscriber', 'v3');
+  receiverV3 = await openNativeSession('subscriber', 'v3');
   await restore(receiverV3);
   const activation = await receiverV3.call('prepare_destination_update', {
     destinationDocument: JSON.stringify({ destinationIds: [destination], changes: { status: 'active' } }),
@@ -481,6 +524,7 @@ try {
   );
   for (const api of ['v2', 'v3']) for (const format of ['json', 'xml']) await exchange(api, format);
   await exchange('v3', 'json', true);
+  await exchange('v3', 'json', false, 'reject');
   stage = 'destination_rotation';
   const replacementKeys = await receiverV3.call('generate_test_keys');
   await checkpoint(receiverV3);

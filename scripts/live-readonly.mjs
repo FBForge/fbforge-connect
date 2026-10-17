@@ -1,8 +1,8 @@
 // Read-only TEST checks. No submissions, receipts or destinations are written.
 import assert from 'node:assert/strict';
 import { NativeEngine, secretNames } from './native-test-engine.mjs';
-for (const name of secretNames) {
-  if (!process.env[name]) throw new Error(`Missing Actions secret: ${name}`);
+for (const secretName of secretNames) {
+  if (!process.env[secretName]) throw new Error(`Missing Actions secret: ${secretName}`);
 }
 let failures = 0;
 for (const version of ['v2', 'v3']) {

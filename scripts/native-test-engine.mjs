@@ -20,11 +20,11 @@ export class NativeEngine {
     this.child.stdout.on('data', (chunk) => {
       this.buffer = Buffer.concat([this.buffer, chunk]);
       if (this.buffer.length < 4) return;
-      const length = this.buffer.readUInt32BE();
-      if (length < 1 || length > 65536) return this.fail('engine_protocol_error');
-      if (this.buffer.length < 4 + length) return;
-      const frame = this.buffer.subarray(4, 4 + length);
-      this.buffer = this.buffer.subarray(4 + length);
+      const frameLength = this.buffer.readUInt32BE();
+      if (frameLength < 1 || frameLength > 65536) return this.fail('engine_protocol_error');
+      if (this.buffer.length < 4 + frameLength) return;
+      const frame = this.buffer.subarray(4, 4 + frameLength);
+      this.buffer = this.buffer.subarray(4 + frameLength);
       try {
         const result = JSON.parse(frame);
         if (!this.pending || result.id !== this.pending.id) return this.fail('engine_protocol_error');

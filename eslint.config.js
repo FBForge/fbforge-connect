@@ -39,5 +39,9 @@ export default [
       'no-constant-binary-expression': 'error',
     },
   },
+  {
+    files: ['scripts/live-*.mjs', 'scripts/native-test-engine.mjs'],
+    rules: { 'no-shadow': ['error', { builtinGlobals: true }] },
+  },
   { files: ['**/*.vue'], rules: { 'vue/no-v-html': 'error' } },
 ];
