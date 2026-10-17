@@ -123,6 +123,10 @@ def main():
         == checksum + "  " + installer_name,
         "checksum_file_mismatch",
     )
+    # GitHub replaces spaces in release asset names with dots. Keep the original
+    # ZIP as well, so its manifest and checksum filenames still match after extraction.
+    files = {name.replace(" ", "."): content for name, content in files.items()}
+    files[f"FBForge-Connect_{version}_windows-x64.zip"] = archive_bytes
     with tempfile.TemporaryDirectory(prefix="fbforge-candidate-") as temporary:
         for name, content in files.items():
             # Recheck before every write; reject a published or retargeted draft.
@@ -153,7 +157,7 @@ def main():
                 "uploaded_asset_mismatch",
             )
     print(
-        "Verified installer, checksum and manifest attached. "
+        "Verified installer, checksum, manifest and original ZIP attached. "
         "Release remains an unpublished draft."
     )
 
