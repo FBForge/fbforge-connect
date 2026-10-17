@@ -11,7 +11,7 @@ import {
   discardReceived,
 } from './receiving.js';
 import { uploadContent, discardContent } from './content.js';
-import { createPreview, disposePreview } from './submission-preview.js';
+import { createPreview, disposePreview, canPreview } from './submission-preview.js';
 import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
@@ -32,6 +32,7 @@ const props = defineProps({
   keyRevision: Number,
   receiveRevision: Number,
   reply: Boolean,
+  autoOpen: Number,
 });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'verified', 'outcome', 'receive-start', 'event-log']);
 const allowExternalSchemas = ref(false);
@@ -182,6 +183,15 @@ watch(
     void resetProof();
   },
   { flush: 'sync' },
+);
+watch(
+  () => props.autoOpen,
+  async (value) => {
+    if (value && props.detail) {
+      await nextTick();
+      verify();
+    }
+  },
 );
 onBeforeUnmount(() => {
   alive = false;
@@ -587,7 +597,13 @@ function inspect(part, download = false) {
                 <p>{{ part.description || part.mimeType || 'Anlage' }} · {{ bytesLabel(part.totalBytes) }}</p>
               </div>
               <div class="client-actions">
-                <button class="button secondary" type="button" :disabled="disabled" @click="inspect(part)">
+                <button
+                  v-if="canPreview(part)"
+                  class="button secondary"
+                  type="button"
+                  :disabled="disabled"
+                  @click="inspect(part)"
+                >
                   Ansehen
                 </button>
                 <button
@@ -640,6 +656,7 @@ function inspect(part, download = false) {
                         class="button secondary"
                         type="button"
                         :disabled="disabled"
+                        v-if="canPreview(part)"
                         @click="inspect(part)"
                       >
                         Anzeigen

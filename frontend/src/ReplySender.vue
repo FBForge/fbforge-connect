@@ -1,6 +1,8 @@
 <script setup>
 import { inject, ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
+import { caseStorageNotice } from './cases.js';
+const storageWarning = ref('');
 import { processWorkspaceKey } from './process-context.js';
 const processWorkspace = inject(processWorkspaceKey, null);
 import { caseWorkspaceKey } from './case-context.js';
@@ -170,6 +172,7 @@ function reset() {
   message.value = '';
   if (outcome.value?.status !== 'uncertain' && outcome.value?.error !== 'content_cleanup_failed') {
     outcome.value = null;
+    storageWarning.value = '';
     outcomeOwner.value = '';
   }
   if (!working.value) void cancelKnown(previous, active);
@@ -352,6 +355,10 @@ async function send() {
       emit('invalidate');
     }
     if (resetsSessions(result.error)) emit('fatal', result.error);
+    if (result.status === 'sent') {
+      const warning = await caseStorageNotice(invoke, active);
+      if (current()) storageWarning.value = warning;
+    }
     return result.status === 'sent' && !result.error
       ? 'Erfolgreich'
       : result.status === 'uncertain'
@@ -525,6 +532,7 @@ async function send() {
       </button>
     </form>
     <p v-if="working" role="status">Antwortaktion läuft …</p>
+    <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="cleanupOwner === session?.sessionId" role="alert">{{ messages.content_cleanup_failed }}</p>
     <div v-if="outcome && outcomeOwner === session?.sessionId" role="status">

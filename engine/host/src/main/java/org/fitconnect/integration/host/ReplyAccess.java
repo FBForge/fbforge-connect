@@ -38,6 +38,10 @@ final class ReplyAccess implements ResourceExchange {
         return state;
     }
 
+    ReplyInput pendingInput() {
+        return input;
+    }
+
     long pendingBytes() {
         if (input == null) return 0;
         if (state.status().equals("prepared") && clock.getAsLong() >= expires) {

@@ -26,6 +26,48 @@
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
           if (args.apiVersion !== api.value || args.sessionId !== id) throw 'session_missing';
+          if (command === 'load_send_destination')
+            return envelope({
+              destinationId: args.destinationId,
+              detailsJson: JSON.stringify({
+                destinationId: args.destinationId,
+                publicServices: [
+                  {
+                    identifier: 'urn:test:service',
+                    name: 'Fiktive Testleistung',
+                    submissionSchemas: [{ schemaUri: 'urn:test:antrag', mimeType: 'application/json' }],
+                  },
+                ],
+              }),
+            });
+          if (command === 'load_send_schema') {
+            const packet = JSON.stringify({
+              schemaPackage: 1,
+              schemaUri: 'urn:test:antrag',
+              documents: {
+                'urn:test:antrag': {
+                  $id: 'urn:test:antrag',
+                  type: 'object',
+                  required: ['vorname', 'nachname'],
+                  properties: {
+                    vorname: { title: 'Vorname', type: 'string' },
+                    nachname: { title: 'Nachname', type: 'string' },
+                    anliegen: { title: 'Anliegen', type: 'string' },
+                  },
+                },
+              },
+            });
+            const bytes = new TextEncoder().encode(packet);
+            return envelope({
+              schemaId: '55555555-5555-4555-8555-555555555555',
+              schemaUri: 'urn:test:antrag',
+              byteOffset: 0,
+              totalBytes: bytes.length,
+              chunk: btoa(String.fromCharCode(...bytes)),
+            });
+          }
+          if (command === 'case_workspace' && args.operation === 'status')
+            return envelope({ persistent: false, storageError: null });
           if (command === 'begin_content') {
             const contentId = crypto.randomUUID();
             files.set(contentId, { total: args.totalBytes, received: 0 });

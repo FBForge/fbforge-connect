@@ -35,6 +35,8 @@ Lauf [38988235240](https://github.com/FBForge/fbforge-connect/actions/runs/38988
 
 Die vollständigen Wiederholungen [38990315338](https://github.com/FBForge/fbforge-connect/actions/runs/38990315338) auf `c4783c4` und [38991770845](https://github.com/FBForge/fbforge-connect/actions/runs/38991770845) auf `09888fe` bestanden ebenfalls alle sieben Fälle. Spätere Namens-/Installeränderungen verändern das Austauschprotokoll nicht.
 
+Der zusätzliche [Lauf 39061438414](https://github.com/FBForge/fbforge-connect/actions/runs/39061438414) auf `697ed5b` besteht erneut alle sieben Fälle. Dabei werden zusätzlich die nativen Versandkopien und die Originalbytes empfangener Einreichungen und Replies nach Annahme beziehungsweise Ablehnung geprüft. Spätere lokale Speicher-/UX-Korrekturen und ihre Windows-Paketabnahme sind in [der dev.9-Prüfdokumentation](planning/dev9-verification.md) getrennt nachgewiesen.
+
 Die folgenden ausschließlich für diese CI-Abnahmen erzeugten Zustellpunkte wurden authentifiziert deaktiviert und sind ohne öffentliche Routing-Freigabe aufbewahrt. Die API verbietet die sofortige Außerbetriebnahme/Löschung vor ihrer Frist:
 
 | Generierter TEST-Zustellpunkt | Frühester serverseitiger Zeitpunkt |
@@ -45,5 +47,6 @@ Die folgenden ausschließlich für diese CI-Abnahmen erzeugten Zustellpunkte wur
 | `2569613d-3d95-4332-9406-0bac444a6da3` | 2026-11-16T00:54:45.997Z |
 | `773aeb44-560c-4e83-a035-6c5c17d3d299` | 2026-11-16T01:22:10.635Z |
 | `83c42935-6139-4f81-872d-01e2e1be378b` | 2026-11-16T01:43:21.390Z |
+| `247a6bf4-4089-42ed-9bb9-6b117f8fe98f` | 2026-11-16T19:16:13.938Z |
 
 Vor einer späteren Bereinigung müssen ID, eindeutiger Laufname, Eigentum und aktueller API-Zustand erneut geprüft werden. Es gibt keine pauschale Löschung aller ähnlich benannten Zustellpunkte und keine Umgehung der Frist. Eine noch nicht bestätigte fiktive Nachricht aus einem fehlgeschlagenen Teillauf ist kein erfolgreicher Anwendungsfall. Echte Zugangsdaten und private Schlüssel sind in dieser Liste nicht enthalten.

@@ -1,6 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod case_store;
+mod cases;
 mod profile_backup;
+use cases::case_workspace;
 mod profiles;
 mod protocol;
 mod vault;
@@ -37,6 +40,8 @@ struct EngineState {
     process: Mutex<Option<EngineProcess>>,
     sequence: AtomicU64,
     profiles: Mutex<profiles::Bindings>,
+    case_profiles: Mutex<cases::Bindings>,
+    case_errors: Mutex<std::collections::HashMap<String, &'static str>>,
 }
 
 impl Drop for EngineProcess {
@@ -331,6 +336,7 @@ async fn session_action(
     }
     if !connected {
         state.profiles.lock().await.remove(id);
+        state.case_profiles.lock().await.remove(id);
     }
     Ok(value)
 }
@@ -411,10 +417,36 @@ async fn resource_action(
             return Ok(intent);
         }
     }
+    if matches!(
+        operation.as_str(),
+        "execute_receipt" | "execute_reply_receipt"
+    ) {
+        cases::checkpoint(app, state, version, id)
+            .await
+            .map_err(|_| "case_storage_pending")?;
+    }
     let value: SessionResource = request(app, state, command).await?;
     if !value.validate(version, id) {
         *state.process.lock().await = None;
         return Err("engine_protocol_error");
+    }
+    if matches!(
+        operation.as_str(),
+        "verify_submission"
+            | "verify_reply"
+            | "execute_send"
+            | "execute_reply"
+            | "execute_receipt"
+            | "execute_reply_receipt"
+    ) {
+        // A local failure must never turn a completed remote write into an implicit resend.
+        let failure = cases::checkpoint(app, state, version, id).await.err();
+        let mut errors = state.case_errors.lock().await;
+        if let Some(code) = failure {
+            errors.insert(id.to_owned(), code);
+        } else {
+            errors.remove(id);
+        }
     }
     if matches!(
         operation.as_str(),
@@ -1902,6 +1934,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .manage(EngineState::default())
         .invoke_handler(tauri::generate_handler![
+            case_workspace,
             update_profile,
             export_profile_backup,
             import_profile_backup,

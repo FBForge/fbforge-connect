@@ -68,3 +68,11 @@ UI, Archivspeicher und FIT-Connect-Schreibaktionen erhalten getrennte Verantwort
 - **UX und Zugänglichkeit:** Empfang → direkt lesen → Anlage ansehen → bestätigt annehmen/ablehnen → wieder öffnen → Reply vorbereiten ohne technische Zwischenansichten bedienen. Tastatur, Screenreader, leere Listen, lange Titel und 125/150/200 Prozent prüfen.
 
 Fertig ist das Paket, wenn diese Abläufe mit echten SDKs und geeigneten fiktiven Daten bestehen, die Aufbewahrung verständlich gewählt und wieder entfernt werden kann und das geprüfte Windows-Paket denselben Stand enthält. Die Vorschau ersetzt keine Schadsoftwareprüfung; eine formale Fachverfahrens-/Aktenkonformität wird daraus nicht abgeleitet.
+
+## 7. Bebilderte Anwendungshilfe und Implementierung
+
+Das Paket wird als zusammenhängender Entwicklungsstand dev.9 umgesetzt, ohne Alpha-Freigabe. Die lokale Hilfe deckt Schnellstart, Profile, Versand, Empfang, Vorgänge, Vorschauen, Replies, BPMN, Zustellpunkte, Event Log, Fehlerbehebung und Tastaturbedienung ab. Screenshots zeigen tatsächliche Anwendungskomponenten mit fiktiven Daten; sie werden zusammen mit der Anwendung ausgeliefert. Keine externen Dokumentationslinks oder Zugangsdaten in Bildern.
+
+Die Umsetzung trennt `CaseRepository` (Java, unveränderliche Sitzungskopien), `cases.rs` (native Profil- und Speicherkoordination), `case_store.rs` (versionierter DPAPI-Inhaltsspeicher) und die Vue-Vorgangsansicht. Inhalte reisen weiterhin in begrenzten IPC-Blöcken. Gespeicherte Blöcke sind an Profil, API, Datensatz, Revision und Position gebunden. Archivdateien werden atomar ersetzt; ein fehlgeschlagener Schreibvorgang verdrängt keine vorhandene Kopie. Archive werden ausschließlich gelesen, niemals in aktive Proofs oder Versandfreigaben zurückverwandelt.
+
+Empfang ohne erfolgreiche Entschlüsselung behält ausschließlich die als ungeprüft gekennzeichneten Transportinformationen. Nach erfolgreicher Prüfung ersetzt dieselbe lokale Kennung diese Informationen durch die eigentlichen Datenkopien. Eine Kopie kann einzeln, ein Profil-/API-Verlauf vollständig gelöscht werden; unbekannte Schreibausgänge und native Sperren bleiben davon unabhängig.

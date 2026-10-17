@@ -16,6 +16,7 @@ import globalPluginHandler
 import inputCore
 from speech.extensions import pre_speech
 
+MAX_RECORDS = 4096
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def __init__(self):
@@ -31,8 +32,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self.write({"ready": True, "nvdaVersion": buildVersion.version})
 
     def write(self, value):
-        if self.count >= 256:
+        if self.count >= MAX_RECORDS:
             return
+        if self.count == MAX_RECORDS - 1:
+            value = {"captureLimitReached": True}
         with self.path.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(value, ensure_ascii=True) + "\n")
         self.count += 1
@@ -54,7 +57,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         text = " ".join(part for part in speechSequence if isinstance(part, str))[:2048]
         if text.strip():
             name = api.getFocusObject().name
-            known = {"Verbinden", "Client-ID", "Client-Secret", "Verbindungsdialog schließen", "Senden", "Empfangen", "Prozesse", "Fiktiven Demo-Prozess öffnen", "Modell einpassen"}
+            known = {"Verbinden", "Client-ID", "Client-Secret", "Verbindungsdialog schließen", "Senden", "Empfangen", "Prozesse", "Fiktiven Demo-Prozess öffnen", "Modell einpassen", "Vorgänge", "Vorgänge durchsuchen", "Hilfe", "Anleitung durchsuchen"}
             self.write({"text": text, "focus": name if name in known else "(other control)"})
 
     def terminate(self):

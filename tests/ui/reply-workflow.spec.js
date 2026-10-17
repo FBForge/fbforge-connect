@@ -13,10 +13,15 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     });
     await page.goto('http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1');
     await page.locator('#pickup-submission').fill('00000003-1111-4111-8111-111111111111');
-    await page.getByRole('button', { name: 'Einreichung direkt öffnen', exact: true }).click();
+    await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
     await page.evaluate((u) => (window.__applicationFixture.uncertain = u), uncertain);
-    await page.getByRole('button', { name: 'Inhalte entschlüsseln und prüfen', exact: true }).click();
     await page.getByRole('heading', { name: 'Antrag lesen', exact: true }).waitFor();
+    assert.equal(
+      await page.evaluate(
+        () => window.__applicationFixture.calls.filter((command) => command === 'verify_submission').length,
+      ),
+      1,
+    );
     await page.getByText('Fachliche Prüfung: manuell offen', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Antwortmöglichkeiten laden', exact: true }).click();
     const prepare = page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true });

@@ -93,6 +93,8 @@
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'case_workspace' && args.operation === 'status')
+            return envelope({ persistent: false, storageError: null });
           fixture.calls.push(command);
           if (command === 'load_submission')
             return envelope({

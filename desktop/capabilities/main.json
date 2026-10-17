@@ -94,6 +94,7 @@
     "allow-save-profile-defaults",
     "allow-list-key-inventory",
     "allow-remove-key-inventory-item",
-    "allow-update-profile"
+    "allow-update-profile",
+    "allow-case-workspace"
   ]
 }

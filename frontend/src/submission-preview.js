@@ -5,8 +5,9 @@ const MAX_TEXT_BYTES = 2 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGE_PIXELS = 16000000;
 const objectUrls = new Map();
-const blockedExtension = /\.(?:html?|xhtml|svgz?|js|mjs|pdf|docx?|xlsx?|pptx?|od[tps])$/i;
-const blockedMime = /(?:html|svg|javascript|pdf|officedocument|msword|ms-excel|ms-powerpoint|opendocument)/i;
+const blockedExtension =
+  /\.(?:html?|xhtml|svgz?|js|mjs|exe|dll|msi|com|bat|cmd|ps1|sh|jar|docx?|xlsx?|pptx?|od[tps])$/i;
+const blockedMime = /(?:html|svg|javascript|officedocument|msword|ms-excel|ms-powerpoint|opendocument)/i;
 
 function imageInfo(bytes) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -90,6 +91,17 @@ async function createPreview(input, { filename = 'Datei', mimeType = '' } = {}, 
     return unavailable(
       'Für die Vorschau ist diese Datei zu groß. Bilder sind auf 8 MiB und Textdateien auf 2 MiB begrenzt.',
     );
+  if (/\.pdf$/i.test(originalName) || mimeType === 'application/pdf') {
+    if (!/^%PDF-[12]\./.test(new TextDecoder('ascii').decode(bytes.subarray(0, 8))))
+      return unavailable('Der Inhalt hat keine gültige PDF-Kennung. Der Originaldownload bleibt verfügbar.');
+    return {
+      kind: 'pdf',
+      filename,
+      bytes: bytes.slice(),
+      notice:
+        'Lokale PDF-Vorschau. Skripte, Formulare, Verweise und eingebettete Dateien werden nicht ausgeführt oder geöffnet.',
+    };
+  }
   const image = imageInfo(bytes);
   if (image) {
     if (!validDimensions(image.width, image.height))
@@ -184,6 +196,7 @@ async function createPreview(input, { filename = 'Datei', mimeType = '' } = {}, 
 }
 
 function disposePreview(preview) {
+  if (preview?.kind === 'pdf') preview.bytes?.fill(0);
   const owner = objectUrls.get(preview?.url);
   if (owner) {
     owner.revokeObjectURL(preview.url);
@@ -192,3 +205,20 @@ function disposePreview(preview) {
 }
 
 export { createPreview, disposePreview, jsonNodes };
+
+/** Advertise only supported inert previews; the original download is always separate. */
+export function canPreview({ fileName = '', filename = fileName, mimeType = '' } = {}) {
+  if (
+    /\.(?:html?|xhtml|svgz?|js|mjs|exe|dll|msi|com|bat|cmd|ps1|sh|jar|docx?|xlsx?|pptx?|od[tps])$/i.test(
+      filename,
+    ) ||
+    blockedMime.test(mimeType)
+  )
+    return false;
+  return (
+    /\.(?:pdf|png|jpe?g|json|xml|txt|csv|log)$/i.test(filename) ||
+    /^(?:application\/(?:pdf|json|xml|[^/]+\+(?:json|xml))|text\/(?:plain|csv|xml)|image\/(?:png|jpeg))$/i.test(
+      mimeType.split(';')[0],
+    )
+  );
+}

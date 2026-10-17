@@ -914,3 +914,105 @@ summary {
   gap: 6px;
   margin-top: 16px;
 }
+
+.case-list,
+.case-attachments {
+  list-style: none;
+  padding: 0;
+}
+.case-list > li,
+.case-attachments > li {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.case-list h3 {
+  margin: 0.35rem 0 0.65rem;
+}
+.case-open {
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 0.2rem 0;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.case-identifier,
+.case-detail dd {
+  overflow-wrap: anywhere;
+}
+.case-filters {
+  margin: 1rem 0;
+}
+.case-detail {
+  scroll-margin-top: 1rem;
+}
+.pdf-preview canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem auto;
+  background: white;
+}
+.pdf-page-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .case-list > li,
+  .case-attachments > li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.help-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.help-topics [aria-current] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.help-article {
+  max-width: 76rem;
+}
+.help-article figure {
+  margin: 1.5rem 0;
+}
+.help-article img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+}
+.help-article figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.help-article li {
+  margin: 0.7rem 0;
+  line-height: 1.6;
+}
+.help-article h2 {
+  scroll-margin-top: 1rem;
+}
+
+.case-open {
+  min-height: 32px;
+}
+.case-list .status-badge {
+  margin-inline-end: 0.5rem;
+}

@@ -1,8 +1,8 @@
 # Alpha-1-Umsetzung
 
-Work-Goal: [ALPHA1_GOAL.md](ALPHA1_GOAL.md). Stand: **dev.8-Kandidat, noch keine Alpha-1-Freigabe**.
+Work-Goal: [ALPHA1_GOAL.md](ALPHA1_GOAL.md). Stand: **dev.9-Entwicklungsstand, noch keine Alpha-1-Freigabe**.
 
-Neues Anwenderfeedback erweitert den gewünschten Umfang um eine vollständige Vorgangsübersicht, optionale geschützte Inhaltsablage und PDF-Vorschau. Dieses [Folgepaket](planning/case-workspace.md) ist geplant und noch nicht umgesetzt; die bisherigen Kennungs-/Versandübersichten sind kein vollständiges Antragsarchiv.
+Neues Anwenderfeedback erweitert den gewünschten Umfang um eine vollständige Vorgangsübersicht, optionale geschützte Inhaltsablage und PDF-Vorschau. Dieses [Folgepaket](planning/case-workspace.md) ist jetzt auf `develop` implementiert: native Vorgangskopien, optionale separate DPAPI-Aufbewahrung, erneutes Lesen, Einzellöschung, lokale PDF-Vorschau und bebilderte Offline-Hilfe. Die abschließenden Paket- und Live-Nachweise werden gesondert festgehalten.
 
 Im ersten manuellen Durchlauf wurden Verbindung, Zustellpunktverwaltung, Empfang, Formularansicht und die Erklärung bei fehlendem Schlüssel positiv zurückgemeldet. Replies und BPMN sind durch diesen Durchlauf noch nicht abgenommen. Die PDF-Downloadbeschränkung und fehlende vollständige Vorgangsablage sind im Folgeplan aufgenommen.
 
@@ -59,3 +59,7 @@ Die gewünschte Plattformprüfung ist abgeschlossen: Für vollständiges macOS/L
 Der gezielte NVDA-Nachweis verwendet unverändert den Installer mit SHA-256 `8b1fbf43b9d617252bcee9c6baeb8eb579b7d4cf81cd1f1f2dd3fe819347cfc8` aus dem erfolgreichen Paketlauf 39038478823. Das [begrenzte Ergebnisartefakt](https://github.com/FBForge/fbforge-connect/actions/runs/39046257372/artifacts/12106345279) nennt zusätzlich Prüfskript-Commit und Lauf-ID. Der kurze Ablauf ersetzt keinen vollständigen neuen Paketlauf.
 
 Repository-Pflege: README und Roadmap sind auf den Einstieg reduziert; Build-Anweisungen stehen in CONTRIBUTING.md und die abschließende Bedienungsabnahme in ZIELGERAETE_TEST.md. Die Alpha-Arbeitshistorie wird in den regulären Entwicklungsstand übernommen. Schreibende TEST-Abnahmen starten künftig ausschließlich manuell mit ausdrücklicher Bestätigung, nicht durch Branch-Pushes oder deren Bereinigung. Die bereits geprüften Installer und ihre unveränderlichen Nachweise bleiben erhalten. Bestehende Schlüssel, Profile und technische Upgrade-Kennungen behalten ihre Identität.
+
+## dev.9: Vorgangsablage und bebilderte Hilfe
+
+Der Funktionsstand `60c9287` besteht den [vollständigen Windows-Lauf 39063273538](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538): 235 Java-Tests, 176 JavaScript-Tests, 25 Browserabläufe, native Speicher-/Protokolltests, Installation/Upgrade und 13 echte NVDA-Sprachausgabekontrollen. Der [Prüfbau](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538/artifacts/12112642005) wurde separat heruntergeladen und mit Manifest, Prüfsumme und NVDA-Bericht abgeglichen. Die [Prüfdokumentation](planning/dev9-verification.md) trennt diese Nachweise, den siebenfachen echten TEST-Austausch und ihre Grenzen. Es gibt weiterhin keine Alpha-1-Freigabe.

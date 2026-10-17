@@ -1,0 +1,261 @@
+<!doctype html>
+<!-- Synthetic native boundary for UI regression and real-component documentation screenshots. -->
+<html lang="de" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Vorgänge · fiktive Testdaten</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp, h, ref } from 'vue';
+      import CaseWorkspace from '../src/CaseWorkspace.vue';
+      import '../src/site.css';
+      import '../src/layout.css';
+      import '../src/desktop.css';
+      import '../src/application-view.css';
+      const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
+      const session = ref({
+        apiVersion: 'v3',
+        sessionId: id(1),
+        environment: 'TEST',
+        connected: true,
+        role: 'administrative-system',
+      });
+      const utf8 = (value) => new TextEncoder().encode(value);
+      const pdf = new Uint8Array(await (await fetch('./assets/fictional-attachment.pdf')).arrayBuffer());
+      const parts = [
+        {
+          contentId: id(10),
+          kind: 'data',
+          fileName: 'Antrag.json',
+          mimeType: 'application/json',
+          description: null,
+          bytes: utf8(
+            JSON.stringify({
+              antragsteller: {
+                vorname: 'Erika',
+                nachname: 'Musterfrau',
+                anschrift: { strasse: 'Teststraße 7', ort: 'Teststadt' },
+              },
+              anliegen: {
+                leistung: 'Fiktiver Testantrag',
+                hinweis: 'Nur synthetische Daten',
+                einwilligung: true,
+              },
+            }),
+          ),
+        },
+        {
+          contentId: id(11),
+          kind: 'attachment',
+          fileName: 'Fiktiver Nachweis.pdf',
+          mimeType: 'application/pdf',
+          description: 'Testnachweis mit zwei Seiten',
+          bytes: pdf,
+        },
+        {
+          contentId: id(12),
+          kind: 'attachment',
+          fileName: 'Aktiver Inhalt.html',
+          mimeType: 'text/html',
+          description: 'Ausschließlich Download',
+          bytes: utf8('<script>fetch("https://invalid.test/never")<\/script>'),
+        },
+        {
+          contentId: id(13),
+          kind: 'schema',
+          fileName: 'urn:test:antrag',
+          mimeType: 'text/plain',
+          description: null,
+          bytes: utf8(
+            JSON.stringify({
+              schemaPackage: 1,
+              schemaUri: 'urn:test:antrag',
+              documents: {
+                'urn:test:antrag': {
+                  $id: 'urn:test:antrag',
+                  type: 'object',
+                  properties: {
+                    antragsteller: {
+                      title: 'Antragstellende Person',
+                      type: 'object',
+                      properties: {
+                        vorname: { title: 'Vorname', type: 'string' },
+                        nachname: { title: 'Nachname', type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+            }),
+          ),
+        },
+      ];
+      const records = [
+        {
+          recordId: id(2),
+          revision: id(20),
+          kind: 'submission',
+          direction: 'received',
+          title: 'Fiktiver Antrag auf Testleistung',
+          createdAt: '2026-10-17T10:30:00Z',
+          status: 'accepted',
+          caseId: id(5),
+          submissionId: id(6),
+          replyId: null,
+          destinationId: id(7),
+          attachmentCount: 2,
+          totalBytes: parts.reduce((sum, p) => sum + p.bytes.length, 0),
+          warnings: ['MALWARE_SCAN_NOT_CONFIGURED'],
+        },
+        {
+          recordId: id(3),
+          revision: id(21),
+          kind: 'reply',
+          direction: 'sent',
+          title: 'Antwort zum Testantrag',
+          createdAt: '2026-10-17T10:35:00Z',
+          status: 'sent',
+          caseId: id(5),
+          submissionId: id(6),
+          replyId: id(8),
+          destinationId: id(7),
+          attachmentCount: 0,
+          totalBytes: parts[0].bytes.length,
+          warnings: [],
+        },
+        {
+          recordId: id(4),
+          revision: id(22),
+          kind: 'submission',
+          direction: 'sent',
+          title: 'Testversand mit ungewissem Ausgang',
+          createdAt: '2026-10-17T10:40:00Z',
+          status: 'uncertain',
+          caseId: null,
+          submissionId: null,
+          replyId: null,
+          destinationId: id(7),
+          attachmentCount: 0,
+          totalBytes: parts[0].bytes.length,
+          warnings: [],
+        },
+      ];
+      const state = (window.__caseFixture = {
+        records: [...records],
+        calls: [],
+        persistent: false,
+        failedRead: false,
+        delayRead: false,
+        releaseRead: null,
+        scope: 'a',
+        scopes: { a: [...records], b: [] },
+      });
+      const envelope = (data) => ({
+        apiVersion: session.value.apiVersion,
+        sessionId: session.value.sessionId,
+        environment: 'TEST',
+        data,
+      });
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args) {
+          if (
+            command !== 'case_workspace' ||
+            args.sessionId !== session.value.sessionId ||
+            args.apiVersion !== session.value.apiVersion
+          )
+            throw 'session_missing';
+          state.calls.push({ operation: args.operation, recordId: args.recordId });
+          const data = state.scopes[state.scope];
+          state.records = data;
+          if (args.operation === 'list')
+            return envelope({
+              records: [...data],
+              persistent: state.persistent,
+              canPersist: true,
+              storageError: null,
+            });
+          if (args.operation === 'storage') {
+            if (state.failStorage) throw 'vault_limit';
+            state.persistent = args.persistent;
+            return envelope({
+              records: [...data],
+              persistent: state.persistent,
+              canPersist: true,
+              storageError: null,
+            });
+          }
+          if (args.operation === 'clear') {
+            data.splice(0);
+            return envelope({ cleared: true });
+          }
+          const record = data.find((r) => r.recordId === args.recordId);
+          if (!record) throw 'invalid_resource';
+          if (args.operation === 'delete') {
+            data.splice(data.indexOf(record), 1);
+            return envelope({ deleted: true });
+          }
+          const files = record.recordId === id(2) ? parts : [parts[0]];
+          if (args.operation === 'parts')
+            return envelope({
+              recordId: record.recordId,
+              offset: args.offset,
+              total: files.length,
+              parts: files
+                .slice(args.offset, args.offset + 2)
+                .map(({ bytes, ...p }) => ({ ...p, totalBytes: bytes.length })),
+            });
+          if (args.operation === 'read') {
+            if (state.failedRead) throw 'vault_unavailable';
+            if (state.delayRead) await new Promise((resolve) => (state.releaseRead = resolve));
+            const part = files.find((p) => p.contentId === args.contentId);
+            if (!part) throw 'invalid_resource';
+            const bytes = part.bytes.slice(args.offset, args.offset + 24576);
+            return envelope({
+              recordId: record.recordId,
+              contentId: part.contentId,
+              byteOffset: args.offset,
+              totalBytes: part.bytes.length,
+              chunk: btoa(String.fromCharCode(...bytes)),
+              complete: args.offset + bytes.length === part.bytes.length,
+            });
+          }
+          throw 'invalid_input';
+        },
+      };
+      const busy = ref(false),
+        visible = ref(true);
+      createApp({
+        setup: () => () =>
+          h('main', { class: 'case-fixture', style: 'max-width:1080px;margin:2rem auto;padding:0 1rem' }, [
+            h('header', { class: 'tool-section-heading' }, [
+              h('h1', 'FBForge Connect'),
+              h('span', { class: 'status-badge info' }, 'TEST · fiktive Beispieldaten'),
+            ]),
+            h('div', { class: 'client-actions' }, [
+              h(
+                'button',
+                {
+                  class: 'button secondary',
+                  onClick: () => {
+                    state.scope = state.scope === 'a' ? 'b' : 'a';
+                    session.value = { ...session.value, sessionId: state.scope === 'a' ? id(1) : id(99) };
+                  },
+                },
+                'Testprofil wechseln',
+              ),
+            ]),
+            h(CaseWorkspace, {
+              session: session.value,
+              busy: busy.value,
+              visible: visible.value,
+              onBusy: (value) => (busy.value = value),
+            }),
+          ]),
+      }).mount('#app');
+    </script>
+  </body>
+</html>

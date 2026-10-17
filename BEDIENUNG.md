@@ -22,7 +22,7 @@ Fachdaten lokal visuell prüfen und anschließend den Versand vorbereiten. Erst 
 
 ## 4. Antrag empfangen und prüfen
 
-Als Fachverfahren **Empfangen** öffnen, Zustellpunkt wählen und verfügbare Einreichungen laden. Eine Einreichung abrufen und mit ihren passenden Schlüsseln entschlüsseln und prüfen. Die Formularansicht zeigt vorhandene Werte und – soweit eindeutig verfügbar – Bezeichnungen aus dem Schema. Originalfelder und Herkunft bleiben nachvollziehbar. Anlagen separat ansehen oder speichern.
+Als Fachverfahren **Empfangen** öffnen, Zustellpunkt wählen und verfügbare Einreichungen laden. Mit **Öffnen und prüfen** die Einreichung in einem Schritt abrufen, entschlüsseln und technisch prüfen. Fehlen Schlüssel oder Schemata, können sie ergänzt und die Prüfung erneut gestartet werden. Die Formularansicht zeigt vorhandene Werte und – soweit eindeutig verfügbar – Bezeichnungen aus dem Schema. Originalfelder und Herkunft bleiben nachvollziehbar. Anlagen separat ansehen oder speichern.
 
 Technische Integrität, Schema-Prüfung und fachliche Bewertung sind unterschiedliche Ergebnisse. Eine technisch gültige Nachricht ist nicht automatisch fachlich richtig. Ein fehlender Malwarescanner wird ausdrücklich angezeigt.
 
@@ -46,7 +46,17 @@ Unter **Prozesse** ein BPMN-Modell per Dateiablage öffnen oder zunächst den fi
 
 Mit einer berechtigten v3-Sitzung passende Prozess-Zustellpunkte suchen und die Auswahl in einen Entwurf übernehmen. Die Suche verwendet automatisch die bestehende Anmeldung; ein zusätzlicher Token muss nicht eingegeben werden. Ein Modellklick versendet nichts. Der Client ist ein Nachrichten-Testwerkzeug und führt keinen vollständigen BPMN-Prozess aus.
 
+## 8. Vorgänge wieder öffnen
+
+Unter **Vorgänge** bleiben abgerufene und gesendete Nachrichten als lokale Kopien sichtbar. Nach erfolgreicher Entschlüsselung sind Fachdaten und Anlagen auch nach Annahme oder Ablehnung wieder lesbar. Ohne Entschlüsselung bleiben lediglich ungeprüfte Transportinformationen erhalten. Die Suche findet Titel sowie Case-, Submission- und Reply-ID.
+
+Standardmäßig gilt der Verlauf nur für die laufende Anwendung. Für gespeicherte Windows-Profile kann die dauerhafte Aufbewahrung ausdrücklich eingeschaltet werden. Die verschlüsselte Vorgangsablage ist vom Schlüsselprofil und dessen Backup getrennt. Einzellöschung und **Verlauf leeren** entfernen lokale Kopien, keine Servernachrichten. Gespeicherte Prüfergebnisse geben keine neue Berechtigung zum Antworten oder Quittieren; hierfür ist ein aktueller Abruf erforderlich.
+
+PDF-, PNG/JPEG-, JSON/XML- und Textanlagen lassen sich lokal ansehen. Die PDF-Vorschau bietet Seitenwahl und auslesbaren Text. Aktive Dokumentfunktionen bleiben gesperrt; Originaldownloads verändern keine Bytes. Unterstützte Größen und Hinweise stehen direkt in der Anwendungshilfe.
+
 ## Hilfe und Grenzen
+
+Die vollständige bebilderte Anleitung befindet sich unter **Hilfe** in der Anwendung und funktioniert offline. Sie deckt alle Arbeitsbereiche und häufige Fehler ab.
 
 **Diagnose** prüft die beiden lokalen SDKs und erstellt einen begrenzten technischen Bericht ohne Fachdaten, Zugangsdaten oder private Schlüssel. Für weiterführende Informationen gibt es die offizielle FIT-Connect-Dokumentation. Versionsabhängige Grenzen und noch offene Alpha-Abnahmen stehen in [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md).
 

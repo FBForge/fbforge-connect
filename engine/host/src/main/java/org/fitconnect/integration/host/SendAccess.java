@@ -66,6 +66,10 @@ final class SendAccess implements ResourceExchange {
                 List.copyOf(diagnostics));
     }
 
+    SubmissionInput pendingInput() {
+        return input;
+    }
+
     long pendingBytes() {
         if ("prepared".equals(state.status()) && clock.getAsLong() >= expires) input = null;
         return input == null ? 0 : input.totalBytes();

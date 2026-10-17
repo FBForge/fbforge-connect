@@ -89,6 +89,59 @@ async function openNativeSession(label, api) {
     },
   };
 }
+async function archivedCopy(
+  engine,
+  subjectId,
+  direction,
+  kind,
+  expectedData,
+  expectedAttachment = null,
+  expectedStatus = null,
+) {
+  const call = (operation, recordId = null, contentId = null, offset = 0) =>
+    engine.call('case_workspace', {
+      archiveDocument: JSON.stringify({ operation, recordId, contentId, offset }),
+    });
+  let record;
+  for (let offset = 0; offset < 100; offset += 10) {
+    const page = await call('list', null, null, offset);
+    record = page.records.find(
+      (item) =>
+        item.direction === direction &&
+        item.kind === kind &&
+        item[kind === 'reply' ? 'replyId' : 'submissionId'] === subjectId,
+    );
+    if (record || offset + 10 >= page.total) break;
+  }
+  requireCheck(record && (!expectedStatus || record.status === expectedStatus), 'case_snapshot_missing');
+  const files = [];
+  for (let offset = 0; offset < 44; offset += 2) {
+    const page = await call('parts', record.recordId, null, offset);
+    files.push(...page.parts);
+    if (files.length === page.total) break;
+  }
+  for (const [partKind, original] of [
+    ['data', expectedData],
+    ['attachment', expectedAttachment],
+  ]) {
+    if (!original) continue;
+    const part = files.find((p) => p.kind === partKind);
+    requireCheck(part && part.totalBytes === original.length, 'case_part_missing');
+    const chunks = [];
+    for (let offset = 0; offset < part.totalBytes; offset += 24576) {
+      const chunk = await call('read', record.recordId, part.contentId, offset);
+      requireCheck(
+        chunk.recordId === record.recordId &&
+          chunk.contentId === part.contentId &&
+          chunk.byteOffset === offset &&
+          chunk.totalBytes === original.length,
+        'case_chunk_invalid',
+      );
+      chunks.push(Buffer.from(chunk.chunk, 'base64'));
+    }
+    requireCheck(Buffer.concat(chunks).equals(original), 'case_original_bytes_differ');
+  }
+}
 async function checkpoint(engine) {
   const keys = [];
   for (let offset = 0; offset <= 176; offset++) {
@@ -235,7 +288,8 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
   const sent = await sender.call('execute_send', { attemptId: prepared.attempt.attemptId });
   await checkpoint(sender);
   requireCheck(sent.status === 'sent', `submission_${sent.status}`);
-  console.log(`${stage}: one native send confirmed`);
+  await archivedCopy(sender, sent.submissionId, 'sent', 'submission', data, attachment, 'sent');
+  console.log(`${stage}: one native send confirmed; exact local send snapshot verified`);
   const localSchemas = xml ? [{ uri: xmlUri, contentId: await upload(receiver, xmlSchema) }] : [];
   const proof = await readEventually(() =>
     receiver.call('verify_submission', {
@@ -292,6 +346,7 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
   const replyPreview = await receiver.call('prepare_reply', { replyDocument: JSON.stringify(replyDraft) });
   const reply = await receiver.call('execute_reply', { attemptId: replyPreview.attempt.attemptId });
   requireCheck(reply.status === 'sent', `reply_${reply.status}_${reply.error || 'unknown'}`);
+  await archivedCopy(receiver, reply.replyId, 'sent', 'reply', replyData, null, 'sent');
   sender.native.close();
   engines.delete(sender.native);
   sender = await openNativeSession('sender', api);
@@ -349,6 +404,9 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
     (await receiver.call('execute_receipt', { attemptId: receipt.attempt.attemptId })).status === 'confirmed',
     'submission_receipt_failed',
   );
+  const localStatus = receiptAction === 'accept' ? 'accepted' : 'rejected';
+  await archivedCopy(receiver, sent.submissionId, 'received', 'submission', data, attachment, localStatus);
+  await archivedCopy(sender, reply.replyId, 'received', 'reply', replyData, null, localStatus);
   await verifiedLog(
     sender,
     'load_reply_event_log',

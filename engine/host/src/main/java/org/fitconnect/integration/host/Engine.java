@@ -184,7 +184,7 @@ final class Engine implements AutoCloseable {
                 case "list_key_inventory" -> expected.addAll(Set.of("sessionId", "offset"));
                 case "remove_key_inventory_item" -> expected.addAll(Set.of("sessionId", "itemId"));
                 case "export_session_item" -> expected.addAll(Set.of("sessionId", "offset"));
-                case "restore_session_item" ->
+                case "case_bind", "case_workspace", "restore_session_item" ->
                         expected.addAll(Set.of("sessionId", "archiveDocument"));
                 case "load_case_event_log" -> expected.addAll(Set.of("sessionId", "caseId"));
                 case "load_reply_event_log" ->
@@ -456,6 +456,16 @@ final class Engine implements AutoCloseable {
                                             command,
                                             values.get("itemId"),
                                             offset);
+                            case "case_bind" ->
+                                    sessions.bindCases(
+                                            version,
+                                            values.get("sessionId"),
+                                            values.get("archiveDocument"));
+                            case "case_workspace" ->
+                                    sessions.caseWorkspace(
+                                            version,
+                                            values.get("sessionId"),
+                                            values.get("archiveDocument"));
                             case "export_session_item" ->
                                     sessions.exportSessionItem(
                                             version, values.get("sessionId"), offset);

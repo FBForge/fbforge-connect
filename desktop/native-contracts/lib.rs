@@ -3,3 +3,6 @@
 pub mod protocol;
 #[path = "../src/vault.rs"]
 pub mod vault;
+
+#[path = "../src/case_store.rs"]
+pub mod case_store;

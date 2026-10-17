@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPreview, disposePreview, jsonNodes } from '../frontend/src/submission-preview.js';
+import { createPreview, disposePreview, jsonNodes, canPreview } from '../frontend/src/submission-preview.js';
 
 const utf8 = (value) => new TextEncoder().encode(value);
 test('JSON tree is inert, parent-addressed and bounded before rendering', () => {
@@ -175,4 +175,25 @@ test('JPEG frame dimensions are checked and canonicalized too', async () => {
   const result = await createPreview(jpeg, { filename: 'test.jpg', mimeType: 'image/jpeg' }, runtime);
   assert.equal(result.kind, 'image');
   disposePreview(result);
+});
+
+test('PDF preview requires signature, is copied and disposed, and never enables active extensions', async () => {
+  const bytes = utf8('%PDF-1.7\nfictional-test');
+  const preview = await createPreview(bytes, { filename: 'Nachweis.pdf', mimeType: 'application/pdf' });
+  assert.equal(preview.kind, 'pdf');
+  bytes[0] = 0;
+  assert.equal(preview.bytes[0], 37);
+  disposePreview(preview);
+  assert.ok(preview.bytes.every((b) => b === 0));
+  assert.equal(
+    (await createPreview(utf8('<html/>'), { filename: 'wrong.pdf', mimeType: 'application/pdf' })).kind,
+    'unavailable',
+  );
+  assert.equal(
+    (await createPreview(new Uint8Array(8 * 1024 * 1024 + 1), { filename: 'too-large.pdf' })).kind,
+    'unavailable',
+  );
+  for (const fileName of ['dangerous.html', 'dangerous.svg', 'dangerous.exe', 'dangerous.docx'])
+    assert.equal(canPreview({ fileName, mimeType: 'text/plain' }), false);
+  assert.equal(canPreview({ fileName: 'Nachweis.pdf', mimeType: 'application/pdf' }), true);
 });

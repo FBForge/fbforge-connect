@@ -189,3 +189,19 @@ test('cancel and status accept only coherent native receipt states', async () =>
     /engine_protocol_error/,
   );
 });
+
+test('local case guard before dispatch never becomes an uncertain remote write', async () => {
+  let calls = 0;
+  await assert.rejects(
+    executeReceipt(
+      async () => {
+        calls++;
+        throw new Error('case_storage_pending');
+      },
+      session,
+      attempt,
+    ),
+    /case_storage_pending/,
+  );
+  assert.equal(calls, 1);
+});

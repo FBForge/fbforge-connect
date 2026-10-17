@@ -1,0 +1,265 @@
+/** Bundled offline guide. All screenshots use fictional examples and contain no credentials. */
+export const helpTopics = [
+  {
+    id: 'start',
+    title: 'Schnellstart',
+    section: 'Senden',
+    image: 'overview',
+    caption: 'Arbeitsbereiche von FBForge Connect. Die Hilfe steht auch ohne Verbindung zur Verfügung.',
+    intro:
+      'FBForge Connect ist ein unabhängiges Testwerkzeug für FIT-Connect. Alle Verbindungen führen ausschließlich in die TEST-Umgebung. Verwende fiktive Personen- und Antragsdaten.',
+    steps: [
+      'Wähle oben API v3 für neue Tests. API v2 bleibt für bestehende Integrationen verfügbar.',
+      'Öffne „Verbinden“, wähle Onlinedienst oder Fachverfahren und gib die TEST-Client-ID und das Client-Secret ein.',
+      'Ein Onlinedienst sendet Einreichungen und empfängt angebotene Antworten. Ein Fachverfahren ruft Einreichungen ab und kann darauf antworten. Die API und der Zugang müssen zu deinem Test passen.',
+      'Wähle „Senden“ für einen Testantrag oder „Empfangen“ für den Eingang. Unter „Vorgänge“ findest du lokale Kopien.',
+      'Führe zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfe anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
+    ],
+    notes: [
+      'Das Werkzeug ersetzt kein produktives Fachverfahren und ist keine offizielle Anwendung der FITKO.',
+      'Die Alpha wird weiterhin entwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
+    ],
+  },
+  {
+    id: 'connection',
+    title: 'Verbinden und Profile',
+    section: 'Senden',
+    image: 'profiles',
+    caption:
+      'Verbindungsdialog mit Auswahl von API, Rolle und lokalem Profil. Zugangsdaten werden in der Anleitung nicht gezeigt.',
+    intro:
+      'Ein Profil bündelt einen TEST-Zugang, seine Rolle und API-Version. Gespeicherte Profile ersparen die erneute Eingabe nach einem Neustart.',
+    steps: [
+      'Öffne „Verbinden“. Für einen einmaligen Test lasse das Speichern ausgeschaltet.',
+      'Für wiederkehrende Tests aktiviere das Speichern und vergib einen verständlichen Namen, zum Beispiel „Musterfachverfahren v3“.',
+      'Prüfe Rolle und API vor dem Verbinden. Nicht jede Funktion steht mit jeder Rolle oder API zur Verfügung.',
+      'Unter den gespeicherten Profilen kannst du einen Zugang wieder öffnen, umbenennen, aktualisieren oder entfernen.',
+      'Speichere Schlüsseländerungen im Profil und beachte Hinweise auf ausstehende Sicherungen. Bewahre zusätzlich eine eigene sichere Schlüsselsicherung auf.',
+    ],
+    notes: [
+      'Dauerhafte Profile und private Schlüssel werden auf Windows mit dem Benutzerkonto verschlüsselt. Es gibt keinen unverschlüsselten Ersatzspeicher.',
+      'Beim Entfernen eines gespeicherten Profils werden auch dessen dauerhaft gespeicherte Vorgangskopien gelöscht.',
+      'Profil-Sicherungen sind verschlüsselt und an das Windows-Benutzerkonto gebunden. Sie sind kein allgemeiner Export für andere Rechner oder Benutzer.',
+      'Ein Profil-Backup enthält keine Vorgangsablage. Die Aufbewahrung von Vorgängen wird separat eingeschaltet.',
+    ],
+  },
+  {
+    id: 'send',
+    title: 'Einreichung senden',
+    section: 'Senden',
+    image: 'send',
+    caption: 'Eine fiktive Einreichung vorbereiten und vor dem Versand prüfen.',
+    intro:
+      'Du bereitest zunächst Fachdaten und Anlagen vor. Erst die separate Bestätigung löst den Versand aus.',
+    steps: [
+      'Verbinde einen Onlinedienst-Zugang und trage den Zielzustellpunkt ein. Lade dessen Leistungen und wähle die passende Leistung und das Fachdatenformat.',
+      'Bei API v3 wähle außerdem den eigenen Absenderzustellpunkt. Dieser muss zu deinem Zugang gehören und passend eingerichtet sein.',
+      'Gib JSON oder XML ein, ziehe eine Datei in das Dateifeld oder verwende „Datei auswählen“. Fiktive Beispieldaten sind eine Starthilfe und müssen zu deinem Test angepasst werden.',
+      'Die Formularansicht zeigt Werte lesbar an. Über JSON-Struktur oder Quelltext kannst du technische Details vergleichen. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist; ansonsten bleiben Originalnamen sichtbar.',
+      'Füge bei Bedarf Anlagen hinzu. Prüfe Dateiname, Format und Größe. Entferne nicht benötigte Anlagen vor dem Vorbereiten.',
+      'Wenn du eine Antwort testen möchtest, aktiviere vor dem Versand das Antwortangebot und wähle das erlaubte Antwortschema.',
+      'Wähle „Versand vorbereiten“, prüfe die unveränderliche Zusammenfassung und bestätige den Versand. Bewahre Einreichungs- und Vorgangs-ID für die Nachverfolgung auf.',
+    ],
+    notes: [
+      'Öffentliche Schemaquellen werden nur nach ausdrücklicher Freigabe geladen. Eigene lokale Schemata sind ebenfalls möglich.',
+      'Bei „Ausgang ungewiss“ nicht einfach erneut senden. Nutze die bekannten IDs zur Event-Log-Prüfung, um doppelte Testnachrichten zu vermeiden.',
+      'Die Vorgangsablage übernimmt den tatsächlich vorbereiteten Versandinhalt. Spätere Änderungen im Eingabefeld verändern diese Kopie nicht.',
+    ],
+  },
+  {
+    id: 'receive',
+    title: 'Antrag empfangen und prüfen',
+    section: 'Empfangen',
+    image: 'receive',
+    caption: 'Die Formularansicht eines fiktiven Antrags nach Entschlüsselung und technischer Prüfung.',
+    intro:
+      'Ein Fachverfahren lädt seinen Eingang, entschlüsselt den ausgewählten Antrag und prüft die technischen Inhalte. Die Empfangsbestätigung bleibt eine eigene bewusste Aktion.',
+    steps: [
+      'Verbinde den Fachverfahren-Zugang. Wähle einen eigenen Zustellpunkt und lade die passenden privaten Testschlüssel zum Entschlüsseln und Signieren.',
+      'Lade verfügbare Einreichungen oder trage eine bekannte Einreichungs-ID ein. „Öffnen und prüfen“ lädt das Detail und versucht direkt die Entschlüsselung und Prüfung.',
+      'Wenn Schlüssel oder Schemata fehlen, folge dem Hinweis im Empfang. Lade die fehlenden Dateien und starte „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
+      'Lies die Fachdaten direkt in der Formularansicht. Die Suche hilft bei umfangreichen Anträgen. Die Struktur- und Quelltextansicht bleiben verfügbar.',
+      'Öffne unterstützte Anlagen über „Ansehen“ oder lade die unveränderte Datei herunter.',
+      'Prüfe fachlich, ob der Antrag zum Testfall passt. Bereite dann „Annehmen“ oder „Ablehnen“ vor und kontrolliere die Bestätigung. Beim Ablehnen wird ein passender technischer Grund benötigt.',
+      'Eine lokale Kopie bleibt unter „Vorgänge“ lesbar. Wenn die dauerhafte Aufbewahrung eingeschaltet ist, wird vor der Bestätigung die Sicherung geprüft.',
+    ],
+    notes: [
+      'Eine technische Prüfung bedeutet keine fachliche Freigabe. Hinweise wie „Kein Malwarescanner eingerichtet“ bleiben sichtbar.',
+      'Bei XML kann nur die Syntax geprüft sein. Eine fehlende XSD-Prüfung wird ausdrücklich angezeigt.',
+      'Die Formularansicht ist auf 256 KiB Fachdaten begrenzt. Größere Inhalte bleiben als Originaldatei verfügbar.',
+    ],
+  },
+  {
+    id: 'cases',
+    title: 'Vorgänge und Aufbewahrung',
+    section: 'Vorgänge',
+    image: 'cases',
+    caption: 'Ein lokal wieder geöffneter Antrag mit Formularansicht, Anlagen und getrennten Aktionen.',
+    intro:
+      'Die Vorgangsübersicht macht aus einzelnen Abrufen einen nachvollziehbaren Arbeitsverlauf. Sie ist ein lokaler Lesespeicher und keine zweite Server-Inbox.',
+    steps: [
+      'Öffne „Vorgänge“ und verbinde das gewünschte Profil. Die Liste enthält die Nachrichten dieses Zugangs und dieser API.',
+      'Suche nach Titel, Vorgangs-ID, Einreichungs-ID, Antwort-ID oder Zustellpunkt. Filtere bei Bedarf nach „Empfangen“ oder „Gesendet“.',
+      'Klicke auf einen Titel. Fachdaten und Anlagen sind direkt im Detail lesbar. Mehrere Nachrichten mit derselben echten Vorgangs-ID lassen sich über die Suche zusammen betrachten.',
+      'Standardmäßig werden Kopien automatisch nur in der laufenden Anwendung gehalten. Ein Profilwechsel entfernt sie nicht. Verbinde denselben Zugang erneut, um sie wieder zu sehen.',
+      'Wenn du sie nach einem Neustart weiter brauchst, aktiviere „Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren“. Vorhandene und neue Kopien werden dann mit deinem Windows-Benutzerkonto verschlüsselt.',
+      '„Löschen“ entfernt genau eine lokale Kopie. „Verlauf leeren“ fragt nach und löscht alle lokalen Kopien des aktuellen Profils und der aktuellen API. Auf dem TEST-Server wird dadurch nichts geändert.',
+      'Zum Antworten oder erneuten technischen Prüfen wähle „Im Empfang erneut prüfen / antworten“. Dafür sind eine aktuelle Sitzung und ein erneut abrufbarer Antrag erforderlich.',
+    ],
+    notes: [
+      'Unbekannte Versand-IDs werden nicht erfunden. Ein ungewisser Versuch hat eine eigene lokale Kennung und bleibt als ungewiss erkennbar.',
+      'Gespeicherte Prüfergebnisse sind historisch. Frühere Freigaben oder Empfangsnachweise werden beim Neustart nicht als aktuelle Berechtigung wiederhergestellt.',
+      'Wenn du dauerhaftes Speichern ausschaltest, bleiben bereits gespeicherte Kopien bis zum Löschen erhalten. Neue Kopien bleiben nur in der Sitzung.',
+      'Grenzen: 100 Sitzungskopien und 128 MiB Gesamtinhalt je Anwendung; maximal 256 MiB geschützter Speicher je gespeichertem Profil und API. Es werden keine alten Vorgänge stillschweigend verdrängt. Bei vollem Speicher lösche nicht benötigte Kopien.',
+      'Lokales Löschen ist kein garantiertes physisches Überschreiben von SSDs oder Betriebssystem-Sicherungen. Exportierte Originaldateien verwaltest du selbst.',
+    ],
+  },
+  {
+    id: 'attachments',
+    title: 'PDF, Bilder und Dateien',
+    section: 'Vorgänge',
+    image: 'pdf',
+    caption: 'Lokale PDF-Vorschau mit Seitensteuerung und auslesbarem Seitentext.',
+    intro:
+      'Die Vorschau zeigt unterstützte Formate lokal. Die Originaldatei bleibt unverändert als Download verfügbar.',
+    steps: [
+      'Wähle bei einer PDF, PNG-, JPEG-, JSON-, XML- oder Textanlage „Ansehen“.',
+      'Bei PDFs wechsle mit „Vorherige Seite“ und „Nächste Seite“. Unter „Seitentext lesen“ ist auslesbarer PDF-Text zugänglich. Für gescannte Seiten gibt es keine Texterkennung.',
+      'Schließe die Vorschau per Schaltfläche oder Escape. Der Fokus kehrt zur auslösenden Schaltfläche zurück.',
+      'Wenn eine Datei nicht dargestellt werden kann, lade das Original herunter. Öffne externe Programme nur bewusst und entsprechend deiner lokalen Sicherheitsregeln.',
+    ],
+    notes: [
+      'PDFs und Bilder: höchstens 8 MiB für die Vorschau. PDFs: höchstens 50 Seiten und 20 Sekunden je Ladevorgang/Seite. Bilder: höchstens 16 Megapixel. Textvorschau: höchstens 2 MiB.',
+      'PDF-Skripte, Formulare, externe Verweise und eingebettete Dateien werden nicht ausgeführt oder geöffnet. Es gibt keine automatische Browser- oder Systemvorschau.',
+      'HTML, SVG, Office-Dateien und ausführbare Dateien werden ausschließlich als Download angeboten.',
+      'Importierte Dateien können höchstens 32 MiB groß sein; zusammen höchstens 64 MiB und 39 Anlagen. Drag-and-drop und Dateiauswahl sind gleichwertige Importwege.',
+    ],
+  },
+  {
+    id: 'replies',
+    title: 'Antworten testen',
+    section: 'Empfangen',
+    image: 'receive',
+    caption: 'Ein geprüfter Antrag bildet die Grundlage für eine separate Antwort.',
+    intro:
+      'Eine Antwort benötigt ein beim ursprünglichen Versand angebotenes Antwortschema und den passenden nativen Schlüsselkontext.',
+    steps: [
+      'Sende als Onlinedienst eine Einreichung mit aktiviertem Antwortangebot. Verwende für einen Test über Neustarts ein gespeichertes Profil und sichere dessen Schlüsselzustand.',
+      'Öffne und prüfe den Antrag im Fachverfahren. Lade im Antwortbereich das angebotene Antwortschema.',
+      'Erstelle passende JSON- oder XML-Antwortdaten und ergänze bei Bedarf Anlagen. Bereite die Antwort vor, prüfe die Zusammenfassung und bestätige den Versand separat.',
+      'Verbinde wieder den ursprünglichen Onlinedienst-Zugang. Lade die Antworten und prüfe die gewünschte Antwort mit dem zu diesem Angebot gehörenden Schlüssel.',
+      'Nimm die Antwort nach Prüfung an oder lehne sie mit passendem Grund ab. Auch Antworten bleiben als lokale Kopien in der Vorgangsablage erhalten.',
+    ],
+    notes: [
+      'Beliebige andere Schlüssel oder eine andere Sitzung ohne wiederhergestellten Antwortschlüssel können eine angebotene Antwort nicht entschlüsseln.',
+      'Ein archivierter Antrag allein berechtigt nicht zum Antworten. Der aktuelle native Nachweis und die angebotenen Antwortmöglichkeiten müssen erneut ermittelt werden.',
+      'Ungewisse Antwortversuche werden nicht automatisch wiederholt. Prüfe zuerst den Event Log.',
+    ],
+  },
+  {
+    id: 'processes',
+    title: 'BPMN und Prozessnachrichten',
+    section: 'Prozesse',
+    image: 'processes',
+    caption: 'BPMN-Modell mit auswählbaren Nachrichtenbezügen und Suche nach unterstützenden Zustellpunkten.',
+    intro:
+      'BPMN-Dateien helfen dir, Prozessmodell- und Nachrichten-IDs auszuwählen, ohne sie von Hand zu übertragen. Das Werkzeug führt keine Prozess-Engine aus.',
+    steps: [
+      'Öffne „Prozesse“ und lade eine BPMN-Datei per Drag-and-drop oder Dateiauswahl. Das mitgelieferte Beispiel ist ausschließlich für fiktive Tests gedacht.',
+      'Wähle einen unterstützten Nachrichtenbezug direkt im Diagramm oder über die zugängliche Auswahlliste. Prüfe die ermittelte Prozessmodell-ID und Nachrichten-ID.',
+      'Suche nach TEST-Zustellpunkten, die diesen Nachrichtenbezug unterstützen. Wähle optional eine Region. Die Suche verwendet den aktuellen nativen Bearer-Zugang.',
+      'Übernimm einen passenden Zustellpunkt und den Nachrichtenbezug in den Versand. Prüfe die Zuordnung erneut in der Versandzusammenfassung.',
+      'Bei eingegangenen Prozessnachrichten kannst du den Nachrichtenbezug im geladenen BPMN-Modell anzeigen lassen. Antwortnachrichten müssen zum angebotenen Prozessbezug passen.',
+    ],
+    notes: [
+      'Die Prozessfunktionen und Suche nach unterstützten Prozessnachrichten benötigen API v3.',
+      'Nicht jedes beliebige BPMN-Element besitzt eine Nachrichten-ID. Bei fehlenden oder mehrdeutigen Zuordnungen wird kein Wert geraten.',
+      'Ein Modell kann mehrere Referenzen enthalten. Vergleiche vor dem Senden stets Modell, Nachricht und Zielzustellpunkt.',
+    ],
+  },
+  {
+    id: 'destinations',
+    title: 'Eigene Zustellpunkte verwalten',
+    section: 'Zustellpunkte',
+    image: 'destinations',
+    caption: 'Verwaltung eigener TEST-Zustellpunkte mit getrennten Vorbereitungs- und Bestätigungsschritten.',
+    intro:
+      'Mit API v3 kannst du eigene TEST-Zustellpunkte anlegen und deren Konfiguration verwalten. Änderungen benötigen die passenden Rechte deines Fachverfahren-Zugangs.',
+    steps: [
+      'Verbinde ein gespeichertes Fachverfahren-Profil mit API v3 und öffne „Zustellpunkte“.',
+      'Lade einen eigenen Zustellpunkt oder bereite die Anlage eines neuen Testzustellpunkts vor.',
+      'Für verschlüsselte Nachrichten erzeuge lokale Testschlüssel beziehungsweise wähle ein erzeugtes Schlüsselpaket. Die Schlüssel müssen vor einer Registrierung sicher im Profil gespeichert sein.',
+      'Prüfe Typ, Bezeichnung, Leistungen und Schemainformationen. Bereite die Änderung vor und lies die Zusammenfassung, bevor du sie bestätigst.',
+      'Übernimm die eigenen Schlüssel anschließend für den Empfang und sende einen kleinen fiktiven Testantrag an den neuen Zustellpunkt.',
+      'Bei einem Schlüsselwechsel nutze den vorgesehenen Rotationsablauf. Entferne alte Schlüssel erst, wenn keine entsprechenden Nachrichten mehr entschlüsselt werden müssen.',
+    ],
+    notes: [
+      'Ein Zustellpunkt kann existieren, obwohl der Bestätigungsschritt unterbrochen wurde. Bei ungewissem Ausgang zuerst abgleichen, statt einen weiteren Zustellpunkt anzulegen.',
+      'Vorbereitungen und Bestätigungen gelten nur kurz und für genau die gezeigte Konfiguration.',
+      'Aufräumaktionen verändern TEST-Ressourcen. Prüfe Auswahl und Folgen. Das Leeren der lokalen Vorgangsablage ist davon unabhängig.',
+    ],
+  },
+  {
+    id: 'events',
+    title: 'Event Log und Nachverfolgung',
+    section: 'Event Log',
+    image: 'events',
+    caption: 'Suche anhand von Vorgangs-, Einreichungs- oder Antwort-ID.',
+    intro:
+      'Der Event Log hilft, den Transport einer Testnachricht nachzuvollziehen und ungewisse Ergebnisse abzugleichen.',
+    steps: [
+      'Öffne den Event Log direkt aus einem Versandversuch, einem Empfangsdetail oder einem lokalen Vorgang. Bekannte Kennungen werden übernommen.',
+      'Wähle die gewünschte Suche: Vorgang über Case-ID, Einreichung über Submission-ID oder Antwort über Reply-ID.',
+      'Verbinde den passenden TEST-Zugang. Trage fehlende Kennungen vollständig ein und starte die Prüfung.',
+      'Lies Ereignisse und Prüfhinweise. Bei längeren Verläufen lade die weiteren Seiten.',
+      'Vergleiche nach einem ungewissen Schreibversuch zunächst die vorhandenen Ereignisse und den Serverzustand. Ein neuer Versand ist eine eigene bewusste Aktion.',
+    ],
+    notes: [
+      'Der Event Log ist kein fachlicher Posteingang und enthält nicht automatisch die Antragsdaten.',
+      'Rechte und verfügbare Ereignisse können je Zugang unterschiedlich sein. Nicht gefunden bedeutet nicht automatisch „nie gesendet“.',
+    ],
+  },
+  {
+    id: 'problems',
+    title: 'Probleme verstehen und beheben',
+    section: 'Diagnose',
+    image: 'receive',
+    caption: 'Der Empfang zeigt fehlende Schlüssel und Prüfhinweise direkt am Antrag.',
+    intro:
+      'Fehlermeldungen erklären den nächsten sinnvollen Schritt. Wiederhole einen Schreibvorgang nicht unüberlegt.',
+    steps: [
+      '„Key missing“: Lade am ausgewählten Zustellpunkt einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
+      'Schlüssel abgewiesen: Vergleiche Zustellpunkt, Verwendungszweck und aktuelle Schlüsselregistrierung. Alte Nachrichten können einen früheren privaten Schlüssel benötigen.',
+      'Schema nicht verfügbar: Prüfe die Schema-URI in den Metadaten. Erlaube bei Bedarf öffentliche Quellen oder lade ein lokales Schema mit passender absoluter $id.',
+      'Zugriff verweigert: Prüfe Client-Rolle, API-Version und Zugehörigkeit des Zustellpunkts. Ein fremder Zustellpunkt wird durch seine ID nicht zu deinem eigenen.',
+      'Lokaler Speicher voll oder nicht verfügbar: Gib Speicherplatz frei beziehungsweise lösche nicht benötigte Vorgangskopien. Bei aktivierter Aufbewahrung wird ohne erfolgreiche Sicherung keine neue Empfangsbestätigung gesendet.',
+      'Bei einem unerwarteten Fehler öffne „Diagnose“, prüfe den lokalen Anwendungskern und sieh den Diagnosebericht vor dem Speichern an.',
+    ],
+    notes: [
+      'Diagnoseberichte enthalten nur freigegebene technische Angaben. Fachdaten, Secrets, Schlüssel, Dateinamen und Nachrichtenkennungen werden nicht aufgenommen.',
+      'Teile keine Secrets oder privaten Schlüssel in öffentlichen GitHub-Issues oder Screenshots. Für Fehlermeldungen reichen zunächst Version, API, Aktion und freigegebener Fehlercode.',
+      'Ausführliche Informationen zu FIT-Connect, Schnittstellen und Schemakonventionen findest du in der offiziellen Dokumentation des Dienstes.',
+    ],
+  },
+  {
+    id: 'accessibility',
+    title: 'Tastatur und Lesbarkeit',
+    section: null,
+    image: 'cases',
+    caption: 'Suchfelder, klar beschriftete Aktionen und strukturierte Inhalte unterstützen die Bedienung.',
+    intro:
+      'Die Oberfläche lässt sich mit Tastatur, vergrößerter Darstellung sowie den üblichen WebView-Hilfsmitteln bedienen. Nicht alle Dokumentinhalte sind automatisch barrierefrei.',
+    steps: [
+      'Wechsle mit Tab und Umschalt+Tab zwischen Bedienelementen. Betätige Schaltflächen mit Eingabe oder Leertaste.',
+      'Nutze die Bereichsauswahl links. Der aktuelle Bereich ist gekennzeichnet; nach dem Wechsel steht die Überschrift im Fokus.',
+      'Schließe Dialoge mit Escape oder „Schließen“. Vor einer Löschbestätigung ist „Abbrechen“ voreingestellt.',
+      'Wähle für Dateien die beschriftete Dateiauswahl, wenn du kein Drag-and-drop verwenden möchtest. Im BPMN-Bereich steht eine textliche Auswahl neben dem Diagramm bereit.',
+      'Nutze die Betriebssystem-Skalierung für größere Darstellung und den Hell-/Dunkel-Schalter für dein bevorzugtes Erscheinungsbild.',
+      'Bei PDFs öffne den auslesbaren Seitentext. Bei gescannten Anlagen oder unzugänglichen Originaldokumenten benötigst du gegebenenfalls ein externes geeignetes Hilfsmittel.',
+    ],
+    notes: [
+      'Schema-Labels werden aus verfügbaren Schemaquellen übernommen. Ohne solche Informationen zeigt die Anwendung die tatsächlichen technischen Feldnamen.',
+      'Diese Hilfe und alle Bilder werden mit der Anwendung ausgeliefert und funktionieren ohne Internetverbindung. Die Verbindung mit der TEST-API selbst benötigt Internet.',
+    ],
+  },
+];

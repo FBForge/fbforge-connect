@@ -321,7 +321,7 @@ export async function executeReply(invoke, session, prepared) {
     return result;
   } catch (error) {
     const code = typeof error === 'string' ? error : error?.message;
-    if (code === 'engine_busy') throw error;
+    if (code === 'engine_busy' || code === 'case_limit') throw error;
     return Object.freeze({
       ...expected,
       status: 'uncertain',

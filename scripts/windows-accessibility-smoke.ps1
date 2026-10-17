@@ -125,6 +125,7 @@ function Check-Spoken([string]$Name, $Type) {
     [AccessibilityKeys]::ReportFocus()
     $spoken = Wait-Check {
         $records = @(Read-Capture)
+        if (@($records | Where-Object { $_.PSObject.Properties.Name -contains 'captureLimitReached' }).Count) { throw 'nvda_capture_limit_reached' }
         if ($records.Count -le $before) { return $false }
         foreach ($record in $records[$before..($records.Count - 1)]) {
             if ($record.PSObject.Properties.Name -contains 'text' -and $record.PSObject.Properties.Name -contains 'focus' -and $record.focus -eq $Name -and $record.text.IndexOf($Name, [StringComparison]::OrdinalIgnoreCase) -ge 0) { return $record.text }
@@ -220,12 +221,18 @@ automaticUpdates = disabled
     $demo = Check-Spoken 'Fiktiven Demo-Prozess öffnen' $buttonType
     Invoke-Control $demo
     $null = Check-Spoken 'Modell einpassen' $buttonType
+    $cases = Check-Spoken 'Vorgänge' $buttonType
+    Invoke-Control $cases
+    $null = Check-Spoken 'Vorgänge durchsuchen' $editType
+    $help = Check-Spoken 'Hilfe' $buttonType
+    Invoke-Control $help
+    $null = Check-Spoken 'Anleitung durchsuchen' $editType
     Write-Output ('Actual NVDA 2026.2 speech observation, ' + $checks.Count + ' control labels, protected field, native Tab order and Escape focus restoration passed')
     $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; installerSha256 = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant(); harnessCommit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; candidate = $(if ($ExpectedBinaryPath) { 'current build' } else { 'pinned previously verified installer' }); scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); initialWebViewActivation = 'one pointer click in empty Client-ID field'; keyboardTab = 'passed'; modalFocusRestoration = 'passed' }
     [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'fbforge-accessibility-result.json'), ($report | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 } catch {
     # The test never enters credentials. Log only known synthetic control names.
-    $knownNames = @('Verbinden','Client-ID','Client-Secret','Bei TEST anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen')
+    $knownNames = @('Verbinden','Client-ID','Client-Secret','Bei TEST anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen','Vorgänge','Vorgänge durchsuchen','Hilfe','Anleitung durchsuchen')
     $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
     if ($focused) {
         $label = if ($knownNames -contains $focused.Current.Name) { $focused.Current.Name } else { '(other control)' }

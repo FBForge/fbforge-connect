@@ -283,7 +283,7 @@ pub fn read_bounded(path: &Path, maximum: usize) -> Result<Vec<u8>, &'static str
     }
     Ok(bytes)
 }
-fn write_protected(path: &Path, bytes: &[u8]) -> Result<(), &'static str> {
+pub(crate) fn write_protected(path: &Path, bytes: &[u8]) -> Result<(), &'static str> {
     if path.exists()
         && !fs::symlink_metadata(path)
             .map_err(|_| "vault_unavailable")?
@@ -314,8 +314,11 @@ fn write_protected(path: &Path, bytes: &[u8]) -> Result<(), &'static str> {
 }
 
 #[cfg(not(windows))]
-mod protection {
+pub(crate) mod protection {
     use super::*;
+    pub fn transform_with_purpose(_: &[u8], _: bool, _: &[u8]) -> Result<Vec<u8>, &'static str> {
+        Err("vault_unsupported")
+    }
     pub fn encrypt(_: &[u8]) -> Result<Vec<u8>, &'static str> {
         Err("vault_unsupported")
     }
@@ -327,7 +330,7 @@ mod protection {
     }
 }
 #[cfg(windows)]
-mod protection {
+pub(crate) mod protection {
     use super::*;
     use std::{ffi::c_void, os::windows::ffi::OsStrExt, ptr};
     #[repr(C)]
@@ -361,7 +364,11 @@ mod protection {
         fn LocalFree(memory: *mut c_void) -> *mut c_void;
         fn MoveFileExW(source: *const u16, destination: *const u16, flags: u32) -> i32;
     }
-    fn transform(bytes: &[u8], encrypt: bool) -> Result<Vec<u8>, &'static str> {
+    pub fn transform_with_purpose(
+        bytes: &[u8],
+        encrypt: bool,
+        purpose: &[u8],
+    ) -> Result<Vec<u8>, &'static str> {
         if bytes.is_empty() || bytes.len() > MAX_FILE {
             return Err("vault_invalid");
         }
@@ -369,7 +376,6 @@ mod protection {
             size: bytes.len() as u32,
             data: bytes.as_ptr() as *mut u8,
         };
-        let purpose = b"FIT-Connect Test-Client / user profile / v1";
         let entropy = Blob {
             size: purpose.len() as u32,
             data: purpose.as_ptr() as *mut u8,
@@ -419,10 +425,10 @@ mod protection {
         result
     }
     pub fn encrypt(bytes: &[u8]) -> Result<Vec<u8>, &'static str> {
-        transform(bytes, true)
+        transform_with_purpose(bytes, true, b"FIT-Connect Test-Client / user profile / v1")
     }
     pub fn decrypt(bytes: &[u8]) -> Result<Vec<u8>, &'static str> {
-        transform(bytes, false)
+        transform_with_purpose(bytes, false, b"FIT-Connect Test-Client / user profile / v1")
     }
     pub fn replace(source: &Path, destination: &Path) -> Result<(), &'static str> {
         let from: Vec<u16> = source.as_os_str().encode_wide().chain(Some(0)).collect();

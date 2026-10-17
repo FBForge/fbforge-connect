@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import StructuredData from './StructuredData.vue';
+import PdfPreview from './PdfPreview.vue';
 
 const props = defineProps({
   preview: Object,
@@ -45,12 +46,13 @@ onBeforeUnmount(() => {
       :schema-uri="schemaUri"
       :schema-status="schemaStatus"
     />
+    <PdfPreview v-else-if="preview.kind === 'pdf'" :bytes="preview.bytes" />
     <pre v-else-if="preview.kind === 'text'">{{ preview.text }}</pre>
     <img v-else-if="preview.kind === 'image'" :src="preview.url" :alt="preview.filename" />
     <p class="small-note">
       {{
         preview.footer ||
-        'Inhalte und Verweise werden nicht ausgeführt. PDF, HTML, SVG und Office-Dateien bleiben ausschließlich als Download verfügbar.'
+        'Inhalte und Verweise werden nicht ausgeführt. HTML, SVG und Office-Dateien bleiben ausschließlich als Download verfügbar.'
       }}
     </p>
   </dialog>
