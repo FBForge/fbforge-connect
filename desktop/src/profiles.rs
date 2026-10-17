@@ -91,6 +91,7 @@ pub async fn save_opened(
         return Err("vault_conflict");
     }
     store.save(&profile)?;
+    bind_cases(app, state, session.api_version, &session.session_id, &id).await?;
     state.profiles.lock().await.insert(
         session.session_id.clone(),
         Binding {
@@ -180,6 +181,21 @@ pub async fn forget_profile(
         return Err("invalid_input");
     }
     let mut bindings = state.profiles.lock().await;
+    let cases = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "vault_unavailable")?
+        .join("cases")
+        .join(&profile_id);
+    if cases.try_exists().map_err(|_| "vault_unavailable")? {
+        if !std::fs::symlink_metadata(&cases)
+            .map_err(|_| "vault_unavailable")?
+            .is_dir()
+        {
+            return Err("vault_invalid");
+        }
+        std::fs::remove_dir_all(cases).map_err(|_| "vault_unavailable")?;
+    }
     vault(&app)?.forget(&profile_id)?;
     bindings.retain(|_, binding| binding.profile_id != profile_id);
     Ok(())
@@ -207,6 +223,7 @@ pub async fn open_saved_profile(
         return Err("engine_protocol_error");
     }
     opened(&state, api, profile.role).await;
+    bind_cases(&app, &state, api, &session.session_id, &profile_id).await?;
     if restore_keys {
         let restore = async {
             for item in &profile.keys {
@@ -404,4 +421,18 @@ pub async fn save_profile_defaults(
     binding.error = result.as_ref().err().copied();
     result?;
     Ok(defaults)
+}
+
+async fn bind_cases(
+    app: &tauri::AppHandle,
+    state: &EngineState,
+    api: ApiVersion,
+    session: &str,
+    profile: &str,
+) -> Result<(), &'static str> {
+    let value: SessionResource = request(app,state,serde_json::json!({"command":"case_bind","apiVersion":api,"sessionId":session,"archiveDocument":profile})).await?;
+    if !value.validate(api, session) || value.data != serde_json::json!({"bound":true}) {
+        return Err("engine_protocol_error");
+    }
+    Ok(())
 }

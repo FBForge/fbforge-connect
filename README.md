@@ -11,7 +11,9 @@ Das unabhängige Open-Source-Projekt unterstützt ausschließlich die **FIT-Conn
 ## Funktionen
 
 - Einreichungen und Antworten über API v2 und v3 senden, empfangen und prüfen.
-- JSON- und XML-Fachdaten übersichtlich lesen und Anlagen öffnen.
+- JSON- und XML-Fachdaten lesen; PDF-, Bild- und Textanlagen lokal ansehen.
+- Gesendete und empfangene Vorgänge wieder öffnen und auf Wunsch geschützt aufbewahren.
+- Bebilderte Schritt-für-Schritt-Hilfe direkt in der Anwendung nutzen.
 - Ereignisse nach Case-, Submission- und Reply-ID suchen.
 - Eigene v3-Zustellpunkte einrichten und Testschlüssel verwalten.
 - BPMN-Modelle öffnen und Prozessnachrichten auswählen.

@@ -18,7 +18,16 @@ test('main workspaces support keyboard navigation, reflow and automated accessib
   await expect(page.getByRole('link', { name: 'Zum Arbeitsbereich' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
-  for (const name of ['Senden', 'Empfangen', 'Zustellpunkte', 'Prozesse', 'Event Log', 'Info']) {
+  for (const name of [
+    'Vorgänge',
+    'Hilfe',
+    'Senden',
+    'Empfangen',
+    'Zustellpunkte',
+    'Prozesse',
+    'Event Log',
+    'Info',
+  ]) {
     await page.getByRole('button', { name, exact: true }).click();
     if (name === 'Prozesse') {
       await page.getByRole('button', { name: 'Fiktiven Demo-Prozess öffnen', exact: true }).click();

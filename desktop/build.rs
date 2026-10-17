@@ -1,6 +1,7 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "case_workspace",
             "update_profile",
             "export_profile_backup",
             "import_profile_backup",

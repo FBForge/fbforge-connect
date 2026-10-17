@@ -16,6 +16,7 @@ const props = defineProps({
   destinationId: String,
   keyRevision: Number,
   receiveRevision: Number,
+  target: Object,
 });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'receive-start']);
 const destination = ref(props.destinationId || ''),
@@ -25,7 +26,19 @@ const destination = ref(props.destinationId || ''),
   error = ref('');
 const pending = ref(false),
   heading = ref(null);
-const verified = ref(false);
+const verified = ref(false),
+  autoOpen = ref(0);
+watch(
+  () => props.target?.requestId,
+  async () => {
+    const target = props.target;
+    if (!target || !props.session) return;
+    destination.value = target.destinationId;
+    await nextTick();
+    submission.value = target.submissionId;
+    open(target.submissionId);
+  },
+);
 const receiptHistory = ref([]);
 const confirmedDetail = computed(() =>
   receiptHistory.value.find(
@@ -142,7 +155,7 @@ function search(offset = 0) {
 function open(id = submission.value.trim()) {
   detail.value = null;
   emit('receive-start');
-  run(
+  void run(
     'Einreichungsinformationen abrufen',
     (active) => loadSubmission(invoke, active, destination.value.trim(), id),
     async (result) => {
@@ -152,7 +165,10 @@ function open(id = submission.value.trim()) {
       await nextTick();
       heading.value?.focus();
     },
-  );
+  ).then(async () => {
+    await nextTick();
+    if (detail.value?.submissionId === id) autoOpen.value++;
+  });
 }
 </script>
 
@@ -200,7 +216,7 @@ function open(id = submission.value.trim()) {
             :disabled="disabled || !destination.trim() || !submission.trim()"
             @click="open()"
           >
-            Einreichung direkt öffnen
+            Einreichung öffnen und prüfen
           </button>
         </div>
       </form>
@@ -235,7 +251,7 @@ function open(id = submission.value.trim()) {
                       :disabled="disabled"
                       @click="open(item.submissionId)"
                     >
-                      Öffnen
+                      Öffnen und prüfen
                     </button>
                     <button
                       v-if="item.caseId"
@@ -368,6 +384,7 @@ function open(id = submission.value.trim()) {
       </span>
     </p>
     <ReceivePanel
+      :auto-open="autoOpen"
       :session="session"
       :detail="detail"
       :destination-id="destination.trim()"

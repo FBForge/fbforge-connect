@@ -111,7 +111,8 @@ export async function executeReplyReceipt(invoke, session, attempt) {
     if (!['confirmed', 'failed', 'uncertain'].includes(result.status)) fail();
     return result;
   } catch (cause) {
-    if ((typeof cause === 'string' ? cause : cause?.message) === 'engine_busy') throw cause;
+    const code = typeof cause === 'string' ? cause : cause?.message;
+    if (code === 'engine_busy' || code?.startsWith('vault_')) throw cause;
     return Object.freeze({ ...expected, status: 'uncertain', error: uncertainOperationError(cause) });
   }
 }

@@ -37,6 +37,8 @@ final class SessionManager implements AutoCloseable {
     private final Map<String, DestinationManagement> management = new HashMap<>();
     private final Map<String, SendSchemas> replySchemas = new HashMap<>();
     private final Map<String, SendSchemas> sendSchemas = new HashMap<>();
+    private final CaseRepository cases = new CaseRepository();
+    private final Map<String, String> caseScopes = new HashMap<>();
     private final ContentStore content;
     private final ReceiveStore received = new ReceiveStore();
     private final ReplyReceiveStore receivedReplies = new ReplyReceiveStore();
@@ -148,6 +150,8 @@ final class SessionManager implements AutoCloseable {
                                             ? resources.apply(version)
                                             : resourceTransport.forReplyReceipt(version)));
             entries.put(key, entry);
+            caseScopes.put(
+                    entry.id(), version.wireValue() + "/" + role.wireValue() + "/" + clientId);
             return entry.snapshot(true);
         } catch (Exception | LinkageError e) {
             if (candidate != null) candidate.close();
@@ -420,6 +424,7 @@ final class SessionManager implements AutoCloseable {
                             if (!detail.submissionId().toString().equals(submission)
                                     || !detail.destinationId().toString().equals(destination))
                                 throw new SessionException("invalid_resource");
+                            cases.notice(caseScopes.get(id), detail);
                             return detail;
                         });
         return new Data<>(version.wireValue(), id, "TEST", data);
@@ -484,6 +489,7 @@ final class SessionManager implements AutoCloseable {
             }
         }
         try {
+            cases.receive(caseScopes.get(id), result);
             var summary =
                     received.publish(
                             version,
@@ -563,16 +569,40 @@ final class SessionManager implements AutoCloseable {
                     version.wireValue(),
                     id,
                     "TEST",
-                    receivedReplies.publish(
-                            version,
-                            id,
-                            UUID.fromString(caseId),
-                            UUID.fromString(replyId),
-                            result));
+                    publishReplyCase(version, id, caseId, replyId, result));
         } catch (RuntimeException failure) {
             invalidateReceived(entry);
             throw failure;
         }
+    }
+
+    private ReplyReceiveStore.Summary publishReplyCase(
+            ApiVersion version,
+            String id,
+            String caseId,
+            String replyId,
+            ReceivedReplyContent result) {
+        cases.receive(caseScopes.get(id), result);
+        return receivedReplies.publish(
+                version, id, UUID.fromString(caseId), UUID.fromString(replyId), result);
+    }
+
+    Data<?> bindCases(ApiVersion version, String id, String profileId) {
+        var entry = find(version, id);
+        caseScopes.put(
+                id,
+                version.wireValue()
+                        + "/"
+                        + entry.key().role().wireValue()
+                        + "/profile/"
+                        + DestinationAccess.id(profileId));
+        return new Data<>(version.wireValue(), id, "TEST", Map.of("bound", true));
+    }
+
+    Data<?> caseWorkspace(ApiVersion version, String id, String document) {
+        find(version, id);
+        return new Data<>(
+                version.wireValue(), id, "TEST", cases.resource(caseScopes.get(id), document));
     }
 
     Data<?> receivedReply(
@@ -618,6 +648,7 @@ final class SessionManager implements AutoCloseable {
         var state = entry.replyReceipts().prepare(prepared);
         pendingReplyReceipts.put(id, draft);
         var request = draft.request();
+        cases.noticeReply(caseScopes.get(id), request.caseId(), request.replyId());
         var warnings =
                 draft.proofId() == null
                         ? List.<String>of()
@@ -671,8 +702,14 @@ final class SessionManager implements AutoCloseable {
                     throw failure;
                 }
             }
-            if (entry.replyReceipts().state().status().equals("confirmed"))
-                receivedReplies.clearOwner(id);
+            var receipt = entry.replyReceipts().state();
+            cases.receipt(
+                    caseScopes.get(id),
+                    receipt.replyId(),
+                    receipt.status(),
+                    receipt.action(),
+                    true);
+            if (receipt.status().equals("confirmed")) receivedReplies.clearOwner(id);
         } else if (command.equals("cancel_reply_receipt")) entry.replyReceipts().cancel(attemptId);
         else if (!command.equals("reply_receipt_state"))
             throw new SessionException("invalid_input");
@@ -1069,7 +1106,12 @@ final class SessionManager implements AutoCloseable {
         Entry entry = find(version, id);
         if (command.equals("execute_reply")) {
             var pending = pendingReplies.get(id);
-            if (pending == null) throw new SessionException("send_locked");
+            if (pending == null
+                    || entry.replySender().pendingInput() == null
+                    || !Objects.equals(attemptId, entry.replySender().state().attemptId()))
+                throw new SessionException("send_locked");
+            String recordId =
+                    cases.outgoing(caseScopes.get(id), entry.replySender().pendingInput());
             try {
                 registry.withSession(
                         version,
@@ -1094,6 +1136,13 @@ final class SessionManager implements AutoCloseable {
                                                                 "verification_failed");
                                                 }));
             } finally {
+                var outcome = entry.replySender().state();
+                cases.outcome(
+                        recordId,
+                        outcome.status(),
+                        pending.caseId(),
+                        pending.submissionId(),
+                        outcome.replyId());
                 try {
                     content.clearWorkspace(id);
                 } catch (RuntimeException failure) {
@@ -1168,6 +1217,7 @@ final class SessionManager implements AutoCloseable {
                                 || request.attachmentId() != null
                                         && !detail.attachments().contains(request.attachmentId()))
                             throw new SessionException("invalid_resource");
+                        cases.notice(caseScopes.get(entry.id()), detail);
                         if (request.action().equals("accept")) {
                             var proof = received.state(entry.key().version(), entry.id(), proofId);
                             var evidence = session.receiptEvidence(destination, submission);
@@ -1205,7 +1255,14 @@ final class SessionManager implements AutoCloseable {
                                             return null;
                                         });
                             });
-            if (entry.receipts().state().status().equals("confirmed")) invalidateReceived(entry);
+            var receipt = entry.receipts().state();
+            cases.receipt(
+                    caseScopes.get(id),
+                    receipt.submissionId(),
+                    receipt.status(),
+                    receipt.action(),
+                    false);
+            if (receipt.status().equals("confirmed")) invalidateReceived(entry);
         } else if (command.equals("cancel_receipt")) entry.receipts().cancel(attemptId);
         else if (!command.equals("receipt_state")) throw new SessionException("invalid_input");
         var state = entry.receipts().state();
@@ -1483,10 +1540,17 @@ final class SessionManager implements AutoCloseable {
     Data<?> send(ApiVersion version, String id, String command, String attemptId) {
         Entry entry = find(version, id);
         if (command.equals("execute_send")) {
+            if (entry.sender().pendingInput() == null
+                    || !Objects.equals(attemptId, entry.sender().state().attemptId()))
+                throw new SessionException("send_locked");
+            String recordId = cases.outgoing(caseScopes.get(id), entry.sender().pendingInput());
             registry.withSession(
                     version,
                     entry.session(),
                     session -> entry.sender().execute(attemptId, session, content.workspace(id)));
+            var outcome = entry.sender().state();
+            cases.outcome(
+                    recordId, outcome.status(), outcome.caseId(), outcome.submissionId(), null);
             try {
                 content.clearWorkspace(id);
             } catch (SessionException failure) {
@@ -1519,6 +1583,7 @@ final class SessionManager implements AutoCloseable {
             if (generated != null) generated.clear();
         }
         if (entry == null) return;
+        caseScopes.remove(entry.id());
         var replySchema = replySchemas.remove(entry.id());
         if (replySchema != null) replySchema.clear();
         var schemas = sendSchemas.remove(entry.id());
@@ -1542,6 +1607,7 @@ final class SessionManager implements AutoCloseable {
     }
 
     public void close() {
+        cases.close();
         eventLogs.clear();
         received.clear();
         receivedReplies.clear();

@@ -220,6 +220,12 @@ automaticUpdates = disabled
     $demo = Check-Spoken 'Fiktiven Demo-Prozess öffnen' $buttonType
     Invoke-Control $demo
     $null = Check-Spoken 'Modell einpassen' $buttonType
+    $cases = Check-Spoken 'Vorgänge' $buttonType
+    Invoke-Control $cases
+    $null = Check-Spoken 'Vorgänge durchsuchen' $editType
+    $help = Check-Spoken 'Hilfe' $buttonType
+    Invoke-Control $help
+    $null = Check-Spoken 'Anleitung durchsuchen' $editType
     Write-Output ('Actual NVDA 2026.2 speech observation, ' + $checks.Count + ' control labels, protected field, native Tab order and Escape focus restoration passed')
     $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; installerSha256 = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant(); harnessCommit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; candidate = $(if ($ExpectedBinaryPath) { 'current build' } else { 'pinned previously verified installer' }); scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); initialWebViewActivation = 'one pointer click in empty Client-ID field'; keyboardTab = 'passed'; modalFocusRestoration = 'passed' }
     [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'fbforge-accessibility-result.json'), ($report | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))

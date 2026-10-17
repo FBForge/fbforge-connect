@@ -22,6 +22,7 @@ import licenseText from '../../LICENSE?raw';
 import bpmnLicense from '../../licenses/bpmn-js.txt?raw';
 import thirdPartyNotices from '../../THIRD_PARTY_NOTICES.md?raw';
 import apacheLicense from '../../licenses/Apache-2.0.txt?raw';
+import pdfLicense from '../../licenses/pdfjs-NOTICE.txt?raw';
 import { probeAdapter, errorMessage } from './diagnostics.js';
 import { openSession, updateSession, resetsSessions } from './sessions.js';
 import ProfileEditor from './ProfileEditor.vue';
@@ -34,6 +35,19 @@ import DestinationManager from './DestinationManager.vue';
 import SubmissionSender from './SubmissionSender.vue';
 import SubmissionBrowser from './SubmissionBrowser.vue';
 import EventLogPanel from './EventLogPanel.vue';
+import CaseWorkspace from './CaseWorkspace.vue';
+const ApplicationHelp = defineAsyncComponent(() => import('./ApplicationHelp.vue'));
+const helpTopic = ref('start'),
+  receiveTarget = shallowRef(null);
+function showHelp(topic = 'start') {
+  helpTopic.value = topic;
+  void navigate('Hilfe');
+}
+function reopenCase(record) {
+  selectedDestination.value = record.destinationId;
+  receiveTarget.value = { ...record, requestId: crypto.randomUUID() };
+  void navigate('Empfangen');
+}
 import ReplyBrowser from './ReplyBrowser.vue';
 import {
   listProfiles,
@@ -247,6 +261,11 @@ async function probe(versions) {
 const version = packageInfo.version;
 const navigation = [
   {
+    name: 'Vorgänge',
+    icon: 'events',
+    description: 'Gesendete und empfangene Anträge, Antworten und Anlagen lokal wieder öffnen.',
+  },
+  {
     name: 'Senden',
     icon: 'send',
     description: 'Einreichungen mit Fachdaten und Anlagen vorbereiten und an TEST übermitteln.',
@@ -270,6 +289,11 @@ const navigation = [
     name: 'Zustellpunkte',
     icon: 'destinations',
     description: 'Eigene Zustellpunkte ansehen und über API v3 verwalten.',
+  },
+  {
+    name: 'Hilfe',
+    icon: 'info',
+    description: 'Schritt für Schritt: verbinden, testen und Ergebnisse nachvollziehen.',
   },
   {
     name: 'Diagnose',
@@ -518,7 +542,7 @@ function clearHistory() {
       <nav class="app-navigation" aria-label="Hauptnavigation">
         <p class="nav-caption">Arbeitsbereich</p>
         <button
-          v-for="item in navigation.slice(0, 4)"
+          v-for="item in navigation.slice(0, 5)"
           :key="item.name"
           type="button"
           class="nav-item"
@@ -532,7 +556,7 @@ function clearHistory() {
         <div class="nav-utilities">
           <p class="nav-caption">Anwendung</p>
           <button
-            v-for="item in navigation.slice(4)"
+            v-for="item in navigation.slice(5)"
             :key="item.name"
             type="button"
             class="nav-item"
@@ -633,6 +657,7 @@ function clearHistory() {
             @invalidate="keyRevision++"
           />
           <SubmissionBrowser
+            :target="receiveTarget"
             v-show="section === 'Empfangen'"
             :session="activeSession"
             :busy="busy"
@@ -645,6 +670,17 @@ function clearHistory() {
             @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
             @fatal="fatal"
           />
+          <CaseWorkspace
+            v-show="section === 'Vorgänge'"
+            :session="activeSession"
+            :busy="busy"
+            :visible="section === 'Vorgänge'"
+            @busy="resourceBusy"
+            @event-log="openEventLog"
+            @receive="reopenCase"
+            @help="showHelp"
+          />
+          <ApplicationHelp v-if="section === 'Hilfe'" :topic="helpTopic" @navigate="navigate" />
           <EventLogPanel
             :known-targets="caseRecords"
             v-show="section === 'Event Log'"
@@ -1091,6 +1127,10 @@ function clearHistory() {
       Aktuell geladene Sitzungsschlüssel bleiben bis zum Abmelden verfügbar.
     </p>
     <p>
+      Dauerhaft gespeicherte Vorgangskopien dieses Profils werden ebenfalls gelöscht. Sitzungskopien bleiben
+      bis zum Beenden der Anwendung erhalten.
+    </p>
+    <p>
       Ohne weitere Sicherung können spätere Antworten und bereits verschlüsselte Nachrichten unter Umständen
       nicht mehr entschlüsselt werden.
     </p>
@@ -1117,7 +1157,8 @@ function clearHistory() {
 
 {{ bpmnLicense }}
 
-{{ apacheLicense }}</pre>
+{{ apacheLicense }}
+{{ pdfLicense }}</pre>
   </dialog>
   <dialog ref="licenseDialog" class="tool-dialog license-dialog" aria-labelledby="license-dialog-title">
     <div class="tool-section-heading">

@@ -23,7 +23,16 @@ for (const scale of [1.25, 1.5, 2]) {
     });
     await page.goto('http://127.0.0.1:1420/');
     expect(await page.evaluate(() => devicePixelRatio)).toBe(scale);
-    for (const name of ['Senden', 'Empfangen', 'Event Log', 'Zustellpunkte', 'Prozesse', 'Info']) {
+    for (const name of [
+      'Vorgänge',
+      'Hilfe',
+      'Senden',
+      'Empfangen',
+      'Event Log',
+      'Zustellpunkte',
+      'Prozesse',
+      'Info',
+    ]) {
       await page.getByRole('button', { name, exact: true }).click();
       if (name === 'Prozesse') {
         await page.getByRole('button', { name: 'Fiktiven Demo-Prozess öffnen', exact: true }).click();

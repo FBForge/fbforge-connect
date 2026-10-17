@@ -3,6 +3,7 @@ import { productName } from './product.js';
 
 // Deliberately exclude arguments, response bodies, identifiers, paths and free-form messages.
 export const operationLabels = Object.freeze({
+  case_workspace: 'Lokale Vorgangsablage',
   list_key_inventory: 'Schlüsselbestand ansehen',
   remove_key_inventory_item: 'Einzelnen Schlüsselbestand entfernen',
   update_profile: 'Gespeichertes Profil bearbeiten',

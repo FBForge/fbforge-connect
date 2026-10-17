@@ -1,6 +1,6 @@
 {
   "name": "fit-connect-integration-client",
-  "version": "0.1.0-dev.8",
+  "version": "0.1.0-dev.9",
   "private": true,
   "type": "module",
   "license": "EUPL-1.2",
@@ -24,6 +24,7 @@
   "dependencies": {
     "@tauri-apps/api": "2.12.4",
     "bpmn-js": "18.31.0",
+    "pdfjs-dist": "6.4.299",
     "vue": "3.5.43"
   },
   "devDependencies": {
