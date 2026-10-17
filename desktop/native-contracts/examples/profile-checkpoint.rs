@@ -43,8 +43,9 @@ fn run() -> Result<(), &'static str> {
     }
 }
 fn main() {
-    if run().is_err() {
-        eprintln!("protected_checkpoint_failed");
+    if let Err(code) = run() {
+        // Only fixed symbolic codes escape this helper; never echo input or serde errors.
+        eprintln!("protected_checkpoint_failed:{code}");
         std::process::exit(1);
     }
 }

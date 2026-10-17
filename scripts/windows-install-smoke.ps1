@@ -113,7 +113,9 @@ function Save-SyntheticProfile {
     $bridge = [System.Diagnostics.Process]::Start($info)
     $inputBytes = [Text.Encoding]::UTF8.GetBytes(($taskProfile | ConvertTo-Json -Depth 8 -Compress))
     $bridge.StandardInput.BaseStream.Write($inputBytes, 0, $inputBytes.Length)
-    $bridge.StandardInput.BaseStream.Flush(); $bridge.StandardInput.Close()
+    # Close the raw pipe, not its unused StreamWriter: Windows PowerShell 5.1 can
+    # otherwise append the writer encoding preamble after the JSON payload.
+    $bridge.StandardInput.BaseStream.Flush(); $bridge.StandardInput.BaseStream.Close()
     if (-not $bridge.WaitForExit(30000)) { $bridge.Kill(); throw 'profile_fixture_timeout' }
     if ($bridge.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $taskProfileFile)) { throw 'profile_fixture_failed' }
     $bridge.Dispose()
