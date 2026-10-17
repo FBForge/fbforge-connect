@@ -149,3 +149,15 @@ export async function readCaseFile(invoke, session, recordId, part, { signal } =
     throw error;
   }
 }
+
+export function caseErrorMessage(cause) {
+  const code = typeof cause === 'string' ? cause : cause?.message;
+  return {
+    vault_limit:
+      'Die geschützte Vorgangsablage hat ihre Größen- oder Datensatzgrenze erreicht. Lösche nicht mehr benötigte lokale Kopien.',
+    vault_invalid:
+      'Diese lokale Kopie ist beschädigt oder kann mit diesem Windows-Benutzerkonto nicht gelesen werden. Andere Kopien bleiben erhalten.',
+    vault_unavailable:
+      'Die geschützte Vorgangsablage ist nicht verfügbar. Prüfe das Benutzerkonto, Dateizugriffsrechte und den freien Speicherplatz.',
+  }[code];
+}

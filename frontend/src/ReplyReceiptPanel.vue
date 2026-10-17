@@ -298,6 +298,7 @@ function openEvents() {
       aria-labelledby="reply-receipt-confirm-title"
       @cancel.prevent="dismiss"
     >
+      <p v-if="error" role="alert">{{ error }}</p>
       <h2 id="reply-receipt-confirm-title">
         {{ prepared.attempt.action === 'accept' ? 'Antwort in TEST annehmen?' : 'Antwort in TEST ablehnen?' }}
       </h2>

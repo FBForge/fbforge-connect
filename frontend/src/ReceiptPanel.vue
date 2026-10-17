@@ -361,6 +361,7 @@ async function confirm() {
       aria-labelledby="receipt-confirm-title"
       @cancel.prevent="dismiss"
     >
+      <p v-if="error" role="alert">{{ error }}</p>
       <h2 id="receipt-confirm-title">
         {{
           prepared.attempt.action === 'accept'

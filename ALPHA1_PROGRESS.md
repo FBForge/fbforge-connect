@@ -1,8 +1,8 @@
 # Alpha-1-Umsetzung
 
-Work-Goal: [ALPHA1_GOAL.md](ALPHA1_GOAL.md). Stand: **dev.8-Kandidat, noch keine Alpha-1-Freigabe**.
+Work-Goal: [ALPHA1_GOAL.md](ALPHA1_GOAL.md). Stand: **dev.9-Entwicklungsstand, noch keine Alpha-1-Freigabe**.
 
-Neues Anwenderfeedback erweitert den gewünschten Umfang um eine vollständige Vorgangsübersicht, optionale geschützte Inhaltsablage und PDF-Vorschau. Dieses [Folgepaket](planning/case-workspace.md) ist geplant und noch nicht umgesetzt; die bisherigen Kennungs-/Versandübersichten sind kein vollständiges Antragsarchiv.
+Neues Anwenderfeedback erweitert den gewünschten Umfang um eine vollständige Vorgangsübersicht, optionale geschützte Inhaltsablage und PDF-Vorschau. Dieses [Folgepaket](planning/case-workspace.md) ist jetzt auf `develop` implementiert: native Vorgangskopien, optionale separate DPAPI-Aufbewahrung, erneutes Lesen, Einzellöschung, lokale PDF-Vorschau und bebilderte Offline-Hilfe. Die abschließenden Paket- und Live-Nachweise werden gesondert festgehalten.
 
 Im ersten manuellen Durchlauf wurden Verbindung, Zustellpunktverwaltung, Empfang, Formularansicht und die Erklärung bei fehlendem Schlüssel positiv zurückgemeldet. Replies und BPMN sind durch diesen Durchlauf noch nicht abgenommen. Die PDF-Downloadbeschränkung und fehlende vollständige Vorgangsablage sind im Folgeplan aufgenommen.
 

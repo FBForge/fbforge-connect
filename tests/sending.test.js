@@ -305,3 +305,19 @@ test('process reply offers are explicit, bounded and unavailable over v2', async
       /invalid_submission/,
     );
 });
+
+test('local case guard before dispatch never becomes an uncertain remote write', async () => {
+  let calls = 0;
+  await assert.rejects(
+    executeSend(
+      async () => {
+        calls++;
+        throw new Error('case_limit');
+      },
+      session,
+      identity,
+    ),
+    /case_limit/,
+  );
+  assert.equal(calls, 1);
+});

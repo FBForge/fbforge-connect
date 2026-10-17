@@ -180,4 +180,50 @@ class CaseRepositoryTest {
             assertFalse(JSON.toJson(item).contains(channel.toString()));
         }
     }
+
+    @Test
+    void anUnverifiedEnvelopeUpgradesInPlaceWithoutInventingVerifiedData() {
+        try (var cases = new CaseRepository()) {
+            var data = received();
+            var info =
+                    new SubmissionInfo(
+                            data.destinationId(),
+                            null,
+                            data.submissionId(),
+                            data.caseId(),
+                            List.of(),
+                            "urn:test:service",
+                            "Fiktive Leistung",
+                            null,
+                            null,
+                            null,
+                            true,
+                            true);
+            cases.notice("scope", info);
+            var before = cases.list("scope").getFirst();
+            assertEquals("unverified", before.status());
+            var page =
+                    (CaseRepository.Page)
+                            cases.resource("scope", request("parts", before.recordId(), null, 0));
+            assertEquals(1, page.total());
+            assertEquals("metadata", page.parts().getFirst().kind());
+            assertEquals(before.recordId(), cases.receive("scope", data));
+            var after = cases.list("scope").getFirst();
+            assertEquals("verified", after.status());
+            assertEquals(before.createdAt(), after.createdAt());
+            assertNotEquals(before.revision(), after.revision());
+            assertEquals(
+                    4,
+                    ((CaseRepository.Page)
+                                    cases.resource(
+                                            "scope", request("parts", after.recordId(), null, 0)))
+                            .total());
+            var limit =
+                    assertThrows(
+                            SessionException.class,
+                            () -> cases.capacity(CaseRepository.MAX_BYTES + 1));
+            assertEquals("case_limit", limit.code());
+            assertEquals(1, cases.list("scope").size());
+        }
+    }
 }

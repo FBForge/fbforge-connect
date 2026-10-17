@@ -19,6 +19,7 @@ public final class SessionException extends RuntimeException {
                     "test_certificate_required",
                     "invalid_input",
                     "content_limit",
+                    "case_limit",
                     "destination_conflict",
                     "destination_update_locked",
                     "destination_no_keys",

@@ -169,7 +169,7 @@ export async function executeReceipt(invoke, session, prepared) {
     return result;
   } catch (error) {
     const code = typeof error === 'string' ? error : error?.message;
-    if (code === 'engine_busy' || code?.startsWith('vault_')) throw error;
+    if (code === 'engine_busy' || code?.startsWith('vault_') || code === 'case_storage_pending') throw error;
     return Object.freeze({
       ...expected,
       status: 'uncertain',

@@ -19,6 +19,10 @@ export async function probeAdapter(invoke, apiVersion) {
 
 export function errorMessage(code) {
   const messages = {
+    case_limit:
+      'Die lokale Vorgangsablage ist voll. Lösche unter „Vorgänge“ nicht mehr benötigte Kopien und bereite die Aktion erneut vor. Es wurden keine Serverdaten verändert.',
+    case_storage_pending:
+      'Die Vorgangskopie konnte noch nicht geschützt gespeichert werden. Prüfe unter „Vorgänge“ den Speicherstatus und den freien Speicherplatz, bevor du den Empfang bestätigst.',
     desktop_required: 'Diese Funktion ist nur in der Desktop-Anwendung verfügbar.',
     engine_not_staged: 'Die lokale Java-Laufzeit fehlt. Bitte zuerst den Java-Kern bauen und bereitstellen.',
     engine_start_failed: 'Der lokale Java-Kern konnte nicht gestartet werden.',
@@ -64,6 +68,8 @@ export function errorMessage(code) {
 
 // Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
 const reportableCodes = new Set([
+  'case_limit',
+  'case_storage_pending',
   'vault_profile_required',
   'vault_unavailable',
   'vault_pending',

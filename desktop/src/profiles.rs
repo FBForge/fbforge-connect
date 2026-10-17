@@ -91,7 +91,15 @@ pub async fn save_opened(
         return Err("vault_conflict");
     }
     store.save(&profile)?;
-    bind_cases(app, state, session.api_version, &session.session_id, &id).await?;
+    bind_cases(
+        app,
+        state,
+        session.api_version,
+        &session.session_id,
+        session.role,
+        &id,
+    )
+    .await?;
     state.profiles.lock().await.insert(
         session.session_id.clone(),
         Binding {
@@ -162,6 +170,11 @@ pub async fn before_open(
 }
 pub async fn opened(state: &EngineState, api: ApiVersion, role: SessionRole) {
     state
+        .case_profiles
+        .lock()
+        .await
+        .retain(|_, item| item.api != api || item.role != role);
+    state
         .profiles
         .lock()
         .await
@@ -198,6 +211,11 @@ pub async fn forget_profile(
     }
     vault(&app)?.forget(&profile_id)?;
     bindings.retain(|_, binding| binding.profile_id != profile_id);
+    state
+        .case_profiles
+        .lock()
+        .await
+        .retain(|_, binding| binding.profile_id != profile_id);
     Ok(())
 }
 #[tauri::command]
@@ -223,7 +241,15 @@ pub async fn open_saved_profile(
         return Err("engine_protocol_error");
     }
     opened(&state, api, profile.role).await;
-    bind_cases(&app, &state, api, &session.session_id, &profile_id).await?;
+    bind_cases(
+        &app,
+        &state,
+        api,
+        &session.session_id,
+        session.role,
+        &profile_id,
+    )
+    .await?;
     if restore_keys {
         let restore = async {
             for item in &profile.keys {
@@ -428,11 +454,20 @@ async fn bind_cases(
     state: &EngineState,
     api: ApiVersion,
     session: &str,
+    role: SessionRole,
     profile: &str,
 ) -> Result<(), &'static str> {
     let value: SessionResource = request(app,state,serde_json::json!({"command":"case_bind","apiVersion":api,"sessionId":session,"archiveDocument":profile})).await?;
     if !value.validate(api, session) || value.data != serde_json::json!({"bound":true}) {
         return Err("engine_protocol_error");
     }
+    state.case_profiles.lock().await.insert(
+        session.to_owned(),
+        crate::cases::Binding {
+            profile_id: profile.to_owned(),
+            api,
+            role,
+        },
+    );
     Ok(())
 }

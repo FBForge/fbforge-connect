@@ -339,3 +339,19 @@ test('reply schema malformed pages, missing consent and failed cleanup cannot au
     /content_cleanup_failed/,
   );
 });
+
+test('local case guard before dispatch never becomes an uncertain remote write', async () => {
+  let calls = 0;
+  await assert.rejects(
+    executeReply(
+      async () => {
+        calls++;
+        throw new Error('case_limit');
+      },
+      session,
+      attempt,
+    ),
+    /case_limit/,
+  );
+  assert.equal(calls, 1);
+});

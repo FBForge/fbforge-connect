@@ -40,6 +40,7 @@ struct EngineState {
     process: Mutex<Option<EngineProcess>>,
     sequence: AtomicU64,
     profiles: Mutex<profiles::Bindings>,
+    case_profiles: Mutex<cases::Bindings>,
     case_errors: Mutex<std::collections::HashMap<String, &'static str>>,
 }
 
@@ -335,6 +336,7 @@ async fn session_action(
     }
     if !connected {
         state.profiles.lock().await.remove(id);
+        state.case_profiles.lock().await.remove(id);
     }
     Ok(value)
 }
@@ -421,7 +423,7 @@ async fn resource_action(
     ) {
         cases::checkpoint(app, state, version, id)
             .await
-            .map_err(|_| "vault_pending")?;
+            .map_err(|_| "case_storage_pending")?;
     }
     let value: SessionResource = request(app, state, command).await?;
     if !value.validate(version, id) {

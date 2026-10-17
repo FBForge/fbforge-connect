@@ -60,7 +60,7 @@ final class CaseRepository implements AutoCloseable {
         if (length < 0
                 || bytes - (old == null ? 0 : old.summary().totalBytes()) + length > MAX_BYTES
                 || records.size() - (old == null ? 0 : 1) >= MAX_RECORDS)
-            throw new SessionException("content_limit");
+            throw new SessionException("case_limit");
     }
 
     private static String id(Object value) {

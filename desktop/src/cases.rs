@@ -7,13 +7,22 @@ use crate::{
 use serde_json::{json, Value};
 use tauri::{Manager, State};
 
+/// Content access is separate from permission to checkpoint or restore the key archive.
+/// Credential-only profile sessions may still read their protected historical documents.
+pub struct Binding {
+    pub profile_id: String,
+    pub api: ApiVersion,
+    pub role: crate::protocol::SessionRole,
+}
+pub type Bindings = std::collections::HashMap<String, Binding>;
+
 async fn disk(
     app: &tauri::AppHandle,
     state: &EngineState,
     api: ApiVersion,
     session: &str,
 ) -> Result<Option<CaseStore>, &'static str> {
-    let bindings = state.profiles.lock().await;
+    let bindings = state.case_profiles.lock().await;
     let Some(binding) = bindings.get(session) else {
         return Ok(None);
     };

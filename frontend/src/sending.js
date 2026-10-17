@@ -272,7 +272,7 @@ export async function executeSend(invoke, session, prepared) {
     return result;
   } catch (error) {
     const code = typeof error === 'string' ? error : error?.message;
-    if (code === 'engine_busy') throw error; // Native mutex rejected the operation before dispatch.
+    if (code === 'engine_busy' || code === 'case_limit') throw error; // Native mutex rejected the operation before dispatch.
     return Object.freeze({
       attemptId: prepared.attemptId,
       status: 'uncertain',

@@ -112,7 +112,7 @@ export async function executeReplyReceipt(invoke, session, attempt) {
     return result;
   } catch (cause) {
     const code = typeof cause === 'string' ? cause : cause?.message;
-    if (code === 'engine_busy' || code?.startsWith('vault_')) throw cause;
+    if (code === 'engine_busy' || code?.startsWith('vault_') || code === 'case_storage_pending') throw cause;
     return Object.freeze({ ...expected, status: 'uncertain', error: uncertainOperationError(cause) });
   }
 }

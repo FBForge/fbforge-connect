@@ -1,7 +1,7 @@
 <script setup>
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
-import { listCases, caseParts, readCaseFile, caseRequest, caseStatus } from './cases.js';
+import { listCases, caseParts, readCaseFile, caseRequest, caseStatus, caseErrorMessage } from './cases.js';
 import { createPreview, disposePreview, canPreview } from './submission-preview.js';
 import { errorMessage } from './diagnostics.js';
 import { SCHEMA_VIEW_BYTES } from './schema-annotations.js';
@@ -69,7 +69,7 @@ async function run(operation) {
   try {
     await operation(session, () => stamp === generation);
   } catch (cause) {
-    if (stamp === generation) error.value = errorMessage(cause);
+    if (stamp === generation) error.value = caseErrorMessage(cause) || errorMessage(cause);
   } finally {
     pending.value = false;
     emit('busy', false);
@@ -391,6 +391,11 @@ onBeforeUnmount(() => {
         :schema-document="application.schemaDocument"
         :schema-uri="application.schemaUri"
       />
+      <p v-else-if="!parts.some((part) => part.kind === 'data')">
+        Für diese Kopie wurden noch keine entschlüsselten Fachdaten gespeichert. Die Transportinformationen
+        stehen unter „Technische Inhalte und Kennungen“. Prüfe die Nachricht im Empfang, wenn sie noch auf dem
+        Server verfügbar ist.
+      </p>
       <p v-else>
         Für diese Fachdaten ist keine Formularansicht verfügbar oder die Grenze von 256 KiB wurde
         überschritten. Das Original ist unter „Technische Inhalte“ verfügbar.

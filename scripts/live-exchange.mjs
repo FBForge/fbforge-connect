@@ -120,12 +120,12 @@ async function archivedCopy(
     files.push(...page.parts);
     if (files.length === page.total) break;
   }
-  for (const [kind, original] of [
+  for (const [partKind, original] of [
     ['data', expectedData],
     ['attachment', expectedAttachment],
   ]) {
     if (!original) continue;
-    const part = files.find((p) => p.kind === kind);
+    const part = files.find((p) => p.kind === partKind);
     requireCheck(part && part.totalBytes === original.length, 'case_part_missing');
     const chunks = [];
     for (let offset = 0; offset < part.totalBytes; offset += 24576) {
