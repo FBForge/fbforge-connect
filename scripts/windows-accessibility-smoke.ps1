@@ -64,6 +64,12 @@ public static class AccessibilityKeys {
         Key(key, true);
         System.Threading.Thread.Sleep(250);
     }
+    public static void Previous() {
+        Key(0x10, false);
+        Press(0x09);
+        Key(0x10, true);
+        System.Threading.Thread.Sleep(250);
+    }
     public static void ReportFocus() {
         Key(0x2d, false); // NVDA's standard Insert+Tab command.
         System.Threading.Thread.Sleep(40);
@@ -80,6 +86,7 @@ $taskCapture = Join-Path $taskRoot 'speech.jsonl'
 $taskApp = $null
 $taskNvda = $null
 $taskWindow = $null
+$taskInputActive = $false
 $checks = [Collections.Generic.List[object]]::new()
 
 function Wait-Check([scriptblock]$Check, [string]$Code, [int]$Seconds = 30) {
@@ -108,6 +115,12 @@ function Check-Spoken([string]$Name, $Type) {
     $before = @(Read-Capture).Count
     if (-not [AccessibilityKeys]::FocusWindow([IntPtr]$taskWindow.Current.NativeWindowHandle)) { throw 'a11y_window_not_foreground' }
     $element.SetFocus()
+    if ($taskInputActive) {
+        # Native navigation emits real focus events for dynamically mounted WebView controls.
+        [AccessibilityKeys]::Press(0x09)
+        [AccessibilityKeys]::Previous()
+        $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq $Name } ('a11y_native_focus_mismatch:' + $Name) 5
+    }
     Start-Sleep -Milliseconds 300
     [AccessibilityKeys]::ReportFocus()
     $spoken = Wait-Check {
@@ -185,11 +198,13 @@ automaticUpdates = disabled
     $editType = [System.Windows.Automation.ControlType]::Edit
     $connect = Check-Spoken 'Verbinden' $buttonType
     Invoke-Control $connect
-    $clientField = Check-Spoken 'Client-ID' $editType
+    $clientField = Wait-Check { Find-Control 'Client-ID' $editType } 'a11y_client_field_missing'
     # UIA SetFocus can focus the DOM without activating the native WebView input host.
     # One real click in this empty field activates it; Tab/Escape remain actual keys.
     $point = $clientField.GetClickablePoint()
     [AccessibilityKeys]::ActivateInput([int]$point.X, [int]$point.Y)
+    $taskInputActive = $true
+    $null = Check-Spoken 'Client-ID' $editType
     [AccessibilityKeys]::Press(0x09)
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Client-Secret' } 'native_tab_order_invalid'
     $null = Check-Spoken 'Client-Secret' $editType
@@ -217,6 +232,7 @@ automaticUpdates = disabled
         $foreground = $taskWindow -and [AccessibilityKeys]::GetForegroundWindow() -eq [IntPtr]$taskWindow.Current.NativeWindowHandle
         Write-Host ('Accessibility failure focus: ' + $label + '; role=' + $focused.Current.ControlType.ProgrammaticName + '; foreground=' + $foreground)
     }
+    Write-Host ('Observed capture records: ' + @(Read-Capture).Count)
     foreach ($record in @(Read-Capture | Where-Object { $_.PSObject.Properties.Name -contains 'key' } | Select-Object -Last 12)) { Write-Host ('Observed NVDA key: ' + ($record | ConvertTo-Json -Compress)) }
     throw
 } finally {
