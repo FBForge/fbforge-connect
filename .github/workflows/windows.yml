@@ -3,7 +3,7 @@ name: Alpha Windows validation
 on:
   pull_request:
   push:
-    branches: [main, develop, alpha1-work]
+    branches: [main, develop]
   workflow_dispatch:
     inputs:
       offline:
@@ -102,7 +102,7 @@ jobs:
             desktop/native-contracts/target
           key: ${{ steps.rust-cache.outputs.cache-primary-key }}
       - name: Download the pinned dev.7 installer for upgrade validation
-        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha1-work'
+        if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -165,7 +165,7 @@ jobs:
           path: desktop/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
       - name: Check real TEST authentication and read operations
-        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha1-work'
+        if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
         env:
           SENDERID: ${{ secrets.SENDERID }}
           SENDERSECRET: ${{ secrets.SENDERSECRET }}

@@ -4,7 +4,7 @@ FBForge Connect ist eine Windows-Desktop-Anwendung für Integrationstests auf TE
 
 ## Lokal starten und prüfen
 
-Benötigt werden Node.js ab 22.13.0, JDK 25 und die im Desktop-Verzeichnis festgelegte Rust-Version. Windows benötigt außerdem die Tauri-Buildvoraussetzungen. Die README beschreibt den vollständigen Windows-Build.
+Benötigt werden Node.js ab 22.13.0, JDK 25 und die im Desktop-Verzeichnis festgelegte Rust-Version. Windows benötigt außerdem die Tauri-Buildvoraussetzungen. Unter Windows werden WebView2, die MSVC-Toolchain, Visual Studio C++ Build Tools und das Windows SDK benötigt; siehe die [Tauri-Voraussetzungen](https://v2.tauri.app/start/prerequisites/).
 
 ```sh
 npm ci --ignore-scripts
@@ -22,6 +22,23 @@ cargo test --manifest-path desktop/native-contracts/Cargo.toml --locked
 ```
 
 Unter Windows kann `engine/mvnw.cmd` verwendet werden. Einige Java-Tests starten lokale HTTP-Server und benötigen dafür eine erlaubte Loopback-Verbindung. Die isolierten Rust-Verträge und Speichertests benötigen keine WebView. Der vollständige Desktop-Test nach dem Staging lautet `cargo test --manifest-path desktop/Cargo.toml --locked`.
+
+## Windows-Anwendung bauen
+
+In einem lokalen Windows-Verzeichnis aus PowerShell ausführen. `JAVA_HOME` muss auf das JDK 25 zeigen.
+
+```powershell
+.\scripts\verify-windows.cmd
+npm run desktop:dev
+```
+
+Das Prüfsystem installiert die npm-Abhängigkeiten, baut und testet die Java-Adapter, stellt die Java-Laufzeit bereit und baut das Frontend. Es benötigt keine FIT-Connect-Zugänge. Der zweite Befehl startet die Anwendung im Entwicklungsmodus.
+
+Den Installer mit `npm run desktop:build -- -- --locked` erstellen. Er liegt unter `desktop/target/release/bundle/nsis/` und kann fehlendes WebView2 nachinstallieren. `npm run desktop:build:offline -- -- --locked` erzeugt das größere Paket mit eingebettetem WebView2-Installer.
+
+## Branches
+
+`main` enthält den zusammengeführten Projektstand, `develop` die laufende Entwicklung. Neue Beiträge verwenden kurze Feature-Branches und Pull Requests nach `develop`. Ein Merge ist keine Release-Freigabe; Veröffentlichungen erhalten einen gesondert geprüften Versionsstand.
 
 ## Änderungen vorbereiten
 

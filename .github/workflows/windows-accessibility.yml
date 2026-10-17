@@ -1,8 +1,6 @@
 name: Focused Windows accessibility validation
 
 on:
-  push:
-    branches: [alpha1-accessibility-tests]
   workflow_dispatch:
 
 permissions:
@@ -15,7 +13,7 @@ concurrency:
 
 jobs:
   accessibility:
-    if: github.repository_id == '1421171092' && github.ref == 'refs/heads/alpha1-accessibility-tests'
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: windows-2025
     timeout-minutes: 12
     steps:
@@ -24,20 +22,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $revision = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/39038478823" --jq '.head_sha'
-          if ($LASTEXITCODE -ne 0 -or $revision -ne 'f0e7edc9f6d231f35c27da659969ccb4dcb010eb') { throw 'accessibility_fixture_provenance_failed' }
+          $revision = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/39046768207" --jq '.head_sha'
+          if ($LASTEXITCODE -ne 0 -or $revision -ne '9e3794a67ccea3eb844cc4c511569b96846060d1') { throw 'accessibility_fixture_provenance_failed' }
           $directory = Join-Path $env:RUNNER_TEMP ('fbforge-accessibility-fixture-' + [Guid]::NewGuid().ToString('N'))
-          gh run download 39038478823 --repo "$env:GITHUB_REPOSITORY" --name windows-alpha-unsigned-setup --dir $directory
+          gh run download 39046768207 --repo "$env:GITHUB_REPOSITORY" --name windows-alpha-unsigned-setup --dir $directory
           if ($LASTEXITCODE -ne 0) { throw 'accessibility_fixture_download_failed' }
           $setup = @(Get-ChildItem -LiteralPath $directory -Filter '*-setup.exe' -File)
           if ($setup.Count -ne 1) { throw 'accessibility_fixture_ambiguous' }
-          if ((Get-FileHash -LiteralPath $setup[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne '8b1fbf43b9d617252bcee9c6baeb8eb579b7d4cf81cd1f1f2dd3fe819347cfc8') { throw 'accessibility_fixture_integrity_failed' }
+          if ((Get-FileHash -LiteralPath $setup[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne '4f4ea61240a24f77a283bc289e058d87d0df3c06f7c42daad2ebe80af1f0d4fb') { throw 'accessibility_fixture_integrity_failed' }
           Add-Content -Path $env:GITHUB_ENV -Value "FBFC_ACCESSIBILITY_INSTALLER=$($setup[0].FullName)"
       - name: Prepare pinned official NVDA
         run: ./scripts/ci/prepare-nvda.ps1
       - name: Exercise actual NVDA speech and native keyboard navigation
         run: |
-          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/windows-accessibility-smoke.ps1 -InstallerPath $env:FBFC_ACCESSIBILITY_INSTALLER -ExpectedInstallerSha256 '8b1fbf43b9d617252bcee9c6baeb8eb579b7d4cf81cd1f1f2dd3fe819347cfc8' -NvdaPath $env:FBFC_NVDA_PATH
+          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/windows-accessibility-smoke.ps1 -InstallerPath $env:FBFC_ACCESSIBILITY_INSTALLER -ExpectedInstallerSha256 '4f4ea61240a24f77a283bc289e058d87d0df3c06f7c42daad2ebe80af1f0d4fb' -NvdaPath $env:FBFC_NVDA_PATH
           if ($LASTEXITCODE -ne 0) { throw 'focused_accessibility_validation_failed' }
       - name: Retain bounded credential-free result
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

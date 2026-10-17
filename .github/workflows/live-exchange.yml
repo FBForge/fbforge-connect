@@ -1,9 +1,13 @@
 name: Real TEST exchange acceptance
 
 on:
-  push:
-    branches: [alpha1-live-tests]
   workflow_dispatch:
+    inputs:
+      confirm_test_writes:
+        description: Create fictitious TEST submissions and a temporary destination
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
@@ -15,7 +19,7 @@ concurrency:
 
 jobs:
   live:
-    if: github.repository_id == '1421171092' && github.ref == 'refs/heads/alpha1-live-tests'
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && inputs.confirm_test_writes == true && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: windows-2025
     timeout-minutes: 25
     steps:

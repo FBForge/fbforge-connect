@@ -6,7 +6,7 @@ FBForge Connect ist ausschließlich für Integrationstests auf der FIT-Connect-T
 
 Bitte keine ausnutzbaren Sicherheitslücken, Zugangsdaten, privaten Schlüssel oder Einreichungsdaten in öffentlichen Issues veröffentlichen.
 
-Sicherheitslücken bitte über [GitHubs privaten Sicherheitsmeldeweg](https://github.com/FBForge/fbforge-connect/security/advisories/new) melden. Die private Meldung ist für dieses Repository aktiviert. Dafür wird ein GitHub-Konto benötigt. Allgemeine Bedienfragen und Fehler ohne Sicherheitsbezug gehören in die normalen Issues. Als zusätzlicher E-Mail-Kontakt ist `kontakt@fbforge.de` geplant; Einrichtung und Empfang sind noch nicht bestätigt. Bis dahin den privaten GitHub-Meldeweg verwenden.
+Sicherheitslücken bitte über [GitHubs privaten Sicherheitsmeldeweg](https://github.com/FBForge/fbforge-connect/security/advisories/new) melden. Die private Meldung ist für dieses Repository aktiviert. Dafür wird ein GitHub-Konto benötigt. Allgemeine Bedienfragen und Fehler ohne Sicherheitsbezug gehören in die normalen Issues.
 
 Beschreibe betroffene Version, Betriebssystem, Auswirkungen und eine möglichst kleine Reproduktion mit fiktiven Daten. Keine echten Zugangsdaten, privaten Schlüssel oder fremden Einreichungen beifügen.
 

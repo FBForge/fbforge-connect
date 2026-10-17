@@ -1,21 +1,29 @@
-# Kurzer Test auf dem eigenen Windows-Gerät
+# Abschließender Alpha-Test unter Windows
 
-Dieser Test kann später erfolgen. Installation/Upgrade, Protokollabläufe und automatisierte Prüfungen werden zuvor in CI geprüft. Diese Checkliste ergänzt die Bedingungen des eigenen Geräts; sie verlangt keinen erneuten vollständigen FIT-Connect-Austausch.
+Die automatisierten Protokoll-, Installations- und ausgewählten NVDA-Prüfungen sind bestanden. Diese Abnahme ergänzt sie um die tatsächliche Bedienung auf einem Windows-Gerät. Ausschließlich eigene TEST-Zugänge und fiktive Daten verwenden.
 
-## Ohne Zugangsdaten prüfen
+## Vorbereitung
 
-1. Den geprüften dev.8-Kandidaten aus dem verlinkten Actions-Lauf verwenden. Die enthaltene Prüfsummendatei gehört genau zu diesem Installer. Der aktuelle Kandidat ist unsigniert, solange das bestellte Certum-Zertifikat fehlt.
-2. Bei der eigenen Windows-Skalierung öffnen und das Fenster verkleinern/vergrößern. Bei Bedarf 125, 150 und 200 Prozent in den Windows-Anzeigeeinstellungen getrennt prüfen. Navigation, Verbindungsdialog, Schließen-Schaltfläche und Statusleiste müssen erreichbar bleiben; lange Inhalte dürfen im Arbeitsbereich scrollen. Keine abgeschnittenen Eingaben oder seitlich verlorenen Bedienelemente.
-3. Mit Tab/Shift+Tab durch Kopfzeile und Navigation wechseln. Der Tastaturfokus muss sichtbar sein. „Verbinden“ öffnen, Client-ID und Client-Secret erreichen und den Dialog mit Escape schließen. Der Fokus soll zum Auslöser zurückkehren. Ein Screenreader kann einzelne Tasten zunächst für seinen eigenen Lese-/Eingabemodus verwenden; diesen Modus im Befund angeben.
-4. Unter „Prozesse“ den fiktiven Demo-Prozess öffnen. Diagramm einpassen und vergrößern/verkleinern; eine Nachricht mit der Tastatur in der Liste auswählen. Die zugehörigen Kennungen müssen lesbar sein. Dafür ist keine Anmeldung nötig und es wird nichts versendet.
-5. Hell-/Dunkeldesign prüfen: Text, Fokus, Warnungen und deaktivierte Bedienelemente sollen erkennbar bleiben. Eine Bedeutung darf nicht allein von einer Farbe abhängen.
+Den [geprüften dev.8-Kandidaten](https://github.com/FBForge/fbforge-connect/actions/runs/39046768207/artifacts/12106497088) herunterladen und die enthaltene Prüfsumme vergleichen. Der Installer ist unsigniert. Für den Austausch werden ein Onlinedienstzugang und ein Fachverfahrenszugang mit den erforderlichen TEST-Berechtigungen benötigt. Der Ablauf ist in [BEDIENUNG.md](BEDIENUNG.md) erklärt.
 
-## Falls ein Screenreader verwendet wird
+## Prüfliste
 
-Mit der tatsächlich eingesetzten NVDA-/JAWS-/Narrator-Version prüfen, ob Navigation, Überschriften, Dialog, beschriftete Eingaben und Auswahlzustände verständlich angesagt werden. Das Secret-Feld muss als geschützt erkennbar sein. Nicht nur einzelne Beschriftungen, sondern einen zusammenhängenden Ablauf ohne Maus durchführen: Navigation → Verbindungsdialog → zurück → Demo-Modell → Nachrichtenauswahl. Auch die Reihenfolge und Verständlichkeit der hörbaren Ausgabe bewerten.
+| Schritt | Erwartetes Ergebnis |
+| --- | --- |
+| Installieren und starten; bei vorhandener Dev-Installation vorher eine geschützte Sicherung exportieren und darüber installieren. „Komponenten prüfen“ aufrufen. | Ein Programmeintrag, korrekter Name und beide SDKs bereit. Vorhandene Profile bleiben erhalten. Kein separat installiertes Java erforderlich. |
+| Mit dem Fachverfahrenszugang einen eigenen v3-Testzustellpunkt samt Testschlüsseln anlegen, geschützt speichern, Registrierung prüfen und separat aktivieren. | Verständliche Vorschau und Bestätigung; der eigene Punkt und die zugehörigen Schlüssel sind eindeutig erkennbar. Keine Routing-Freigabe erforderlich. |
+| Eine Einreichung mit JSON-Fachdaten und einer kleinen Anlage senden, empfangen, prüfen und bestätigt annehmen; darauf antworten und das Reply auf Senderseite empfangen. Für v2 und v3 wiederholen; dabei auch XML verwenden. | Fachdaten und Anlage stimmen überein. Formular-/Quellansicht, Prüfungen, Reply und Quittierung funktionieren. Versand und Annahme erfolgen jeweils erst nach Bestätigung. |
+| Die Case-, Submission- und Reply-ID des Vorgangs in der Ereignissuche mit dem passenden ID-Typ öffnen. | Die Ereignisse passen zum Vorgang und die Signaturprüfung ist erfolgreich. Ein nötiger zusätzlicher Kontext wird verständlich angefordert. |
+| Vor einem noch ausstehenden Reply beide Profile geschützt speichern, die Anwendung vollständig schließen, neu starten und das Reply abrufen. | Erneute Verbindung und Entschlüsselung mit den gespeicherten Schlüsseln funktionieren. Secrets müssen nicht erneut eingegeben werden. |
+| Unter „Prozesse“ das Demo-Modell öffnen; eine BPMN-Datei per Drag-and-drop und per Dateiauswahl laden, eine Nachricht anklicken und per Tastatur auswählen. | Zugeordnete Kennungen erscheinen nachvollziehbar; die Übernahme in einen Entwurf sendet nichts. Die echte Prozesskommunikation ist zusätzlich automatisiert live geprüft. |
+| Fenster verkleinern, Hell/Dunkel wechseln und die Windows-Skalierung bei 125, 150 und 200 Prozent prüfen. Mit Tab/Shift+Tab und Escape durch Navigation, Verbindungsdialog und BPMN-Auswahl gehen. | Keine verlorenen Bedienelemente, sichtbarer Fokus, beschriftete Eingaben und verständliche Statusanzeigen; nach dem Schließen kehrt der Fokus zurück. |
 
-Der automatische NVDA-Test erfasst erzeugte Sprachsequenzen für ausgewählte Bedienelemente in der installierten Anwendung. Er aktiviert die WebView zunächst einmal mit einem echten Klick im leeren ID-Feld und prüft danach Tab und Escape; dies ist keine vollständige Prüfung eines Ablaufs ohne Maus. Er bestätigt keine allgemeine Unterstützung jedes Screenreaders, keine hörbare Sprachqualität und keine vollständige WCAG-/BITV-Konformität.
+Beim letzten Schritt mit einem verfügbaren Screenreader zusätzlich einen zusammenhängenden Ablauf ab App-Start ohne Maus ausführen und die hörbare Ausgabe bewerten. Das Secret-Feld muss geschützt angesagt werden. Der automatische NVDA-Test prüft ausgewählte Sprachsequenzen nach einmaliger WebView-Aktivierung per Klick; er ersetzt diesen vollständigen Ablauf nicht.
 
-## Rückmeldung
+Einen eigens angelegten Testzustellpunkt nach Abschluss wieder deaktivieren. Die serverseitige Aufbewahrungsfrist beachten; keine vorhandenen fremden oder dauerhaft benötigten Zustellpunkte verändern.
 
-Für einen gewöhnlichen Fehler reichen Windows-Version, App-Build/Commit, Skalierung, Fenstergröße, gegebenenfalls Screenreader-Version sowie die betroffene Aktion und das erwartete/tatsächliche Verhalten. Nur fiktive Daten verwenden. Screenshots oder Berichte dürfen keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten enthalten. Sicherheitslücken gemäß [SECURITY.md](SECURITY.md) privat melden.
+## Ergebnis und Freigabe
+
+Je Schritt „bestanden“ oder eine kurze Reproduktion festhalten: App-Version/Commit, Windows-Version, Skalierung und gegebenenfalls Screenreader-Version sowie erwartetes und tatsächliches Verhalten. Keine Secrets, privaten Schlüssel oder echten Antragsdaten in Screenshots oder Issues übernehmen. Sicherheitsprobleme gemäß [SECURITY.md](SECURITY.md) privat melden.
+
+Die Bedienungsabnahme ist bestanden, wenn alle Schritte funktionieren und kein Fehler den Austausch, Schlüsselerhalt oder die Bedienung blockiert. Die Veröffentlichung folgt erst nach den verbleibenden Paket-, Signierungs- und Lizenzprüfungen aus [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md). Wird das Paket danach geändert oder signiert, sind Installation/Upgrade und die betroffenen Abläufe am endgültigen Paket erneut zu prüfen.
