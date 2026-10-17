@@ -125,6 +125,7 @@ function Check-Spoken([string]$Name, $Type) {
     [AccessibilityKeys]::ReportFocus()
     $spoken = Wait-Check {
         $records = @(Read-Capture)
+        if (@($records | Where-Object { $_.PSObject.Properties.Name -contains 'captureLimitReached' }).Count) { throw 'nvda_capture_limit_reached' }
         if ($records.Count -le $before) { return $false }
         foreach ($record in $records[$before..($records.Count - 1)]) {
             if ($record.PSObject.Properties.Name -contains 'text' -and $record.PSObject.Properties.Name -contains 'focus' -and $record.focus -eq $Name -and $record.text.IndexOf($Name, [StringComparison]::OrdinalIgnoreCase) -ge 0) { return $record.text }
@@ -231,7 +232,7 @@ automaticUpdates = disabled
     [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'fbforge-accessibility-result.json'), ($report | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 } catch {
     # The test never enters credentials. Log only known synthetic control names.
-    $knownNames = @('Verbinden','Client-ID','Client-Secret','Bei TEST anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen')
+    $knownNames = @('Verbinden','Client-ID','Client-Secret','Bei TEST anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen','Vorgänge','Vorgänge durchsuchen','Hilfe','Anleitung durchsuchen')
     $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
     if ($focused) {
         $label = if ($knownNames -contains $focused.Current.Name) { $focused.Current.Name } else { '(other control)' }
