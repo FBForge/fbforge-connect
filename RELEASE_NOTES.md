@@ -2,32 +2,21 @@
 
 ## 0.1.0-alpha.1.rc.1
 
-Prüfkandidat für Alpha 1. Noch keine endgültige Alpha-Freigabe.
+Windows-Prüfkandidat, unsigniert. Noch keine öffentliche Alpha-Freigabe.
 
-- Einheitliche Sie-Anrede in Oberfläche, Hinweisen, Hilfe und Dokumentation.
-- Verständlichere Hinweise zum Verbinden und Senden; Anleitung an die tatsächlichen Bedienelemente angepasst.
-- Bebilderte Anleitung im GitHub-Wiki und offline in der Anwendung.
-
-Der [geprüfte Windows-Installer](https://github.com/FBForge/fbforge-connect/actions/runs/39077541393/artifacts/12117903402) stammt aus dem [erfolgreichen Paketlauf](https://github.com/FBForge/fbforge-connect/actions/runs/39077541393). Neuinstallation, Updates von dev.7 und dev.9 mit erhaltenem Profil sowie 13 NVDA-Kontrollen sind bestanden. Installer, Build-Manifest, Prüfsumme und NVDA-Bericht wurden unabhängig abgeglichen. Die [reale TEST-Abnahme](https://github.com/FBForge/fbforge-connect/actions/runs/39076803683) besteht alle sieben Austauschfälle auf demselben Anwendungsstand.
+- Einheitliche Sie-Anrede.
+- Hinweise beim Verbinden und Senden vereinfacht.
+- Bebilderte Hilfe in der Anwendung und im GitHub-Wiki.
 
 ## 0.1.0-dev.9
 
-Entwicklungsbau für Windows x64 und FIT-Connect TEST. Noch keine Alpha-1-Freigabe; der Installer ist unsigniert.
+- Vorgangsübersicht mit Suche, Anlagen und Löschfunktion.
+- Optionale, mit Windows-DPAPI geschützte Aufbewahrung.
+- Einreichungen direkt öffnen und prüfen.
+- Lokale PDF-Vorschau und bebilderte Offline-Hilfe.
 
-- Vorgangsübersicht für gesendete und empfangene Einreichungen und Antworten, mit Suche, Formularansicht, Anlagen und Löschfunktion.
-- Optionale geschützte Windows-Aufbewahrung, getrennt von Profilen und Schlüsseln. Inhalte bleiben nach Annahme oder Ablehnung lokal lesbar.
-- Einreichungen direkt öffnen und prüfen; Empfangsbestätigungen und Antworten separat bestätigen.
-- Lokale PDF-Vorschau mit Seitenwahl und auslesbarem Text, ohne aktive Dokumentfunktionen.
-- Offline-Hilfe mit zwölf Themen und neun vergrößerbaren Bildschirmaufnahmen.
+## 0.1.0-dev.8
 
-Der [Windows-Prüfbau](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538/artifacts/12112642005) enthält Setup, SHA-256-Prüfsumme und Build-Manifest. Der [zugehörige Prüflauf](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538) umfasst Neuinstallation, Upgrade von dev.7, Profil-Erhalt, beide SDKs und ausgewählte NVDA-Kontrollen. [Sieben reale TEST-Austausche](https://github.com/FBForge/fbforge-connect/actions/runs/39061438414) prüfen das Austauschprotokoll auf dem vorherigen Funktionsstand; spätere lokale Speicher- und Bedienkorrekturen sind im Paketlauf geprüft. Eine vollständige manuelle Zielgeräteabnahme bleibt erforderlich.
-
-## Vorherige Entwicklungsstände
-
-Einreichungen und Replies über v2/v3, signierte Ereignissuche, geschützte Profile und Schlüssel, v3-Zustellpunktverwaltung und BPMN-Nachrichtenauswahl bilden den bisherigen Funktionsumfang. Die v3-Prozesssuche verwendet die bestehende Anmeldung entsprechend der aktuellen TEST-API-Anforderung.
-
-Die Anwendung heißt seit dev.8 **FBForge Connect**. Technische App-Kennung, Profilformat und Upgrade-Registrierung bleiben kompatibel. Profilsicherungen sind an das zugehörige Windows-Benutzerkonto gebunden.
-
-## Grenzen
-
-Derzeit ausschließlich Windows und TEST. Kein integrierter Malwarescanner, universeller Formulareditor oder Prozessmotor. Ungewisse Schreibausgänge werden nicht automatisch wiederholt. Geschützte Vorgangskopien sind kein revisionssicheres Archiv. Hinweise zum Umgang mit Testdaten stehen in [SECURITY.md](SECURITY.md).
+- Einreichungen und Replies über API v2/v3, Event-Log-Suche und geschützte Profile.
+- v3-Zustellpunktverwaltung und BPMN-Nachrichtenauswahl.
+- Umbenennung in FBForge Connect; bestehende Profile und Installationen bleiben kompatibel.
