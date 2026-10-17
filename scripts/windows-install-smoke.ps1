@@ -60,8 +60,8 @@ function Check-Installed([bool]$ExpectProfile) {
     $installedBinary = Join-Path $taskInstall 'fit-connect-integration-client.exe'
     if ((Get-FileHash -LiteralPath $installedBinary -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedBinaryPath -Algorithm SHA256).Hash) { throw 'installed_binary_revision_mismatch' }
     $registration = Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FIT-Connect Test-Client'
-    if ($registration.DisplayName -ne 'FBForge Test-Client' -or $registration.Publisher -ne 'FBForge' -or $registration.MainBinaryName -ne 'fit-connect-integration-client.exe' -or $registration.InstallLocation.Trim('"') -ne $taskInstall) { throw 'installed_upgrade_identity_mismatch' }
-    if (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FBForge Test-Client') { throw 'duplicate_upgrade_registration' }
+    if ($registration.DisplayName -ne 'FBForge Connect' -or $registration.Publisher -ne 'FBForge' -or $registration.MainBinaryName -ne 'fit-connect-integration-client.exe' -or $registration.InstallLocation.Trim('"') -ne $taskInstall) { throw 'installed_upgrade_identity_mismatch' }
+    if (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FBForge Connect') { throw 'duplicate_upgrade_registration' }
     $info = [System.Diagnostics.ProcessStartInfo]::new((Join-Path $taskInstall 'fit-connect-integration-client.exe'))
     $info.UseShellExecute = $false; $info.WorkingDirectory = $taskInstall
     # Prove that the application uses its own JDK; do not inherit CI credentials or JVM injection options.
@@ -74,7 +74,7 @@ function Check-Installed([bool]$ExpectProfile) {
             $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $script:taskApp.Id)
             [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
         } 'installed_window_missing'
-        if ($window.Current.Name -ne 'FBForge Test-Client · FIT-Connect TEST') { throw 'installed_title_invalid' }
+        if ($window.Current.Name -ne 'FBForge Connect · FIT-Connect TEST') { throw 'installed_title_invalid' }
         Invoke-Named $window 'Diagnose'
         Invoke-Named $window 'Komponenten prüfen'
         $null = Wait-Condition {

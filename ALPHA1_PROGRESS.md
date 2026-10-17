@@ -2,7 +2,7 @@
 
 Work-Goal: [ALPHA1_GOAL.md](ALPHA1_GOAL.md). Stand: **dev.8-Kandidat, noch keine Alpha-1-Freigabe**.
 
-Öffentlicher Produktname: **FBForge Test-Client**, Zusatz **Unabhängiges Testwerkzeug für FIT-Connect**. Fenstertitel, Installer und Projektbeschreibung verwenden diesen Namen. App-/Speicher- und NSIS-Upgrade-Identitäten bleiben für bisherige Dev-Installationen kompatibel; eine eigene, zur FBForge-Farbfamilie passende Bildmarke ist eingebunden.
+Öffentlicher Produktname: **FBForge Connect**, Zusatz **Integrationstests für FIT-Connect**. Fenstertitel, Installer und Projektbeschreibung verwenden diesen Namen. App-/Speicher- und NSIS-Upgrade-Identitäten bleiben für bisherige Dev-Installationen kompatibel; eine eigene, zur FBForge-Farbfamilie passende Bildmarke ist eingebunden.
 
 | Paket | Implementierung und Nachweis |
 | --- | --- |
@@ -20,6 +20,8 @@ Work-Goal: [ALPHA1_GOAL.md](ALPHA1_GOAL.md). Stand: **dev.8-Kandidat, noch keine
 - [Erneute vollständige Windows-TEST-Abnahme 38990315338](https://github.com/FBForge/fit-connect-testclient/actions/runs/38990315338), Commit `c4783c4`: alle sieben Austauschfälle mit Schlüsselübersicht und Profilvorgaben im Produktstand erfolgreich. Windows-Installation/Upgrade laufen separat.
 - Neuer lokaler Paketstand: 228 Java-Host-Tests erfolgreich; 11 isolierte native Verträge einschließlich Altdatenmigration der Voreinstellungen; Windows-Cross-Compile und paketierter Engine-Smoke erfolgreich. 15 bisherige Browserabläufe einschließlich öffentlicher FIM-/XML-Fälle bestanden; zwei zusätzliche Dateiablageprüfungen ebenfalls erfolgreich. Die abschließende UX-Nachprüfung von sechs betroffenen Abläufen ist erfolgreich. 34 Frontend-Vertragsdateien einschließlich Abgleich nativer Befehle, Berechtigungsdefinitionen, Hauptfenster-Freigaben und unveränderter Installer-Vorlage bis auf zwei geprüfte Registry-Zeilen erfolgreich. Der vollständige neue Kandidat erhält eigene Windows-CI.
 - [Installationslauf 38990314124](https://github.com/FBForge/fit-connect-testclient/actions/runs/38990314124): tatsächliche Neuinstallation startete die Anwendung und lud beide SDKs mit gebündeltem JDK erfolgreich. Danach scheiterte der CI-Profilhelfer an der unter Windows PowerShell 5.1 fehlenden Eigenschaft `StandardInputEncoding`. Der Helfer schreibt jetzt explizite UTF-8-Bytes in die Pipe; vollständiger Wiederholungsnachweis steht noch aus.
+- [Erneuter Live-Lauf 38991770845](https://github.com/FBForge/fit-connect-testclient/actions/runs/38991770845), Commit `09888fe`: alle sieben realen Austauschfälle auch mit gemeinsamer Dateiablage und neuer Bildmarke erfolgreich. Die spätere Namensfestlegung auf FBForge Connect ändert das Austauschprotokoll nicht.
+- Der strengere Installationslauf 38991930066 erkannte anschließend die dokumentierte Tauri-Bündeltypänderung am eingebetteten Binary. Für den einzigen Windows-Pakettyp NSIS ohne Auto-Updater wird diese optionale Änderung nun über `--no-binary-patching` unterbunden. Der bytegenaue Vergleich mit dem gebauten Programm bleibt erforderlich. Die vollständige Wiederholung des FBForge-Connect-Pakets ist ausstehend.
 - `npm audit` über den gesperrten Baum einschließlich Entwicklungs-/Axe-Abhängigkeiten: keine bekannten Schwachstellen am 17. Oktober 2026. Zielabhängige Rust-Befunde und BSI-Grenzen stehen in [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
 
 ## Wesentliche Live-Korrekturen

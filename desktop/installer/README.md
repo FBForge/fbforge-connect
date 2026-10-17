@@ -1,6 +1,6 @@
 # Kompatible Windows-Produktumbenennung
 
-Der Anzeigename lautet ab dev.8 **FBForge Test-Client**. Die bestehenden Dev-Installationen verwenden den Namen **FIT-Connect Test-Client** auch als technische NSIS-Registry-Identität. Tauri leitet diese Identität standardmäßig aus `productName` ab; ein bloßer Namenswechsel würde zwei Installationseinträge erzeugen und den bisherigen Installationsort übersehen.
+Der Anzeigename lautet ab dev.8 **FBForge Connect**. Die bestehenden Dev-Installationen verwenden den Namen **FIT-Connect Test-Client** auch als technische NSIS-Registry-Identität. Tauri leitet diese Identität standardmäßig aus `productName` ab; ein bloßer Namenswechsel würde zwei Installationseinträge erzeugen und den bisherigen Installationsort übersehen.
 
 Die NSIS-Vorlage ist deshalb unverändert aus der gepinnten Tauri-CLI 2.12.3 übernommen, mit genau zwei Ersetzungen: `UNINSTKEY` und `MANUPRODUCTKEY` verwenden weiter die frühere technische Identität. Der alte Herstelleranteil `fitconnect` wurde von Tauri aus der unveränderten App-ID abgeleitet; der sichtbare Herausgeber ist nun ausdrücklich `FBForge`. Sichtbarer Produktname, Installer, Deinstallationsanzeige und neue Verknüpfungen tragen den neuen Namen. `compatibility.nsh` entfernt nur alte Verknüpfungen, deren Ziel exakt auf die ersetzte Anwendung zeigt. App-ID, Binärname und Profilformat bleiben unverändert. Weitere Änderungen der technischen Identität brauchen eine eigene Migration.
 

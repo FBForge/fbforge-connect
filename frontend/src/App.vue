@@ -464,7 +464,7 @@ function exportReport() {
   downloadUrl = URL.createObjectURL(new Blob([reportJson.value], { type: 'application/json' }));
   const link = document.createElement('a');
   link.href = downloadUrl;
-  link.download = `FBForge-Test-Client-Diagnose-${version}.json`;
+  link.download = `FBForge-Connect-Diagnose-${version}.json`;
   document.body.append(link);
   link.click();
   link.remove();

@@ -15,6 +15,10 @@ permissions:
   contents: read
   actions: read
 
+concurrency:
+  group: windows-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   windows:
     runs-on: windows-2025
@@ -29,6 +33,19 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+          cache: maven
+          cache-dependency-path: engine/**/pom.xml
+      - name: Restore Rust dependencies and build outputs
+        id: rust-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/target
+            desktop/native-contracts/target
+          key: ${{ runner.os }}-rust-1.99.0-${{ hashFiles('desktop/Cargo.lock', 'desktop/native-contracts/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-rust-1.99.0-${{ hashFiles('desktop/Cargo.lock', 'desktop/native-contracts/Cargo.lock') }}-
       - name: Install pinned Rust toolchain
         working-directory: desktop
         run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt
@@ -68,6 +85,16 @@ jobs:
         run: npm run desktop:build -- -- --locked
       - name: Build CI-only protected profile fixture bridge
         run: cargo +1.99.0 build --manifest-path desktop/native-contracts/Cargo.toml --locked --target-dir desktop/native-contracts/target --example profile-checkpoint
+      - name: Save Rust build outputs before installation validation
+        if: steps.rust-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/target
+            desktop/native-contracts/target
+          key: ${{ steps.rust-cache.outputs.cache-primary-key }}
       - name: Download the pinned dev.7 installer for upgrade validation
         if: github.event_name == 'push' && github.ref == 'refs/heads/alpha1-work'
         env:

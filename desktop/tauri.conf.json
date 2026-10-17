@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "FBForge Test-Client",
+  "productName": "FBForge Connect",
   "version": "0.1.0-dev.8",
   "identifier": "org.fitconnect.integration-client",
   "build": {
@@ -10,7 +10,7 @@
     "frontendDist": "../frontend/dist"
   },
   "app": {
-    "windows": [{ "label": "main", "title": "FBForge Test-Client · FIT-Connect TEST", "width": 1180, "height": 800, "minWidth": 420, "minHeight": 500, "dragDropEnabled": false }],
+    "windows": [{ "label": "main", "title": "FBForge Connect · FIT-Connect TEST", "width": 1180, "height": 800, "minWidth": 420, "minHeight": 500, "dragDropEnabled": false }],
     "security": {
       "capabilities": ["main"],
       "devCsp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src ipc: http://ipc.localhost http://127.0.0.1:1420 ws://127.0.0.1:1420; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'",

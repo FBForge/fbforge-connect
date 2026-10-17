@@ -1,14 +1,14 @@
-# FBForge Test-Client
+# FBForge Connect
 
 <img src="frontend/src/assets/test-client.png" alt="" width="80" height="80">
 
-**Unabhängiges Testwerkzeug für FIT-Connect.**
+**Integrationstests für FIT-Connect.**
 
-Der **FBForge Test-Client** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
+Der **FBForge Connect** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
 
 Die Anwendung arbeitet ausschließlich mit der FIT-Connect-Testumgebung. Sie ist ein unabhängiges Projekt und kein offizielles Produkt von FITKO.
 
-Der frühere Anzeigename „FIT-Connect Test-Client“ wird ab diesem Kandidaten durch „FBForge Test-Client“ ersetzt. App-Kennung, Profilordner, interne Paketnamen und das verschlüsselte Sicherungsformat bleiben kompatibel, damit gespeicherte Profile und Upgrades weiter funktionieren.
+Der frühere Anzeigename „FIT-Connect Test-Client“ wird ab diesem Kandidaten durch „FBForge Connect“ ersetzt. App-Kennung, Profilordner, interne Paketnamen und das verschlüsselte Sicherungsformat bleiben kompatibel, damit gespeicherte Profile und Upgrades weiter funktionieren.
 
 ## Funktionen
 
