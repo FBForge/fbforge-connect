@@ -290,7 +290,7 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
   };
   const replyPreview = await receiver.call('prepare_reply', { replyDocument: JSON.stringify(replyDraft) });
   const reply = await receiver.call('execute_reply', { attemptId: replyPreview.attempt.attemptId });
-  requireCheck(reply.status === 'sent', `reply_${reply.status}`);
+  requireCheck(reply.status === 'sent', `reply_${reply.status}_${reply.error || 'unknown'}`);
   sender.native.close();
   engines.delete(sender.native);
   sender = await openNativeSession('sender', api);
@@ -374,8 +374,109 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
     engines.delete(receiver.native);
   }
 }
+async function prepareReplySource() {
+  stage = 'source_metadata_setup';
+  const manager = await openNativeSession('sender', 'v3');
+  try {
+    const current = await manager.call('load_managed_destination', { destinationId: process.env.SENDERDEST });
+    requireCheck(current.type === 'C' && current.status === 'active', 'source_configuration_invalid');
+    const metadataVersions = [...new Set([...current.metadataVersions, '2.0.0', '3.0.0'])];
+    if (metadataVersions.length !== current.metadataVersions.length) {
+      const preview = await manager.call('prepare_destination_update', {
+        destinationDocument: JSON.stringify({
+          destinationIds: [process.env.SENDERDEST],
+          changes: { metadataVersions },
+        }),
+      });
+      const result = await manager.call('execute_destination_update', { attemptId: preview.attemptId });
+      requireCheck(
+        result.status === 'completed' && result.changes[0]?.status === 'updated',
+        'source_metadata_update_failed',
+      );
+    }
+    const configured = JSON.parse(
+      (await manager.call('load_send_destination', { destinationId: process.env.SENDERDEST })).detailsJson,
+    );
+    requireCheck(
+      configured.metadataVersions.includes('2.0.0') && configured.metadataVersions.includes('3.0.0'),
+      'source_metadata_readback_failed',
+    );
+    console.log(
+      'TEST source reply metadata versions verified; missing versions added with a field-only native PATCH',
+    );
+  } finally {
+    manager.native.close();
+    engines.delete(manager.native);
+  }
+}
+async function cleanupManagedFixture(manager, fixtureId, fixtureName, fixtureType) {
+  // The ID comes only from this run's native creation. Never delete an existing configured destination.
+  const detail = await manager.call('load_managed_destination', { destinationId: fixtureId });
+  requireCheck(detail.name === fixtureName && detail.type === fixtureType, 'cleanup_ownership_conflict');
+  if (['created', 'draft'].includes(detail.status)) {
+    const p = await manager.call('prepare_destination_cleanup', { destinationId: fixtureId });
+    requireCheck(
+      (await manager.call('execute_destination_cleanup', { attemptId: p.attemptId })).status === 'removed',
+      'cleanup_failed',
+    );
+  } else {
+    // An activated destination has a server-enforced retention period. Deactivate our
+    // exact fixture and read that policy; do not try to bypass it with a DELETE.
+    if (detail.status === 'active') {
+      const p = await manager.call('prepare_destination_update', {
+        destinationDocument: JSON.stringify({
+          destinationIds: [fixtureId],
+          changes: { status: 'inactive' },
+        }),
+      });
+      await manager.call('execute_destination_update', { attemptId: p.attemptId });
+    }
+    const current = await manager.call('load_managed_destination', { destinationId: fixtureId });
+    requireCheck(current.status === 'inactive' && current.name === fixtureName, 'cleanup_state_conflict');
+    const tokenResponse = await fetch('https://auth-testing.fit-connect.fitko.dev/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: process.env[manager.label === 'sender' ? 'SENDERID' : 'SUBSCRIBERID'],
+        client_secret: process.env[manager.label === 'sender' ? 'SENDERSECRET' : 'SUBSCRIBERSECRET'],
+      }),
+      signal: AbortSignal.timeout(15000),
+      redirect: 'error',
+    });
+    requireCheck(tokenResponse.ok, 'cleanup_auth_failed');
+    const token = await tokenResponse.json();
+    requireCheck(typeof token.access_token === 'string', 'cleanup_auth_invalid');
+    const result = await fetch(
+      `https://test.fit-connect.fitko.dev/destination-api/v3/destinations/${fixtureId}`,
+      {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token.access_token}` },
+        signal: AbortSignal.timeout(30000),
+        redirect: 'error',
+      },
+    );
+    requireCheck(result.ok, `cleanup_http_${result.status}`);
+    const retained = await result.json();
+    const until = Date.parse(retained.canBeDecommissionedAt);
+    requireCheck(
+      retained.destinationId === fixtureId &&
+        retained.name === fixtureName &&
+        retained.type === fixtureType &&
+        retained.status === 'inactive' &&
+        retained.publicForRouting === false &&
+        Number.isFinite(until) &&
+        until > Date.now(),
+      'cleanup_retention_unconfirmed',
+    );
+    console.log(
+      `Temporary owned TEST destination inactive; server retention until ${new Date(until).toISOString()}; ID ${fixtureId}`,
+    );
+    return;
+  }
+  console.log('Temporary owned TEST destination removed');
+}
 async function cleanup() {
-  if (!receiverV3) return;
   if (!destination && creationBundle) {
     const matches = [];
     for (let offset = 0; offset <= 100; offset += 20) {
@@ -392,76 +493,14 @@ async function cleanup() {
       destination = matches[0].destinationId;
     }
   }
-  if (!destination) return;
-  // The ID comes only from this run's native creation. Never delete an existing configured destination.
-  const detail = await receiverV3.call('load_managed_destination', { destinationId: destination });
-  requireCheck(detail.name === runName && detail.type === 'A', 'cleanup_ownership_conflict');
-  if (['created', 'draft'].includes(detail.status)) {
-    const p = await receiverV3.call('prepare_destination_cleanup', { destinationId: destination });
-    requireCheck(
-      (await receiverV3.call('execute_destination_cleanup', { attemptId: p.attemptId })).status === 'removed',
-      'cleanup_failed',
-    );
-  } else {
-    // An activated destination has a server-enforced retention period. Deactivate our
-    // exact fixture and read that policy; do not try to bypass it with a DELETE.
-    if (detail.status === 'active') {
-      const p = await receiverV3.call('prepare_destination_update', {
-        destinationDocument: JSON.stringify({
-          destinationIds: [destination],
-          changes: { status: 'inactive' },
-        }),
-      });
-      await receiverV3.call('execute_destination_update', { attemptId: p.attemptId });
-    }
-    const current = await receiverV3.call('load_managed_destination', { destinationId: destination });
-    requireCheck(current.status === 'inactive' && current.name === runName, 'cleanup_state_conflict');
-    const tokenResponse = await fetch('https://auth-testing.fit-connect.fitko.dev/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: process.env.SUBSCRIBERID,
-        client_secret: process.env.SUBSCRIBERSECRET,
-      }),
-      signal: AbortSignal.timeout(15000),
-      redirect: 'error',
-    });
-    requireCheck(tokenResponse.ok, 'cleanup_auth_failed');
-    const token = await tokenResponse.json();
-    requireCheck(typeof token.access_token === 'string', 'cleanup_auth_invalid');
-    const result = await fetch(
-      `https://test.fit-connect.fitko.dev/destination-api/v3/destinations/${destination}`,
-      {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token.access_token}` },
-        signal: AbortSignal.timeout(30000),
-        redirect: 'error',
-      },
-    );
-    requireCheck(result.ok, `cleanup_http_${result.status}`);
-    const retained = await result.json();
-    const until = Date.parse(retained.canBeDecommissionedAt);
-    requireCheck(
-      retained.destinationId === destination &&
-        retained.name === runName &&
-        retained.type === 'A' &&
-        retained.status === 'inactive' &&
-        retained.publicForRouting === false &&
-        Number.isFinite(until) &&
-        until > Date.now(),
-      'cleanup_retention_unconfirmed',
-    );
-    console.log(
-      `Temporary owned TEST destination inactive; server retention until ${new Date(until).toISOString()}; ID ${destination}`,
-    );
+  if (destination) {
+    await cleanupManagedFixture(receiverV3, destination, runName, 'A');
     destination = null;
-    return;
   }
-  console.log('Temporary owned TEST destination removed');
-  destination = null;
 }
+
 try {
+  await prepareReplySource();
   stage = 'destination_setup';
   receiverV3 = await openNativeSession('subscriber', 'v3');
   const keys = await receiverV3.call('generate_test_keys');
