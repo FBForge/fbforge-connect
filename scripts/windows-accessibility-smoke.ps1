@@ -70,7 +70,7 @@ function Check-Spoken([string]$Name, $Type) {
     } ('nvda_label_not_spoken:' + $Name) 15
     if ($Name -eq 'Client-Secret' -and -not $element.Current.IsPassword) { throw 'a11y_secret_not_protected' }
     $checks.Add([ordered]@{ name = $Name; role = $Type.ProgrammaticName; speech = $spoken })
-    Write-Output ('NVDA generated the focused control label: ' + $Name)
+    Write-Host ('NVDA generated the focused control label: ' + $Name)
     return $element
 }
 function Invoke-Control($Element) {
