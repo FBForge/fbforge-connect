@@ -5,8 +5,10 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { makeGeneratedFilesWritable } from '../scripts/stage-permissions.mjs';
 
-test('generated resource files become owner-writable while execute and other permission bits stay intact',
-  { skip: process.platform === 'win32' ? 'POSIX file modes are not available on Windows' : false }, async () => {
+test(
+  'generated resource files become owner-writable while execute and other permission bits stay intact',
+  { skip: process.platform === 'win32' ? 'POSIX file modes are not available on Windows' : false },
+  async () => {
     const fixture = await mkdtemp(join(tmpdir(), 'fit-stage-permissions-'));
     try {
       const runtime = join(fixture, 'runtime');
@@ -24,11 +26,21 @@ test('generated resource files become owner-writable while execute and other per
       await writeFile(license, 'overwrite succeeds');
       await makeGeneratedFilesWritable(runtime);
       assert.equal((await lstat(executable)).mode & 0o777, 0o755);
-    } finally { await rm(fixture, { recursive: true, force: true }); }
-  });
+    } finally {
+      await rm(fixture, { recursive: true, force: true });
+    }
+  },
+);
 
-test('generated resource permission normalization never follows file, directory or root symlinks',
-  { skip: process.platform === 'win32' ? 'POSIX symlink creation may require elevated privileges on Windows' : false }, async () => {
+test(
+  'generated resource permission normalization never follows file, directory or root symlinks',
+  {
+    skip:
+      process.platform === 'win32'
+        ? 'POSIX symlink creation may require elevated privileges on Windows'
+        : false,
+  },
+  async () => {
     const fixture = await mkdtemp(join(tmpdir(), 'fit-stage-symlink-'));
     try {
       const runtime = join(fixture, 'runtime');
@@ -46,5 +58,8 @@ test('generated resource permission normalization never follows file, directory 
       await makeGeneratedFilesWritable(rootLink);
       assert.equal((await lstat(file)).mode & 0o777, 0o444);
       assert.equal((await lstat(join(runtime, 'directory-link'))).isSymbolicLink(), true);
-    } finally { await rm(fixture, { recursive: true, force: true }); }
-  });
+    } finally {
+      await rm(fixture, { recursive: true, force: true });
+    }
+  },
+);

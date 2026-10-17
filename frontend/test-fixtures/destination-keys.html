@@ -1,93 +1,153 @@
 <!doctype html>
 <!-- Development-only browser fixture. Not an entry point of the production Vite build. -->
 <html lang="de" data-theme="light">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="data:,">
-  <title>Zustellpunkt und Testschlüssel · UI-Testdaten</title>
-</head>
-<body>
-  <div id="app"></div>
-  <script type="module">
-    import { createApp, h, ref } from 'vue';
-    import DestinationKeys from '../src/DestinationKeys.vue';
-    import '../src/site.css';
-    import '../src/layout.css';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Zustellpunkt und Testschlüssel · UI-Testdaten</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp, h, ref } from 'vue';
+      import DestinationKeys from '../src/DestinationKeys.vue';
+      import '../src/site.css';
+      import '../src/layout.css';
 
-    const session = Object.freeze({
-      apiVersion: 'v3', sessionId: '00000000-0000-4000-8000-000000000001',
-      environment: 'TEST', role: 'administrative-system', connected: true,
-    });
-    const destinationId = '00000000-0000-4000-8000-000000000002';
-    const decryptId = 'synthetic-test-key-registered-decryption';
-    const signId = 'synthetic-test-key-registered-signature';
-    let references = [{ destinationId, kid: decryptId, purpose: 'decrypt' }];
-    const envelope = data => ({ apiVersion: session.apiVersion, sessionId: session.sessionId, environment: 'TEST', data });
-    const registration = (kid, purpose, eligible = true) => ({
-      kid, purpose, eligible, reason: eligible ? null : 'test_certificate_required',
-      certificateSha256: eligible ? 'a'.repeat(64) : null,
-      expiresAt: eligible ? '2099-12-31T23:59:59Z' : null,
-    });
+      const session = Object.freeze({
+        apiVersion: 'v3',
+        sessionId: '00000000-0000-4000-8000-000000000001',
+        environment: 'TEST',
+        role: 'administrative-system',
+        connected: true,
+      });
+      const destinationId = '00000000-0000-4000-8000-000000000002';
+      const decryptId = 'synthetic-test-key-registered-decryption';
+      const signId = 'synthetic-test-key-registered-signature';
+      let references = [{ destinationId, kid: decryptId, purpose: 'decrypt' }];
+      const envelope = (data) => ({
+        apiVersion: session.apiVersion,
+        sessionId: session.sessionId,
+        environment: 'TEST',
+        data,
+      });
+      const registration = (kid, purpose, eligible = true) => ({
+        kid,
+        purpose,
+        eligible,
+        reason: eligible ? null : 'test_certificate_required',
+        certificateSha256: eligible ? 'a'.repeat(64) : null,
+        expiresAt: eligible ? '2099-12-31T23:59:59Z' : null,
+      });
 
-    // @tauri-apps/api/core.invoke delegates directly to this method. No native bridge is present.
-    window.__TAURI_INTERNALS__ = {
-      async invoke(command, args) {
-        if (args?.apiVersion !== session.apiVersion || args?.sessionId !== session.sessionId) throw 'session_missing';
-        switch (command) {
-          case 'list_destinations':
-            return envelope({ destinations: args.offset === 0 ? [
-              { destinationId, name: 'Fiktives Testamt für Integrationstests', status: 'active', type: 'A' },
-            ] : [], offset: args.offset, totalCount: 1 });
-          case 'load_destination':
-            if (args.destinationId !== destinationId) throw 'resource_missing';
-            return envelope({ destinationId, detailsJson: JSON.stringify({
-              destinationId, status: 'active', metadataVersions: ['2.1.0'],
-              description: 'Ausschließlich synthetische öffentliche Zustellpunktdaten für die lokale UI-Prüfung.',
-            }), keys: [registration(decryptId, 'decrypt'), registration(signId, 'sign'),
-              registration('synthetic-ineligible-registration', 'unknown', false)] });
-          case 'loaded_keys':
-            return envelope({ keys: references.map(key => ({ ...key })) });
-          case 'import_key':
-            if (args.destinationId !== destinationId || !['decrypt', 'sign'].includes(args.purpose)) throw 'key_rejected';
-            // The fixture never parses or retains a key document. This simulates only the public UI result.
-            references = references.filter(key => key.purpose !== args.purpose);
-            references.push({ destinationId, kid: args.purpose === 'decrypt' ? decryptId : signId, purpose: args.purpose });
-            return envelope({ keys: references.map(key => ({ ...key })) });
-          case 'discard_keys':
-            references = [];
-            return envelope({ keys: [] });
-          default:
-            throw 'engine_protocol_error';
-        }
-      },
-    };
+      // @tauri-apps/api/core.invoke delegates directly to this method. No native bridge is present.
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args) {
+          if (args?.apiVersion !== session.apiVersion || args?.sessionId !== session.sessionId)
+            throw 'session_missing';
+          switch (command) {
+            case 'list_destinations':
+              return envelope({
+                destinations:
+                  args.offset === 0
+                    ? [
+                        {
+                          destinationId,
+                          name: 'Fiktives Testamt für Integrationstests',
+                          status: 'active',
+                          type: 'A',
+                        },
+                      ]
+                    : [],
+                offset: args.offset,
+                totalCount: 1,
+              });
+            case 'load_destination':
+              if (args.destinationId !== destinationId) throw 'resource_missing';
+              return envelope({
+                destinationId,
+                detailsJson: JSON.stringify({
+                  destinationId,
+                  status: 'active',
+                  metadataVersions: ['2.1.0'],
+                  description:
+                    'Ausschließlich synthetische öffentliche Zustellpunktdaten für die lokale UI-Prüfung.',
+                }),
+                keys: [
+                  registration(decryptId, 'decrypt'),
+                  registration(signId, 'sign'),
+                  registration('synthetic-ineligible-registration', 'unknown', false),
+                ],
+              });
+            case 'loaded_keys':
+              return envelope({ keys: references.map((key) => ({ ...key })) });
+            case 'import_key':
+              if (args.destinationId !== destinationId || !['decrypt', 'sign'].includes(args.purpose))
+                throw 'key_rejected';
+              // The fixture never parses or retains a key document. This simulates only the public UI result.
+              references = references.filter((key) => key.purpose !== args.purpose);
+              references.push({
+                destinationId,
+                kid: args.purpose === 'decrypt' ? decryptId : signId,
+                purpose: args.purpose,
+              });
+              return envelope({ keys: references.map((key) => ({ ...key })) });
+            case 'discard_keys':
+              references = [];
+              return envelope({ keys: [] });
+            default:
+              throw 'engine_protocol_error';
+          }
+        },
+      };
 
-    createApp({
-      setup() {
-        const busy = ref(false);
-        const activity = ref('Noch keine Aktion ausgeführt.');
-        const theme = value => { document.documentElement.dataset.theme = value; };
-        return () => h('main', { class: 'page client-page' }, [
-          h('section', { class: 'tool-section', 'aria-labelledby': 'fixture-title' }, [
-            h('h1', { id: 'fixture-title' }, 'UI-Testdaten · keine FIT-Connect-Verbindung'),
-            h('p', 'Diese Entwicklungsansicht verwendet ausschließlich synthetische Daten. Keine echten Schlüssel auswählen.'),
-            h('p', ['Testzustellpunkt: ', h('code', destinationId)]),
-            h('div', { class: 'client-actions' }, [
-              h('button', { class: 'button secondary', type: 'button', onClick: () => theme('light') }, 'Light Mode'),
-              h('button', { class: 'button secondary', type: 'button', onClick: () => theme('dark') }, 'Dark Mode'),
-            ]),
-          ]),
-          h(DestinationKeys, {
-            session, busy: busy.value,
-            onBusy: value => { busy.value = value; },
-            onActivity: event => { activity.value = `${event.action}: ${event.status}`; },
-            onFatal: () => { activity.value = 'UI-Test: ungültige simulierte Antwort.'; },
-          }),
-          h('p', { role: 'status' }, activity.value),
-        ]);
-      },
-    }).mount('#app');
-  </script>
-</body>
+      createApp({
+        setup() {
+          const busy = ref(false);
+          const activity = ref('Noch keine Aktion ausgeführt.');
+          const theme = (value) => {
+            document.documentElement.dataset.theme = value;
+          };
+          return () =>
+            h('main', { class: 'page client-page' }, [
+              h('section', { class: 'tool-section', 'aria-labelledby': 'fixture-title' }, [
+                h('h1', { id: 'fixture-title' }, 'UI-Testdaten · keine FIT-Connect-Verbindung'),
+                h(
+                  'p',
+                  'Diese Entwicklungsansicht verwendet ausschließlich synthetische Daten. Keine echten Schlüssel auswählen.',
+                ),
+                h('p', ['Testzustellpunkt: ', h('code', destinationId)]),
+                h('div', { class: 'client-actions' }, [
+                  h(
+                    'button',
+                    { class: 'button secondary', type: 'button', onClick: () => theme('light') },
+                    'Light Mode',
+                  ),
+                  h(
+                    'button',
+                    { class: 'button secondary', type: 'button', onClick: () => theme('dark') },
+                    'Dark Mode',
+                  ),
+                ]),
+              ]),
+              h(DestinationKeys, {
+                session,
+                busy: busy.value,
+                onBusy: (value) => {
+                  busy.value = value;
+                },
+                onActivity: (event) => {
+                  activity.value = `${event.action}: ${event.status}`;
+                },
+                onFatal: () => {
+                  activity.value = 'UI-Test: ungültige simulierte Antwort.';
+                },
+              }),
+              h('p', { role: 'status' }, activity.value),
+            ]);
+        },
+      }).mount('#app');
+    </script>
+  </body>
 </html>

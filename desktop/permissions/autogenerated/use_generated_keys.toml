@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-use-generated-keys"
+description = "Enables the use_generated_keys command without any pre-configured scope."
+commands.allow = ["use_generated_keys"]
+
+[[permission]]
+identifier = "deny-use-generated-keys"
+description = "Denies the use_generated_keys command without any pre-configured scope."
+commands.deny = ["use_generated_keys"]

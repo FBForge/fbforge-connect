@@ -1,56 +1,156 @@
 <!doctype html>
 <!-- Development-only synthetic UI fixture. No native engine or FIT-Connect network access. -->
 <html lang="de" data-theme="light">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><title>Sender · UI-Testdaten</title></head>
-<body><div id="app"></div><script type="module">
-import { createApp, h, ref } from 'vue';
-import SubmissionSender from '../src/SubmissionSender.vue';
-import '../src/site.css';
-import '../src/layout.css';
-const api = ref('v3'), busy = ref(false), uncertain = ref(false), activity = ref('Noch keine Aktion');
-const eventTarget = ref(null);
-const id = '11111111-1111-4111-8111-111111111111';
-const files = new Map();
-let current = { attemptId: null, status: 'idle', submissionId: null, caseId: null, error: null };
-const envelope = data => ({ apiVersion: api.value, sessionId: id, environment: 'TEST', data });
-window.__TAURI_INTERNALS__ = { async invoke(command, args) {
-  if (args.apiVersion !== api.value || args.sessionId !== id) throw 'session_missing';
-  if (command === 'begin_content') {
-    const contentId = crypto.randomUUID(); files.set(contentId, { total: args.totalBytes, received: 0 });
-    return envelope({ contentId, totalBytes: args.totalBytes, receivedBytes: 0, complete: args.totalBytes === 0 });
-  }
-  if (command === 'append_content') {
-    const file = files.get(args.contentId); file.received += atob(args.chunk).length;
-    return envelope({ contentId: args.contentId, totalBytes: file.total, receivedBytes: file.received, complete: file.total === file.received });
-  }
-  if (command === 'discard_content') { files.delete(args.contentId); return envelope({ contentId: args.contentId }); }
-  if (command === 'prepare_send') {
-    const { contentId, attachments, ...draft } = JSON.parse(args.sendDocument);
-    current = { attemptId: crypto.randomUUID(), status: 'prepared', submissionId: null, caseId: null, error: null };
-    return envelope({ attempt: current, summary: { ...draft, dataBytes: files.get(contentId).total,
-      attachments: attachments.map(({ contentId, ...item }) => ({ ...item, bytes: files.get(contentId).total })) } });
-  }
-  if (command === 'execute_send') {
-    if (args.attemptId !== current.attemptId || current.status !== 'prepared') throw 'send_locked';
-    current = { ...current, status: uncertain.value ? 'uncertain' : 'sent', submissionId: '22222222-2222-4222-8222-222222222222',
-      caseId: '33333333-3333-4333-8333-333333333333', error: uncertain.value ? 'resource_unavailable' : null };
-    return envelope(current);
-  }
-  if (command === 'cancel_send') { current = { ...current, status: 'cancelled' }; return envelope(current); }
-  if (command === 'send_state') return envelope(current);
-  throw 'engine_protocol_error';
-} };
-createApp({ setup() { return () => h('main', { class: 'page client-page' }, [
-  h('section', { class: 'tool-section' }, [h('h1', 'Sender · ausschließlich synthetische UI-Testdaten'),
-    h('p', 'Keine FIT-Connect-Verbindung. Keine echten Inhalte auswählen.'),
-    h('div', { class: 'client-actions' }, [h('button', { class: 'button secondary', onClick: () => document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark' }, 'Theme wechseln'),
-      h('button', { class: 'button secondary', disabled: busy.value, onClick: () => api.value = api.value === 'v3' ? 'v2' : 'v3' }, 'API wechseln'),
-      h('label', [h('input', { type: 'checkbox', checked: uncertain.value, onChange: event => uncertain.value = event.target.checked }), 'Ungewissen Ausgang simulieren'])]),
-    h('p', { role: 'status' }, activity.value)]),
-  h(SubmissionSender, { session: { apiVersion: api.value, sessionId: id, environment: 'TEST', connected: true, role: 'online-service' },
-    busy: busy.value, onBusy: value => busy.value = value, onActivity: event => activity.value = `${event.action}: ${event.status}`,
-    onEventLog: value => eventTarget.value = value }),
-  eventTarget.value && h('section', { class: 'tool-section', 'aria-label': 'Event-Log-Ziel' }, [h('h2', 'Übernommene Event-Log-Kennungen'),
-    ...Object.entries(eventTarget.value).map(([key, value]) => h('p', [h('strong', key + ': '), h('code', value)]))]),
-]); } }).mount('#app');
-</script></body></html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Sender · UI-Testdaten</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp, h, ref } from 'vue';
+      import SubmissionSender from '../src/SubmissionSender.vue';
+      import '../src/site.css';
+      import '../src/layout.css';
+      const api = ref('v3'),
+        busy = ref(false),
+        uncertain = ref(false),
+        activity = ref('Noch keine Aktion');
+      const eventTarget = ref(null);
+      const id = '11111111-1111-4111-8111-111111111111';
+      const files = new Map();
+      let current = { attemptId: null, status: 'idle', submissionId: null, caseId: null, error: null };
+      const envelope = (data) => ({ apiVersion: api.value, sessionId: id, environment: 'TEST', data });
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args) {
+          if (args.apiVersion !== api.value || args.sessionId !== id) throw 'session_missing';
+          if (command === 'begin_content') {
+            const contentId = crypto.randomUUID();
+            files.set(contentId, { total: args.totalBytes, received: 0 });
+            return envelope({
+              contentId,
+              totalBytes: args.totalBytes,
+              receivedBytes: 0,
+              complete: args.totalBytes === 0,
+            });
+          }
+          if (command === 'append_content') {
+            const file = files.get(args.contentId);
+            file.received += atob(args.chunk).length;
+            return envelope({
+              contentId: args.contentId,
+              totalBytes: file.total,
+              receivedBytes: file.received,
+              complete: file.total === file.received,
+            });
+          }
+          if (command === 'discard_content') {
+            files.delete(args.contentId);
+            return envelope({ contentId: args.contentId });
+          }
+          if (command === 'prepare_send') {
+            const { contentId, attachments, ...draft } = JSON.parse(args.sendDocument);
+            current = {
+              attemptId: crypto.randomUUID(),
+              status: 'prepared',
+              submissionId: null,
+              caseId: null,
+              error: null,
+            };
+            return envelope({
+              attempt: current,
+              summary: {
+                ...draft,
+                dataBytes: files.get(contentId).total,
+                attachments: attachments.map(({ contentId, ...item }) => ({
+                  ...item,
+                  bytes: files.get(contentId).total,
+                })),
+              },
+            });
+          }
+          if (command === 'execute_send') {
+            if (args.attemptId !== current.attemptId || current.status !== 'prepared') throw 'send_locked';
+            current = {
+              ...current,
+              status: uncertain.value ? 'uncertain' : 'sent',
+              submissionId: '22222222-2222-4222-8222-222222222222',
+              caseId: '33333333-3333-4333-8333-333333333333',
+              error: uncertain.value ? 'resource_unavailable' : null,
+            };
+            return envelope(current);
+          }
+          if (command === 'cancel_send') {
+            current = { ...current, status: 'cancelled' };
+            return envelope(current);
+          }
+          if (command === 'send_state') return envelope(current);
+          throw 'engine_protocol_error';
+        },
+      };
+      createApp({
+        setup() {
+          return () =>
+            h('main', { class: 'page client-page' }, [
+              h('section', { class: 'tool-section' }, [
+                h('h1', 'Sender · ausschließlich synthetische UI-Testdaten'),
+                h('p', 'Keine FIT-Connect-Verbindung. Keine echten Inhalte auswählen.'),
+                h('div', { class: 'client-actions' }, [
+                  h(
+                    'button',
+                    {
+                      class: 'button secondary',
+                      onClick: () =>
+                        (document.documentElement.dataset.theme =
+                          document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'),
+                    },
+                    'Theme wechseln',
+                  ),
+                  h(
+                    'button',
+                    {
+                      class: 'button secondary',
+                      disabled: busy.value,
+                      onClick: () => (api.value = api.value === 'v3' ? 'v2' : 'v3'),
+                    },
+                    'API wechseln',
+                  ),
+                  h('label', [
+                    h('input', {
+                      type: 'checkbox',
+                      checked: uncertain.value,
+                      onChange: (event) => (uncertain.value = event.target.checked),
+                    }),
+                    'Ungewissen Ausgang simulieren',
+                  ]),
+                ]),
+                h('p', { role: 'status' }, activity.value),
+              ]),
+              h(SubmissionSender, {
+                session: {
+                  apiVersion: api.value,
+                  sessionId: id,
+                  environment: 'TEST',
+                  connected: true,
+                  role: 'online-service',
+                },
+                busy: busy.value,
+                onBusy: (value) => (busy.value = value),
+                onActivity: (event) => (activity.value = `${event.action}: ${event.status}`),
+                onEventLog: (value) => (eventTarget.value = value),
+              }),
+              eventTarget.value &&
+                h('section', { class: 'tool-section', 'aria-label': 'Event-Log-Ziel' }, [
+                  h('h2', 'Übernommene Event-Log-Kennungen'),
+                  ...Object.entries(eventTarget.value).map(([key, value]) =>
+                    h('p', [h('strong', key + ': '), h('code', value)]),
+                  ),
+                ]),
+            ]);
+        },
+      }).mount('#app');
+    </script>
+  </body>
+</html>

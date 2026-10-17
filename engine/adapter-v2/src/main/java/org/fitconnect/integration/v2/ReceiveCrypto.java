@@ -1,56 +1,97 @@
 package org.fitconnect.integration.v2;
 
+import com.fasterxml.jackson.core.*;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.crypto.opts.*;
 import com.nimbusds.jose.jwk.RSAKey;
-import com.fasterxml.jackson.core.*;
-import dev.fitko.fitconnect.core.crypto.JWECryptoService;
 import dev.fitko.fitconnect.api.domain.crypto.DecryptedJwe;
-import org.fitconnect.integration.contract.SessionException;
-import org.fitconnect.integration.contract.ReceiveFileNames;
+import dev.fitko.fitconnect.core.crypto.JWECryptoService;
 import java.util.*;
+import org.fitconnect.integration.contract.ReceiveFileNames;
+import org.fitconnect.integration.contract.SessionException;
 
-/** Configure the SDK's JOSE library with explicit limits. No encryption primitives are implemented here. */
+/**
+ * Configure the SDK's JOSE library with explicit limits. No encryption primitives are implemented
+ * here.
+ */
 final class ReceiveCrypto extends JWECryptoService {
     private byte[] metadata;
     private long total;
-    byte[] metadata() { return metadata; }
-    @Override public byte[] decryptToBytes(RSAKey key, String wire) { return decryptToBytesWithAuthTag(key, wire).getPayload(); }
-    @Override public DecryptedJwe decryptToBytesWithAuthTag(RSAKey key, String wire) {
+
+    byte[] metadata() {
+        return metadata;
+    }
+
+    @Override
+    public byte[] decryptToBytes(RSAKey key, String wire) {
+        return decryptToBytesWithAuthTag(key, wire).getPayload();
+    }
+
+    @Override
+    public DecryptedJwe decryptToBytesWithAuthTag(RSAKey key, String wire) {
         try {
-            if (wire == null || wire.length() > 46 * 1024 * 1024) throw new SessionException("content_limit");
-            if (wire.indexOf('.') < 1 || wire.indexOf('.') > 16384) throw new SessionException("invalid_resource");
+            if (wire == null || wire.length() > 46 * 1024 * 1024)
+                throw new SessionException("content_limit");
+            if (wire.indexOf('.') < 1 || wire.indexOf('.') > 16384)
+                throw new SessionException("invalid_resource");
             JWEObject jwe = JWEObject.parse(wire);
             var header = jwe.getHeader();
-            if (!JWEAlgorithm.RSA_OAEP_256.equals(header.getAlgorithm()) || !EncryptionMethod.A256GCM.equals(header.getEncryptionMethod())
-                    || !Objects.equals(key.getKeyID(), header.getKeyID()) || header.getCriticalParams() != null
-                    || header.getCompressionAlgorithm() != null && !CompressionAlgorithm.DEF.equals(header.getCompressionAlgorithm()))
+            if (!JWEAlgorithm.RSA_OAEP_256.equals(header.getAlgorithm())
+                    || !EncryptionMethod.A256GCM.equals(header.getEncryptionMethod())
+                    || !Objects.equals(key.getKeyID(), header.getKeyID())
+                    || header.getCriticalParams() != null
+                    || header.getCompressionAlgorithm() != null
+                            && !CompressionAlgorithm.DEF.equals(header.getCompressionAlgorithm()))
                 throw new SessionException("verification_failed");
             int maximum = metadata == null ? 2 * 1024 * 1024 : 32 * 1024 * 1024;
-            jwe.decrypt(new RSADecrypter(key, Set.of(new MaxDecompressedPlainTextLength(maximum))),
+            jwe.decrypt(
+                    new RSADecrypter(key, Set.of(new MaxDecompressedPlainTextLength(maximum))),
                     Set.of(new MaxCompressedCipherTextLength(46 * 1024 * 1024)));
             byte[] plain = jwe.getPayload().toBytes();
-            if (plain.length > maximum || (total += plain.length) > 64L * 1024 * 1024) throw new SessionException("content_limit");
-            if (metadata == null) { validateMetadata(plain); metadata = plain; }
+            if (plain.length > maximum || (total += plain.length) > 64L * 1024 * 1024)
+                throw new SessionException("content_limit");
+            if (metadata == null) {
+                validateMetadata(plain);
+                metadata = plain;
+            }
             return new DecryptedJwe(plain, jwe.getAuthTag().toString());
-        } catch (SessionException failure) { throw failure;
-        } catch (Exception failure) { throw new SessionException("verification_failed"); }
+        } catch (SessionException failure) {
+            throw failure;
+        } catch (Exception failure) {
+            throw new SessionException("verification_failed");
+        }
     }
+
     private static void validateMetadata(byte[] plain) throws Exception {
-        var factory = JsonFactory.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
-                .streamReadConstraints(StreamReadConstraints.builder().maxNestingDepth(32).maxStringLength(2 * 1024 * 1024).build()).build();
+        var factory =
+                JsonFactory.builder()
+                        .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                        .streamReadConstraints(
+                                StreamReadConstraints.builder()
+                                        .maxNestingDepth(32)
+                                        .maxStringLength(2 * 1024 * 1024)
+                                        .build())
+                        .build();
         try (var parser = factory.createParser(plain)) {
-            if (parser.nextToken() != JsonToken.START_OBJECT) throw new SessionException("invalid_resource");
-            int depth = 1, remaining = 20000; boolean supported = false;
+            if (parser.nextToken() != JsonToken.START_OBJECT)
+                throw new SessionException("invalid_resource");
+            int depth = 1, remaining = 20000;
+            boolean supported = false;
             JsonToken token;
             while ((token = parser.nextToken()) != null) {
                 if (--remaining < 0 || depth == 0) throw new SessionException("invalid_resource");
                 if (token.isStructStart()) depth++;
                 if (token.isStructEnd()) depth--;
-                if (token == JsonToken.VALUE_STRING && "filename".equals(parser.currentName())) ReceiveFileNames.check(parser.getText());
-                if (depth == 1 && token == JsonToken.VALUE_STRING && "$schema".equals(parser.currentName()))
-                    supported = parser.getText().matches("https://schema\\.fitko\\.de/fit-connect/metadata/2\\.\\d+\\.\\d+/metadata\\.schema\\.json");
+                if (token == JsonToken.VALUE_STRING && "filename".equals(parser.currentName()))
+                    ReceiveFileNames.check(parser.getText());
+                if (depth == 1
+                        && token == JsonToken.VALUE_STRING
+                        && "$schema".equals(parser.currentName()))
+                    supported =
+                            parser.getText()
+                                    .matches(
+                                            "https://schema\\.fitko\\.de/fit-connect/metadata/2\\.\\d+\\.\\d+/metadata\\.schema\\.json");
             }
             if (!supported || depth != 0) throw new SessionException("invalid_resource");
         }

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Öffentliche FIM-Schemata · fiktive Werte</title>
+  </head>
+  <body>
+    <h1>Schema-Darstellungsprüfung</h1>
+    <script type="module">
+      import { parseStructuredData } from '../src/structured-data.js';
+      import { annotateSchema } from '../src/schema-annotations.js';
+      window.__inspectPublicSchema = (format, text, schema, uri) => {
+        const model = parseStructuredData(text, format),
+          before = JSON.stringify(model);
+        const packet =
+          format === 'json'
+            ? { schemaPackage: 1, schemaUri: uri, documents: { [uri]: JSON.parse(schema) } }
+            : { schemaPackage: 1, schemaUri: uri, schemas: [{ name: uri, text: schema, primary: true }] };
+        const annotated = annotateSchema(model, JSON.stringify(packet), uri);
+        const flatten = (node) => [node, ...node.children.flatMap(flatten)];
+        return {
+          status: annotated.status,
+          unchanged: JSON.stringify(model) === before,
+          root: annotated.root.label,
+          fields: flatten(annotated.root).map((n) => ({
+            key: n.key,
+            label: n.label,
+            value: n.value,
+            schema: n.schema,
+          })),
+        };
+      };
+    </script>
+  </body>
+</html>

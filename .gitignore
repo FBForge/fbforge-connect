@@ -29,9 +29,14 @@ desktop/resources/.stage-*/
 
 # Local project documentation and development guidance
 /docs/
-/THIRD_PARTY_NOTICES.md
 /.codex/
 /.agents/
 /AGENTS.md
 /CLAUDE.md
 
+
+/playwright-report/
+/test-results/
+
+# Downloaded immutable public schema fixtures are test-only and never distributed.
+/frontend/test-fixtures/.public-schema-cache/

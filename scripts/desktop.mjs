@@ -3,6 +3,16 @@ import { fileURLToPath } from 'node:url';
 
 const directory = fileURLToPath(new URL('../desktop/', import.meta.url));
 const cli = fileURLToPath(new URL('../node_modules/@tauri-apps/cli/tauri.js', import.meta.url));
-const child = spawn(process.execPath, [cli, ...process.argv.slice(2)], { cwd: directory, stdio: 'inherit' });
-child.on('error', () => { console.error('Tauri CLI konnte nicht gestartet werden. Bitte npm ci ausführen.'); process.exitCode = 1; });
-child.on('exit', code => { process.exitCode = code ?? 1; });
+const args = process.argv.slice(2);
+// Windows currently ships NSIS only and has no updater plugin. Preserve byte-exact
+// executable provenance instead of patching its per-bundle updater marker.
+if (process.platform === 'win32' && args[0] === 'build' && !args.includes('--no-binary-patching'))
+  args.splice(1, 0, '--no-binary-patching');
+const child = spawn(process.execPath, [cli, ...args], { cwd: directory, stdio: 'inherit' });
+child.on('error', () => {
+  console.error('Tauri CLI konnte nicht gestartet werden. Bitte npm ci ausführen.');
+  process.exitCode = 1;
+});
+child.on('exit', (code) => {
+  process.exitCode = code ?? 1;
+});

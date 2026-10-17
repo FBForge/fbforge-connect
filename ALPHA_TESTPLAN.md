@@ -1,5 +1,7 @@
 # Alpha-Testplan · 0.1.0-dev.7
 
+Aktueller Alpha-1-Kandidat und Nachweise: [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md). Die folgenden dev.2–dev.7-Abschnitte dokumentieren die früheren Regressionen; neue Live- und Installationsabnahmen sind in [LIVE_TESTS.md](LIVE_TESTS.md) und [INSTALLATION_TESTS.md](INSTALLATION_TESTS.md) beschrieben.
+
 Entwicklungszweig: `develop`. Dies ist ein Entwicklungsstand für die erste ausführbare Alpha. Eine erfolgreiche Simulation ersetzt keinen Live-Test gegen TEST.
 
 ## Korrigierte und automatisiert geprüfte Fälle
@@ -69,6 +71,8 @@ Die Tests verwenden synthetische API-Antworten und erzeugen keine Änderungen an
 Die Browserprüfung verwendet eine synthetische native Schnittstelle. Sie prüft Oberfläche und Export, nicht die Kommunikation mit FIT-Connect oder die tatsächliche Windows-WebView. Reply-, Prozess- und ZBP-Funktionen wurden in dev.4 nicht erweitert. PROD bleibt ausgeschlossen.
 
 ## Zusätzliche Abnahme von dev.5
+
+Historischer Produktname: Die folgende Namensprüfung gilt für dev.5. Seit dev.8 heißt die Anwendung **FBForge Connect**; aktuelle Nachweise stehen in [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md).
 
 1. Installer, Fenstertitel, Hauptnavigation/Programminformationen und Diagnosebericht müssen „FIT-Connect Test-Client“ verwenden. Installation beziehungsweise Aktualisierung von dev.4 gesondert prüfen; das Umbenennen ist kein bereits getesteter Upgrade-Nachweis.
 2. Beim Versand JSON über Eingabefeld und Datei vorbereiten. „Fachdaten visuell ansehen“ öffnen: Feldgruppen, Suche, JSON-Struktur und Quelltext prüfen. Werte und Dateiauswahl müssen nach dem Schließen unverändert sein. Öffnen/Schließen darf keine Übertragung auslösen. Für XML dasselbe prüfen.

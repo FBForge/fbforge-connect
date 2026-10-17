@@ -1,64 +1,354 @@
-<!doctype html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Antragsansicht · synthetische Testdaten</title></head><body><div id="app"></div><script type="module">
-import { createApp, ref, h } from 'vue';
-import ReceivePanel from '../src/ReceivePanel.vue';
-import SubmissionBrowser from '../src/SubmissionBrowser.vue';
-import EventLogPanel from '../src/EventLogPanel.vue';
-import '../src/site.css';import '../src/layout.css';import '../src/desktop.css';import '../src/application-view.css';
-const uuid = n => `${String(n).padStart(8,'0')}-1111-4111-8111-111111111111`;
-const session={sessionId:uuid(1),apiVersion:'v3',environment:'TEST',role:'online-service',connected:true};
-const detail={destinationId:uuid(2),submissionId:uuid(3),caseId:uuid(4),metadataAvailable:true,dataAvailable:true};
-const json='{"antragsteller":{"vorname":"Erika","nachname":"Musterfrau","geburtsdatum":"1985-04-12","adresse":{"strasse":"Teststraße 7","postleitzahl":"12345","ort":"Teststadt"}},"anliegen":{"leistung":"Synthetischer Testantrag","mitteilung":"Bitte prüfen Sie meinen Testantrag.","einwilligung":true},"kinder":[{"vorname":"Alex","geburtsdatum":"2015-03-08"}]}';
-const xml='<?xml version="1.0"?><a:antrag xmlns:a="urn:test:antrag" nummer="9007199254740993"><a:antragsteller><a:vorname>Erika</a:vorname><a:nachname>Musterfrau</a:nachname><a:adresse><a:strasse>Teststraße 7</a:strasse><a:ort>Teststadt</a:ort></a:adresse></a:antragsteller><a:anliegen status="neu">Ein <a:art>Testantrag</a:art> mit Anlagen.</a:anliegen><a:kind>Alex</a:kind><a:kind>Robin</a:kind></a:antrag>';
-const fixture=window.__applicationFixture={uploaded:new Map(),replyWrites:0,replyState:null,nextContent:20,delaySchema:false,releaseSchema:null,calls:[],format:'json',delayRead:false,releaseRead:null};
-const textBytes=value=>new TextEncoder().encode(value);
-const parts=()=>[ {contentId:uuid(5),kind:'metadata',attachmentId:null,fileName:'Metadaten.json',mimeType:'application/json',description:null,bytes:textBytes('{}')},
- {contentId:uuid(6),kind:'data',attachmentId:null,fileName:`Antrag.${fixture.format==='large'?'json':fixture.format}`,mimeType:`application/${fixture.format==='large'?'json':fixture.format}`,description:null,bytes:textBytes(fixture.customText??(fixture.format==='xml'?xml:fixture.format==='large'?'x'.repeat(256*1024+1):json))},
- {contentId:uuid(7),kind:'attachment',attachmentId:uuid(8),fileName:'Nachweis.txt',mimeType:'text/plain',description:'Fiktiver Nachweis zum Antrag',bytes:textBytes('Synthetischer Nachweis.')} ];
-const envelope=data=>({apiVersion:session.apiVersion,sessionId:session.sessionId,environment:'TEST',data});
-window.__TAURI_INTERNALS__={async invoke(command,args){
- fixture.calls.push(command);
- if(command==='load_submission')return envelope({...detail,fromDestinationId:uuid(17),attachments:[uuid(8)],serviceIdentifier:'urn:test:service',serviceName:'Synthetischer Testantrag',region:'DE000000000000',processModelId:null,messageId:null});
- if(command==='verify_submission')return envelope({proofId:uuid(9),destinationId:detail.destinationId,submissionId:detail.submissionId,caseId:detail.caseId,partCount:3,warningCount:1,warnings:['MALWARE_SCAN_NOT_CONFIGURED']});
- if(command==='list_received_contents')return envelope({proofId:uuid(9),offset:args.offset,total:3,parts:parts().slice(args.offset,args.offset+2).map(({bytes,...part})=>({...part,totalBytes:bytes.length}))});
- if(command==='read_received_content'){
-  if(fixture.delayRead)await new Promise(resolve=>fixture.releaseRead=resolve);
-  const part=parts().find(p=>p.contentId===args.contentId), chunk=part.bytes.slice(args.byteOffset,args.byteOffset+24*1024);
-  return envelope({proofId:uuid(9),contentId:args.contentId,byteOffset:args.byteOffset,totalBytes:part.bytes.length,chunk:btoa(String.fromCharCode(...chunk)),complete:args.byteOffset+chunk.length===part.bytes.length});
- }
- if(command==='read_received_schema'){
-  const bytes=fixture.schemaPacket?textBytes(JSON.stringify(fixture.schemaPacket)):new Uint8Array();
-  return envelope({proofId:uuid(9),schemaUri:fixture.schemaPacket?.schemaUri??null,totalBytes:bytes.length,byteOffset:args.byteOffset,chunk:btoa(String.fromCharCode(...bytes.slice(args.byteOffset,args.byteOffset+12288)))});
- }
- if(command==='reply_state')return envelope(fixture.replyState||{attemptId:null,status:'idle',replyId:null,caseId:null,error:null});
- if(command==='reply_target')return envelope({proofId:uuid(9),destinationId:detail.destinationId,submissionId:detail.submissionId,caseId:detail.caseId,replyDestinationId:null,offset:0,total:1,schemas:[{schemaUri:'https://example.invalid/reply.json',mimeType:'application/json'}]});
- if(command==='discard_received')return envelope({proofId:args.proofId});
- if(command==='discard_content'){fixture.uploaded.delete(args.contentId);return envelope({contentId:args.contentId});}
- if(command==='load_reply_schema'){
-  if(fixture.delaySchema)await new Promise(resolve=>fixture.releaseSchema=resolve);
-  const selection=JSON.parse(args.schemaDocument);let schema={title:'Testantwort',type:'object',required:['status'],properties:{status:{title:'Bearbeitungsstatus',type:'string',const:'erhalten'}}};
-  if(selection.schemaContentId)schema=JSON.parse(new TextDecoder().decode(fixture.uploaded.get(selection.schemaContentId).bytes));
-  const packet={schemaPackage:1,schemaUri:selection.schemaUri,documents:{[selection.schemaUri]:schema}},bytes=textBytes(JSON.stringify(packet));
-  return envelope({schemaId:uuid(11),schemaUri:selection.schemaUri,totalBytes:bytes.length,byteOffset:0,chunk:btoa(String.fromCharCode(...bytes))});
- }
- if(command==='begin_content') {const contentId=uuid(fixture.nextContent++);fixture.uploaded.set(contentId,{bytes:new Uint8Array(args.totalBytes),received:0});return envelope({contentId,totalBytes:args.totalBytes,receivedBytes:0,complete:args.totalBytes===0});}
- if(command==='append_content'){const item=fixture.uploaded.get(args.contentId),part=Uint8Array.from(atob(args.chunk),c=>c.charCodeAt(0));item.bytes.set(part,args.byteOffset);item.received+=part.length;return envelope({contentId:args.contentId,totalBytes:item.bytes.length,receivedBytes:item.received,complete:item.received===item.bytes.length});}
- if(command==='prepare_reply'){
-  const draft=JSON.parse(args.replyDocument),data=fixture.uploaded.get(draft.contentId).bytes;
-  if(JSON.parse(new TextDecoder().decode(data)).status!=='erhalten')throw 'data_schema_invalid';
-  const {contentId,attachments,...summary}=draft;fixture.replyBytes=new Uint8Array(data);
-  fixture.replyState={attemptId:uuid(12),status:'prepared',replyId:null,caseId:detail.caseId,error:null};
-  return envelope({attempt:fixture.replyState,summary:{...summary,destinationId:detail.destinationId,submissionId:detail.submissionId,caseId:detail.caseId,dataBytes:data.length,attachments:attachments.map(item=>({fileName:item.fileName,mimeType:item.mimeType,description:item.description,bytes:fixture.uploaded.get(item.contentId).bytes.length}))}});
- }
- if(command==='cancel_reply'){fixture.replyState={...fixture.replyState,status:'cancelled'};return envelope(fixture.replyState);}
- if(command==='execute_reply'){fixture.replyWrites++;fixture.replyState={...fixture.replyState,status:fixture.uncertain?'uncertain':'sent',replyId:uuid(13),error:fixture.uncertain?'resource_unavailable':null};return envelope(fixture.replyState);}
- if(command==='load_reply_event_log')return envelope({logId:uuid(14),caseId:args.caseId,replyId:args.replyId,total:2,warnings:['CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED']});
- if(command==='list_event_log')return envelope({logId:uuid(14),offset:0,total:2,events:['submit-reply','accept-reply'].map((name,index)=>({eventId:uuid(15+index),eventType:'https://schema.fitko.de/fit-connect/events/'+name,issuer:'https://test.fit-connect.fitko.dev/submission-api',issuedAt:`2026-10-16T12:0${index}:00Z`,headerBytes:2,claimsBytes:2}))});
- if(command==='read_event_log')return envelope({logId:uuid(14),eventId:args.eventId,part:args.part,byteOffset:0,totalBytes:2,chunk:btoa('{}'),complete:true});
- if(command==='discard_event_log')return envelope({logId:args.logId});
- throw 'resource_denied';
-}};
-createApp({setup(){const busy=ref(false),eventTarget=ref(null),current=ref(detail),keys=ref(0);fixture.invalidate=()=>keys.value++;fixture.replaceDetail=()=>current.value={...detail,submissionId:uuid(10)};return()=>h('div',{class:'desktop-shell',style:'grid-template-columns:1fr'},[
- h('header',{class:'app-topbar'},[h('strong','FIT-Connect Test-Client'),h('span',{class:'environment-tag'},'SYNTHETISCHE TESTDATEN')]),
- h('main',{class:'workspace-scroll',style:'grid-column:1;grid-row:2'},[h('div',{class:'workspace-content'},[h('div',{style:{display:eventTarget.value?'none':'block'}},[h(new URLSearchParams(location.search).has('browser')?SubmissionBrowser:ReceivePanel,{session,destinationId:detail.destinationId,detail:current.value,busy:busy.value,keyRevision:keys.value,onBusy:value=>busy.value=value,onEventLog:value=>eventTarget.value=value})]),h('div',{style:{display:eventTarget.value?'block':'none'}},[h(EventLogPanel,{session,target:eventTarget.value,visible:Boolean(eventTarget.value),busy:busy.value,onBusy:value=>busy.value=value})])])]),
- h('footer',{class:'app-statusbar'},'Lokale UI-Prüfung · keine FIT-Connect-Verbindung')]);}}).mount('#app');
-</script></body></html>
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Antragsansicht · synthetische Testdaten</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp, ref, h } from 'vue';
+      import { productName } from '../src/product.js';
+      import ReceivePanel from '../src/ReceivePanel.vue';
+      import SubmissionBrowser from '../src/SubmissionBrowser.vue';
+      import EventLogPanel from '../src/EventLogPanel.vue';
+      import '../src/site.css';
+      import '../src/layout.css';
+      import '../src/desktop.css';
+      import '../src/application-view.css';
+      const uuid = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
+      const session = {
+        sessionId: uuid(1),
+        apiVersion: 'v3',
+        environment: 'TEST',
+        role: 'online-service',
+        connected: true,
+      };
+      const detail = {
+        destinationId: uuid(2),
+        submissionId: uuid(3),
+        caseId: uuid(4),
+        metadataAvailable: true,
+        dataAvailable: true,
+      };
+      const json =
+        '{"antragsteller":{"vorname":"Erika","nachname":"Musterfrau","geburtsdatum":"1985-04-12","adresse":{"strasse":"Teststraße 7","postleitzahl":"12345","ort":"Teststadt"}},"anliegen":{"leistung":"Synthetischer Testantrag","mitteilung":"Bitte prüfen Sie meinen Testantrag.","einwilligung":true},"kinder":[{"vorname":"Alex","geburtsdatum":"2015-03-08"}]}';
+      const xml =
+        '<?xml version="1.0"?><a:antrag xmlns:a="urn:test:antrag" nummer="9007199254740993"><a:antragsteller><a:vorname>Erika</a:vorname><a:nachname>Musterfrau</a:nachname><a:adresse><a:strasse>Teststraße 7</a:strasse><a:ort>Teststadt</a:ort></a:adresse></a:antragsteller><a:anliegen status="neu">Ein <a:art>Testantrag</a:art> mit Anlagen.</a:anliegen><a:kind>Alex</a:kind><a:kind>Robin</a:kind></a:antrag>';
+      const fixture = (window.__applicationFixture = {
+        uploaded: new Map(),
+        replyWrites: 0,
+        replyState: null,
+        nextContent: 20,
+        delaySchema: false,
+        releaseSchema: null,
+        calls: [],
+        format: 'json',
+        delayRead: false,
+        releaseRead: null,
+      });
+      const textBytes = (value) => new TextEncoder().encode(value);
+      const parts = () => [
+        {
+          contentId: uuid(5),
+          kind: 'metadata',
+          attachmentId: null,
+          fileName: 'Metadaten.json',
+          mimeType: 'application/json',
+          description: null,
+          bytes: textBytes('{}'),
+        },
+        {
+          contentId: uuid(6),
+          kind: 'data',
+          attachmentId: null,
+          fileName: `Antrag.${fixture.format === 'large' ? 'json' : fixture.format}`,
+          mimeType: `application/${fixture.format === 'large' ? 'json' : fixture.format}`,
+          description: null,
+          bytes: textBytes(
+            fixture.customText ??
+              (fixture.format === 'xml'
+                ? xml
+                : fixture.format === 'large'
+                  ? 'x'.repeat(256 * 1024 + 1)
+                  : json),
+          ),
+        },
+        {
+          contentId: uuid(7),
+          kind: 'attachment',
+          attachmentId: uuid(8),
+          fileName: 'Nachweis.txt',
+          mimeType: 'text/plain',
+          description: 'Fiktiver Nachweis zum Antrag',
+          bytes: textBytes('Synthetischer Nachweis.'),
+        },
+      ];
+      const envelope = (data) => ({
+        apiVersion: session.apiVersion,
+        sessionId: session.sessionId,
+        environment: 'TEST',
+        data,
+      });
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args) {
+          fixture.calls.push(command);
+          if (command === 'load_submission')
+            return envelope({
+              ...detail,
+              fromDestinationId: uuid(17),
+              attachments: [uuid(8)],
+              serviceIdentifier: 'urn:test:service',
+              serviceName: 'Synthetischer Testantrag',
+              region: 'DE000000000000',
+              processModelId: null,
+              messageId: null,
+            });
+          if (command === 'verify_submission')
+            return envelope({
+              proofId: uuid(9),
+              destinationId: detail.destinationId,
+              submissionId: detail.submissionId,
+              caseId: detail.caseId,
+              partCount: 3,
+              warningCount: 1,
+              warnings: ['MALWARE_SCAN_NOT_CONFIGURED'],
+            });
+          if (command === 'list_received_contents')
+            return envelope({
+              proofId: uuid(9),
+              offset: args.offset,
+              total: 3,
+              parts: parts()
+                .slice(args.offset, args.offset + 2)
+                .map(({ bytes, ...part }) => ({ ...part, totalBytes: bytes.length })),
+            });
+          if (command === 'read_received_content') {
+            if (fixture.delayRead) await new Promise((resolve) => (fixture.releaseRead = resolve));
+            const part = parts().find((p) => p.contentId === args.contentId),
+              chunk = part.bytes.slice(args.byteOffset, args.byteOffset + 24 * 1024);
+            return envelope({
+              proofId: uuid(9),
+              contentId: args.contentId,
+              byteOffset: args.byteOffset,
+              totalBytes: part.bytes.length,
+              chunk: btoa(String.fromCharCode(...chunk)),
+              complete: args.byteOffset + chunk.length === part.bytes.length,
+            });
+          }
+          if (command === 'read_received_schema') {
+            const bytes = fixture.schemaPacket
+              ? textBytes(JSON.stringify(fixture.schemaPacket))
+              : new Uint8Array();
+            return envelope({
+              proofId: uuid(9),
+              schemaUri: fixture.schemaPacket?.schemaUri ?? null,
+              totalBytes: bytes.length,
+              byteOffset: args.byteOffset,
+              chunk: btoa(String.fromCharCode(...bytes.slice(args.byteOffset, args.byteOffset + 12288))),
+            });
+          }
+          if (command === 'reply_state')
+            return envelope(
+              fixture.replyState || {
+                attemptId: null,
+                status: 'idle',
+                replyId: null,
+                caseId: null,
+                error: null,
+              },
+            );
+          if (command === 'reply_target')
+            return envelope({
+              proofId: uuid(9),
+              destinationId: detail.destinationId,
+              submissionId: detail.submissionId,
+              caseId: detail.caseId,
+              replyDestinationId: null,
+              offset: 0,
+              total: 1,
+              schemas: [{ schemaUri: 'https://example.invalid/reply.json', mimeType: 'application/json' }],
+            });
+          if (command === 'discard_received') return envelope({ proofId: args.proofId });
+          if (command === 'discard_content') {
+            fixture.uploaded.delete(args.contentId);
+            return envelope({ contentId: args.contentId });
+          }
+          if (command === 'load_reply_schema') {
+            if (fixture.delaySchema) await new Promise((resolve) => (fixture.releaseSchema = resolve));
+            const selection = JSON.parse(args.schemaDocument);
+            let schema = {
+              title: 'Testantwort',
+              type: 'object',
+              required: ['status'],
+              properties: { status: { title: 'Bearbeitungsstatus', type: 'string', const: 'erhalten' } },
+            };
+            if (selection.schemaContentId)
+              schema = JSON.parse(
+                new TextDecoder().decode(fixture.uploaded.get(selection.schemaContentId).bytes),
+              );
+            const packet = {
+                schemaPackage: 1,
+                schemaUri: selection.schemaUri,
+                documents: { [selection.schemaUri]: schema },
+              },
+              bytes = textBytes(JSON.stringify(packet));
+            return envelope({
+              schemaId: uuid(11),
+              schemaUri: selection.schemaUri,
+              totalBytes: bytes.length,
+              byteOffset: 0,
+              chunk: btoa(String.fromCharCode(...bytes)),
+            });
+          }
+          if (command === 'begin_content') {
+            const contentId = uuid(fixture.nextContent++);
+            fixture.uploaded.set(contentId, { bytes: new Uint8Array(args.totalBytes), received: 0 });
+            return envelope({
+              contentId,
+              totalBytes: args.totalBytes,
+              receivedBytes: 0,
+              complete: args.totalBytes === 0,
+            });
+          }
+          if (command === 'append_content') {
+            const item = fixture.uploaded.get(args.contentId),
+              part = Uint8Array.from(atob(args.chunk), (c) => c.charCodeAt(0));
+            item.bytes.set(part, args.byteOffset);
+            item.received += part.length;
+            return envelope({
+              contentId: args.contentId,
+              totalBytes: item.bytes.length,
+              receivedBytes: item.received,
+              complete: item.received === item.bytes.length,
+            });
+          }
+          if (command === 'prepare_reply') {
+            const draft = JSON.parse(args.replyDocument),
+              data = fixture.uploaded.get(draft.contentId).bytes;
+            if (JSON.parse(new TextDecoder().decode(data)).status !== 'erhalten') throw 'data_schema_invalid';
+            const { contentId, attachments, ...summary } = draft;
+            fixture.replyBytes = new Uint8Array(data);
+            fixture.replyState = {
+              attemptId: uuid(12),
+              status: 'prepared',
+              replyId: null,
+              caseId: detail.caseId,
+              error: null,
+            };
+            return envelope({
+              attempt: fixture.replyState,
+              summary: {
+                ...summary,
+                destinationId: detail.destinationId,
+                submissionId: detail.submissionId,
+                caseId: detail.caseId,
+                dataBytes: data.length,
+                attachments: attachments.map((item) => ({
+                  fileName: item.fileName,
+                  mimeType: item.mimeType,
+                  description: item.description,
+                  bytes: fixture.uploaded.get(item.contentId).bytes.length,
+                })),
+              },
+            });
+          }
+          if (command === 'cancel_reply') {
+            fixture.replyState = { ...fixture.replyState, status: 'cancelled' };
+            return envelope(fixture.replyState);
+          }
+          if (command === 'execute_reply') {
+            fixture.replyWrites++;
+            fixture.replyState = {
+              ...fixture.replyState,
+              status: fixture.uncertain ? 'uncertain' : 'sent',
+              replyId: uuid(13),
+              error: fixture.uncertain ? 'resource_unavailable' : null,
+            };
+            return envelope(fixture.replyState);
+          }
+          if (command === 'load_reply_event_log')
+            return envelope({
+              logId: uuid(14),
+              caseId: args.caseId,
+              replyId: args.replyId,
+              total: 2,
+              warnings: ['CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED'],
+            });
+          if (command === 'list_event_log')
+            return envelope({
+              logId: uuid(14),
+              offset: 0,
+              total: 2,
+              events: ['submit-reply', 'accept-reply'].map((name, index) => ({
+                eventId: uuid(15 + index),
+                eventType: 'https://schema.fitko.de/fit-connect/events/' + name,
+                issuer: 'https://test.fit-connect.fitko.dev/submission-api',
+                issuedAt: `2026-10-16T12:0${index}:00Z`,
+                headerBytes: 2,
+                claimsBytes: 2,
+              })),
+            });
+          if (command === 'read_event_log')
+            return envelope({
+              logId: uuid(14),
+              eventId: args.eventId,
+              part: args.part,
+              byteOffset: 0,
+              totalBytes: 2,
+              chunk: btoa('{}'),
+              complete: true,
+            });
+          if (command === 'discard_event_log') return envelope({ logId: args.logId });
+          throw 'resource_denied';
+        },
+      };
+      createApp({
+        setup() {
+          const busy = ref(false),
+            eventTarget = ref(null),
+            current = ref(detail),
+            keys = ref(0);
+          fixture.invalidate = () => keys.value++;
+          fixture.replaceDetail = () => (current.value = { ...detail, submissionId: uuid(10) });
+          return () =>
+            h('div', { class: 'desktop-shell', style: 'grid-template-columns:1fr' }, [
+              h('header', { class: 'app-topbar' }, [
+                h('strong', productName),
+                h('span', { class: 'environment-tag' }, 'SYNTHETISCHE TESTDATEN'),
+              ]),
+              h('main', { class: 'workspace-scroll', style: 'grid-column:1;grid-row:2' }, [
+                h('div', { class: 'workspace-content' }, [
+                  h('div', { style: { display: eventTarget.value ? 'none' : 'block' } }, [
+                    h(
+                      new URLSearchParams(location.search).has('browser') ? SubmissionBrowser : ReceivePanel,
+                      {
+                        session,
+                        destinationId: detail.destinationId,
+                        detail: current.value,
+                        busy: busy.value,
+                        keyRevision: keys.value,
+                        onBusy: (value) => (busy.value = value),
+                        onEventLog: (value) => (eventTarget.value = value),
+                      },
+                    ),
+                  ]),
+                  h('div', { style: { display: eventTarget.value ? 'block' : 'none' } }, [
+                    h(EventLogPanel, {
+                      session,
+                      target: eventTarget.value,
+                      visible: Boolean(eventTarget.value),
+                      busy: busy.value,
+                      onBusy: (value) => (busy.value = value),
+                    }),
+                  ]),
+                ]),
+              ]),
+              h('footer', { class: 'app-statusbar' }, 'Lokale UI-Prüfung · keine FIT-Connect-Verbindung'),
+            ]);
+        },
+      }).mount('#app');
+    </script>
+  </body>
+</html>
