@@ -350,13 +350,21 @@ async fn resource_action(
     let operation = command["command"].as_str().unwrap_or("").to_string();
     if matches!(
         operation.as_str(),
-        "generate_test_keys"
-            | "prepare_destination_creation"
-            | "execute_destination_creation"
-            | "prepare_destination_rotation"
-            | "execute_destination_rotation"
+        "generate_test_keys" | "prepare_destination_rotation" | "execute_destination_rotation"
     ) {
         profiles::require_profile(state, version, id).await?;
+    }
+    if operation == "prepare_destination_creation" {
+        let document: serde_json::Value = serde_json::from_str(
+            command["destinationDocument"]
+                .as_str()
+                .ok_or("invalid_input")?,
+        )
+        .map_err(|_| "invalid_input")?;
+        // The Java boundary accepts type C only without any key bundle or registered key material.
+        if document["configuration"]["type"] != "C" {
+            profiles::require_profile(state, version, id).await?;
+        }
     }
     if matches!(
         operation.as_str(),
@@ -379,6 +387,25 @@ async fn resource_action(
         {
             return Err("engine_protocol_error");
         }
+        if operation == "execute_destination_creation" {
+            if intent.data["bundleId"].is_null() {
+                let document: serde_json::Value = serde_json::from_str(
+                    intent.data["configurationJson"]
+                        .as_str()
+                        .ok_or("engine_protocol_error")?,
+                )
+                .map_err(|_| "engine_protocol_error")?;
+                if document["type"] != "C"
+                    || ["encryptionKid", "encryptionPublicKey", "signingPublicKey"]
+                        .iter()
+                        .any(|key| document.get(key).is_some())
+                {
+                    return Err("engine_protocol_error");
+                }
+            } else {
+                profiles::require_profile(state, version, id).await?;
+            }
+        }
         profiles::checkpoint(app, state, version, id).await?;
         if intent.data["status"] == "expired" {
             return Ok(intent);
@@ -397,6 +424,7 @@ async fn resource_action(
             | "cancel_send"
             | "import_key"
             | "discard_keys"
+            | "execute_destination_cleanup"
             | "generate_test_keys"
             | "prepare_destination_creation"
             | "execute_destination_creation"
@@ -1298,11 +1326,13 @@ async fn reconcile_destination_creation(
     state: State<'_, EngineState>,
     api_version: ApiVersion,
     session_id: String,
-    bundle_id: String,
+    bundle_id: Option<String>,
     destination_id: String,
 ) -> Result<SessionResource, &'static str> {
     if api_version != ApiVersion::V3
-        || !valid_session_id(&bundle_id)
+        || bundle_id
+            .as_ref()
+            .is_some_and(|value| !valid_session_id(value))
         || !valid_session_id(&destination_id)
     {
         return Err("invalid_input");

@@ -35,7 +35,7 @@ final class ReplyReceipts {
             return new AcceptReply(
                     List.of(),
                     new AuthenticationTags(
-                            evidence.data(), evidence.metadata(), evidence.attachments()));
+                            evidence.metadata(), evidence.data(), evidence.attachments()));
         }
         if (evidence != null) throw new SessionException("invalid_input");
         return new RejectReply(

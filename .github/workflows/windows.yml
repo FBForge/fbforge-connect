@@ -39,8 +39,8 @@ jobs:
           npm run format:check
       - name: Check Rust formatting
         run: |
-          cargo fmt --manifest-path desktop/Cargo.toml --all -- --check
-          cargo fmt --manifest-path desktop/native-contracts/Cargo.toml --all -- --check
+          cargo +1.99.0 fmt --manifest-path desktop/Cargo.toml --all -- --check
+          cargo +1.99.0 fmt --manifest-path desktop/native-contracts/Cargo.toml --all -- --check
       - name: Build and test both SDK adapters and the host
         working-directory: engine
         run: .\mvnw.cmd --batch-mode verify
@@ -57,10 +57,10 @@ jobs:
       - name: Test application workflows in browser
         run: npm run test:ui
       - name: Test isolated native protocol and protected profile storage
-        run: cargo test --manifest-path desktop/native-contracts/Cargo.toml --locked
+        run: cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked
       - name: Test native protocol contracts
         working-directory: desktop
-        run: cargo test --locked
+        run: cargo +1.99.0 test --locked
       - name: Build unsigned Windows setup
         run: npm run desktop:build -- -- --locked
       - name: Retain unsigned alpha installer

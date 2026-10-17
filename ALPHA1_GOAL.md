@@ -156,6 +156,10 @@ Tests/Abnahme:
 7. Abhängigkeiten/Lizenzen, gepackte Dateien und Diagnoseexport prüfen. Installer-Prüfsumme, verständliche Release Notes, bekannte Grenzen, kurze Bedienanleitung und Datenschutz-/Speicherhinweise bereitstellen. Optionale Herstellerlinks gehören nicht in den normalen Arbeitsablauf.
 8. Code-Signing und Herausgeberidentität klären. Falls für Alpha kein Signierzertifikat verfügbar ist, unsignierte Verteilung nur als klar bezeichnete, ausdrücklich vereinbarte Alpha-Ausnahme; Signierung nicht als bereits erledigt ausgeben.
 
+### Abschließende Plattformprüfung
+
+Auf Wunsch vom 17. Oktober 2026 folgt die Prüfung von macOS und Linux erst nach der funktionalen Stabilisierung und vor der Veröffentlichung. Zusätzliche Plattformen werden in Alpha 1 aufgenommen, wenn Build, gebündelte Engine und Bedienbarkeit ohne größere Umbauten zuverlässig unterstützt werden können. Gespeicherte Geheimnisse erfordern den macOS-Schlüsselbund beziehungsweise Linux Secret Service; es gibt keinen Klartext-Fallback. Plattformabhängige Abhängigkeiten, Sicherheitsbefunde, Installation und erforderliche Signierung/Notarisierung werden vor einer Zusage geprüft. Falls der Aufwand erheblich ist, bleibt Windows der Alpha-Schwerpunkt und der konkrete Mehraufwand wird dokumentiert. Ein erfolgreicher Cross-Build ersetzt keine Prüfung auf dem jeweiligen Betriebssystem.
+
 ## 10. Verbindliche Freigabekriterien
 
 | Bereich | Alpha-1-Kriterium |

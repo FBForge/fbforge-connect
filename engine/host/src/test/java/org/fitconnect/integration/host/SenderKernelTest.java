@@ -676,6 +676,31 @@ class SenderKernelTest {
                                                         value.prepareReplyReceipt(
                                                                 request, evidence));
                                 assertEquals(request, prepared.request());
+                                if (action.equals("accept")) {
+                                    var tags =
+                                            JsonParser.parseString(prepared.body())
+                                                    .getAsJsonObject()
+                                                    .getAsJsonObject("authenticationTags");
+                                    // Independent evidence from the original encrypted parts, not
+                                    // an
+                                    // acknowledgement copied from the request under test. SDK4
+                                    // changed
+                                    // constructor order to metadata, data; SDK3 still takes data
+                                    // first.
+                                    assertEquals(
+                                            fixture.encryptedMetadata.split("\\.")[4],
+                                            tags.get("metadata").getAsString(),
+                                            api + " metadata tag");
+                                    assertEquals(
+                                            fixture.encryptedData.split("\\.")[4],
+                                            tags.get("data").getAsString(),
+                                            api + " data tag");
+                                    assertEquals(
+                                            fixture.encryptedAttachment.split("\\.")[4],
+                                            tags.getAsJsonObject("attachments")
+                                                    .get(fixture.attachmentId.toString())
+                                                    .getAsString());
+                                }
                                 assertFalse(prepared.toString().contains("authenticationTags"));
                                 var transport = new ReplyReceiptCapture(fixture, prepared);
                                 assertNotNull(
@@ -1337,14 +1362,18 @@ class SenderKernelTest {
                                         .getAsJsonObject("case")
                                         .get("caseId")
                                         .getAsString());
-                    } else
+                    } else {
                         assertEquals(
                                 SERVICE,
                                 exchange.announce
-                                        .getAsJsonObject("case")
                                         .getAsJsonObject("publicService")
                                         .get("identifier")
                                         .getAsString());
+                        assertTrue(
+                                !exchange.announce.has("case")
+                                        || exchange.announce.get("case").isJsonNull(),
+                                "A normal service submission opens its case implicitly; case.publicService is legal only for a process message");
+                    }
                 }
             }
         }

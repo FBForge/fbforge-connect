@@ -98,6 +98,8 @@ final class DestinationRotation {
                 throw error("destination_update_locked");
             var current = DestinationRegistration.read(session, id);
             var detail = current.details();
+            if (detail.has("type") && "C".equals(detail.get("type").getAsString()))
+                throw error("destination_no_keys");
             String status = DestinationConfiguration.text(detail.get("status"), 32);
             if (!Set.of("draft", "created", "active", "inactive").contains(status))
                 throw error("invalid_input");

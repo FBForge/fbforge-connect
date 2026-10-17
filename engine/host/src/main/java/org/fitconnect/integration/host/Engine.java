@@ -67,6 +67,10 @@ final class Engine implements AutoCloseable {
                         || values.containsKey(key)) throw new IllegalArgumentException();
                 if (Set.of("protocolVersion", "offset", "totalBytes", "byteOffset").contains(key)) {
                     if (reader.peek() != JsonToken.NUMBER) throw new IllegalArgumentException();
+                } else if (key.equals("bundleId") && reader.peek() == JsonToken.NULL) {
+                    reader.nextNull();
+                    values.put(key, null);
+                    continue;
                 } else if (reader.peek() != JsonToken.STRING) throw new IllegalArgumentException();
                 values.put(key, reader.nextString());
             }

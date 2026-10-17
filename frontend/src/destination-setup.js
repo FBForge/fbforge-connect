@@ -82,9 +82,8 @@ function publicConfiguration(document) {
     !exact(value, [
       ...configFields,
       'status',
-      'encryptionKid',
-      'encryptionPublicKey',
-      'signingPublicKey',
+      ...(value?.type === 'C' ? [] : ['encryptionKid', 'encryptionPublicKey']),
+      ...(value?.type === 'C' ? [] : ['signingPublicKey']),
       'publicForRouting',
     ]) ||
     value.status !== 'created' ||
@@ -92,10 +91,10 @@ function publicConfiguration(document) {
     !['A', 'C'].includes(value.type) ||
     typeof value.name !== 'string' ||
     !value.name.trim() ||
-    !uuid(value.encryptionKid)
+    (value.type === 'A' && !uuid(value.encryptionKid))
   )
     fail();
-  for (const field of ['encryptionPublicKey', 'signingPublicKey']) {
+  for (const field of value.type === 'C' ? [] : ['encryptionPublicKey', 'signingPublicKey']) {
     const key = value[field];
     if (
       !exact(key, ['kty', 'key_ops', 'alg', 'kid', 'n', 'e', 'x5c']) ||
@@ -149,7 +148,7 @@ function state(value, expected) {
           value.httpStatus < 100 ||
           value.httpStatus > 599 ||
           value.error === null)) ||
-      !uuid(value.bundleId) ||
+      (value.bundleId !== null && !uuid(value.bundleId)) ||
       (value.destinationId !== null && !uuid(value.destinationId)) ||
       (value.attemptId !== null && !uuid(value.attemptId)) ||
       (['failed', 'uncertain', 'expired'].includes(value.status)
@@ -158,7 +157,10 @@ function state(value, expected) {
       (value.status === 'confirmed' && value.destinationId === null)
     )
       fail();
-    if (value.configurationJson !== null) publicConfiguration(value.configurationJson);
+    if (value.configurationJson !== null) {
+      const configuration = publicConfiguration(value.configurationJson);
+      if ((configuration.type === 'C') !== (value.bundleId === null)) fail();
+    } else if (value.bundleId === null) fail();
     else if (value.status !== 'confirmed' || value.attemptId !== null) fail();
     if (
       ['prepared', 'running'].includes(value.status) &&
@@ -181,7 +183,9 @@ function normalized(value) {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
-        .filter((key) => value[key] !== null)
+        .filter(
+          (key) => value[key] !== null && !(key === 'cc' && Array.isArray(value[key]) && !value[key].length),
+        )
         .map((key) => [key, normalized(value[key])]),
     );
   return value;
@@ -189,27 +193,32 @@ function normalized(value) {
 export async function prepareDestinationCreation(invoke, session, selected, configuration) {
   if (
     session?.apiVersion !== 'v3' ||
-    !uuid(selected?.bundleId) ||
-    selected.status !== 'ready' ||
+    (configuration?.type === 'C'
+      ? selected !== null
+      : !uuid(selected?.bundleId) || selected.status !== 'ready') ||
     !exact(configuration, configFields)
   )
     throw new Error('invalid_input');
   const snapshot = structuredClone(configuration);
-  const destinationDocument = JSON.stringify({ bundleId: selected.bundleId, configuration: snapshot });
+  const destinationDocument = JSON.stringify({
+    bundleId: selected?.bundleId || null,
+    configuration: snapshot,
+  });
   if (new TextEncoder().encode(destinationDocument).length > 24000) throw new Error('content_limit');
   let prepared;
   try {
     prepared = state(
       await requestResource(invoke, session, 'prepare_destination_creation', { destinationDocument }),
     );
-    if (prepared.status !== 'prepared' || prepared.bundleId !== selected.bundleId) fail();
+    if (prepared.status !== 'prepared' || prepared.bundleId !== (selected?.bundleId || null)) fail();
     const actual = publicConfiguration(prepared.configurationJson);
     const relevant = Object.fromEntries(configFields.map((field) => [field, actual[field]]));
     if (
       JSON.stringify(normalized(relevant)) !== JSON.stringify(normalized(snapshot)) ||
-      actual.encryptionKid !== selected.encryption.kid ||
-      actual.encryptionPublicKey.kid !== selected.encryption.kid ||
-      actual.signingPublicKey.kid !== selected.signing.kid
+      (actual.type === 'A' &&
+        (actual.encryptionKid !== selected.encryption.kid ||
+          actual.encryptionPublicKey.kid !== selected.encryption.kid ||
+          actual.signingPublicKey.kid !== selected.signing.kid))
     )
       fail();
     return freeze({ attempt: prepared, configuration: actual, keys: selected });
@@ -261,7 +270,7 @@ export async function destinationCreationState(invoke, session) {
   return state(await requestResource(invoke, session, 'destination_creation_state'));
 }
 export async function reconcileDestinationCreation(invoke, session, bundleId, destinationId) {
-  if (!uuid(bundleId) || !uuid(destinationId)) throw new Error('invalid_input');
+  if ((bundleId !== null && !uuid(bundleId)) || !uuid(destinationId)) throw new Error('invalid_input');
   const value = state(
     await requestResource(invoke, session, 'reconcile_destination_creation', { bundleId, destinationId }),
   );

@@ -165,6 +165,12 @@ public interface AuthenticatedSession extends AutoCloseable {
 
     void discardKeys();
 
+    /** Unload imported keys only after confirmed removal of their never-activated destination. */
+    default void discardDestinationKeys(String destinationId) {
+        if (loadedKeys().stream().anyMatch(key -> key.destinationId().equals(destinationId)))
+            throw new SessionException("key_rejected");
+    }
+
     /** The host must supply a private session workspace and a write-authorized transport. */
     SendResult send(SubmissionInput input, java.nio.file.Path workspace, java.util.UUID attemptId);
 

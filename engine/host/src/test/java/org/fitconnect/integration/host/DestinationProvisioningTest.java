@@ -123,7 +123,16 @@ class DestinationProvisioningTest {
             assertEquals("created", input.get("status").getAsString());
             assertFalse(input.get("publicForRouting").getAsBoolean());
             keys = new JsonArray();
-            for (String field : List.of("encryptionPublicKey", "signingPublicKey")) {
+            boolean senderOnly = "C".equals(input.get("type").getAsString());
+            if (senderOnly) {
+                assertFalse(input.has("encryptionKid"));
+                assertFalse(input.has("encryptionPublicKey"));
+                assertFalse(input.has("signingPublicKey"));
+            }
+            for (String field :
+                    senderOnly
+                            ? List.<String>of()
+                            : List.of("encryptionPublicKey", "signingPublicKey")) {
                 var key = input.getAsJsonObject(field);
                 for (String secret : Set.of("d", "p", "q", "dp", "dq", "qi", "oth", "k"))
                     assertFalse(key.has(secret));
@@ -300,6 +309,36 @@ class DestinationProvisioningTest {
                 assertEquals(DEST, outcome.destinationId());
                 assertEquals(1, remote.writes);
             }
+        }
+    }
+
+    @Test
+    void typeCSdkCreationRequiresNoBundleOrCertificatesAndChecksOnlyTheOwnedConfiguration()
+            throws Exception {
+        var remote = new Remote();
+        try (var adapters = registry();
+                var session = session(adapters, remote)) {
+            var bank = new LocalTestKeys();
+            var input = StrictJson.object(choices(UUID.randomUUID().toString()), 24000);
+            input.add("bundleId", JsonNull.INSTANCE);
+            input.getAsJsonObject("configuration").addProperty("type", "C");
+            input.getAsJsonObject("configuration").add("publicServices", new JsonArray());
+            var creation = new DestinationProvisioning(bank, remote);
+            var prepared =
+                    adapters.withSession(
+                            ApiVersion.V3, session, s -> creation.prepare(s, input.toString()));
+            assertFalse(prepared.configurationJson().contains("encryptionKid"));
+            creation.markDispatch(prepared.attemptId());
+            assertEquals(
+                    "confirmed",
+                    adapters.withSession(
+                                    ApiVersion.V3,
+                                    session,
+                                    s -> creation.execute(s, prepared.attemptId()))
+                            .status());
+            assertTrue(remote.keys.isEmpty());
+            assertTrue(bank.list().isEmpty());
+            assertFalse(prepared.configurationJson().contains("signingPublicKey"));
         }
     }
 }

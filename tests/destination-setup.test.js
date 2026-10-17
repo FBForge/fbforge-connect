@@ -59,6 +59,7 @@ const configuration = {
 };
 const actual = {
   ...configuration,
+  contactInformation: { ...configuration.contactInformation, cc: [] },
   status: 'created',
   encryptionKid: id(3),
   encryptionPublicKey: publicKey('decrypt', 3),
@@ -243,5 +244,50 @@ test('known rejected writes and read-only reconciliation preserve their distinct
       id(6),
     ),
     /engine_protocol_error/,
+  );
+});
+
+test('type-C creation needs no key generation or registration and normalizes the empty CC list', async () => {
+  const choices = { ...configuration, type: 'C', publicServices: [], processMessages: [] };
+  const canonical = { ...actual, ...choices, contactInformation: { ...choices.contactInformation, cc: [] } };
+  delete canonical.encryptionKid;
+  delete canonical.encryptionPublicKey;
+  delete canonical.signingPublicKey;
+  const native = { ...attempt, bundleId: null, configurationJson: JSON.stringify(canonical) };
+  const result = await prepareDestinationCreation(
+    async (_command, args) => {
+      assert.equal(JSON.parse(args.destinationDocument).bundleId, null);
+      return envelope(native);
+    },
+    session,
+    null,
+    choices,
+  );
+  assert.equal(result.configuration.type, 'C');
+  assert.equal(result.keys, null);
+  assert.equal(Object.hasOwn(result.configuration, 'signingPublicKey'), false);
+  await assert.rejects(
+    prepareDestinationCreation(
+      async () =>
+        envelope({
+          ...native,
+          configurationJson: JSON.stringify({ ...canonical, encryptionKid: keys.encryption.kid }),
+        }),
+      session,
+      null,
+      choices,
+    ),
+    /engine_protocol_error/,
+  );
+  await assert.rejects(
+    prepareDestinationCreation(
+      async () => {
+        throw new Error('Must not call native boundary');
+      },
+      session,
+      keys,
+      choices,
+    ),
+    /invalid_input/,
   );
 });

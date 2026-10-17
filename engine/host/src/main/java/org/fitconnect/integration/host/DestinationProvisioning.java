@@ -24,6 +24,7 @@ final class DestinationProvisioning {
     private final LongSupplier clock;
     private State state = new State(null, "idle", null, null, null, null, null);
     private long expires;
+    private boolean marked;
     private static final String ROOT =
             "https://test.fit-connect.fitko.dev/destination-api/v3/destinations";
 
@@ -44,22 +45,31 @@ final class DestinationProvisioning {
     State prepare(AuthenticatedSession session, String document) {
         if (Set.of("running", "uncertain").contains(state.status()))
             throw error("destination_update_locked");
-        if (state.status().equals("prepared")) keys.release(state.bundleId());
+        if (state.status().equals("prepared") && state.bundleId() != null)
+            keys.release(state.bundleId());
+        marked = false;
         state = new State(null, "idle", null, null, null, null, null);
         var value = StrictJson.object(document, 24000);
         if (!value.keySet().equals(Set.of("bundleId", "configuration"))
                 || !value.get("configuration").isJsonObject()) throw error("invalid_input");
+        var configuration = value.getAsJsonObject("configuration");
+        boolean unkeyed =
+                configuration.has("type") && "C".equals(configuration.get("type").getAsString());
         String bundleId =
-                DestinationAccess.id(DestinationConfiguration.text(value.get("bundleId"), 36));
+                unkeyed
+                        ? null
+                        : DestinationAccess.id(
+                                DestinationConfiguration.text(value.get("bundleId"), 36));
+        if (unkeyed && !value.get("bundleId").isJsonNull()) throw error("invalid_input");
         var generated =
                 DestinationConfiguration.create(
-                        value.getAsJsonObject("configuration"),
-                        keys.key(bundleId, "decrypt").publicJwk(),
-                        keys.key(bundleId, "sign").publicJwk());
+                        configuration,
+                        unkeyed ? null : keys.key(bundleId, "decrypt").publicJwk(),
+                        unkeyed ? null : keys.key(bundleId, "sign").publicJwk());
         String canonical = session.canonicalDestinationMutation("create", generated.toString());
         // The public preview is the exact SDK serialization that will cross the write gate.
         StrictJson.object(canonical, 44000);
-        keys.reserve(bundleId, null);
+        if (bundleId != null) keys.reserve(bundleId, null);
         expires = clock.getAsLong() + 120000;
         state =
                 new State(
@@ -75,7 +85,7 @@ final class DestinationProvisioning {
 
     State cancel(String id) {
         requirePrepared(id);
-        keys.release(state.bundleId());
+        if (state.bundleId() != null) keys.release(state.bundleId());
         return finish("cancelled", null, null);
     }
 
@@ -86,24 +96,27 @@ final class DestinationProvisioning {
     State markDispatch(String id) {
         requirePrepared(id);
         if (clock.getAsLong() >= expires) {
-            keys.release(state.bundleId());
+            if (state.bundleId() != null) keys.release(state.bundleId());
             return finish("expired", null, "confirmation_expired");
         }
-        keys.unresolved(state.bundleId());
+        if (state.bundleId() != null) keys.unresolved(state.bundleId());
+        marked = true;
         return state;
     }
 
     State execute(AuthenticatedSession session, String id) {
         requirePrepared(id);
         if (clock.getAsLong() >= expires) {
-            keys.release(state.bundleId());
+            if (state.bundleId() != null) keys.release(state.bundleId());
             return finish("expired", null, "confirmation_expired");
         }
-        if (keys.list().stream()
-                .noneMatch(
-                        item ->
-                                item.bundleId().equals(state.bundleId())
-                                        && item.status().equals("unresolved")))
+        if (!marked
+                || state.bundleId() != null
+                        && keys.list().stream()
+                                .noneMatch(
+                                        item ->
+                                                item.bundleId().equals(state.bundleId())
+                                                        && item.status().equals("unresolved")))
             throw error("destination_update_locked");
         var gate =
                 new DestinationWriteAccess(
@@ -122,14 +135,16 @@ final class DestinationProvisioning {
                     DestinationAccess.id(
                             DestinationConfiguration.text(created.get("destinationId"), 36));
             verifyRegistration(session, state.bundleId(), knownId, true);
-            keys.bind(state.bundleId(), knownId);
+            if (state.bundleId() != null) keys.bind(state.bundleId(), knownId);
             return finish("confirmed", knownId, null);
         } catch (Exception | LinkageError cause) {
             Integer status = cause instanceof SessionException known ? known.httpStatus() : null;
             boolean declined = gate.declinedWrite();
             boolean uncertain = gate.dispatched() && !declined;
-            if (uncertain) keys.unresolved(state.bundleId(), knownId);
-            else keys.release(state.bundleId());
+            if (state.bundleId() != null) {
+                if (uncertain) keys.unresolved(state.bundleId(), knownId);
+                else keys.release(state.bundleId());
+            }
             return finish(
                     uncertain ? "uncertain" : "failed",
                     knownId,
@@ -139,8 +154,16 @@ final class DestinationProvisioning {
     }
 
     State reconcile(AuthenticatedSession session, String bundleId, String destinationId) {
-        String bundle = DestinationAccess.id(bundleId),
-                target = DestinationAccess.id(destinationId);
+        String target = DestinationAccess.id(destinationId);
+        if (bundleId == null) {
+            if (state.bundleId() != null
+                    || !state.status().equals("uncertain")
+                    || !Objects.equals(state.destinationId(), target))
+                throw error("destination_update_locked");
+            verifyRegistration(session, null, target, true);
+            return finish("confirmed", target, null);
+        }
+        String bundle = DestinationAccess.id(bundleId);
         var item =
                 keys.list().stream()
                         .filter(value -> value.bundleId().equals(bundle))
@@ -159,9 +182,18 @@ final class DestinationProvisioning {
             String bundle,
             String destination,
             boolean checkConfiguration) {
-        var registration = DestinationRegistration.read(session, destination);
-        var detail = registration.details();
-        registration.verifyBundle(keys, bundle);
+        JsonObject detail;
+        if (bundle == null) {
+            detail = StrictJson.object(session.ownDestination(destination), 65536);
+            if (!destination.equals(DestinationConfiguration.text(detail.get("destinationId"), 36))
+                    || !"C".equals(DestinationConfiguration.text(detail.get("type"), 1))
+                    || detail.has("encryptionKid") && !detail.get("encryptionKid").isJsonNull())
+                throw error("verification_failed");
+        } else {
+            var registration = DestinationRegistration.read(session, destination);
+            detail = registration.details();
+            registration.verifyBundle(keys, bundle);
+        }
         if (checkConfiguration) {
             var planned = StrictJson.object(state.configurationJson(), 44000);
             var observed = new JsonObject();
@@ -169,13 +201,18 @@ final class DestinationProvisioning {
                 if (!detail.has(field)) throw error("verification_failed");
                 observed.add(field, detail.get(field));
             }
-            for (String field : List.of("status", "encryptionKid", "publicForRouting")) {
+            for (String field :
+                    planned.has("encryptionKid")
+                            ? List.of("status", "encryptionKid", "publicForRouting")
+                            : List.of("status", "publicForRouting")) {
                 if (!Objects.equals(planned.get(field), detail.get(field)))
                     throw error("verification_failed");
                 observed.add(field, detail.get(field));
             }
-            observed.add("encryptionPublicKey", planned.get("encryptionPublicKey"));
-            observed.add("signingPublicKey", planned.get("signingPublicKey"));
+            if (planned.has("encryptionPublicKey"))
+                observed.add("encryptionPublicKey", planned.get("encryptionPublicKey"));
+            if (planned.has("signingPublicKey"))
+                observed.add("signingPublicKey", planned.get("signingPublicKey"));
             if (!planned.equals(
                     StrictJson.object(
                             session.canonicalDestinationMutation("create", observed.toString()),

@@ -17,7 +17,12 @@ const pending = ref(false),
   error = ref(''),
   progress = ref('');
 const disabled = computed(
-  () => props.busy || pending.value || !props.session || props.session.apiVersion !== 'v3',
+  () =>
+    props.busy ||
+    pending.value ||
+    !props.session ||
+    props.session.apiVersion !== 'v3' ||
+    props.selected.some((row) => row.type === 'C'),
 );
 const statuses = {
   prepared: 'Zur Bestätigung',
@@ -155,6 +160,10 @@ function use(row) {
     <p>
       Die privaten Schlüssel werden im gespeicherten TEST-Profil geschützt auf diesem Windows-Benutzerkonto
       aufbewahrt. Eine gespeicherte Sitzung ist erforderlich.
+    </p>
+    <p v-if="selected.some((row) => row.type === 'C')" role="status">
+      Onlinedienst-Zustellpunkte vom Typ C haben keine Zertifikate. Wählen Sie für einen Schlüsselwechsel
+      ausschließlich empfangende Zustellpunkte aus.
     </p>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="progress" role="status">{{ progress }}</p>

@@ -103,7 +103,9 @@ final class SendSchemas {
             var consent = request.get("allowExternalSchemas");
             if (!consent.isJsonPrimitive()
                     || !consent.getAsJsonPrimitive().isBoolean()
-                    || !consent.getAsBoolean() && local.isEmpty())
+                    || !consent.getAsBoolean()
+                            && local.isEmpty()
+                            && DemoSchemas.document(string(request, "schemaUri")) == null)
                 throw new SessionException("schema_consent_required");
             String selected = string(request, "schemaUri"), mime = string(request, "mimeType");
             if (!Set.of("application/json", "application/xml").contains(mime)

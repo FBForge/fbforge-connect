@@ -9,6 +9,7 @@ import java.util.Set;
 public final class TestEventIssuers {
     private static final Set<String> SUBMISSION_SERVICES =
             Set.of(
+                    "https://test.fit-connect.fitko.dev",
                     "https://test.fit-connect.fitko.dev/submission-api",
                     "https://submission-api-testing.fit-connect.fitko.dev");
 

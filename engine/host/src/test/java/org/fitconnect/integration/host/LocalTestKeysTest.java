@@ -102,4 +102,65 @@ class LocalTestKeysTest {
                     "Restoration must preserve the private material");
         }
     }
+
+    @Test
+    void confirmedDraftRemovalUnloadsOnlyItsImportedKeysBeforeTheNextProfileCheckpoint()
+            throws Exception {
+        try (var registry = DestinationManagementTest.registry();
+                var generator =
+                        registry.openSession(
+                                ApiVersion.V3,
+                                "id",
+                                "secret",
+                                (u, b) ->
+                                        "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}",
+                                (u, h) -> {
+                                    throw new AssertionError("No live API access");
+                                })) {
+            var material =
+                    registry.withSession(
+                            ApiVersion.V3, generator, value -> value.generateTestKey("decrypt"));
+            for (var api : ApiVersion.values()) {
+                try (var session =
+                        registry.openSession(
+                                api,
+                                "id",
+                                "secret",
+                                (u, b) ->
+                                        "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}",
+                                (u, h) -> {
+                                    throw new AssertionError("No live API access");
+                                })) {
+                    var removed = "00000000-0000-4000-8000-000000000001";
+                    var retained = "00000000-0000-4000-8000-000000000002";
+                    registry.withSession(
+                            api,
+                            session,
+                            value -> {
+                                value.importKey(
+                                        removed,
+                                        "decrypt",
+                                        material.privateJwk(),
+                                        java.util.List.of(material.publicJwk()));
+                                value.importKey(
+                                        retained,
+                                        "decrypt",
+                                        material.privateJwk(),
+                                        java.util.List.of(material.publicJwk()));
+                                assertEquals(2, value.archiveKeys().size());
+                                value.discardDestinationKeys(removed);
+                                assertEquals(1, value.archiveKeys().size());
+                                assertEquals(
+                                        retained, value.loadedKeys().getFirst().destinationId());
+                                value.discardDestinationKeys(removed);
+                                assertEquals(
+                                        1,
+                                        value.archiveKeys().size(),
+                                        "A repeated local cleanup must not affect another destination");
+                                return null;
+                            });
+                }
+            }
+        }
+    }
 }

@@ -83,6 +83,10 @@ final class DestinationCleanup {
         try {
             session.deleteOwnDestination(state.destinationId(), gate);
             gate.complete();
+            // A deleted registration cannot be revalidated on the next profile login. Keep the
+            // separate generated bundle, but stop archiving imported handles for this removed
+            // draft.
+            session.discardDestinationKeys(state.destinationId());
             return finish("removed", null);
         } catch (Exception | LinkageError cause) {
             return finish(

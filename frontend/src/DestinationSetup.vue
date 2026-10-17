@@ -270,16 +270,17 @@ async function prepare() {
       return 'Ausgang ungewiss';
     }
     if (previous.status === 'prepared') await cancelDestinationCreation(invoke, active, previous.attemptId);
-    const rows = await refresh(active, current);
-    if (!current()) return 'Abgebrochen';
-    let keys = rows.find(
-      (item) => item.bundleId === (chosen || generatedForDraft) && item.status === 'ready',
-    );
-    if (!chosen && !keys) {
-      keys = await generateTestKeys(invoke, active);
-      generatedForDraft = keys.bundleId;
+    let keys = null;
+    if (draft.type === 'A') {
+      const rows = await refresh(active, current);
+      if (!current()) return 'Abgebrochen';
+      keys = rows.find((item) => item.bundleId === (chosen || generatedForDraft) && item.status === 'ready');
+      if (!chosen && !keys) {
+        keys = await generateTestKeys(invoke, active);
+        generatedForDraft = keys.bundleId;
+      }
+      if (!keys) throw new Error('key_missing');
     }
-    if (!keys) throw new Error('key_missing');
     if (!current()) return 'Abgebrochen';
     const value = await prepareDestinationCreation(invoke, active, keys, draft);
     if (!current()) {
@@ -335,8 +336,18 @@ async function confirm() {
   });
 }
 async function reconcile() {
-  if (disabled.value || !unresolvedBundle.value || !knownDestination.value.trim()) return;
-  const bundleId = unresolvedBundle.value,
+  if (
+    disabled.value ||
+    (!unresolvedBundle.value &&
+      !(
+        outcome.value?.status === 'uncertain' &&
+        outcome.value.bundleId === null &&
+        outcome.value.destinationId
+      )) ||
+    !knownDestination.value.trim()
+  )
+    return;
+  const bundleId = unresolvedBundle.value || null,
     destinationId = knownDestination.value.trim().toLowerCase();
   await run('Vorhandenen TEST-Zustellpunkt zuordnen', async (active, current) => {
     const result = await reconcileDestinationCreation(invoke, active, bundleId, destinationId);
@@ -554,12 +565,20 @@ async function loadKeys() {
           </label>
         </div>
       </fieldset>
-      <fieldset v-show="wizardStep === 2" data-setup-step="2" :disabled="disabled">
+      <p v-if="wizardStep === 2 && kind === 'C'">
+        Onlinedienst-Zustellpunkte vom Typ C benötigen keine Zertifikate oder dauerhaften Schlüssel. Prüfen
+        Sie die Vorschau, bevor der Zustellpunkt angelegt wird.
+      </p>
+      <fieldset v-show="wizardStep === 2 && kind === 'A'" data-setup-step="2" :disabled="disabled">
         <legend>Schlüssel und Kompatibilität</legend>
         <p>
           Ohne eigene Auswahl erzeugt die Vorbereitung zwei neue RSA-4096-Schlüssel mit selbstsignierten
           TEST-Zertifikaten: einen für Verschlüsselung und einen für Signaturen. Die Zertifikate gelten ein
           Jahr.
+        </p>
+        <p v-if="kind === 'C'" class="small-note">
+          Onlinedienst-Zustellpunkte benötigen keine Zertifikate und keine dauerhaften Zustellpunktschlüssel.
+          Die Verschlüsselung von Antworten wird später für jeden Antwortkanal automatisch eingerichtet.
         </p>
         <label for="setup-key-bundle">
           TEST-Schlüssel
@@ -602,7 +621,9 @@ async function loadKeys() {
       <h3 id="destination-setup-result" ref="resultHeading" tabindex="-1">
         {{
           outcome.status === 'confirmed'
-            ? 'Zustellpunkt und Schlüsselzuordnung geprüft'
+            ? outcome.bundleId
+              ? 'Zustellpunkt und Schlüsselzuordnung geprüft'
+              : 'Zustellpunktangaben geprüft'
             : outcome.status === 'uncertain'
               ? 'Anlageausgang ungeklärt'
               : 'Zustellpunkt nicht vollständig angelegt'
@@ -613,13 +634,22 @@ async function loadKeys() {
         <code>{{ outcome.destinationId }}</code>
       </p>
       <p v-if="outcome.status === 'confirmed'">
-        Der Zustellpunkt wurde anhand der eigenen API und der öffentlichen Schlüssel geprüft. Für neue Anträge
-        muss er aktiv sein. Die Aktivierung wird separat bestätigt.
+        Die Angaben wurden anhand der eigenen API geprüft.
+        <span v-if="outcome.bundleId">
+          Auch die öffentlichen Schlüssel stimmen mit dem gesicherten Paar überein.
+        </span>
+        Die Aktivierung wird separat bestätigt.
       </p>
       <p v-else-if="outcome.status === 'uncertain'">
         Die Anlage kann bereits erfolgt sein. Bitte keinen neuen Anlageversuch starten. Lade die eigenen
-        Zustellpunkte und ordne den vorhandenen Eintrag unten seinem Schlüsselpaar zu. Die privaten Schlüssel
-        bleiben gespeichert.
+        Zustellpunkte und prüfe den vorhandenen Eintrag.
+        <span v-if="outcome.bundleId">
+          Ordne ihn unten seinem gesicherten Schlüsselpaar zu. Die privaten Schlüssel bleiben gespeichert.
+        </span>
+        <span v-else>
+          Eine bekannte Zustellpunkt-ID kann unten erneut gelesen werden. Ohne bekannte ID erst die eigene
+          Zustellpunktliste prüfen.
+        </span>
       </p>
       <p v-else>
         {{
@@ -638,7 +668,13 @@ async function loadKeys() {
         >
           Zustellpunkt ansehen und Aktivierung vorbereiten
         </button>
-        <button type="button" class="button secondary" :disabled="disabled" @click="loadKeys">
+        <button
+          v-if="outcome.bundleId"
+          type="button"
+          class="button secondary"
+          :disabled="disabled"
+          @click="loadKeys"
+        >
           Schlüssel laden und zum Empfang wechseln
         </button>
         <button type="button" class="button secondary" :disabled="disabled" @click="outcome = null">
@@ -646,14 +682,20 @@ async function loadKeys() {
         </button>
       </div>
     </section>
-    <form v-if="unresolved.length" @submit.prevent="reconcile">
+    <form
+      v-if="
+        unresolved.length ||
+        (outcome?.status === 'uncertain' && outcome.bundleId === null && outcome.destinationId)
+      "
+      @submit.prevent="reconcile"
+    >
       <h3>Ungeklärte Anlage zuordnen</h3>
       <p>
         Diese Prüfung liest nur den vorhandenen eigenen Zustellpunkt und seine Schlüssel. Sie legt keinen
         weiteren Zustellpunkt an.
       </p>
       <div class="client-fields">
-        <label for="setup-unresolved">
+        <label v-if="unresolved.length && outcome?.bundleId !== null" for="setup-unresolved">
           Gespeichertes Schlüsselpaar
           <select id="setup-unresolved" v-model="unresolvedBundle" required :disabled="disabled">
             <option value="">Bitte auswählen</option>
@@ -696,16 +738,31 @@ async function loadKeys() {
         <dd>{{ prepared.configuration.type === 'A' ? 'Fachverfahren / Behörde' : 'Onlinedienst' }}</dd>
         <dt>Status</dt>
         <dd>Vorbereitet; noch nicht aktiv</dd>
-        <dt>Verschlüsselungsschlüssel</dt>
-        <dd>
-          <code>{{ prepared.keys.encryption.kid }}</code>
-        </dd>
-        <dt>Signaturschlüssel</dt>
-        <dd>
-          <code>{{ prepared.keys.signing.kid }}</code>
-        </dd>
+        <template v-if="prepared.configuration.type === 'A'">
+          <dt>Verschlüsselungsschlüssel</dt>
+          <dd>
+            <code>{{ prepared.keys.encryption.kid }}</code>
+          </dd>
+        </template>
+        <template v-else>
+          <dt>Verschlüsselung</dt>
+          <dd>
+            Onlinedienste verwenden eigene Antwortschlüssel je Antwortkanal; kein
+            Zustellpunkt-Verschlüsselungsschlüssel wird registriert.
+          </dd>
+        </template>
+        <template v-if="prepared.keys">
+          <dt>Signaturschlüssel</dt>
+          <dd>
+            <code>{{ prepared.keys.signing.kid }}</code>
+          </dd>
+        </template>
       </dl>
-      <p>
+      <p v-if="!prepared.keys">
+        Typ C benötigt keine Zertifikate oder dauerhaften Schlüssel. Antwortschlüssel entstehen erst je
+        Antwortkanal. Die Vorschau gilt zwei Minuten.
+      </p>
+      <p v-if="prepared.keys">
         Die privaten Schlüssel sind im Windows-Profil gesichert. Es werden ausschließlich öffentliche
         Schlüssel übertragen. Die Vorschau gilt zwei Minuten.
       </p>

@@ -80,4 +80,55 @@ class SendSchemasTest {
         schemas.clear();
         assertThrows(SessionException.class, () -> schemas.read(first.schemaId(), 0));
     }
+
+    @Test
+    void bundledReplySchemaNeedsNoExternalConsentButAnUnknownSchemaStillDoes() {
+        String demo = "urn:fit-connect:test-client:demo:reply:1";
+        var calls = new AtomicInteger();
+        var nativeSession =
+                (AuthenticatedSession)
+                        Proxy.newProxyInstance(
+                                AuthenticatedSession.class.getClassLoader(),
+                                new Class<?>[] {AuthenticatedSession.class},
+                                (proxy, method, args) -> {
+                                    assertEquals("publicSchema", method.getName());
+                                    assertEquals(demo, args[0]);
+                                    assertEquals(Map.of(), args[1]);
+                                    assertEquals(false, args[2]);
+                                    calls.incrementAndGet();
+                                    return DemoSchemas.document(demo);
+                                });
+        var recipient =
+                new ReplyRecipient(
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        null,
+                        "{}",
+                        List.of(
+                                new ReplyRecipient.Schema(
+                                        java.net.URI.create(demo), "application/json")));
+        var schemas = new SendSchemas();
+        String request =
+                "{\"schemaUri\":\""
+                        + demo
+                        + "\",\"mimeType\":\"application/json\",\"allowExternalSchemas\":false,\"schemaContentId\":null}";
+        var page =
+                schemas.loadReply(
+                        nativeSession, recipient, UUID.randomUUID().toString(), request, Map.of());
+        assertEquals(demo, page.schemaUri());
+        assertEquals(1, calls.get());
+        var error =
+                assertThrows(
+                        SessionException.class,
+                        () ->
+                                schemas.loadReply(
+                                        nativeSession,
+                                        recipient,
+                                        UUID.randomUUID().toString(),
+                                        request.replace(demo, "urn:unknown:reply"),
+                                        Map.of()));
+        assertEquals("schema_consent_required", error.code());
+        assertEquals(1, calls.get());
+    }
 }

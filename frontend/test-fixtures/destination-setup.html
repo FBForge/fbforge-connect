@@ -91,21 +91,26 @@
               signingPublicKey: publicKey('sign', 4),
               publicForRouting: false,
             };
+            if (draft.configuration.type === 'C') {
+              delete configuration.encryptionKid;
+              delete configuration.encryptionPublicKey;
+              delete configuration.signingPublicKey;
+            }
             fixture.state = {
               attemptId: id(5),
               status: 'prepared',
-              bundleId: id(2),
+              bundleId: draft.bundleId,
               configurationJson: JSON.stringify(configuration),
               destinationId: null,
               error: null,
               httpStatus: null,
             };
-            fixture.bundles[0].status = 'reserved';
+            if (fixture.bundles[0]) fixture.bundles[0].status = 'reserved';
             return envelope(fixture.state);
           }
           if (command === 'cancel_destination_creation') {
             fixture.state = { ...fixture.state, status: 'cancelled' };
-            fixture.bundles[0].status = 'ready';
+            if (fixture.bundles[0]) fixture.bundles[0].status = 'ready';
             return envelope(fixture.state);
           }
           if (command === 'execute_destination_creation') {
@@ -116,8 +121,10 @@
               destinationId: id(6),
               error: fixture.uncertain ? 'resource_unavailable' : null,
             };
-            fixture.bundles[0].status = fixture.uncertain ? 'unresolved' : 'bound';
-            fixture.bundles[0].destinationId = id(6);
+            if (fixture.bundles[0]) {
+              fixture.bundles[0].status = fixture.uncertain ? 'unresolved' : 'bound';
+              fixture.bundles[0].destinationId = id(6);
+            }
             return envelope(fixture.state);
           }
           if (command === 'reconcile_destination_creation') {

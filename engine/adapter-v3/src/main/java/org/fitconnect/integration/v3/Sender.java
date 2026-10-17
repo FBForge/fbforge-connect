@@ -102,7 +102,8 @@ final class Sender {
                                 input.region());
         var request = OutgoingSubmission.to(Participant.of(input.destinationId(), address));
         if (input.caseId() != null) request.inCase(input.caseId());
-        else request.openingCase(input.serviceIdentifier(), input.serviceName());
+        else if (input.processMessage() != null)
+            request.openingCase(input.serviceIdentifier(), input.serviceName());
         var outgoing =
                 request.setData(
                         "application/json".equals(input.mimeType())

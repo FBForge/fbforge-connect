@@ -333,6 +333,12 @@ public final class V2Adapter implements SdkAdapter {
             sender.replyKeys.restore(item);
         }
 
+        public void discardDestinationKeys(String destinationId) {
+            requireOpen();
+            keys.discardDestination(destinationId);
+            receiver = null;
+        }
+
         public void discardKeys() {
             requireOpen();
             keys.clear();

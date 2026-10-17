@@ -93,6 +93,7 @@ impl<T> EngineResponse<T> {
                 Some("destination_update_locked") => {
                     EngineFailure::Remote("destination_update_locked")
                 }
+                Some("destination_no_keys") => EngineFailure::Remote("destination_no_keys"),
                 Some("resource_denied") => EngineFailure::Remote("resource_denied"),
                 Some("resource_missing") => EngineFailure::Remote("resource_missing"),
                 Some("resource_unavailable") => EngineFailure::Remote("resource_unavailable"),

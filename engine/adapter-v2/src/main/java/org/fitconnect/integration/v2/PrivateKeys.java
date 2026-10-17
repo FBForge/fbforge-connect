@@ -242,6 +242,10 @@ final class PrivateKeys {
         }
     }
 
+    void discardDestination(String destination) {
+        keys.keySet().removeIf(key -> key.destinationId().equals(destination));
+    }
+
     void clear() {
         keys.clear();
     }

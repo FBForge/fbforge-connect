@@ -1245,7 +1245,17 @@ final class SessionManager implements AutoCloseable {
                                                 || !Objects.equals(
                                                         bundle.destinationId(), destinationId))
                                             throw new SessionException("invalid_input");
-                                        entry.destinations().loadOwned(session, destinationId);
+                                        var registration =
+                                                entry.destinations()
+                                                        .loadOwned(session, destinationId);
+                                        if ("C"
+                                                .equals(
+                                                        StrictJson.object(
+                                                                        registration.detailsJson(),
+                                                                        24576)
+                                                                .get("type")
+                                                                .getAsString()))
+                                            throw new SessionException("destination_no_keys");
                                         for (String purpose : List.of("decrypt", "sign"))
                                             entry.destinations()
                                                     .importKey(

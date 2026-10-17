@@ -342,4 +342,31 @@ class DestinationRotationTest {
             assertEquals(3, remote.keys.get(FIRST).size());
         }
     }
+
+    @Test
+    void typeCHasNoDestinationKeyRotationAndCannotTriggerAWrite() throws Exception {
+        var remote = new Remote();
+        remote.details.get(FIRST).addProperty("type", "C");
+        remote.details.get(FIRST).remove("encryptionKid");
+        remote.keys.put(FIRST, new JsonArray());
+        try (var adapters = registry();
+                var session = session(adapters, remote)) {
+            var bank = new LocalTestKeys();
+            var bundle = bundle(bank, adapters, session, 1);
+            var rotation = new DestinationRotation(bank, remote);
+            var error =
+                    assertThrows(
+                            SessionException.class,
+                            () ->
+                                    adapters.withSession(
+                                            ApiVersion.V3,
+                                            session,
+                                            value ->
+                                                    rotation.prepare(
+                                                            value, choices(FIRST, bundle))));
+            assertEquals("destination_no_keys", error.code());
+            assertTrue(remote.writes.isEmpty());
+            assertEquals("ready", bank.list().getFirst().status());
+        }
+    }
 }

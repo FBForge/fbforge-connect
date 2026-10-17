@@ -46,6 +46,8 @@ export function errorMessage(code) {
       'Gespeicherte Schlüssel konnten nicht vollständig wiederhergestellt oder gegen TEST geprüft werden. Das Profil bleibt erhalten. Du kannst zunächst nur seine Zugangsdaten verwenden und die Schlüsselzuordnung prüfen.',
     invalid_credentials:
       'Bitte eine Client-ID und ein Client-Secret innerhalb der zulässigen Länge eingeben.',
+    destination_no_keys:
+      'Onlinedienst-Zustellpunkte vom Typ C benötigen keine Zertifikate oder dauerhaften Zustellpunktschlüssel. Antwortschlüssel werden je Antwortkanal erzeugt.',
     authentication_failed: 'Die TEST-Anmeldung ist fehlgeschlagen. Bitte Client-ID und Client-Secret prüfen.',
     auth_unavailable: 'Der TEST-Anmeldedienst konnte nicht sicher erreicht werden. Bitte erneut versuchen.',
     endpoint_blocked:
@@ -70,6 +72,7 @@ const reportableCodes = new Set([
   'vault_restore_failed',
   'destination_conflict',
   'destination_update_locked',
+  'destination_no_keys',
   'desktop_required',
   'engine_not_staged',
   'engine_start_failed',

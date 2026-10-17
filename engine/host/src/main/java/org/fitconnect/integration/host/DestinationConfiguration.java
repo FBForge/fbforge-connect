@@ -32,16 +32,18 @@ final class DestinationConfiguration {
                 messages = choices.getAsJsonArray("processMessages").size();
         if (type.equals("C") ? services != 0 || messages != 0 : services + messages == 0)
             throw invalid();
-        var encryption = StrictJson.object(encryptionKey, 32768);
-        var signing = StrictJson.object(signingKey, 32768);
         var result = choices.deepCopy();
         var canonicalContact = result.getAsJsonObject("contactInformation");
         if (!canonicalContact.has("cc") || canonicalContact.get("cc").isJsonNull())
             canonicalContact.add("cc", new com.google.gson.JsonArray());
         result.addProperty("status", "created");
-        result.addProperty("encryptionKid", text(encryption.get("kid"), 512));
-        result.add("encryptionPublicKey", encryption);
-        result.add("signingPublicKey", signing);
+        if (type.equals("A")) {
+            var encryption = StrictJson.object(encryptionKey, 32768);
+            var signing = StrictJson.object(signingKey, 32768);
+            result.addProperty("encryptionKid", text(encryption.get("kid"), 512));
+            result.add("encryptionPublicKey", encryption);
+            result.add("signingPublicKey", signing);
+        }
         // A new TEST destination is not advertised via the public routing directory by default.
         result.addProperty("publicForRouting", false);
         if (result.toString().getBytes(StandardCharsets.UTF_8).length > 44000)
