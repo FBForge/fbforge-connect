@@ -29,6 +29,7 @@ const responseMessage = { processModelId: modelId, messageId: 'request-more' };
 const service = 'urn:de:fim:leika:leistung:99000000000000';
 const profiles = new Map(),
   engines = new Set();
+let receiptSigningKid = null;
 let destination = null,
   creationBundle = null,
   receiverV3 = null,
@@ -337,7 +338,7 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
       submissionId: sent.submissionId,
       caseId: sent.caseId,
       action: receiptAction,
-      signingKid: null,
+      signingKid: receiptSigningKid,
       reason: receiptAction === 'reject' ? 'technical-error' : null,
       description: receiptAction === 'reject' ? 'Fiktive technische Ablehnung für die Alpha-Abnahme' : null,
       attachmentId: null,
@@ -505,6 +506,7 @@ try {
   receiverV3 = await openNativeSession('subscriber', 'v3');
   const keys = await receiverV3.call('generate_test_keys');
   creationBundle = keys.bundleId;
+  receiptSigningKid = keys.signing.kid;
   await checkpoint(receiverV3);
   const configuration = {
     name: runName,
@@ -577,6 +579,7 @@ try {
   const rotated = await receiverV3.call('execute_destination_rotation', { attemptId: rotation.attemptId });
   await checkpoint(receiverV3);
   requireCheck(rotated.status === 'completed' && rotated.changes[0]?.status === 'updated', 'rotation_failed');
+  receiptSigningKid = replacementKeys.signing.kid;
   await receiverV3.call('use_generated_keys', {
     bundleId: replacementKeys.bundleId,
     destinationId: destination,
