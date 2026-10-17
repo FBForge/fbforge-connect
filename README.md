@@ -23,9 +23,9 @@ Das unabhängige Open-Source-Projekt unterstützt ausschließlich die **FIT-Conn
 
 Aktuell verfügbar: **0.1.0-dev.9, Alpha-Kandidat für Windows x64**. Die öffentliche Alpha 1 ist noch nicht freigegeben. Der Kandidat ist unsigniert.
 
-Den [geprüften Windows-Installer herunterladen](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538/artifacts/12112642005) und der [Kurzanleitung](BEDIENUNG.md) folgen. Das Downloadpaket enthält die Prüfsumme und Build-Informationen. Für den Actions-Download ist eine GitHub-Anmeldung erforderlich.
+Den [geprüften Windows-Installer herunterladen](https://github.com/FBForge/fbforge-connect/actions/runs/39063273538/artifacts/12112642005) und die Hilfe in der Anwendung öffnen. Das Downloadpaket enthält die Prüfsumme und Build-Informationen. Für den Actions-Download ist eine GitHub-Anmeldung erforderlich.
 
-Verwende eigene Testzugänge und fiktive Daten. Details zum Kandidaten stehen in den [Versionshinweisen](RELEASE_NOTES.md); die [Testliste](ZIELGERAETE_TEST.md) führt durch die abschließende Abnahme.
+Verwende eigene Testzugänge und fiktive Daten. Die bebilderte Anleitung wird im [GitHub-Wiki](https://github.com/FBForge/fbforge-connect/wiki) und offline in der Anwendung gepflegt. Änderungen stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 
 ## Mitwirken
 
