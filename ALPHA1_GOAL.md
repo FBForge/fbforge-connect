@@ -16,7 +16,7 @@ dev.7 enthält die native Schemaprüfung für Reply-Entwürfe, schemaabhängige 
 
 Das ist noch keine Live-Abnahme: V2-Versand war früher erfolgreich; der aktuelle Stand muss mit berechtigten FIT-Connect-TEST-Zugängen erneut real geprüft werden. Frische Windows-Installation und Upgrade sind ebenfalls offen. Ein grüner Build ersetzt diese Nachweise nicht.
 
-Installer dev.7: https://github.com/FBForge/fit-connect-testclient/actions/runs/38967495361/artifacts/12076405136
+Installer dev.7: https://github.com/FBForge/fbforge-connect/actions/runs/38967495361/artifacts/12076405136
 
 ## 3. Technische Leitlinien und Definition „fertig“
 

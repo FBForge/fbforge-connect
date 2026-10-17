@@ -6,7 +6,7 @@ FBForge Connect ist ausschließlich für Integrationstests auf der FIT-Connect-T
 
 Bitte keine ausnutzbaren Sicherheitslücken, Zugangsdaten, privaten Schlüssel oder Einreichungsdaten in öffentlichen Issues veröffentlichen.
 
-Ein privater Meldeweg wird vor der ersten Veröffentlichung des Anwendungscodes eingerichtet und hier bekanntgegeben.
+Für normale Fehler und Verbesserungsvorschläge sind die GitHub Issues des Projekts vorgesehen. Sicherheitslücken bitte privat melden; eine bestätigte, empfangsfähige Kontaktadresse wird vor der Alpha-Freigabe hier eingetragen. Öffentliche Issues sind kein privater Sicherheitsmeldeweg.
 
 ## Umgang mit Testdaten
 

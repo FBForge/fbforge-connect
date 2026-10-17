@@ -13,7 +13,7 @@
 
 ## Bestehende Installation und Profile
 
-Die frühere Anzeige „FIT-Connect Test-Client“ wird ersetzt. Interne App-Kennung, Profilordner, verschlüsseltes Sicherungsformat und Upgrade-Registrierung bleiben kompatibel. Eine Sicherung vor einem Upgrade ist sinnvoll; sie bleibt an die zugehörigen Windows-Benutzerschlüssel gebunden. Die tatsächliche Neuinstallation, das Upgrade von dev.7 und die Deinstallation mit erhaltenem DPAPI-Profil wurden im [Windows-Lauf 39037553713](https://github.com/FBForge/fit-connect-testclient/actions/runs/39037553713) auf `06a7ee2` erfolgreich geprüft.
+Die frühere Anzeige „FIT-Connect Test-Client“ wird ersetzt. Interne App-Kennung, Profilordner, verschlüsseltes Sicherungsformat und Upgrade-Registrierung bleiben kompatibel. Eine Sicherung vor einem Upgrade ist sinnvoll; sie bleibt an die zugehörigen Windows-Benutzerschlüssel gebunden. Die tatsächliche Neuinstallation, das Upgrade von dev.7 und die Deinstallation mit erhaltenem DPAPI-Profil wurden im [Windows-Lauf 39037553713](https://github.com/FBForge/fbforge-connect/actions/runs/39037553713) auf `06a7ee2` erfolgreich geprüft.
 
 Das Windows-Actions-Artefakt enthält nach erfolgreicher Installationsprüfung den Setup-Installer, `SHA256SUMS.txt` und `build-info.json` mit Version, Commit und Workflow-Lauf. Eine Prüfsumme bestätigt Dateigleichheit und ersetzt keine Herausgebersignatur. Eine Anleitung für den ersten Testvorgang steht in [BEDIENUNG.md](BEDIENUNG.md).
 

@@ -28,7 +28,7 @@ Für den ersten vollständigen Austausch: [Kurzanleitung für Anwender](BEDIENUN
 
 ## Entwicklungsstand
 
-Der Stand `0.1.0-dev.8` ist ein **Alpha-1-Kandidat für Windows und TEST**, noch keine freigegebene Alpha 1. Der reale Windows-TEST-Lauf [38988235240](https://github.com/FBForge/fit-connect-testclient/actions/runs/38988235240) hat v2/v3 mit JSON/XML, Anlagen, Replies nach Neustart, signierten Submission-/Case-/Reply-Logs, Annahme/Ablehnung, v3-Prozesskommunikation und Schlüsselwechsel erfolgreich geprüft. Private Checkpoints wurden dabei mit dem tatsächlichen Windows-DPAPI-Tresor gesichert.
+Der Stand `0.1.0-dev.8` ist ein **Alpha-1-Kandidat für Windows und TEST**, noch keine freigegebene Alpha 1. Der reale Windows-TEST-Lauf [38988235240](https://github.com/FBForge/fbforge-connect/actions/runs/38988235240) hat v2/v3 mit JSON/XML, Anlagen, Replies nach Neustart, signierten Submission-/Case-/Reply-Logs, Annahme/Ablehnung, v3-Prozesskommunikation und Schlüsselwechsel erfolgreich geprüft. Private Checkpoints wurden dabei mit dem tatsächlichen Windows-DPAPI-Tresor gesichert.
 
 Optionale Profile speichern Zugangsdaten, private Schlüssel, Antwortkanäle und Standard-Zustellpunkte geschützt für das Windows-Benutzerkonto. Unter „Verbindung“ lassen sich Profilname/Secret, geschützte Sicherungen, Voreinstellungen und der einzelne Schlüsselbestand verwalten. Ungewisse oder vorbereitete Schlüsselvorgänge bleiben gegen gezieltes Entfernen gesperrt. Das Entfernen eines erzeugten Paars entfernt auch seine geladenen Kopien; andere Schlüssel bleiben erhalten.
 
