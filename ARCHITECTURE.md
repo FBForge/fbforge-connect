@@ -14,7 +14,7 @@ Vue: Eingaben, verständliche Darstellung und ausdrückliche Bestätigung
 ## Zuständigkeiten
 
 - `frontend/src`: Darstellung, Entwürfe und geprüfte öffentliche Antwortverträge. Der Renderer verwaltet keine dauerhaften privaten Schlüssel. Die Kennungsübersicht in `case-context.js` ist ausschließlich Navigationshilfe.
-- `desktop/src`: Tauri-Berechtigungsgrenze, Prozesslebenszyklus, IPC-Prüfung und optionale geschützte Profile. `profiles.rs` verbindet den Speicher mit dem nativen Java-Archiv. `vault.rs` verschlüsselt Profile unter Windows benutzergebunden mit DPAPI; andere Plattformen haben keinen Klartext-Fallback.
+- `desktop/src`: Tauri-Berechtigungsgrenze, Prozesslebenszyklus, IPC-Prüfung und optionale geschützte Profile. `profiles.rs` verbindet den Speicher mit dem nativen Java-Archiv. `vault.rs` verschlüsselt Profile, `case_store.rs` speichert davon getrennt optionale Vorgangskopien. Beide verwenden unter Windows benutzergebundenes DPAPI; andere Plattformen haben keinen Klartext-Fallback.
 - `engine/contract`: unveränderliche native Verträge. Öffentliche DTOs und private Archivdaten sind ausdrücklich unterschieden.
 - `engine/host`: Begrenzung von URLs, Ressourcen, Lebensdauer und Schreibaktionen. `SessionManager` koordiniert; konkrete Zugriffsregeln und Fachzustände bleiben in eigenen Klassen.
 - `engine/adapter-v2` und `adapter-v3`: SDK-Komposition, jeweilige Serialisierung, Verschlüsselung und SDK-Prüfung. Unterschiede sollen hier sichtbar bleiben.
@@ -36,6 +36,24 @@ Die privaten Engine-Befehle `export_session_item` und `restore_session_item` wer
 Profilsicherungen werden ausschließlich nativ entschlüsselt. Der System-Dateidialog hält Pfade und Dateidaten im nativen Prozess. Für Drag-and-drop darf der Renderer eine größenbegrenzte verschlüsselte `.fctest-profile`-Datei über binäres IPC weiterreichen; er erhält nur öffentliche Profilmetadaten zurück. Derselbe DPAPI-, Format-, Größen- und Konfliktschutz gilt für beide Wege. Es entsteht keine allgemeine Dateisystem-Berechtigung. Diagnoseberichte enthalten weder Dateinamen noch Dateiinhalt. Dateiablagen lösen keinen Versand aus.
 
 Bei einem gespeicherten Profil wird ein Antwortschlüssel bereits vor Bestätigung des Versands gesichert. Abgebrochene Vorbereitungen werden entfernt. Nach einem Prozessabbruch ausstehende Vorgänge werden als ungeklärt behandelt; gespeicherte Schlüssel sind keine Erlaubnis, eine frühere Schreibaktion fortzusetzen.
+
+`CaseRepository` hält native, unveränderliche Versand- und Empfangskopien getrennt von aktuellen Empfangsnachweisen. Dauerhafte Inhalte sind nach gespeicherter Profil-ID und API isoliert; temporäre Client-Kontexte verwenden einen eigenen Namensraum. Vor einer Empfangsbestätigung muss eine aktivierte Sicherung gelingen. Ein nachträglicher Speicherfehler darf einen erfolgreichen Versand weder als fehlgeschlagen umdeuten noch automatisch wiederholen. Historische Kopien sind keine neue Schreibberechtigung.
+
+## BPMN-Zuordnung
+
+BPMN-Element-IDs und Anzeigenamen werden nicht als FIT-Connect-Kennungen geraten. Eigene Modelle können die folgende explizite Erweiterung verwenden; sie ist eine Konvention dieses Clients, kein FIT-Connect-Standard:
+
+```xml
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:fc="urn:fit-connect:test-client:bpmn:1"
+  targetNamespace="urn:mein-test" fc:processModelId="vereinbarte-modellkennung">
+  <bpmn:message id="BpmnMessage_1" name="Nachforderung"
+    fc:messageId="vereinbarte-nachrichtenkennung"
+    fc:schemaUri="urn:vereinbartes:antwortschema:1" fc:mimeType="application/json"/>
+</bpmn:definitions>
+```
+
+`processModelId` kann alternativ an einer Nachricht stehen. Schemahinweise sind optional, werden aber als URI-/Formatpaar angegeben. Manuelle Zuordnungsdateien sind an den SHA-256 des unveränderten Modells gebunden. Bei Prozess-Replies sind ausschließlich die ausdrücklich angebotenen Modell-/Nachrichtenbezüge und Schemata des geprüften Antwortkanals zulässig. Beispiel: `frontend/src/examples/test-process.bpmn`.
 
 ## Tests und Entwicklung
 

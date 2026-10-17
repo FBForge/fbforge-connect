@@ -1,6 +1,6 @@
 # Mitwirken
 
-FBForge Connect ist eine Windows-Desktop-Anwendung für Integrationstests auf TEST. Vor Änderungen bitte [Architektur](ARCHITECTURE.md), [Work-Goal](ALPHA1_GOAL.md) und [Umsetzungsstand](ALPHA1_PROGRESS.md) lesen. Ausschließlich fiktive Testdaten verwenden.
+FBForge Connect ist eine Windows-Desktop-Anwendung für Integrationstests auf TEST. Vor Änderungen bitte die [Architektur](ARCHITECTURE.md) lesen. Ausschließlich fiktive Testdaten verwenden.
 
 ## Lokal starten und prüfen
 
@@ -40,6 +40,14 @@ Den Installer mit `npm run desktop:build -- -- --locked` erstellen. Er liegt unt
 
 `main` enthält den zusammengeführten Projektstand, `develop` die laufende Entwicklung. Neue Beiträge verwenden kurze Feature-Branches und Pull Requests nach `develop`. Ein Merge ist keine Release-Freigabe; Veröffentlichungen erhalten einen gesondert geprüften Versionsstand.
 
+## Anwendungshilfe und GitHub-Wiki
+
+Hilfetexte werden ausschließlich in `frontend/src/help/topics.js` gepflegt. Die zugehörigen Bildschirmaufnahmen liegen unter `frontend/src/help/screenshots/` und dürfen nur fiktive Daten zeigen. Die Anwendung bündelt diese Quellen für die Offline-Hilfe; das Wiki verwendet dieselben Inhalte.
+
+Mit `node scripts/export-wiki.mjs <neues-Ausgabeverzeichnis>` werden die zwölf Hilfethemen, Startseite, Seitennavigation und Bilder für das Wiki erzeugt. Der Export benötigt keine Zugangsdaten, führt keine Netzwerkanfragen aus und überschreibt kein vorhandenes Verzeichnis.
+
+Zur Veröffentlichung zuerst das vorhandene Wiki mit `git clone https://github.com/FBForge/fbforge-connect.wiki.git` separat auschecken. GitHub benötigt gegebenenfalls einmalig eine im Web angelegte erste Wiki-Seite. Den Export in ein anderes, neues Verzeichnis erzeugen, die Seiten sowie `images/` in den Wiki-Checkout übernehmen und den Diff prüfen. Andere, manuell gepflegte Wiki-Seiten erhalten. Anschließend die Wiki-Änderung committen und regulär pushen. Bei umbenannten Hilfethemen alte generierte Seiten gezielt entfernen und eingehende Links prüfen. Texte oder Bilder nicht unabhängig im Wiki bearbeiten, da der nächste Export sie ersetzt.
+
 ## Änderungen vorbereiten
 
 - Module nach fachlicher Verantwortung schneiden. UI, native Berechtigungen und SDK-Anpassungen haben unterschiedliche Aufgaben.
@@ -58,8 +66,22 @@ Die vorhandenen SDKs übernehmen Kryptografie und FIT-Connect-Protokollverarbeit
 
 Mit einem Beitrag bestätigst du die Berechtigung, ihn unter der EUPL-1.2 dieses Projekts einzureichen. Bestehende Urheberrechts- und Lizenzhinweise bleiben erhalten. Sicherheitsprobleme bitte privat gemäß [SECURITY.md](SECURITY.md) melden. Größere Beiträge externer Mitwirkender sollten vorab in einem Issue abgestimmt werden.
 
-Formatierung: `npm run format`, im Engine-Verzeichnis `./mvnw spotless:apply`, für Rust `cargo fmt --manifest-path desktop/Cargo.toml --all`. Die Compiler-Modulfreigaben in `engine/.mvn/jvm.config` gelten nur für den Build-Formatter, nicht für die ausgelieferte Laufzeit. Live-Zugänge ausschließlich über echte Secret-Speicher verwenden; siehe [Sicherheitsprüfung](SECURITY_REVIEW.md).
+Formatierung: `npm run format`, im Engine-Verzeichnis `./mvnw spotless:apply`, für Rust `cargo fmt --manifest-path desktop/Cargo.toml --all`. Die Compiler-Modulfreigaben in `engine/.mvn/jvm.config` gelten nur für den Build-Formatter, nicht für die ausgelieferte Laufzeit.
 
 ## Öffentliche Schema-Integrationstests
 
-Die normalen lokalen Tests benötigen keine Zugangsdaten. Für die zusätzlichen versionsgebundenen FIM-Beispiele einmal `node scripts/fetch-public-schemas.mjs` ausführen und anschließend die Browsertests starten. Ein vollständiger Cache kann mit `--offline` geprüft werden. Die Dateien werden nicht mit der Anwendung verteilt; Herkunft und Grenzen stehen in [PUBLIC_SCHEMA_TESTS.md](PUBLIC_SCHEMA_TESTS.md). Reale TEST-Schreibabläufe sind separat in [LIVE_TESTS.md](LIVE_TESTS.md) beschrieben und gehören nicht in gewöhnliche Beitragsprüfungen.
+Die normalen lokalen Tests benötigen keine Zugangsdaten. Für die zusätzlichen FIM-Beispiele einmal `node scripts/fetch-public-schemas.mjs` ausführen und anschließend `npm run test:ui` starten. Unveränderliche URLs und SHA-256 stehen in `tests/public-schemas/manifest.json`. Mit `--offline` wird nur ein vollständig vorhandener, korrekt gehashter Cache akzeptiert; ohne Cache wird dieser externe Integrationstest übersprungen. Die Fremddateien bleiben im ignorierten Testcache und werden nicht mit der Anwendung verteilt. Die Beispiele prüfen die Darstellung zweier konkreter Veröffentlichungen und belegen keine vollständige FIM-/XÖV-Unterstützung.
+
+## Reale TEST-Austausche
+
+`live-exchange.yml` startet ausschließlich manuell auf `main` oder `develop` mit ausdrücklich aktivierter Eingabe `confirm_test_writes`. Es erzeugt fiktive Einreichungen, Antworten und einen eigenen temporären Zustellpunkt. Benötigt werden die Actions-Secrets `SENDERID`, `SENDERSECRET`, `SENDERDEST`, `SUBSCRIBERID` und `SUBSCRIBERSECRET`; Werte gehören niemals in Quelldateien, Logs oder Artefakte. PR-Prüfungen erhalten keine Live-Zugänge.
+
+Der Sender benötigt einen bestehenden aktiven Typ-C-Zustellpunkt und Verwaltungsrechte für dessen Metadatenangebote. Der Test ergänzt nach vorherigem Lesen ausschließlich fehlende Versionen `2.0.0`/`3.0.0`. Der Subscriber benötigt Rechte zur Zustellpunktverwaltung und zum Empfang. Geprüft werden v2/v3, JSON/XML, Anlagen, Fragmentierung, Replies nach Neustart, Prozesskommunikation, signierte Ereignisse, Annahme/Ablehnung, lokale Vorgangskopien und Schlüsselrotation. Private Schlüssel werden vor Registrierung beziehungsweise Reply-Angebot mit dem produktiven Windows-DPAPI-Speicher gesichert. Ungewisse Schreiboperationen werden nicht automatisch wiederholt.
+
+Aufräumen betrifft nur den im Lauf erstellten Zustellpunkt nach erneutem Eigentums-/Zustandsabgleich. Nach Aktivierung erzwingt die API eine Aufbewahrungsfrist: Der Test deaktiviert ihn und nennt ID sowie `canBeDecommissionedAt` im Laufprotokoll. Spätere Löschung erfordert einen erneuten Abgleich; keine pauschale Löschung nach Namenspräfix. Vorhandene konfigurierte Zustellpunkte bleiben erhalten.
+
+## Pakete prüfen und veröffentlichen
+
+Der Windows-Workflow baut die tatsächliche Anwendung und prüft Neuinstallation, Upgrade, erhaltene Profile, beide gebündelten SDKs und ausgewählte echte NVDA-Sprachsequenzen. Das Setup-Artefakt enthält `SHA256SUMS.txt` und `build-info.json`. Quelle, Version, Lauf-ID und Installerhash müssen zusammenpassen. Browser-Reflow, Axe und der automatisierte Screenreader-Test ersetzen keine vollständige manuelle Bedienungs-, Audio- oder Monitor-DPI-Abnahme.
+
+Vor einer Veröffentlichung den endgültigen Installer auf einem Windows-Zielgerät prüfen: Senden/Empfangen mit Anlagen, Replies, Ereignissuche, BPMN, Zustellpunkte, Profil-Neustart, Vorgangsablage/Löschen sowie Tastatur, Screenreader und 125/150/200-Prozent-Skalierung. Lizenzinventar, Abhängigkeiten und die Signatur des finalen Pakets prüfen. Authenticode-Identität, Zertifikatskette und Zeitstempel lassen sich mit `Get-AuthenticodeSignature` und `signtool verify /pa /all /v` kontrollieren. Nach Signierung neue Prüfsummen erzeugen und Installation/Upgrade erneut am endgültigen Paket testen. Ein grüner Build oder Merge veröffentlicht keine Alpha.
