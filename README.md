@@ -10,14 +10,14 @@ Ausschließlich **FIT-Connect TEST und fiktive Daten**. Kein offizielles Produkt
 
 ## Entwicklungsstand
 
-Der aktuelle Stand ist ein **Alpha-1-Kandidat für Windows x64**, noch keine freigegebene Alpha 1. Normale Einreichungen und Replies über v2/v3, signierte Ereignisse, Neustart mit geschützten Schlüsseln, Zustellpunktanlage, Rotation und v3-Prozesskommunikation wurden real gegen TEST geprüft. Die echte Windows-Neuinstallation und das Upgrade von dev.7 einschließlich Profil-Erhalt sind ebenfalls erfolgreich getestet.
+Der aktuelle Stand ist ein **Alpha-1-Kandidat für Windows x64**, noch keine freigegebene Alpha 1. Normale Einreichungen und Replies über v2/v3, signierte Ereignisse, Neustart mit geschützten Schlüsseln, Zustellpunktanlage, Rotation und v3-Prozesskommunikation wurden real gegen TEST geprüft. Die echte Windows-Neuinstallation und das Upgrade von dev.7 einschließlich Profil-Erhalt sind ebenfalls erfolgreich getestet. Der [vollständige aktuelle Windows-Lauf](https://github.com/FBForge/fbforge-connect/actions/runs/39046768207) bestätigt zusätzlich 20 Browserabläufe und den tatsächlichen NVDA-Test gegen denselben Installer; ZIP-Digests, Installerbytes und Build-/NVDA-Bericht wurden nach dem Download unabhängig abgeglichen.
 
 Der Kandidat ist **unsigniert**; das bestellte Certum-Zertifikat steht noch aus. Die zusätzlichen Browserprüfungen bei 125/150/200 Prozent sind bestanden. Ein [Ablauf mit echtem NVDA 2026.2](https://github.com/FBForge/fbforge-connect/actions/runs/39046257372) bestätigt in beiden Laufversuchen neun Beschriftungen, geschütztes Secret-Feld, Tab-Navigation und Escape-Fokus-Rückkehr. Er beginnt mit einer einmaligen Mausaktivierung der WebView. Reale Zielgeräte, hörbare Bedienbarkeit und native Monitor-DPI bleiben gesondert zu prüfen. Es wird keine BSI- oder vollständige WCAG-Konformität behauptet.
 
 - [Alpha-1-Kandidat und aktuelle Nachweise](https://github.com/FBForge/fbforge-connect/blob/alpha1-work/ALPHA1_PROGRESS.md)
 - [Anwendungscode im Kandidatenzweig](https://github.com/FBForge/fbforge-connect/tree/alpha1-work)
 - [Zusammengeführter Entwicklungsstand](https://github.com/FBForge/fbforge-connect/tree/develop)
-- [Geprüfter unsignierter Windows-Kandidat](https://github.com/FBForge/fbforge-connect/actions/runs/39038478823/artifacts/12103363136)
+- [Geprüfter unsignierter Windows-Kandidat](https://github.com/FBForge/fbforge-connect/actions/runs/39046768207/artifacts/12106497088)
 
 `main` enthält die öffentliche Projektübersicht. Quellcode, Build-Anleitung und vollständige Entwicklungsdokumentation liegen in den verlinkten Entwicklungszweigen.
 
