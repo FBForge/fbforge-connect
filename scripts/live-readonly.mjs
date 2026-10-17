@@ -27,6 +27,22 @@ for (const version of ['v2', 'v3']) {
           destinationId: process.env.SENDERDEST,
         });
         assert.equal(result.data.destinationId, process.env.SENDERDEST);
+        const selection = {
+          processModelId: 'urn:fbforge:connect:ci:process-discovery',
+          messageId: 'read-only-probe',
+          region: 'DE',
+          offset: 0,
+        };
+        const page = (
+          await engine.call(version, 'search_process_destinations', {
+            ...args,
+            destinationDocument: JSON.stringify(selection),
+          })
+        ).data;
+        for (const [key, value] of Object.entries(selection)) assert.equal(page[key], value);
+        assert.ok(Array.isArray(page.destinations));
+        assert.ok(Number.isSafeInteger(page.totalCount) && page.totalCount >= page.destinations.length);
+        console.log('v3 sender: authenticated process destination search passed');
       } else if (label === 'subscriber') {
         const result = await engine.call(version, 'list_destinations', { ...args, offset: 0 });
         assert.ok(Array.isArray(result.data.destinations));
@@ -44,7 +60,7 @@ for (const version of ['v2', 'v3']) {
       failures++;
       // Never include SDK exceptions, network bodies, request values or tokens in CI output.
       const code =
-        /^(open_session|load_send_destination|list_destinations|generate_test_keys): [a-z_]+$/.test(
+        /^(open_session|load_send_destination|search_process_destinations|list_destinations|generate_test_keys): [a-z_]+$/.test(
           error.message,
         )
           ? error.message

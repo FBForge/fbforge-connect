@@ -42,7 +42,8 @@ class ProcessDiscoveryTest {
     }
 
     @Test
-    void actualSdkUsesPublicTestSearchAndEncodesExactProcessAndMessageOnce() throws Exception {
+    void actualSdkUsesSessionBearerForProcessSearchAndEncodesExactProcessAndMessageOnce()
+            throws Exception {
         String model = "urn:test:model/a & b", message = "Nachforderung + Beleg";
         var reply = response(model, message);
         var urls = new ArrayList<String>();
@@ -50,9 +51,17 @@ class ProcessDiscoveryTest {
                 (endpoint, headers) -> {
                     urls.add(endpoint);
                     assertEquals(ProcessDiscovery.allowed(endpoint).toString(), endpoint);
-                    assertTrue(
-                            headers.keySet().stream()
-                                    .noneMatch(key -> key.equalsIgnoreCase("authorization")));
+                    assertEquals(
+                            "Bearer synthetic-token",
+                            headers.entrySet().stream()
+                                    .filter(
+                                            entry ->
+                                                    entry.getKey()
+                                                            .equalsIgnoreCase("authorization"))
+                                    .map(Map.Entry::getValue)
+                                    .findFirst()
+                                    .orElse(null),
+                            "The TEST process-search endpoint currently requires a session bearer");
                     assertTrue(
                             endpoint.contains(
                                     "processModelId="
@@ -135,5 +144,79 @@ class ProcessDiscoveryTest {
                         ROOT + query.replace("offset=0", "offset=10020"),
                         ROOT + query.replace("limit=20", "limit=100")))
             assertThrows(SessionException.class, () -> ProcessDiscovery.allowed(url));
+    }
+
+    @Test
+    void bearerIsRequiredOnlyForTheNarrowProcessSearchProfile() {
+        String endpoint =
+                ROOT + "?processModelId=model&messageId=message&region=DE&offset=0&limit=20";
+        var bearer =
+                Map.of("Authorization", "Bearer synthetic-token", "Accept", "application/json");
+        assertEquals(endpoint, ProcessDiscovery.allowed(endpoint, bearer).toString());
+        for (var headers :
+                List.of(
+                        Map.<String, String>of(),
+                        Map.of("Authorization", "Basic synthetic"),
+                        Map.of("Authorization", "Bearer "),
+                        Map.of("Authorization", "Bearer token with spaces"),
+                        Map.of("Authorization", "Bearer synthetic\r\nOther: value"),
+                        Map.of(
+                                "Authorization",
+                                "Bearer synthetic",
+                                "authorization",
+                                "Bearer other"),
+                        Map.of("Authorization", "Bearer synthetic", "X-Untrusted", "value"))) {
+            assertThrows(SessionException.class, () -> ProcessDiscovery.allowed(endpoint, headers));
+            try (var transport = new TestResourceTransport()) {
+                assertThrows(
+                        SessionException.class,
+                        () -> transport.forProcessSearch().get(endpoint, headers));
+            }
+        }
+        assertThrows(SessionException.class, () -> ProcessDiscovery.allowed(endpoint, null));
+        // The public directory profile must not become an alternative authenticated search route.
+        assertThrows(
+                SessionException.class,
+                () -> TestResourceTransport.allowed(ApiVersion.V3, endpoint));
+        try (var transport = new TestResourceTransport()) {
+            assertThrows(
+                    SessionException.class,
+                    () ->
+                            transport
+                                    .forProcessSearch()
+                                    .get(endpoint.replace("test.", "prod."), bearer));
+        }
+    }
+
+    @Test
+    void unexpectedSdkQueryOrBearerNeverReachesTheNetwork() {
+        String endpoint =
+                ROOT + "?processModelId=model&messageId=other&region=DE&offset=0&limit=20";
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
+        for (var headers :
+                List.of(
+                        Map.of("Authorization", "Bearer synthetic-token"),
+                        Map.<String, String>of())) {
+            var session =
+                    (AuthenticatedSession)
+                            java.lang.reflect.Proxy.newProxyInstance(
+                                    AuthenticatedSession.class.getClassLoader(),
+                                    new Class<?>[] {AuthenticatedSession.class},
+                                    (proxy, method, args) -> {
+                                        assertEquals("processDestinations", method.getName());
+                                        return ((ResourceExchange) args[5]).get(endpoint, headers);
+                                    });
+            assertThrows(
+                    SessionException.class,
+                    () ->
+                            ProcessDiscovery.search(
+                                    session,
+                                    query("model", "message"),
+                                    (url, values) -> {
+                                        calls.incrementAndGet();
+                                        throw new AssertionError("Unexpected network access");
+                                    }));
+        }
+        assertEquals(0, calls.get());
     }
 }

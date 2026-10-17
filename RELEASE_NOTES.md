@@ -4,6 +4,7 @@
 
 ## Änderungen gegenüber dev.7
 
+- Die v3-Prozess-Empfängersuche nutzt die bestehende Anmeldung. Damit wird auch die derzeitige TEST-API unterstützt, die für diesen eigentlich öffentlichen Suchendpunkt einen Bearer-Token verlangt.
 - Vollständige Einreichungen und Replies mit separater Annahme/Ablehnung; signierte Suche nach Case-, Submission- und Reply-ID. Reale v3-Vertragsfehler beim Senden, Empfang und in Ereignissen sind korrigiert und durch erneute TEST-Austausche belegt.
 - Optionale Windows-Profile schützen Zugangsdaten, private Schlüssel und Antwortkanäle auch nach einem Neustart. Standard-Zustellpunkte, Profilbearbeitung, Schlüsselübersicht und geschützte Sicherungen ergänzen den Arbeitsplatz.
 - Eigene v3-Zustellpunkte samt Testschlüsseln anlegen, öffentliche Registrierungen prüfen, getrennt aktivieren und Angebote beziehungsweise Schlüssel für bis zu zehn Ziele bearbeiten. Alte Entschlüsselungsschlüssel bleiben erhalten.

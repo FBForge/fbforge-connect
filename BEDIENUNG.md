@@ -44,7 +44,7 @@ Bei **ungewissem Übertragungsausgang** nicht einfach nochmals senden: zuerst de
 
 Unter **Prozesse** ein BPMN-Modell per Dateiablage öffnen oder zunächst den fiktiven Demo-Prozess wählen; dafür ist keine Anmeldung nötig. Eine Nachricht im Diagramm oder in der Tastaturliste auswählen. FIT-Connect-Kennungen müssen ausdrücklich im Modell oder einer zu dessen Prüfsumme passenden Zuordnung stehen. Anzeigenamen allein reichen nicht aus.
 
-Mit einer berechtigten v3-Sitzung passende Prozess-Zustellpunkte suchen und die Auswahl in einen Entwurf übernehmen. Ein Modellklick versendet nichts. Der Client ist ein Nachrichten-Testwerkzeug und führt keinen vollständigen BPMN-Prozess aus.
+Mit einer berechtigten v3-Sitzung passende Prozess-Zustellpunkte suchen und die Auswahl in einen Entwurf übernehmen. Die Suche verwendet automatisch die bestehende Anmeldung; ein zusätzlicher Token muss nicht eingegeben werden. Ein Modellklick versendet nichts. Der Client ist ein Nachrichten-Testwerkzeug und führt keinen vollständigen BPMN-Prozess aus.
 
 ## Hilfe und Grenzen
 
