@@ -64,12 +64,6 @@ public static class AccessibilityKeys {
         Key(key, true);
         System.Threading.Thread.Sleep(250);
     }
-    public static void Previous() {
-        Key(0x10, false);
-        Press(0x09);
-        Key(0x10, true);
-        System.Threading.Thread.Sleep(250);
-    }
     public static void ReportFocus() {
         Key(0x2d, false); // NVDA's standard Insert+Tab command.
         System.Threading.Thread.Sleep(40);
@@ -114,12 +108,18 @@ function Check-Spoken([string]$Name, $Type) {
     if (-not $element.Current.IsEnabled -or -not $element.Current.IsKeyboardFocusable) { throw ('a11y_not_focusable:' + $Name) }
     $before = @(Read-Capture).Count
     if (-not [AccessibilityKeys]::FocusWindow([IntPtr]$taskWindow.Current.NativeWindowHandle)) { throw 'a11y_window_not_foreground' }
-    $element.SetFocus()
     if ($taskInputActive) {
-        # Native navigation emits real focus events for dynamically mounted WebView controls.
-        [AccessibilityKeys]::Press(0x09)
-        [AccessibilityKeys]::Previous()
-        $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq $Name } ('a11y_native_focus_mismatch:' + $Name) 5
+        # Reach controls using actual keyboard navigation rather than UIA's DOM-only focus.
+        $reached = $false
+        for ($step = 0; $step -lt 60; $step++) {
+            $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
+            if ($focused -and $focused.Current.Name -eq $Name -and $focused.Current.ControlType -eq $Type) { $reached = $true; break }
+            if ([AccessibilityKeys]::GetForegroundWindow() -ne [IntPtr]$taskWindow.Current.NativeWindowHandle) { throw 'a11y_keyboard_left_owned_window' }
+            [AccessibilityKeys]::Press(0x09)
+        }
+        if (-not $reached) { throw ('a11y_native_focus_unreachable:' + $Name) }
+    } else {
+        $element.SetFocus()
     }
     Start-Sleep -Milliseconds 300
     [AccessibilityKeys]::ReportFocus()
@@ -127,7 +127,7 @@ function Check-Spoken([string]$Name, $Type) {
         $records = @(Read-Capture)
         if ($records.Count -le $before) { return $false }
         foreach ($record in $records[$before..($records.Count - 1)]) {
-            if ($record.PSObject.Properties.Name -contains 'text' -and $record.text.IndexOf($Name, [StringComparison]::OrdinalIgnoreCase) -ge 0) { return $record.text }
+            if ($record.PSObject.Properties.Name -contains 'text' -and $record.PSObject.Properties.Name -contains 'focus' -and $record.focus -eq $Name -and $record.text.IndexOf($Name, [StringComparison]::OrdinalIgnoreCase) -ge 0) { return $record.text }
         }
         return $false
     } ('nvda_label_not_spoken:' + $Name) 15
