@@ -22,11 +22,12 @@ test('renamed installer preserves the legacy upgrade identity with only two revi
       '!define UNINSTKEY "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCTNAME}"',
     )
     .replace(
-      '!define MANUPRODUCTKEY "${MANUKEY}\\FIT-Connect Test-Client"',
+      '!define MANUPRODUCTKEY "Software\\fitconnect\\FIT-Connect Test-Client"',
       '!define MANUPRODUCTKEY "${MANUKEY}\\${PRODUCTNAME}"',
     );
   assert.equal(createHash('sha256').update(original).digest('hex'), source.sha256);
   assert.equal(app.productName, productName);
+  assert.equal(app.bundle.publisher, 'FBForge');
   assert.ok(app.app.windows[0].title.startsWith(productName));
   assert.ok(page.includes(`<title>${productName}</title>`));
   assert.equal(app.identifier, 'org.fitconnect.integration-client');

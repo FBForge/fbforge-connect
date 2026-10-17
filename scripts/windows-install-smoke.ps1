@@ -60,7 +60,7 @@ function Check-Installed([bool]$ExpectProfile) {
     $installedBinary = Join-Path $taskInstall 'fit-connect-integration-client.exe'
     if ((Get-FileHash -LiteralPath $installedBinary -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedBinaryPath -Algorithm SHA256).Hash) { throw 'installed_binary_revision_mismatch' }
     $registration = Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FIT-Connect Test-Client'
-    if ($registration.DisplayName -ne 'FBForge Test-Client' -or $registration.MainBinaryName -ne 'fit-connect-integration-client.exe' -or $registration.InstallLocation.Trim('"') -ne $taskInstall) { throw 'installed_upgrade_identity_mismatch' }
+    if ($registration.DisplayName -ne 'FBForge Test-Client' -or $registration.Publisher -ne 'FBForge' -or $registration.MainBinaryName -ne 'fit-connect-integration-client.exe' -or $registration.InstallLocation.Trim('"') -ne $taskInstall) { throw 'installed_upgrade_identity_mismatch' }
     if (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FBForge Test-Client') { throw 'duplicate_upgrade_registration' }
     $info = [System.Diagnostics.ProcessStartInfo]::new((Join-Path $taskInstall 'fit-connect-integration-client.exe'))
     $info.UseShellExecute = $false; $info.WorkingDirectory = $taskInstall

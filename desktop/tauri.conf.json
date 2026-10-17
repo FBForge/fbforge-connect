@@ -18,6 +18,7 @@
     }
   },
   "bundle": {
+    "publisher": "FBForge",
     "active": true,
     "targets": ["nsis"],
     "icon": ["icons/app.png", "icons/app.ico"],
