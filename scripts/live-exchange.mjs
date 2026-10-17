@@ -17,7 +17,7 @@ for (const secretName of secretNames)
 const root = fileURLToPath(new URL('../', import.meta.url));
 const bridge = join(root, 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe');
 const directory = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), 'fitconnect-live-'));
-const runName = `FIT-Connect Test-Client CI ${randomUUID()}`;
+const runName = `FBForge Connect CI ${randomUUID()}`;
 const applicationUri = 'urn:fit-connect:test-client:demo:application:1';
 const replyUri = 'urn:fit-connect:test-client:demo:reply:1';
 const xmlUri = 'urn:fit-connect:test-client:ci:xml:1';

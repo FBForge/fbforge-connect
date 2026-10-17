@@ -22,7 +22,7 @@ final class TestKeys {
         try {
             boolean encryption = purpose.equals("decrypt");
             var pair = KeyGenerator.buildRSAKeyPair(4096);
-            var identity = new X500Name("CN=FIT-Connect Test-Client TEST");
+            var identity = new X500Name("CN=FBForge Connect TEST");
             var now = Instant.now();
             var serial = new BigInteger(159, new SecureRandom()).setBit(158);
             // SDK4 rc.2's CertUtils uses different issuer/subject DNs. Keep our self-signature
