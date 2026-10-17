@@ -20,6 +20,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test-readonly:
+    if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.20.0
+          package-manager-cache: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: engine/**/pom.xml
+      - name: Build the actual SDK adapters and host for read-only TEST checks
+        working-directory: engine
+        run: ./mvnw --batch-mode -DskipTests package
+      - name: Stage the actual Java runtime and adapters
+        run: node scripts/stage-engine.mjs
+      - name: Check real TEST authentication, process discovery and read operations
+        env:
+          SENDERID: ${{ secrets.SENDERID }}
+          SENDERSECRET: ${{ secrets.SENDERSECRET }}
+          SENDERDEST: ${{ secrets.SENDERDEST }}
+          SUBSCRIBERID: ${{ secrets.SUBSCRIBERID }}
+          SUBSCRIBERSECRET: ${{ secrets.SUBSCRIBERSECRET }}
+        run: node scripts/live-readonly.mjs
+
   windows:
     runs-on: windows-2025
     timeout-minutes: 40
@@ -164,12 +196,3 @@ jobs:
           name: windows-alpha-unsigned-offline-setup
           path: desktop/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
-      - name: Check real TEST authentication and read operations
-        if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-        env:
-          SENDERID: ${{ secrets.SENDERID }}
-          SENDERSECRET: ${{ secrets.SENDERSECRET }}
-          SENDERDEST: ${{ secrets.SENDERDEST }}
-          SUBSCRIBERID: ${{ secrets.SUBSCRIBERID }}
-          SUBSCRIBERSECRET: ${{ secrets.SUBSCRIBERSECRET }}
-        run: node scripts/live-readonly.mjs
