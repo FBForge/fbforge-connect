@@ -7,8 +7,9 @@ import java.util.*;
 import org.fitconnect.integration.contract.*;
 
 /**
- * Public v3 process-message discovery. A model click grants no write or authenticated HTTP
- * capability.
+ * Read-only v3 process-message discovery. TEST currently requires the native session bearer for
+ * this otherwise public search; the credential is restricted to the exact search endpoint and
+ * query.
  */
 final class ProcessDiscovery {
     record Schema(String schemaUri, String mimeType) {}
@@ -54,9 +55,8 @@ final class ProcessDiscovery {
                         "20");
         ResourceExchange gate =
                 (url, headers) -> {
-                    if (!parameters(url).equals(expected)
-                            || headers.keySet().stream()
-                                    .anyMatch(key -> key.equalsIgnoreCase("authorization")))
+                    allowed(url, headers);
+                    if (!parameters(url).equals(expected))
                         throw new SessionException("endpoint_blocked");
                     return remote.get(url, headers);
                 };
@@ -123,6 +123,18 @@ final class ProcessDiscovery {
     static URI allowed(String endpoint) {
         parameters(endpoint);
         return URI.create(endpoint);
+    }
+
+    static URI allowed(String endpoint, Map<String, String> headers) {
+        var uri = allowed(endpoint);
+        var checked = ReceiveAccess.safeHeaders(headers, false);
+        if (checked.entrySet().stream()
+                .noneMatch(
+                        entry ->
+                                entry.getKey().equalsIgnoreCase("authorization")
+                                        && entry.getValue().matches("Bearer [\\x21-\\x7e]+")))
+            throw new SessionException("endpoint_blocked");
+        return uri;
     }
 
     private static Map<String, String> parameters(String endpoint) {

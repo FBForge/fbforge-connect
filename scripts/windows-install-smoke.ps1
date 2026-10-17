@@ -9,6 +9,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class InstallerWindowFocus {
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr window, int command);
+}
+'@
 $taskRoot = Join-Path $env:RUNNER_TEMP ('fitconnect-install-' + [Guid]::NewGuid().ToString('N'))
 $taskInstall = Join-Path $taskRoot 'application files'
 $taskProfiles = Join-Path $env:APPDATA 'org.fitconnect.integration-client\profiles'
@@ -51,7 +60,7 @@ function Find-Named($Root, [string]$Name) {
     return $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
 }
 function Invoke-Named($Root, [string]$Name) {
-    $element = Wait-Condition { Find-Named $Root $Name } 'installer_ui_control_missing'
+    $element = Wait-Condition { Find-Named $Root $Name } ('installer_ui_control_missing: ' + $Name)
     $pattern = $null
     if (-not $element.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) { throw 'installer_ui_invoke_unavailable' }
     $pattern.Invoke()
@@ -75,6 +84,12 @@ function Check-Installed([bool]$ExpectProfile) {
             [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
         } 'installed_window_missing'
         if ($window.Current.Name -ne 'FBForge Connect · FIT-Connect TEST') { throw 'installed_title_invalid' }
+        # WebView accessibility can remain inactive after silent installer/uninstaller windows.
+        # Activate the actual native window, rather than relying on a DOM/UIA focus assignment.
+        $handle = [IntPtr]$window.Current.NativeWindowHandle
+        $null = [InstallerWindowFocus]::ShowWindow($handle, 9)
+        $null = [InstallerWindowFocus]::SetForegroundWindow($handle)
+        $null = Wait-Condition { [InstallerWindowFocus]::GetForegroundWindow() -eq $handle } 'installed_window_not_foreground' 15
         Invoke-Named $window 'Diagnose'
         Invoke-Named $window 'Komponenten prüfen'
         $null = Wait-Condition {

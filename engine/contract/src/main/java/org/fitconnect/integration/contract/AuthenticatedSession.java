@@ -31,7 +31,7 @@ public interface AuthenticatedSession extends AutoCloseable {
             String region,
             int offset,
             int limit,
-            ResourceExchange publicReads) {
+            ResourceExchange processReads) {
         throw new SessionException("invalid_input");
     }
 

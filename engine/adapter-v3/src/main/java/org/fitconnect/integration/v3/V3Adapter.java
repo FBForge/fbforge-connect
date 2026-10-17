@@ -130,17 +130,19 @@ public final class V3Adapter implements SdkAdapter {
                 String region,
                 int offset,
                 int limit,
-                ResourceExchange publicReads) {
+                ResourceExchange processReads) {
             requireOpen();
             var transport =
                     new OAuthTransport(
                             (url, body) -> {
                                 throw new SessionException("endpoint_blocked");
                             },
-                            publicReads);
+                            processReads);
             var client =
                     new SubmissionApiClient(
-                            RequestHeaders.withoutCredentials(),
+                            // TEST currently requires OAuth even though discovery is public by
+                            // spec.
+                            new RequestHeaders(current),
                             transport,
                             new ConcurrencyLimiter(1),
                             "https://test.fit-connect.fitko.dev/submission-api");

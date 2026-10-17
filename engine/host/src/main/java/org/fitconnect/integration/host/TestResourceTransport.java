@@ -235,7 +235,7 @@ final class TestResourceTransport implements AutoCloseable {
         URI uri =
                 switch (profile) {
                     case DIRECTORY -> allowed(version, endpoint);
-                    case PROCESS_SEARCH -> ProcessDiscovery.allowed(endpoint);
+                    case PROCESS_SEARCH -> ProcessDiscovery.allowed(endpoint, headers);
                     case RECEIVE -> ReceiveAccess.allowedTransport(version, endpoint);
                     case REPLY_RECEIVE -> ReceiveAccess.allowedReplyTransport(version, endpoint);
                     case EVENTS -> EventLogAccess.allowedTransport(version, endpoint);
