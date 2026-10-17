@@ -1,4 +1,5 @@
 import { diagnosticCode } from './diagnostics.js';
+import { productName } from './product.js';
 
 // Deliberately exclude arguments, response bodies, identifiers, paths and free-form messages.
 export const operationLabels = Object.freeze({
@@ -7,6 +8,7 @@ export const operationLabels = Object.freeze({
   update_profile: 'Gespeichertes Profil bearbeiten',
   export_profile_backup: 'Geschütztes Profil sichern',
   import_profile_backup: 'Geschütztes Profil wiederherstellen',
+  import_profile_backup_file: 'Geschützte Profildatei wiederherstellen',
   search_process_destinations: 'Prozess-Empfänger suchen',
   prepare_destination_rotation: 'Schlüsselwechsel vorbereiten',
   execute_destination_rotation: 'Schlüsselwechsel ausführen',
@@ -177,7 +179,7 @@ export function buildSupportReport({ version, selectedApi, probes = {}, entries 
     throw new Error('invalid_input');
   return {
     format: 'fit-connect-support-v1',
-    application: 'FIT-Connect Test-Client',
+    application: productName,
     version,
     environment: 'TEST',
     selectedApi: api(selectedApi),

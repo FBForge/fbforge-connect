@@ -89,6 +89,11 @@
     "allow-search-process-destinations",
     "allow-export-profile-backup",
     "allow-import-profile-backup",
+    "allow-import-profile-backup-file",
+    "allow-get-profile-defaults",
+    "allow-save-profile-defaults",
+    "allow-list-key-inventory",
+    "allow-remove-key-inventory-item",
     "allow-update-profile"
   ]
 }

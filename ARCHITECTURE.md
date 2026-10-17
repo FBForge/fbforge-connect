@@ -33,6 +33,8 @@ Gespeichert werden optional Zugangsdaten, registrierte private TEST-Schlüssel u
 
 Die privaten Engine-Befehle `export_session_item` und `restore_session_item` werden ausschließlich von Rust verwendet. Es gibt dafür keine Tauri-Handler oder Renderer-Berechtigungen. Das private Archiv darf weder über allgemeine Ressourcenoperationen durchgereicht noch in Diagnoseberichte aufgenommen werden.
 
+Profilsicherungen werden ausschließlich nativ entschlüsselt. Der System-Dateidialog hält Pfade und Dateidaten im nativen Prozess. Für Drag-and-drop darf der Renderer eine größenbegrenzte verschlüsselte `.fctest-profile`-Datei über binäres IPC weiterreichen; er erhält nur öffentliche Profilmetadaten zurück. Derselbe DPAPI-, Format-, Größen- und Konfliktschutz gilt für beide Wege. Es entsteht keine allgemeine Dateisystem-Berechtigung. Diagnoseberichte enthalten weder Dateinamen noch Dateiinhalt. Dateiablagen lösen keinen Versand aus.
+
 Bei einem gespeicherten Profil wird ein Antwortschlüssel bereits vor Bestätigung des Versands gesichert. Abgebrochene Vorbereitungen werden entfernt. Nach einem Prozessabbruch ausstehende Vorgänge werden als ungeklärt behandelt; gespeicherte Schlüssel sind keine Erlaubnis, eine frühere Schreibaktion fortzusetzen.
 
 ## Tests und Entwicklung

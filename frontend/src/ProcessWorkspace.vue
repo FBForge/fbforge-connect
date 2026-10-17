@@ -13,6 +13,7 @@ import { searchProcessDestinations } from './process-discovery.js';
 import { processWorkspaceKey } from './process-context.js';
 const BpmnDiagram = defineAsyncComponent(() => import('./BpmnDiagram.vue'));
 import demo from './examples/test-process.bpmn?raw';
+import FileDropInput from './FileDropInput.vue';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 const props = defineProps({ session: Object, busy: Boolean, visible: Boolean, context: Object });
@@ -163,10 +164,9 @@ async function load(source) {
     pending.value = false;
   }
 }
-async function file(event) {
-  const file = event.target.files?.[0];
-  event.target.value = '';
-  if (!file) return;
+async function file(files) {
+  const file = files[0];
+  if (!file || disabled.value) return;
   if (file.size > BPMN_LIMIT) {
     error.value = explain('bpmn_limit');
     return;
@@ -223,10 +223,9 @@ function apply() {
     error.value = explain(cause);
   }
 }
-async function importMapping(event) {
-  const file = event.target.files?.[0];
-  event.target.value = '';
-  if (!file || !model.value) return;
+async function importMapping(files) {
+  const file = files[0];
+  if (!file || !model.value || disabled.value) return;
   try {
     if (file.size > 262144) throw new Error('bpmn_mapping_mismatch');
     mapping.value = checkedMapping(model.value, JSON.parse(await file.text()));
@@ -304,56 +303,30 @@ function send(row) {
       Ein lokales BPMN-Modell öffnen, eine Nachricht auswählen und ihre FIT-Connect-Kennungen prüfen. Ein
       Modellklick oder eine Empfängersuche versendet nichts und führt keinen Prozess aus.
     </p>
-    <div class="client-fields">
-      <label for="bpmn-file">
-        BPMN-2.0-Modell öffnen
-        <input
-          id="bpmn-file"
-          type="file"
-          accept=".bpmn,.xml,application/xml"
-          :disabled="disabled"
-          @change="file"
-        />
-        <small>UTF-8, höchstens 2 MiB. Die Modelldatei bleibt lokal.</small>
-      </label>
+    <div class="process-model-header">
+      <h3 v-if="model">{{ model.name }}</h3>
+      <details class="process-model-picker" :open="!model">
+        <summary>{{ model ? 'Anderes BPMN-Modell öffnen' : 'BPMN-Modell auswählen' }}</summary>
+        <div class="client-fields">
+          <FileDropInput
+            id="bpmn-file"
+            label="BPMN-2.0-Modell öffnen"
+            accept=".bpmn,.xml,application/xml"
+            :disabled="disabled"
+            @files="file"
+          >
+            UTF-8, höchstens 2 MiB. Die Modelldatei bleibt lokal.
+          </FileDropInput>
+          <button class="button secondary" :disabled="disabled" @click="load(demo)">
+            Fiktiven Demo-Prozess öffnen
+          </button>
+        </div>
+      </details>
     </div>
-    <button class="button secondary" :disabled="disabled" @click="load(demo)">
-      Fiktiven Demo-Prozess öffnen
-    </button>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="notice" role="status">{{ notice }}</p>
     <p v-if="pending" role="status">Modell oder Empfänger werden geprüft …</p>
     <template v-if="model">
-      <h3>{{ model.name }}</h3>
-      <details>
-        <summary>Modellidentität und Zuordnung</summary>
-        <p>
-          SHA-256:
-          <code>{{ model.sha256 }}</code>
-        </p>
-        <p>
-          BPMN-IDs und Anzeigenamen sind keine automatisch gültigen FIT-Connect-Kennungen. Die Demo verwendet
-          ausdrücklich hinterlegte Testkennungen; bei eigenen Modellen musst du die vereinbarten Kennungen
-          prüfen oder ergänzen.
-        </p>
-        <label class="checkbox-label">
-          <input v-model="remember" type="checkbox" :disabled="disabled" @change="persist" />
-          Kennungszuordnung für diesen Modell-Fingerabdruck lokal merken
-        </label>
-        <div class="client-actions">
-          <button class="button secondary" @click="download">Zuordnung als JSON exportieren</button>
-          <label for="bpmn-mapping-file">
-            Zuordnung importieren
-            <input
-              id="bpmn-mapping-file"
-              type="file"
-              accept=".json,application/json"
-              :disabled="disabled"
-              @change="importMapping"
-            />
-          </label>
-        </div>
-      </details>
       <p v-if="context">
         Nachrichtenbezug: {{ context.processModelId }} · {{ context.messageId }}.
         {{
@@ -372,7 +345,7 @@ function send(row) {
         @select="select"
       />
       <p v-else>Dieses Modell hat keine Diagrammkoordinaten. Wähle eine Nachricht in der Liste.</p>
-      <label for="bpmn-search">
+      <label class="process-message-search" for="bpmn-search">
         Nachricht oder BPMN-ID in diesem Modell suchen
         <input id="bpmn-search" v-model="search" type="search" maxlength="256" />
       </label>
@@ -389,6 +362,34 @@ function send(row) {
         </li>
       </ul>
       <p v-if="!filtered.length">Keine auswählbaren Nachrichten gefunden.</p>
+      <details class="process-model-identity">
+        <summary>Modellidentität und Zuordnung</summary>
+        <p>
+          SHA-256:
+          <code>{{ model.sha256 }}</code>
+        </p>
+        <p>
+          BPMN-IDs und Anzeigenamen sind keine automatisch gültigen FIT-Connect-Kennungen. Die Demo verwendet
+          ausdrücklich hinterlegte Testkennungen; bei eigenen Modellen musst du die vereinbarten Kennungen
+          prüfen oder ergänzen.
+        </p>
+        <label class="checkbox-label">
+          <input v-model="remember" type="checkbox" :disabled="disabled" @change="persist" />
+          Kennungszuordnung für diesen Modell-Fingerabdruck lokal merken
+        </label>
+        <div class="client-actions">
+          <button class="button secondary" @click="download">Zuordnung als JSON exportieren</button>
+          <FileDropInput
+            id="bpmn-mapping-file"
+            label="Zuordnung importieren"
+            accept=".json,application/json"
+            :disabled="disabled"
+            @files="importMapping"
+          >
+            JSON, höchstens 256 KiB. Der Modell-Fingerabdruck muss passen.
+          </FileDropInput>
+        </div>
+      </details>
       <section v-if="selected" class="tool-section" aria-labelledby="process-selection-title">
         <h3 id="process-selection-title" ref="selectionHeading" tabindex="-1">
           Ausgewählte Nachricht: {{ selected.label }}

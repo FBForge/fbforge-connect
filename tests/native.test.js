@@ -1,6 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { serialInvoke } from '../frontend/src/native.js';
+import { readFile } from 'node:fs/promises';
+
+test('desktop command registration, generated permissions and main-window grants agree', async () => {
+  const [main, build, capability] = await Promise.all([
+    readFile(new URL('../desktop/src/main.rs', import.meta.url), 'utf8'),
+    readFile(new URL('../desktop/build.rs', import.meta.url), 'utf8'),
+    readFile(new URL('../desktop/capabilities/main.json', import.meta.url), 'utf8'),
+  ]);
+  const registered = main
+    .match(/generate_handler!\[([\s\S]*?)\]/)?.[1]
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .sort();
+  const declared = [...build.matchAll(/"([a-z][a-z0-9_]+)"/g)].map((match) => match[1]).sort();
+  const grants = JSON.parse(capability);
+  assert.deepEqual(grants.windows, ['main']);
+  assert.equal(grants.remote, undefined, 'remote pages must not receive native permissions');
+  assert.deepEqual(declared, registered, 'every command needs a generated permission');
+  assert.deepEqual(
+    grants.permissions.toSorted(),
+    registered.map((name) => `allow-${name.replaceAll('_', '-')}`).sort(),
+  );
+});
 
 test('context cleanup completes before the next native lookup without overlapping exchanges', async () => {
   const calls = [];

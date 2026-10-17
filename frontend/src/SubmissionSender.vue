@@ -7,6 +7,7 @@ import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
 import DraftDataPreview from './DraftDataPreview.vue';
+import FileDropInput from './FileDropInput.vue';
 import { prepareSend, executeSend, cancelSend, sendState } from './sending.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
@@ -321,16 +322,15 @@ watch(
     }
   },
 );
-function addFiles(event) {
+function addFiles(files) {
   if (disabled.value) return;
-  for (const file of event.dataTransfer?.files || event.target.files || [])
+  for (const file of files)
     attachments.value.push({
       id: crypto.randomUUID(),
       file,
       description: '',
       mimeType: file.type || 'application/octet-stream',
     });
-  if (event.target.type === 'file') event.target.value = '';
 }
 async function act(action, operation) {
   if (working.value || props.busy) return;
@@ -596,16 +596,15 @@ async function refreshState() {
             </output>
             <small>Wird aus der gewählten Leistung beziehungsweise Prozessnachricht übernommen.</small>
           </label>
-          <label for="send-data-file">
-            Datei auswählen (optional)
-            <input
-              id="send-data-file"
-              type="file"
-              accept=".json,.xml,application/json,application/xml,text/xml"
-              @change="dataFile = $event.target.files[0] || null"
-            />
-            <small>Ohne Datei wird der Inhalt aus dem Eingabefeld verwendet.</small>
-          </label>
+          <FileDropInput
+            id="send-data-file"
+            label="Fachdaten aus Datei (optional)"
+            accept=".json,.xml,application/json,application/xml,text/xml"
+            :disabled="disabled"
+            @files="(files) => (dataFile = files[0] || null)"
+          >
+            Ohne Datei wird der Inhalt aus dem Eingabefeld verwendet.
+          </FileDropInput>
         </div>
         <SchemaSourceConsent id="send-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
         <div class="client-actions">
@@ -702,12 +701,13 @@ async function refreshState() {
       </fieldset>
       <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
         <legend>Anlagen</legend>
-        <div class="file-drop-zone" @dragover.prevent @drop.prevent="addFiles">
-          <label for="send-attachments">
-            Eine oder mehrere Anlagen hier ablegen oder auswählen
-            <input id="send-attachments" type="file" multiple @change="addFiles" />
-          </label>
-        </div>
+        <FileDropInput
+          id="send-attachments"
+          label="Anlagen hinzufügen"
+          multiple
+          :disabled="disabled"
+          @files="addFiles"
+        />
         <div v-for="item in attachments" :key="item.id" class="client-fields">
           <div>
             <strong>{{ item.file.name }}</strong>

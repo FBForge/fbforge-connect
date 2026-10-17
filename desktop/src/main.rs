@@ -4,7 +4,7 @@ mod profile_backup;
 mod profiles;
 mod protocol;
 mod vault;
-use profile_backup::{export_profile_backup, import_profile_backup};
+use profile_backup::{export_profile_backup, import_profile_backup, import_profile_backup_file};
 use profiles::{
     forget_profile, get_profile_defaults, list_profiles, open_saved_profile, profile_status,
     save_profile_defaults, save_profile_state, update_profile,
@@ -1905,6 +1905,7 @@ fn main() {
             update_profile,
             export_profile_backup,
             import_profile_backup,
+            import_profile_backup_file,
             search_process_destinations,
             prepare_destination_cleanup,
             execute_destination_cleanup,

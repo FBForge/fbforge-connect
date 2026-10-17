@@ -7,6 +7,7 @@ import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
 import DraftDataPreview from './DraftDataPreview.vue';
+import FileDropInput from './FileDropInput.vue';
 import {
   loadReplyTarget,
   loadReplySchema,
@@ -261,23 +262,21 @@ async function loadSchema(example = false) {
     }
   });
 }
-function chooseSchemaFile(event) {
+function chooseSchemaFile(files) {
   if (disabled.value) return;
   schemaPackage.value = null;
   schemaNotice.value = '';
-  schemaFile.value = event.target.files?.[0] || null;
-  event.target.value = '';
+  schemaFile.value = files[0] || null;
 }
-function addFiles(event) {
+function addFiles(files) {
   if (disabled.value) return;
-  for (const item of event.dataTransfer?.files || event.target.files || [])
+  for (const item of files)
     attachments.value.push({
       id: crypto.randomUUID(),
       file: item,
       mimeType: item.type || 'application/octet-stream',
       description: '',
     });
-  if (event.target.type === 'file') event.target.value = '';
 }
 async function prepare() {
   if (disabled.value || !selected.value || !schemaPackage.value) return;
@@ -396,15 +395,13 @@ async function send() {
             Antwortformat:
             <strong>{{ format === 'application/json' ? 'JSON' : 'XML' }}</strong>
           </p>
-          <label for="reply-data-file">
-            Fachdaten aus Datei (optional)
-            <input
-              id="reply-data-file"
-              type="file"
-              accept=".json,.xml,application/json,application/xml,text/xml"
-              @change="file = $event.target.files[0] || null"
-            />
-          </label>
+          <FileDropInput
+            id="reply-data-file"
+            label="Fachdaten aus Datei (optional)"
+            accept=".json,.xml,application/json,application/xml,text/xml"
+            :disabled="disabled"
+            @files="(files) => (file = files[0] || null)"
+          />
         </div>
         <label v-if="!file" for="reply-data">
           Antwortinhalt
@@ -415,16 +412,15 @@ async function send() {
           <button class="button secondary" type="button" @click="file = null">Eingabefeld verwenden</button>
         </p>
         <div class="client-fields">
-          <label for="reply-schema-file">
-            Lokales Antwortschema (optional, JSON mit passender $id)
-            <input
-              id="reply-schema-file"
-              type="file"
-              accept=".json,application/json,application/schema+json"
-              @change="chooseSchemaFile"
-            />
-            <small>Maximal 2 MiB. Bei lokaler Auswahl werden keine externen Referenzen geladen.</small>
-          </label>
+          <FileDropInput
+            id="reply-schema-file"
+            label="Lokales Antwortschema (optional, JSON mit passender $id)"
+            accept=".json,application/json,application/schema+json"
+            :disabled="disabled"
+            @files="chooseSchemaFile"
+          >
+            Maximal 2 MiB. Bei lokaler Auswahl werden keine externen Referenzen geladen.
+          </FileDropInput>
           <p v-if="schemaFile">
             {{ schemaFile.name }}
             <button
@@ -489,12 +485,13 @@ async function send() {
       </fieldset>
       <fieldset :disabled="disabled">
         <legend>Antwortanlagen</legend>
-        <div class="file-drop-zone" @dragover.prevent @drop.prevent="addFiles">
-          <label for="reply-files">
-            Eine oder mehrere Anlagen hier ablegen oder auswählen
-            <input id="reply-files" type="file" multiple @change="addFiles" />
-          </label>
-        </div>
+        <FileDropInput
+          id="reply-files"
+          label="Antwortanlagen hinzufügen"
+          multiple
+          :disabled="disabled"
+          @files="addFiles"
+        />
         <div v-for="item in attachments" :key="item.id" class="client-fields">
           <p>
             <strong>{{ item.file.name }}</strong>

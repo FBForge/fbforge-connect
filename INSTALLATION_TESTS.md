@@ -5,7 +5,7 @@
 Geplanter automatisierter Ablauf:
 
 1. Frisch installieren, die installierte Desktop-Anwendung starten und über Windows UI Automation die sichtbare Diagnose „Komponenten prüfen“ bedienen.
-2. Beide Adapter müssen „Lokal bereit“ anzeigen. Der Java-Kindprozess muss aus der installierten gebündelten Laufzeit stammen. Java/Node-Pfade und JVM-Injektionsvariablen sind beim Anwendungsstart entfernt.
+2. Beide Adapter müssen „Lokal bereit“ anzeigen. Der Java-Kindprozess muss aus der installierten gebündelten Laufzeit stammen. Java/Node-Pfade und JVM-Injektionsvariablen sind beim Anwendungsstart entfernt. Der SHA-256 der installierten Anwendung muss dem gerade gebauten Programm entsprechen. Der neue Anzeigename muss im beibehaltenen Upgrade-Registrierungseintrag stehen; ein zweiter Eintrag unter dem neuen Namen ist unzulässig.
 3. Mit dem CI-Hilfsprogramm ein DPAPI-Profil mit erfundenen Zugangsdaten anlegen. Die echte Anwendung muss dessen öffentlichen Profilnamen anzeigen, ohne sich damit anzumelden.
 4. Die Anwendung schließen und den Installer deinstallieren. Das gespeicherte Profil muss erhalten bleiben.
 5. Im vertrauenswürdigen Push-Lauf den Installer aus dem festen dev.7-Workflow 38967495361 verwenden, dessen Quellstand `bc12b4ad0f0f47a77024e82a070dc2df993da438` geprüft wird. Danach den aktuellen Kandidaten darüber installieren, beide SDKs und das erhaltene Profil erneut in der echten Anwendung prüfen und deinstallieren.

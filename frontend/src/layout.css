@@ -168,8 +168,24 @@
   background: var(--surface-soft);
 }
 .file-drop-zone:focus-within,
-.file-drop-zone:hover {
+.file-drop-zone:hover,
+.file-drop-zone.is-dragging {
   border-color: var(--accent);
+}
+.file-drop-zone.is-dragging {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.file-drop-zone.is-disabled {
+  opacity: 0.65;
+}
+.file-drop-zone > label {
+  display: block;
+  font-weight: 600;
+}
+.file-drop-zone > input {
+  width: 100%;
+  max-width: 100%;
 }
 .connection-panel > details > summary {
   cursor: pointer;

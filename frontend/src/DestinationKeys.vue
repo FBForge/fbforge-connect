@@ -4,6 +4,7 @@ import { invoke } from './native.js';
 import { listDestinations, loadDestination, importKey, loadedKeys, discardKeys } from './resources.js';
 import { resetsSessions } from './sessions.js';
 import { importKeyFiles } from './key-files.js';
+import FileDropInput from './FileDropInput.vue';
 
 const props = defineProps({ session: Object, busy: Boolean, defaultDestination: String });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'destination', 'invalidate']);
@@ -106,9 +107,7 @@ function load(destination = id.value.trim()) {
     },
   );
 }
-function chooseFile(event) {
-  const files = Array.from(event.dataTransfer?.files || event.target.files || []);
-  if (event.target.type === 'file') event.target.value = '';
+function chooseFile(files) {
   if (disabled.value || !selected.value) return;
   const destination = selected.value.destinationId;
   const fileRevision = revision;
@@ -272,23 +271,17 @@ watch(
       </template>
       <template v-if="selected">
         <p>{{ selected.keys.filter((key) => key.eligible).length }} registrierte Testschlüssel verfügbar.</p>
-        <div class="file-drop-zone" @dragover.prevent @drop.prevent="chooseFile">
-          <label for="private-test-key">
-            Private Testschlüssel hier ablegen oder auswählen
-            <input
-              id="private-test-key"
-              type="file"
-              multiple
-              accept=".json,.jwk,.jwks,.pem,.key"
-              :disabled="disabled || !selected.keys.some((key) => key.eligible)"
-              @change="chooseFile"
-            />
-          </label>
-          <p class="small-note">
-            Bis zu 16 Dateien als JWK, JWKS oder unverschlüsseltes PKCS#8-PEM, jeweils maximal 32 KiB.
-            Verwendung und passende Registrierung werden automatisch erkannt.
-          </p>
-        </div>
+        <FileDropInput
+          id="private-test-key"
+          label="Private Testschlüssel laden"
+          multiple
+          accept=".json,.jwk,.jwks,.pem,.key"
+          :disabled="disabled || !selected.keys.some((key) => key.eligible)"
+          @files="chooseFile"
+        >
+          Bis zu 16 Dateien als JWK, JWKS oder unverschlüsseltes PKCS#8-PEM, jeweils maximal 32 KiB.
+          Verwendung und passende Registrierung werden automatisch erkannt.
+        </FileDropInput>
         <details>
           <summary>Öffentliche Zustellpunktdaten</summary>
           <pre>{{ selected.detailsJson }}</pre>

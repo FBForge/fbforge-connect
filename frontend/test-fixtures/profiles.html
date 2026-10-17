@@ -68,7 +68,7 @@
             fixture.backups++;
             return true;
           }
-          if (command === 'import_profile_backup') {
+          if (command === 'import_profile_backup' || command === 'import_profile_backup_file') {
             const profile = {
               profileId: id(3),
               name: 'Wiederhergestellt TEST',

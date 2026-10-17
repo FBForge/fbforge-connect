@@ -94,6 +94,23 @@ export async function importProfileBackup(invoke) {
   if (value === null) return null;
   return (await listProfiles(async () => [value]))[0];
 }
+const backupMagic = new TextEncoder().encode('FIT-Connect Test-Client protected profile v1\n');
+const backupLimit = 8 * 1024 * 1024 + backupMagic.length;
+/** The WebView forwards only a bounded encrypted file. DPAPI decryption stays native. */
+export async function importProfileBackupFile(invoke, file) {
+  if (!file || !Number.isSafeInteger(file.size) || file.size <= backupMagic.length || file.size > backupLimit)
+    throw new Error('vault_invalid');
+  let bytes;
+  try {
+    bytes = new Uint8Array(await file.arrayBuffer());
+    if (bytes.length !== file.size || !backupMagic.every((value, index) => bytes[index] === value))
+      throw new Error('vault_invalid');
+    const result = await invoke('import_profile_backup_file', bytes);
+    return (await listProfiles(async () => [result]))[0];
+  } finally {
+    bytes?.fill(0);
+  }
+}
 export async function updateProfile(invoke, profileId, name, newSecret = null) {
   if (
     !uuid(profileId) ||

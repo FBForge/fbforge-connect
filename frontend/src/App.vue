@@ -14,6 +14,9 @@ import { isTauri } from '@tauri-apps/api/core';
 import { invoke, diagnosticLog } from './native.js';
 import { buildSupportReport, operationLabels } from './support-report.js';
 import AppIcon from './AppIcon.vue';
+import appLogo from './assets/test-client.png';
+import { productName, productBrand, productEdition, productPurpose } from './product.js';
+import FileDropInput from './FileDropInput.vue';
 import packageInfo from '../../package.json';
 import licenseText from '../../LICENSE?raw';
 import bpmnLicense from '../../licenses/bpmn-js.txt?raw';
@@ -40,6 +43,7 @@ import {
   saveProfileState,
   exportProfileBackup,
   importProfileBackup,
+  importProfileBackupFile,
   getProfileDefaults,
 } from './profiles.js';
 import { createCaseWorkspace, caseWorkspaceKey } from './case-context.js';
@@ -367,13 +371,15 @@ async function backupProfile(profile) {
     busy.value = false;
   }
 }
-async function restoreProfileBackup() {
+async function restoreProfileBackup(files = null) {
   if (busy.value) return;
   busy.value = true;
   profileError.value = '';
   profileNotice.value = '';
   try {
-    const profile = await importProfileBackup(invoke);
+    const profile = Array.isArray(files)
+      ? await importProfileBackupFile(invoke, files[0])
+      : await importProfileBackup(invoke);
     if (profile) {
       await refreshProfiles();
       profileNotice.value =
@@ -420,7 +426,12 @@ async function retryProfileSave() {
 }
 const trace = ref(diagnosticLog.snapshot());
 let unsubscribe, downloadUrl, downloadTimer;
+function preventFileNavigation(event) {
+  event.preventDefault();
+}
 onMounted(() => {
+  window.addEventListener('dragover', preventFileNavigation);
+  window.addEventListener('drop', preventFileNavigation);
   unsubscribe = diagnosticLog.subscribe((entries) => {
     trace.value = entries;
   });
@@ -431,6 +442,8 @@ function clearDownload() {
   downloadUrl = null;
 }
 onBeforeUnmount(() => {
+  window.removeEventListener('dragover', preventFileNavigation);
+  window.removeEventListener('drop', preventFileNavigation);
   unsubscribe?.();
   clearDownload();
 });
@@ -451,7 +464,7 @@ function exportReport() {
   downloadUrl = URL.createObjectURL(new Blob([reportJson.value], { type: 'application/json' }));
   const link = document.createElement('a');
   link.href = downloadUrl;
-  link.download = `FIT-Connect-Diagnose-${version}.json`;
+  link.download = `FBForge-Test-Client-Diagnose-${version}.json`;
   document.body.append(link);
   link.click();
   link.remove();
@@ -465,16 +478,13 @@ function clearHistory() {
 
 <template>
   <a class="skip-link" href="#main">Zum Arbeitsbereich</a>
-  <div class="desktop-shell">
+  <div class="desktop-shell" @dragover.prevent @drop.prevent>
     <header class="app-topbar">
       <div class="app-brand">
-        <span class="app-mark" aria-hidden="true">
-          F
-          <span>↔</span>
-        </span>
+        <img class="app-mark" :src="appLogo" alt="" width="34" height="34" />
         <div>
-          <strong>FIT-Connect</strong>
-          <span>Test-Client</span>
+          <strong>{{ productBrand }}</strong>
+          <span>{{ productEdition }}</span>
         </div>
       </div>
       <div class="topbar-context">
@@ -552,7 +562,10 @@ function clearHistory() {
       </div>
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div class="workspace-content">
-          <div v-if="!activeSession && !['Diagnose', 'Info'].includes(section)" class="connection-notice">
+          <div
+            v-if="!activeSession && !['Diagnose', 'Info', 'Prozesse'].includes(section)"
+            class="connection-notice"
+          >
             <AppIcon name="connection" />
             <div>
               <strong>Mit FIT-Connect TEST verbinden</strong>
@@ -773,15 +786,12 @@ function clearHistory() {
           </div>
           <div v-show="section === 'Info'" class="info-view">
             <section class="tool-section app-info" aria-labelledby="about-title">
-              <div class="app-mark large" aria-hidden="true">
-                F
-                <span>↔</span>
-              </div>
+              <img class="app-mark large" :src="appLogo" alt="" width="64" height="64" />
               <div>
                 <p class="workspace-eyebrow">Desktop-Anwendung</p>
-                <h2 id="about-title">FIT-Connect Test-Client</h2>
+                <h2 id="about-title">{{ productName }}</h2>
                 <p>Version {{ version }} · Alpha-Entwicklung</p>
-                <p>Für Integrationstests von Onlinediensten und Fachverfahren mit FIT-Connect.</p>
+                <p>{{ productPurpose }}.</p>
               </div>
             </section>
             <section class="tool-section" aria-labelledby="scope-title">
@@ -797,8 +807,8 @@ function clearHistory() {
                 <dd>Vorhandene eigene Zustellpunkte ansehen; Änderungen und Bulk-Edit über API v3</dd>
                 <dt>Entwicklungsstand</dt>
                 <dd>
-                  Die Live-Abnahme gegen TEST und die Installation auf einem frischen Windows-System sind noch
-                  offen.
+                  Alpha-1-Kandidat für Integrationstests. Installation und Verhalten auf deinen Zielgeräten
+                  vor dem Einsatz prüfen.
                 </dd>
               </dl>
             </section>
@@ -1026,8 +1036,8 @@ function clearHistory() {
         refreshStorageStatus();
       "
     />
-    <section class="tool-section">
-      <h3>Geschützte Profilsicherung</h3>
+    <details class="profile-backup">
+      <summary>Geschützte Profilsicherung importieren</summary>
       <p>
         Eine Sicherung enthält Zugangsdaten und Schlüssel verschlüsselt mit Windows-Benutzerschutz. Sie ist
         kein Passwort-Export für andere Benutzerkonten oder Rechner. Bereits vorhandene Profile werden beim
@@ -1036,8 +1046,17 @@ function clearHistory() {
       <button type="button" class="button secondary" :disabled="busy" @click="restoreProfileBackup">
         Geschützte Sicherung importieren
       </button>
-      <p v-if="profileNotice" role="status">{{ profileNotice }}</p>
-    </section>
+      <FileDropInput
+        id="profile-backup-file"
+        label="Geschützte Profildatei"
+        accept=".fctest-profile"
+        :disabled="busy"
+        @files="restoreProfileBackup"
+      >
+        Höchstens 8 MiB verschlüsselte Profildaten. Das ursprüngliche Windows-Benutzerkonto wird benötigt.
+      </FileDropInput>
+    </details>
+    <p v-if="profileNotice" role="status">{{ profileNotice }}</p>
     <p v-if="profileError" role="alert">{{ profileError }}</p>
     <p v-if="storageStatus?.profileId" class="small-note">
       {{

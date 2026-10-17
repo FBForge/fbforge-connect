@@ -7,6 +7,7 @@ import {
   profileStatus,
   exportProfileBackup,
   importProfileBackup,
+  importProfileBackupFile,
   updateProfile,
 } from '../frontend/src/profiles.js';
 const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
@@ -34,6 +35,40 @@ test('profile list accepts public metadata only and rejects unexpected secrets a
     );
   const unavailable = { ...profile, apiVersion: null, role: null, keyCount: 0, available: false };
   assert.equal((await listProfiles(async () => [unavailable]))[0].available, false);
+});
+
+test('dropped profile backups forward bounded ciphertext and erase the IPC buffer after success or failure', async () => {
+  const magic = 'FIT-Connect Test-Client protected profile v1\n';
+  for (const fails of [false, true]) {
+    let buffer;
+    const action = importProfileBackupFile(
+      async (command, bytes) => {
+        assert.equal(command, 'import_profile_backup_file');
+        assert.ok(bytes instanceof Uint8Array);
+        assert.equal(new TextDecoder().decode(bytes), magic + 'synthetic-ciphertext');
+        buffer = bytes;
+        if (fails) throw 'vault_unavailable';
+        return profile;
+      },
+      new Blob([magic, 'synthetic-ciphertext']),
+    );
+    if (fails) await assert.rejects(action, (cause) => cause === 'vault_unavailable');
+    else assert.equal((await action).profileId, profile.profileId);
+    assert.ok(buffer.every((value) => value === 0));
+  }
+  for (const file of [
+    new Blob(['plaintext is not a backup']),
+    {
+      size: 9 * 1024 * 1024,
+      arrayBuffer() {
+        assert.fail('oversized backup read');
+      },
+    },
+  ])
+    await assert.rejects(
+      importProfileBackupFile(() => assert.fail('invalid backup reached IPC'), file),
+      /vault_invalid/,
+    );
 });
 test('saved profile opens only the selected API and returns a fresh TEST session without private material', async () => {
   const session = {

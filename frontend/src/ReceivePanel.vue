@@ -15,6 +15,7 @@ import { createPreview, disposePreview } from './submission-preview.js';
 import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
+import FileDropInput from './FileDropInput.vue';
 import ContentPreview from './ContentPreview.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
 import ReplyReceiptPanel from './ReplyReceiptPanel.vue';
@@ -321,9 +322,8 @@ function verify() {
     }
   });
 }
-function chooseSchema(event) {
-  const file = event.target.files?.[0];
-  event.target.value = '';
+function chooseSchema(files) {
+  const file = files[0];
   if (!file || disabled.value) return;
   const cleanup = resetProof();
   run('Fachdaten-Schema laden', async (active, current) => {
@@ -469,20 +469,16 @@ function inspect(part, download = false) {
           kontrolliert geladen.
         </p>
         <div class="client-fields">
-          <label :for="`${panelId}-schema-file`">
-            JSON-Schemadatei hinzufügen
-            <input
-              :id="`${panelId}-schema-file`"
-              type="file"
-              accept=".json,application/json,application/schema+json"
-              :disabled="disabled"
-              @change="chooseSchema"
-            />
-            <small>
-              Maximal 2 MiB pro Datei, insgesamt 16 MiB. Öffentliche HTTPS-Schemata benötigen die Freigabe
-              unten. Private Netzadressen werden nicht aufgerufen.
-            </small>
-          </label>
+          <FileDropInput
+            :id="`${panelId}-schema-file`"
+            label="JSON-Schemadatei hinzufügen"
+            accept=".json,application/json,application/schema+json"
+            :disabled="disabled"
+            @files="chooseSchema"
+          >
+            Maximal 2 MiB pro Datei, insgesamt 16 MiB. Öffentliche HTTPS-Schemata benötigen die Freigabe
+            unten. Private Netzadressen werden nicht aufgerufen.
+          </FileDropInput>
         </div>
         <ul v-if="schemas.length" class="receive-schema-list">
           <li v-for="file in schemas" :key="file.contentId">

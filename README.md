@@ -1,12 +1,19 @@
-# FIT-Connect Test-Client
+# FBForge Test-Client
 
-Der **FIT-Connect Test-Client** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
+<img src="frontend/src/assets/test-client.png" alt="" width="80" height="80">
+
+**Unabhängiges Testwerkzeug für FIT-Connect.**
+
+Der **FBForge Test-Client** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
 
 Die Anwendung arbeitet ausschließlich mit der FIT-Connect-Testumgebung. Sie ist ein unabhängiges Projekt und kein offizielles Produkt von FITKO.
+
+Der frühere Anzeigename „FIT-Connect Test-Client“ wird ab diesem Kandidaten durch „FBForge Test-Client“ ersetzt. App-Kennung, Profilordner, interne Paketnamen und das verschlüsselte Sicherungsformat bleiben kompatibel, damit gespeicherte Profile und Upgrades weiter funktionieren.
 
 ## Funktionen
 
 - Einreichungen mit Fachdaten und Anlagen über API v2 und v3 versenden, einschließlich Prozessadressierung bei v3.
+- Dateien über einheitliche Ablageflächen per Drag-and-drop oder Dateiauswahl übernehmen: BPMN-Modelle, Kennungszuordnungen, Fachdaten, Schemata, Anlagen, private Testschlüssel und verschlüsselte Profilsicherungen. Ablegen versendet keine Nachricht.
 - Leistungen und Fachdaten-Schemata aus dem Empfängerzustellpunkt auswählen und fiktive Beispieldaten erzeugen.
 - Verfügbare Einreichungen eines Zustellpunkts auflisten, abrufen und lokal entschlüsseln.
 - Einreichungen mit den FIT-Connect-SDKs technisch prüfen und anschließend annehmen oder ablehnen.

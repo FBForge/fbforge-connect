@@ -1,4 +1,4 @@
-//! System file dialogs keep backup paths and protected profile bytes in native code.
+//! Backups are decrypted only in native code; dropped files carry ciphertext, never paths.
 use crate::{
     profiles,
     protocol::valid_session_id,
@@ -73,4 +73,22 @@ pub async fn import_profile_backup(
     };
     let _bindings = state.profiles.lock().await;
     profiles::vault(&app)?.restore_backup(&protected).map(Some)
+}
+
+/// Binary IPC avoids a JSON/base64 expansion. Native storage still enforces the backup
+/// envelope, size, current-user DPAPI binding, profile validation and no-overwrite rule.
+#[tauri::command]
+pub async fn import_profile_backup_file(
+    app: tauri::AppHandle,
+    state: State<'_, EngineState>,
+    request: tauri::ipc::Request<'_>,
+) -> Result<ProfileSummary, &'static str> {
+    let tauri::ipc::InvokeBody::Raw(protected) = request.body() else {
+        return Err("vault_invalid");
+    };
+    if protected.is_empty() || protected.len() > MAX_BACKUP_BYTES {
+        return Err("vault_invalid");
+    }
+    let _bindings = state.profiles.lock().await;
+    profiles::vault(&app)?.restore_backup(protected)
 }

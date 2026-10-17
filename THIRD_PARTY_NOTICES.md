@@ -6,6 +6,7 @@ Die Anwendung enthält getrennt lizenzierte Komponenten. Die EUPL-Lizenz des Pro
 | --- | --- | --- |
 | FIT-Connect Java SDK 3.5.2 / 4.0.0-rc.2 und REST-Modelle | FIT-Connect-Protokoll und Kryptografie | Apache-2.0 |
 | Tauri 2 und offizielle Plugins für Einzelinstanz/Dateidialoge | Windows-Desktop, IPC und native Dialoge | MIT oder Apache-2.0 |
+| Tauri-CLI 2.12.3 NSIS-Installervorlage | Zwei dokumentierte Anpassungen für die kompatible Produktumbenennung | MIT oder Apache-2.0; Copyright (c) 2017 - Present Tauri Apps Contributors; siehe `licenses/tauri-MIT.txt` und `desktop/installer/upstream.json` |
 | Vue 3 | Bedienoberfläche | MIT |
 | bpmn-js 18.31.0 | Lokale BPMN-Ansicht | bpmn.io-Lizenz, siehe unten |
 | bpmn-moddle 10.3.1 | BPMN-Referenzen und XML-Modell | MIT |

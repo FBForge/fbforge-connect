@@ -36,6 +36,7 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
   await page.getByRole('button', { name: 'Geschützte Sicherung exportieren', exact: true }).click();
   await page.getByText(/Geschützte Sicherung gespeichert/).waitFor();
   assert.equal(await page.evaluate(() => window.__profilesFixture.backups), 1);
+  await page.getByText('Geschützte Profilsicherung importieren', { exact: true }).click();
   await page.getByRole('button', { name: 'Geschützte Sicherung importieren', exact: true }).click();
   await page.getByText('Wiederhergestellt TEST', { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__profilesFixture.profiles.length), 2);
