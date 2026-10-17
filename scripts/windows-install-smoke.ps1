@@ -105,20 +105,10 @@ function Uninstall-Owned {
 function Save-SyntheticProfile {
     if (Test-Path -LiteralPath $taskProfiles) { throw 'profile_fixture_conflict' }
     $script:taskOwnsProfiles = $true
-    $taskProfile = @{ version = 1; profileId = $taskProfileId; name = 'CI TEST Profil'; apiVersion = 'v3'; role = 'online-service'; clientId = 'ci-checkpoint-only'; clientSecret = 'not-an-oauth-credential'; keys = @(); defaults = @{ sourceDestination = $null; receiverDestination = '33333333-3333-4333-8333-333333333333' } }
-    $info = [System.Diagnostics.ProcessStartInfo]::new([IO.Path]::GetFullPath($CheckpointBridge))
-    $info.UseShellExecute = $false; $info.RedirectStandardInput = $true
-    if ($taskProfiles.Contains('"')) { throw 'profile_fixture_path_invalid' }
-    $info.Arguments = 'save "' + $taskProfiles + '" ' + $taskProfileId
-    $bridge = [System.Diagnostics.Process]::Start($info)
-    $inputBytes = [Text.Encoding]::UTF8.GetBytes(($taskProfile | ConvertTo-Json -Depth 8 -Compress))
-    $bridge.StandardInput.BaseStream.Write($inputBytes, 0, $inputBytes.Length)
-    # Close the raw pipe, not its unused StreamWriter: Windows PowerShell 5.1 can
-    # otherwise append the writer encoding preamble after the JSON payload.
-    $bridge.StandardInput.BaseStream.Flush(); $bridge.StandardInput.BaseStream.Close()
-    if (-not $bridge.WaitForExit(30000)) { $bridge.Kill(); throw 'profile_fixture_timeout' }
-    if ($bridge.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $taskProfileFile)) { throw 'profile_fixture_failed' }
-    $bridge.Dispose()
+    # The CI-only Rust bridge constructs the fixture with product types and validates it.
+    # No shell serialization, stdin writer encoding or real credentials are involved.
+    & ([IO.Path]::GetFullPath($CheckpointBridge)) fixture $taskProfiles $taskProfileId
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $taskProfileFile)) { throw 'profile_fixture_failed' }
 }
 try {
     $null = New-Item -ItemType Directory -Path $taskRoot

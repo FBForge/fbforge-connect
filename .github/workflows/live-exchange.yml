@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   live:
-    if: github.repository == 'FBForge/fit-connect-testclient' && github.ref == 'refs/heads/alpha1-live-tests'
+    if: github.repository_id == '1421171092' && github.ref == 'refs/heads/alpha1-live-tests'
     runs-on: windows-2025
     timeout-minutes: 25
     steps:

@@ -77,7 +77,9 @@ jobs:
       - name: Test application workflows in browser
         run: npm run test:ui
       - name: Test isolated native protocol and protected profile storage
-        run: cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked
+        run: |
+          cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked
+          cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked --example profile-checkpoint
       - name: Test native protocol contracts
         working-directory: desktop
         run: cargo +1.99.0 test --locked
@@ -100,9 +102,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $revision = gh api repos/FBForge/fit-connect-testclient/actions/runs/38967495361 --jq '.head_sha'
+          $revision = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/38967495361" --jq '.head_sha'
           if ($LASTEXITCODE -ne 0 -or $revision -ne 'bc12b4ad0f0f47a77024e82a070dc2df993da438') { throw 'previous_installer_provenance_failed' }
-          gh run download 38967495361 --repo FBForge/fit-connect-testclient --name windows-alpha-unsigned-setup --dir "$env:RUNNER_TEMP/fitconnect-dev7"
+          gh run download 38967495361 --repo "$env:GITHUB_REPOSITORY" --name windows-alpha-unsigned-setup --dir "$env:RUNNER_TEMP/fitconnect-dev7"
           if ($LASTEXITCODE -ne 0) { throw 'previous_installer_download_failed' }
           $previous = @(Get-ChildItem "$env:RUNNER_TEMP/fitconnect-dev7" -Filter '*-setup.exe' -Recurse -File)
           if ($previous.Count -ne 1) { throw 'previous_installer_missing' }

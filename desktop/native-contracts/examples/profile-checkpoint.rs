@@ -1,6 +1,9 @@
 //! CI-only checkpoint bridge using the actual product vault. Not part of the desktop bundle.
 //! Private archive JSON travels through pipes; the on-disk representation is always Windows DPAPI.
-use fit_connect_native_contracts::vault::{Profile, Vault};
+use fit_connect_native_contracts::{
+    protocol::{ApiVersion, SessionRole},
+    vault::{Profile, ProfileDefaults, Vault},
+};
 use std::{
     io::{Read, Write},
     path::PathBuf,
@@ -13,6 +16,9 @@ fn run() -> Result<(), &'static str> {
     }
     let vault = Vault::new(PathBuf::from(&args[2]));
     match args[1].as_str() {
+        // Installation acceptance uses a native fixture, avoiding shell JSON/pipe encodings.
+        // This mode never reads or writes actual OAuth credentials or private keys.
+        "fixture" => vault.save(&installation_fixture(&args[3])),
         "save" => {
             let mut input = Vec::new();
             std::io::stdin()
@@ -42,10 +48,40 @@ fn run() -> Result<(), &'static str> {
         _ => Err("invalid_input"),
     }
 }
+fn installation_fixture(id: &str) -> Profile {
+    Profile {
+        version: 1,
+        profile_id: id.to_owned(),
+        name: "CI TEST Profil".into(),
+        api_version: ApiVersion::V3,
+        role: SessionRole::OnlineService,
+        client_id: "ci-checkpoint-only".into(),
+        client_secret: "not-an-oauth-credential".into(),
+        keys: vec![],
+        defaults: ProfileDefaults {
+            source_destination: None,
+            receiver_destination: Some("33333333-3333-4333-8333-333333333333".into()),
+        },
+    }
+}
 fn main() {
     if let Err(code) = run() {
-        // Only fixed symbolic codes escape this helper; never echo input or serde errors.
+        // Only static vault/protocol error codes; never profile input or OS diagnostics.
         eprintln!("protected_checkpoint_failed:{code}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn installation_fixture_obeys_product_validation_and_has_no_private_keys() {
+        let profile = installation_fixture("11111111-1111-4111-8111-111111111111");
+        profile.validate().unwrap();
+        assert_eq!(profile.name, "CI TEST Profil");
+        assert!(profile.keys.is_empty());
+        assert!(installation_fixture("../outside").validate().is_err());
     }
 }
