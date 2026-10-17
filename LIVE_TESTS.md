@@ -4,7 +4,7 @@ Die native Abnahme verwendet ausschließlich TEST und fiktive Fachdaten. Sie ist
 
 ## GitHub Actions
 
-Der Workflow `.github/workflows/live-exchange.yml` läuft ausschließlich im Repository `FBForge/fit-connect-testclient` auf dem eigens vorgesehenen Branch `alpha1-live-tests`. Ein Push auf diesen Branch oder ein dort manuell gestarteter Lauf führt Schreiboperationen gegen TEST aus. Normale Pull Requests starten diese Abnahme nicht. Gleichzeitige Läufe sind ausgeschlossen; laufende Schreibvorgänge werden nicht durch einen neuen Push abgebrochen.
+Der Workflow `.github/workflows/live-exchange.yml` läuft ausschließlich im Repository `FBForge/fit-connect-testclient` (stabile Repository-ID `1421171092`) auf dem eigens vorgesehenen Branch `alpha1-live-tests`. Ein Push auf diesen Branch oder ein dort manuell gestarteter Lauf führt Schreiboperationen gegen TEST aus. Normale Pull Requests starten diese Abnahme nicht. Gleichzeitige Läufe sind ausgeschlossen; laufende Schreibvorgänge werden nicht durch einen neuen Push abgebrochen.
 
 Erforderliche Repository-Secrets: `SENDERID`, `SENDERSECRET`, `SENDERDEST`, `SUBSCRIBERID`, `SUBSCRIBERSECRET`. Der Sender muss senden dürfen, der Subscriber Zustellpunkte verwalten und empfangen. `SENDERDEST` bezeichnet den bestehenden aktiven Typ-C-TEST-Absenderzustellpunkt. Für Replies muss er Metadatenversionen anbieten. Nach authentifiziertem Lesen ergänzt der Test ausschließlich fehlende Versionen `2.0.0`/`3.0.0` über die native Vorschau und einen gezielten PATCH mit anschließendem öffentlichen Rücklesen. Bereits angebotene Versionen bleiben erhalten; Schlüssel und andere Einstellungen werden nicht verändert. Der Senderzugang benötigt hierfür Verwaltungsberechtigung. Ein zweiter aktiver Absender wird nicht angelegt, damit die implizite v2-Absenderzuordnung eindeutig bleibt. Secrets stehen nur dem abschließenden Testschritt zur Verfügung und werden weder in Dateien noch in Artefakte geschrieben. Der Wert von Repository-Secrets kann über GitHub nicht zurückgelesen werden.
 
@@ -33,6 +33,8 @@ Es werden keine Artefakte hochgeladen. Geschützte temporäre Checkpoints werden
 
 Lauf [38988235240](https://github.com/FBForge/fit-connect-testclient/actions/runs/38988235240) auf `9503027` bestand den vollständigen Ablauf einschließlich Rotation und anschließendem Austausch. Beide echten Actions-Clients wurden verwendet. Sieben fiktive Einreichungen prüften v2/v3, JSON/XML, Fragmente, Prozesskommunikation, Replies nach Neustart, Annahmen/Ablehnungen und die zugehörigen signierten Ereignisse.
 
+Die vollständigen Wiederholungen [38990315338](https://github.com/FBForge/fit-connect-testclient/actions/runs/38990315338) auf `c4783c4` und [38991770845](https://github.com/FBForge/fit-connect-testclient/actions/runs/38991770845) auf `09888fe` bestanden ebenfalls alle sieben Fälle. Spätere Namens-/Installeränderungen verändern das Austauschprotokoll nicht.
+
 Die folgenden ausschließlich für diese CI-Abnahmen erzeugten Zustellpunkte wurden authentifiziert deaktiviert und sind ohne öffentliche Routing-Freigabe aufbewahrt. Die API verbietet die sofortige Außerbetriebnahme/Löschung vor ihrer Frist:
 
 | Generierter TEST-Zustellpunkt | Frühester serverseitiger Zeitpunkt |
@@ -41,5 +43,7 @@ Die folgenden ausschließlich für diese CI-Abnahmen erzeugten Zustellpunkte wur
 | `eb094983-09ab-4771-acf2-eb8a733d12af` | 2026-11-16T00:36:29.915Z |
 | `a73bc879-c0d5-4174-b4c4-84272fd91753` | 2026-11-16T00:49:14.519Z |
 | `2569613d-3d95-4332-9406-0bac444a6da3` | 2026-11-16T00:54:45.997Z |
+| `773aeb44-560c-4e83-a035-6c5c17d3d299` | 2026-11-16T01:22:10.635Z |
+| `83c42935-6139-4f81-872d-01e2e1be378b` | 2026-11-16T01:43:21.390Z |
 
 Vor einer späteren Bereinigung müssen ID, eindeutiger Laufname, Eigentum und aktueller API-Zustand erneut geprüft werden. Es gibt keine pauschale Löschung aller ähnlich benannten Zustellpunkte und keine Umgehung der Frist. Eine noch nicht bestätigte fiktive Nachricht aus einem fehlgeschlagenen Teillauf ist kein erfolgreicher Anwendungsfall. Echte Zugangsdaten und private Schlüssel sind in dieser Liste nicht enthalten.

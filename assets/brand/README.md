@@ -9,3 +9,5 @@ npx tauri icon assets/brand/test-client-source.png --output /tmp/fitconnect-bran
 ```
 
 Verwendet werden `128x128.png` für `frontend/src/assets/test-client.png`, `128x128@2x.png` für `desktop/icons/app.png` und `icon.ico` für `desktop/icons/app.ico`. Das Original bleibt erhalten.
+
+Die editierbare Markenbasis mit Logo-Größen, Farben und Wortmarke liegt in [Figma](https://www.figma.com/design/1hgKANEaO7z8Gcnp0SoHwa). Maßgeblich für die ausgelieferte Anwendung bleiben die versionierten Assets und Designwerte im Repository.

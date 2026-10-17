@@ -1,4 +1,4 @@
-# FIT-Connect Test-Client: Arbeitsplan bis Alpha 1
+# FBForge Connect: Arbeitsplan bis Alpha 1
 
 Stand: 16. Oktober 2026. Freigegebenes Work-Goal: Umsetzung durch den Nutzer beauftragt. Alpha-Freigabe bleibt an dokumentierte Live- und Windows-Abnahme gebunden. Ausgangspunkt ist `develop`, Commit `bc12b4ad0f0f47a77024e82a070dc2df993da438`, Version `0.1.0-dev.7`.
 
@@ -6,7 +6,7 @@ Stand: 16. Oktober 2026. Freigegebenes Work-Goal: Umsetzung durch den Nutzer bea
 
 Alpha 1 ist ein professioneller Windows-Testarbeitsplatz für Behörden, Integratoren und Entwickler. Ein Anwender kann einen TEST-Arbeitsplatz einrichten, eigene Zustellpunkte anlegen, normale Einreichungen und Antworten austauschen, Fachdaten und Anlagen prüfen, den Vorgang im Eventlog nachvollziehen und v3-Prozessnachrichten aus einem BPMN-Modell vorbereiten.
 
-Die Bezeichnung bleibt **FIT-Connect Test-Client**. TEST ist die einzige Umgebung. V3 ist Standard; v2 bleibt für kompatible Versand-/Empfangs-/Reply-/Eventlog-Tests erhalten. Neue Zustellpunkt-Schreibverwaltung und BPMN-Prozessfunktionen werden ausschließlich für v3 gebaut. Für nicht unterstützte Kombinationen zeigt die Oberfläche die Voraussetzung vor der Aktion.
+Der vom Nutzer festgelegte Produktname lautet **FBForge Connect**, mit dem Zusatz **Integrationstests für FIT-Connect**. Frühere interne Speicher-/Upgrade-Kennungen bleiben zur Kompatibilität erhalten. TEST ist die einzige Umgebung. V3 ist Standard; v2 bleibt für kompatible Versand-/Empfangs-/Reply-/Eventlog-Tests erhalten. Neue Zustellpunkt-Schreibverwaltung und BPMN-Prozessfunktionen werden ausschließlich für v3 gebaut. Für nicht unterstützte Kombinationen zeigt die Oberfläche die Voraussetzung vor der Aktion.
 
 Nicht Bestandteil dieser Alpha: PROD-/Stage-Freigabe, Routing-Debugger, Support-Administrationsfunktionen für fremde Zustellpunkte, ZBP-Adapter, vollständiger BPMN-Editor oder Prozessmotor, universeller FIM-Formular-Editor, Lasttests. Ein einfaches Finden passender Empfänger gehört dagegen zum regulären Versand.
 
@@ -186,7 +186,7 @@ Nach Go wird dieser Plan in Roadmap und überprüfbare Paket-Checklisten im Repo
 
 Arbeitsgoal zur Freigabe:
 
-> Den FIT-Connect Test-Client von dev.7 bis zu einem funktionsvollständigen Alpha-1-Kandidaten für TEST entwickeln: normale Einreichungen und Replies einschließlich Prüfung und Quittierung, Eventlogs über alle drei Kennungstypen, optionale geschützte Profile/Schlüssel, eigene v3-Zustellpunkte mit Anlage und Schlüsselwechsel sowie anklickbare BPMN-Prozesskommunikation. Professionelle, verständliche Desktop-Bedienung und automatisierte Tests je Paket. Alpha 1 erst nach dokumentierter Live- und Windows-Abnahme; konkrete externe Blocker gesammelt melden.
+> FBForge Connect von dev.7 bis zu einem funktionsvollständigen Alpha-1-Kandidaten für TEST entwickeln: normale Einreichungen und Replies einschließlich Prüfung und Quittierung, Eventlogs über alle drei Kennungstypen, optionale geschützte Profile/Schlüssel, eigene v3-Zustellpunkte mit Anlage und Schlüsselwechsel sowie anklickbare BPMN-Prozesskommunikation. Professionelle, verständliche Desktop-Bedienung und automatisierte Tests je Paket. Alpha 1 erst nach dokumentierter Live- und Windows-Abnahme; konkrete externe Blocker gesammelt melden.
 
 ## 12. Empfohlener Reasoning Effort
 

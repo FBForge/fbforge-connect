@@ -84,7 +84,11 @@ jobs:
         working-directory: desktop
         run: cargo +1.99.0 test --locked
       - name: Build unsigned Windows setup
-        run: npm run desktop:build -- -- --locked
+        run: |
+          # Cached build outputs may contain installers from an older product/version.
+          $bundles = 'desktop/target/release/bundle/nsis'
+          if (Test-Path -LiteralPath $bundles) { Remove-Item -LiteralPath $bundles -Recurse -Force }
+          npm run desktop:build -- -- --locked
       - name: Build CI-only protected profile fixture bridge
         run: cargo +1.99.0 build --manifest-path desktop/native-contracts/Cargo.toml --locked --target-dir desktop/native-contracts/target --example profile-checkpoint
       - name: Save Rust build outputs before installation validation
@@ -117,11 +121,24 @@ jobs:
           if ($env:FITCONNECT_PREVIOUS_INSTALLER) { $arguments += @('-PreviousInstallerPath', $env:FITCONNECT_PREVIOUS_INSTALLER) }
           & powershell.exe @arguments
           if ($LASTEXITCODE -ne 0) { throw 'installed_desktop_validation_failed' }
+      - name: Record installer checksum and build provenance
+        run: |
+          $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
+          if ($setup.Count -ne 1) { throw 'installer_missing' }
+          $hash = (Get-FileHash -LiteralPath $setup[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Output ('Installer SHA256: ' + $hash)
+          $utf8 = [Text.UTF8Encoding]::new($false)
+          [IO.File]::WriteAllText((Join-Path $setup[0].DirectoryName 'SHA256SUMS.txt'), ($hash + '  ' + $setup[0].Name + "`n"), $utf8)
+          $build = [ordered]@{ application = 'FBForge Connect'; version = (Get-Content 'desktop/tauri.conf.json' -Raw | ConvertFrom-Json).version; repository = $env:GITHUB_REPOSITORY; commit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; platform = 'windows-x64'; signing = 'unsigned'; installer = $setup[0].Name; bytes = $setup[0].Length; sha256 = $hash }
+          [IO.File]::WriteAllText((Join-Path $setup[0].DirectoryName 'build-info.json'), (($build | ConvertTo-Json) + "`n"), $utf8)
       - name: Retain unsigned alpha installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-alpha-unsigned-setup
-          path: desktop/target/release/bundle/nsis/*-setup.exe
+          path: |
+            desktop/target/release/bundle/nsis/*-setup.exe
+            desktop/target/release/bundle/nsis/SHA256SUMS.txt
+            desktop/target/release/bundle/nsis/build-info.json
           if-no-files-found: error
       - name: Build offline installer
         if: github.event_name == 'workflow_dispatch' && inputs.offline

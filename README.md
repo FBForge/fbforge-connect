@@ -4,11 +4,13 @@
 
 **Integrationstests für FIT-Connect.**
 
-Der **FBForge Connect** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
+**FBForge Connect** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über API v2 und v3 austauschen.
 
 Die Anwendung arbeitet ausschließlich mit der FIT-Connect-Testumgebung. Sie ist ein unabhängiges Projekt und kein offizielles Produkt von FITKO.
 
 Der frühere Anzeigename „FIT-Connect Test-Client“ wird ab diesem Kandidaten durch „FBForge Connect“ ersetzt. App-Kennung, Profilordner, interne Paketnamen und das verschlüsselte Sicherungsformat bleiben kompatibel, damit gespeicherte Profile und Upgrades weiter funktionieren.
+
+Für den ersten vollständigen Austausch: [Kurzanleitung für Anwender](BEDIENUNG.md).
 
 ## Funktionen
 
@@ -36,7 +38,7 @@ Im Bereich „Prozesse“ lassen sich lokale BPMN-Modelle öffnen und Nachrichte
 
 Die Formularansicht übernimmt Bezeichnungen und Erläuterungen aus verfügbaren JSON-/XSD-Schemata, zeigt Originalfelder und Herkunft und verändert keine Fachdaten. Zwei konkrete offizielle FIM-Veröffentlichungen werden zusätzlich mit fiktiven Werten geprüft; das ist keine pauschale Unterstützung jedes Fachstandards. Externe Schemaquellen erfordern Zustimmung, werden ohne FIT-Connect-Zugangsdaten geladen und sind in Umfang und Auflösung begrenzt. Nicht auflösbare oder mehrdeutige Angaben bleiben erkennbar. Ein Malwarescanner ist nicht eingerichtet und wird im Empfangsergebnis ausdrücklich als Warnung ausgewiesen.
 
-Der abschließende Installations-/Upgrade-Ablauf wird gegen die echte Desktop-Anwendung geprüft; Zielgeräte, Screenreader/Skalierung und Herausgeber-/Signierung bleiben Freigabekriterien. macOS/Linux sind nach der [abschließenden Aufwandseinschätzung](PLATFORM_ASSESSMENT.md) ein eigener Folgeschritt. Aktuelle Nachweise und offene Punkte stehen in [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md), der vereinbarte Umfang in [ALPHA1_GOAL.md](ALPHA1_GOAL.md).
+Neuinstallation, dev.7-Upgrade und der Erhalt des DPAPI-Profils nach Neustart/Deinstallation sind automatisiert mit der echten Windows-Desktop-Anwendung geprüft; Zielgeräte, Screenreader/Skalierung und Herausgeber-/Signierung bleiben Freigabekriterien. macOS/Linux sind nach der [abschließenden Aufwandseinschätzung](PLATFORM_ASSESSMENT.md) ein eigener Folgeschritt. Aktuelle Nachweise und offene Punkte stehen in [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md), der vereinbarte Umfang in [ALPHA1_GOAL.md](ALPHA1_GOAL.md).
 
 ## Technische Grundlage
 
@@ -54,7 +56,7 @@ Die SDK-Versionen werden getrennt geladen. Die Anwendung benötigt keinen separa
 Voraussetzungen:
 
 - Windows x64 mit WebView2.
-- Node.js ab 22.12.0 und npm.
+- Node.js ab 22.13.0 und npm.
 - JDK 25. `JAVA_HOME` muss auf das JDK zeigen.
 - Rust mit MSVC-Toolchain, Visual Studio C++ Build Tools und Windows SDK. Siehe [Tauri-Voraussetzungen](https://v2.tauri.app/start/prerequisites/).
 

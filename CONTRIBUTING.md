@@ -1,6 +1,6 @@
 # Mitwirken
 
-Der FIT-Connect Test-Client ist eine Windows-Desktop-Anwendung für Integrationstests auf TEST. Vor Änderungen bitte [Architektur](ARCHITECTURE.md), [Work-Goal](ALPHA1_GOAL.md) und [Umsetzungsstand](ALPHA1_PROGRESS.md) lesen. Ausschließlich fiktive Testdaten verwenden.
+FBForge Connect ist eine Windows-Desktop-Anwendung für Integrationstests auf TEST. Vor Änderungen bitte [Architektur](ARCHITECTURE.md), [Work-Goal](ALPHA1_GOAL.md) und [Umsetzungsstand](ALPHA1_PROGRESS.md) lesen. Ausschließlich fiktive Testdaten verwenden.
 
 ## Lokal starten und prüfen
 
