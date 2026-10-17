@@ -114,6 +114,7 @@ impl<T> EngineResponse<T> {
                 Some("invalid_input") => EngineFailure::Remote("invalid_input"),
                 Some("content_limit") => EngineFailure::Remote("content_limit"),
                 Some("invalid_submission") => EngineFailure::Remote("invalid_submission"),
+                Some("reply_metadata_required") => EngineFailure::Remote("reply_metadata_required"),
                 Some("data_format_invalid") => EngineFailure::Remote("data_format_invalid"),
                 Some("reply_channel_missing") => EngineFailure::Remote("reply_channel_missing"),
                 Some("send_locked") => EngineFailure::Remote("send_locked"),

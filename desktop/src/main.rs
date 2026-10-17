@@ -6,8 +6,8 @@ mod protocol;
 mod vault;
 use profile_backup::{export_profile_backup, import_profile_backup};
 use profiles::{
-    forget_profile, list_profiles, open_saved_profile, profile_status, save_profile_state,
-    update_profile,
+    forget_profile, get_profile_defaults, list_profiles, open_saved_profile, profile_status,
+    save_profile_defaults, save_profile_state, update_profile,
 };
 use protocol::{
     valid_session_id, ApiVersion, EngineFailure, EngineResponse, ProbeResult, SessionResource,
@@ -424,6 +424,7 @@ async fn resource_action(
             | "cancel_send"
             | "import_key"
             | "discard_keys"
+            | "remove_key_inventory_item"
             | "execute_destination_cleanup"
             | "generate_test_keys"
             | "prepare_destination_creation"
@@ -436,7 +437,10 @@ async fn resource_action(
             | "cancel_destination_rotation"
     ) {
         if let Err(code) = profiles::checkpoint(app, state, version, id).await {
-            if operation == "generate_test_keys" {
+            if matches!(
+                operation.as_str(),
+                "generate_test_keys" | "remove_key_inventory_item"
+            ) {
                 return Err(code);
             }
             if matches!(
@@ -1229,6 +1233,46 @@ async fn generate_test_keys(
     .await
 }
 #[tauri::command]
+async fn list_key_inventory(
+    app: tauri::AppHandle,
+    state: State<'_, EngineState>,
+    api_version: ApiVersion,
+    session_id: String,
+    offset: usize,
+) -> Result<SessionResource, &'static str> {
+    if offset > 120 || offset % 20 != 0 {
+        return Err("invalid_input");
+    }
+    resource_action(
+        &app,
+        &state,
+        api_version,
+        &session_id,
+        serde_json::json!({"command":"list_key_inventory","offset":offset}),
+    )
+    .await
+}
+#[tauri::command]
+async fn remove_key_inventory_item(
+    app: tauri::AppHandle,
+    state: State<'_, EngineState>,
+    api_version: ApiVersion,
+    session_id: String,
+    item_id: String,
+) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&item_id) {
+        return Err("invalid_input");
+    }
+    resource_action(
+        &app,
+        &state,
+        api_version,
+        &session_id,
+        serde_json::json!({"command":"remove_key_inventory_item","itemId":item_id}),
+    )
+    .await
+}
+#[tauri::command]
 async fn list_generated_keys(
     app: tauri::AppHandle,
     state: State<'_, EngineState>,
@@ -1872,6 +1916,8 @@ fn main() {
             destination_rotation_state,
             generate_test_keys,
             list_generated_keys,
+            list_key_inventory,
+            remove_key_inventory_item,
             prepare_destination_creation,
             execute_destination_creation,
             cancel_destination_creation,
@@ -1879,6 +1925,8 @@ fn main() {
             reconcile_destination_creation,
             use_generated_keys,
             list_profiles,
+            get_profile_defaults,
+            save_profile_defaults,
             forget_profile,
             open_saved_profile,
             profile_status,

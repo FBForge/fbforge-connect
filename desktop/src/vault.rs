@@ -12,6 +12,26 @@ const MAX_PROFILES: usize = 32;
 const BACKUP_MAGIC: &[u8] = b"FIT-Connect Test-Client protected profile v1\n";
 pub const MAX_BACKUP_BYTES: usize = MAX_FILE + BACKUP_MAGIC.len();
 
+/// Public UUID conveniences, stored with the protected profile; they grant no permissions.
+#[derive(Serialize, Deserialize, Default, Clone, PartialEq, Debug)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ProfileDefaults {
+    pub source_destination: Option<String>,
+    pub receiver_destination: Option<String>,
+}
+impl ProfileDefaults {
+    pub fn validate(&self, api: ApiVersion) -> Result<(), &'static str> {
+        if (api == ApiVersion::V2 && self.source_destination.is_some())
+            || [&self.source_destination, &self.receiver_destination]
+                .iter()
+                .any(|value| value.as_ref().is_some_and(|id| !valid_session_id(id)))
+        {
+            return Err("vault_invalid");
+        }
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Profile {
@@ -23,6 +43,8 @@ pub struct Profile {
     pub client_id: String,
     pub client_secret: String,
     pub keys: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub defaults: ProfileDefaults,
 }
 impl Drop for Profile {
     fn drop(&mut self) {
@@ -57,6 +79,7 @@ pub struct ProfileSummary {
 }
 impl Profile {
     pub fn validate(&self) -> Result<(), &'static str> {
+        self.defaults.validate(self.api_version)?;
         if self.version != 1
             || !valid_session_id(&self.profile_id)
             || self.name.trim().is_empty()
@@ -422,6 +445,7 @@ mod tests {
     use super::*;
     fn sample() -> Profile {
         Profile {
+            defaults: ProfileDefaults::default(),
             version: 1,
             profile_id: "11111111-1111-4111-8111-111111111111".into(),
             name: "TEST-Arbeitsplatz".into(),
@@ -432,6 +456,30 @@ mod tests {
             keys: vec![],
         }
     }
+    #[test]
+    fn legacy_profiles_gain_empty_defaults_and_public_defaults_never_include_secrets_or_keys() {
+        let mut legacy = serde_json::to_value(sample()).unwrap();
+        legacy.as_object_mut().unwrap().remove("defaults");
+        let mut profile: Profile = serde_json::from_value(legacy).unwrap();
+        assert_eq!(profile.defaults, ProfileDefaults::default());
+        profile.defaults.source_destination = Some("22222222-2222-4222-8222-222222222222".into());
+        profile.defaults.receiver_destination = Some("33333333-3333-4333-8333-333333333333".into());
+        profile.validate().unwrap();
+        let public = serde_json::to_string(&profile.defaults).unwrap();
+        assert!(!public.contains("synthetic-secret-marker"));
+        assert!(!public.contains("keys"));
+        let roundtrip: Profile =
+            serde_json::from_slice(&serde_json::to_vec(&profile).unwrap()).unwrap();
+        assert_eq!(roundtrip.defaults, profile.defaults);
+        assert_eq!(roundtrip.client_secret, profile.client_secret);
+        profile.api_version = ApiVersion::V2;
+        assert_eq!(profile.validate().err(), Some("vault_invalid"));
+        profile.defaults.source_destination = None;
+        profile.validate().unwrap();
+        profile.defaults.receiver_destination = Some("../../outside".into());
+        assert_eq!(profile.validate().err(), Some("vault_invalid"));
+    }
+
     #[test]
     fn profile_validation_and_paths_are_strict() {
         let vault = Vault::new(std::env::temp_dir().join("fit-connect-vault-validation"));
@@ -506,7 +554,12 @@ mod tests {
             std::env::temp_dir().join(format!("fit-connect-vault-{}", std::process::id()));
         let vault = Vault::new(directory.clone());
         let mut profile = sample();
+        profile.defaults.receiver_destination = Some("33333333-3333-4333-8333-333333333333".into());
         vault.save(&profile).unwrap();
+        assert_eq!(
+            vault.load(&profile.profile_id).unwrap().defaults,
+            profile.defaults
+        );
         let path = vault.path(&profile.profile_id).unwrap();
         let bytes = fs::read(&path).unwrap();
         assert!(!bytes

@@ -115,6 +115,7 @@ final class ReplyAccess implements ResourceExchange {
                                     : "resource_unavailable";
             if (!Set.of(
                             "invalid_submission",
+                            "reply_metadata_required",
                             "verification_failed",
                             "endpoint_blocked",
                             "resource_denied",
@@ -307,6 +308,8 @@ final class ReplyAccess implements ResourceExchange {
             String expected =
                     endpoint.equals(own) ? input.destinationId().toString() : replyDestination;
             if (!expected.equals(id(value, "destinationId"))) throw error("invalid_resource");
+            if (version == ApiVersion.V3 && expected.equals(replyDestination))
+                ReplyMetadataVersions.require(value, input.processMessage() != null);
         }
         return response;
     }

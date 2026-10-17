@@ -19,6 +19,7 @@ const formats = ['application/json', 'application/xml'];
 const draftFields = ['proofId', 'schemaId', 'schemaUri', 'mimeType', 'processMessage'];
 const errors = new Set([
   'invalid_submission',
+  'reply_metadata_required',
   'verification_failed',
   'endpoint_blocked',
   'resource_denied',

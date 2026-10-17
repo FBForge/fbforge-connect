@@ -1813,6 +1813,55 @@ class SenderKernelTest {
     }
 
     @Test
+    void v3ReplyOfferFailsBeforeAnyWriteWhenTheSourceAdvertisesNoMetadataVersions()
+            throws Exception {
+        var remote = new Capture("v3");
+        remote.allowReplies = true;
+        var gate =
+                new SendAccess(
+                        ApiVersion.V3,
+                        new ResourceExchange() {
+                            public String get(String url, Map<String, String> headers) {
+                                return request("GET", url, headers, null).body();
+                            }
+
+                            public Response request(
+                                    String method,
+                                    String url,
+                                    Map<String, String> headers,
+                                    String body) {
+                                if (url.equals(remote.BASE + "/destinations/" + SOURCE))
+                                    return new Response(
+                                            200,
+                                            "{\"destinationId\":\""
+                                                    + SOURCE
+                                                    + "\",\"type\":\"C\",\"status\":\"active\",\"metadataVersions\":[]}");
+                                return remote.request(method, url, headers, body);
+                            }
+                        });
+        try (var adapters = registry();
+                var session =
+                        adapters.openSession(
+                                ApiVersion.V3,
+                                "id",
+                                "secret",
+                                (u, b) ->
+                                        "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}",
+                                gate)) {
+            var prepared = gate.prepare(replyInput(ApiVersion.V3));
+            var result =
+                    adapters.withSession(
+                            ApiVersion.V3,
+                            session,
+                            value -> gate.execute(prepared.attemptId(), value, workspace));
+            assertEquals("failed", result.status());
+            assertEquals("reply_metadata_required", result.error());
+            assertEquals(0, remote.posts);
+            assertTrue(remote.uploads.isEmpty());
+        }
+    }
+
+    @Test
     void v3SendDoesNotRequirePermissionToListUnrelatedCases() throws Exception {
         var remote = new Capture("v3");
         var gate =
@@ -3258,7 +3307,7 @@ class SenderKernelTest {
                             200,
                             "{\"destinationId\":\""
                                     + SOURCE
-                                    + "\",\"type\":\"C\",\"status\":\"active\"}");
+                                    + "\",\"type\":\"C\",\"status\":\"active\",\"metadataVersions\":[\"2.0.0\",\"3.0.0\"]}");
                 if (url.equals(BASE + "/destinations/" + TARGET))
                     return new Response(
                             200,

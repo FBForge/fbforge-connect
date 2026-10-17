@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   windows:
@@ -54,6 +55,8 @@ jobs:
         run: npm run build:frontend
       - name: Install browser for synthetic UI regression tests
         run: npx playwright install chromium
+      - name: Fetch immutable public FIM schema fixtures with integrity checks
+        run: node scripts/fetch-public-schemas.mjs
       - name: Test application workflows in browser
         run: npm run test:ui
       - name: Test isolated native protocol and protected profile storage
@@ -63,6 +66,28 @@ jobs:
         run: cargo +1.99.0 test --locked
       - name: Build unsigned Windows setup
         run: npm run desktop:build -- -- --locked
+      - name: Build CI-only protected profile fixture bridge
+        run: cargo +1.99.0 build --manifest-path desktop/native-contracts/Cargo.toml --locked --target-dir desktop/native-contracts/target --example profile-checkpoint
+      - name: Download the pinned dev.7 installer for upgrade validation
+        if: github.event_name == 'push' && github.ref == 'refs/heads/alpha1-work'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $revision = gh api repos/FBForge/fit-connect-testclient/actions/runs/38967495361 --jq '.head_sha'
+          if ($LASTEXITCODE -ne 0 -or $revision -ne 'bc12b4ad0f0f47a77024e82a070dc2df993da438') { throw 'previous_installer_provenance_failed' }
+          gh run download 38967495361 --repo FBForge/fit-connect-testclient --name windows-alpha-unsigned-setup --dir "$env:RUNNER_TEMP/fitconnect-dev7"
+          if ($LASTEXITCODE -ne 0) { throw 'previous_installer_download_failed' }
+          $previous = @(Get-ChildItem "$env:RUNNER_TEMP/fitconnect-dev7" -Filter '*-setup.exe' -Recurse -File)
+          if ($previous.Count -ne 1) { throw 'previous_installer_missing' }
+          Add-Content -Path $env:GITHUB_ENV -Value "FITCONNECT_PREVIOUS_INSTALLER=$($previous[0].FullName)"
+      - name: Install the real desktop application and verify bundled runtime and profile preservation
+        run: |
+          $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
+          if ($setup.Count -ne 1) { throw 'installer_missing' }
+          $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', './scripts/windows-install-smoke.ps1', '-InstallerPath', $setup[0].FullName, '-CheckpointBridge', 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe')
+          if ($env:FITCONNECT_PREVIOUS_INSTALLER) { $arguments += @('-PreviousInstallerPath', $env:FITCONNECT_PREVIOUS_INSTALLER) }
+          & powershell.exe @arguments
+          if ($LASTEXITCODE -ne 0) { throw 'installed_desktop_validation_failed' }
       - name: Retain unsigned alpha installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

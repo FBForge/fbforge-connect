@@ -109,3 +109,36 @@ export async function updateProfile(invoke, profileId, name, newSecret = null) {
   if (result.profileId !== profileId || result.name !== name) fail();
   return result;
 }
+
+function defaultsContext(session) {
+  if (
+    !uuid(session?.sessionId) ||
+    !['v2', 'v3'].includes(session.apiVersion) ||
+    session.environment !== 'TEST' ||
+    session.connected !== true
+  )
+    throw new Error('session_missing');
+  return { apiVersion: session.apiVersion, sessionId: session.sessionId };
+}
+function checkedDefaults(value, apiVersion) {
+  if (
+    !exact(value, ['sourceDestination', 'receiverDestination']) ||
+    ![value.sourceDestination, value.receiverDestination].every((id) => id === null || uuid(id)) ||
+    (apiVersion === 'v2' && value.sourceDestination !== null)
+  )
+    fail();
+  return Object.freeze({ ...value });
+}
+export async function getProfileDefaults(invoke, session) {
+  const value = await invoke('get_profile_defaults', defaultsContext(session));
+  return value === null ? null : checkedDefaults(value, session.apiVersion);
+}
+export async function saveProfileDefaults(invoke, session, defaults) {
+  const expected = checkedDefaults(defaults, session?.apiVersion);
+  const result = checkedDefaults(
+    await invoke('save_profile_defaults', { ...defaultsContext(session), defaults: expected }),
+    session.apiVersion,
+  );
+  if (Object.keys(expected).some((key) => result[key] !== expected[key])) fail();
+  return result;
+}

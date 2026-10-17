@@ -2,6 +2,8 @@ import { diagnosticCode } from './diagnostics.js';
 
 // Deliberately exclude arguments, response bodies, identifiers, paths and free-form messages.
 export const operationLabels = Object.freeze({
+  list_key_inventory: 'Schlüsselbestand ansehen',
+  remove_key_inventory_item: 'Einzelnen Schlüsselbestand entfernen',
   update_profile: 'Gespeichertes Profil bearbeiten',
   export_profile_backup: 'Geschütztes Profil sichern',
   import_profile_backup: 'Geschütztes Profil wiederherstellen',

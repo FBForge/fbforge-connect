@@ -15,6 +15,7 @@ const fail = () => {
 const errors = new Set([
   'test_certificate_required',
   'invalid_submission',
+  'reply_metadata_required',
   'data_format_invalid',
   'endpoint_blocked',
   'resource_denied',

@@ -238,6 +238,28 @@ final class SessionManager implements AutoCloseable {
         return new Data<>(version.wireValue(), entry.id(), "TEST", data);
     }
 
+    Data<?> keyInventory(ApiVersion version, String id, String command, String itemId, int offset) {
+        var entry = find(version, id);
+        var generated = localKeys.get(id);
+        Object result =
+                registry.withSession(
+                        version,
+                        entry.session(),
+                        session -> {
+                            if (command.equals("remove_key_inventory_item")) {
+                                KeyInventory.remove(
+                                        id, session, generated, DestinationAccess.id(itemId));
+                                var archive = archives.get(id);
+                                if (archive != null) archive.clear();
+                                invalidateReceived(entry);
+                                eventLogs.clearOwner(id);
+                                return KeyInventory.list(id, session, generated, 0);
+                            }
+                            return KeyInventory.list(id, session, generated, offset);
+                        });
+        return new Data<>(version.wireValue(), id, "TEST", result);
+    }
+
     Data<?> manageDestination(
             ApiVersion version,
             String id,

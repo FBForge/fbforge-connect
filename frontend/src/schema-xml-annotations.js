@@ -169,8 +169,13 @@ export function annotateXmlSchema(root, packet, Parser) {
       .map((line) => line.trim())
       .find(Boolean);
     // XSD documentation is often a whole paragraph, not a field title. Keep that as help text.
-    const title =
-      !typeOnly && firstLine && firstLine.length <= 120 && !/[.!?]$/.test(firstLine) ? firstLine : null;
+    // FIM XSD exports explicitly prefix the authored label and append version/type metadata.
+    // Keep that full documentation as help; never infer a label from a technical FIM identifier.
+    const fimLabel = firstLine?.match(
+      /^(?:Datenschema|Datenfeldgruppe|Datenfeld):\s+(.+?)(?=\s+-\s+Version:\s+\d|$)/,
+    )?.[1];
+    const heading = fimLabel || firstLine;
+    const title = !typeOnly && heading && heading.length <= 120 && !/[.!?]$/.test(heading) ? heading : null;
     return {
       rank,
       title,

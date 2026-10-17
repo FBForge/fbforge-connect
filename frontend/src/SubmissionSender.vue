@@ -13,13 +13,21 @@ import { resetsSessions } from './sessions.js';
 import { loadSendDestination, loadSendSchema } from './sender-options.js';
 import { generateExample } from './generate-example.js';
 
-const props = defineProps({ session: Object, busy: Boolean, processDraft: Object });
+const props = defineProps({ session: Object, busy: Boolean, processDraft: Object, defaultSource: String });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log']);
 const target = ref(''),
   source = ref(''),
   service = ref(''),
   serviceName = ref('Testantrag'),
   region = ref('DE000000000000');
+watch(
+  [() => props.session?.sessionId, () => props.defaultSource],
+  () => {
+    if (!source.value && props.session?.apiVersion === 'v3' && props.defaultSource)
+      source.value = props.defaultSource;
+  },
+  { immediate: true, flush: 'post' },
+);
 const schema = ref(''),
   mime = ref('application/json'),
   caseId = ref(''),
@@ -485,7 +493,10 @@ async function refreshState() {
               maxlength="36"
               placeholder="Zustellpunkt-ID deiner TEST-Zugangsdaten"
             />
-            <small>Der Absender kann innerhalb deiner Berechtigungen gewählt werden.</small>
+            <small>
+              Der Absender muss zu deinen Zugangsdaten gehören. Für Replies dort Metadatenversion 2.0.0 oder
+              3.0.0 freigeben; Prozessantworten benötigen 3.0.0.
+            </small>
           </label>
           <label for="send-target">
             Empfängerzustellpunkt

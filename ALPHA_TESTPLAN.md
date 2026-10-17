@@ -1,5 +1,7 @@
 # Alpha-Testplan · 0.1.0-dev.7
 
+Aktueller Alpha-1-Kandidat und Nachweise: [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md). Die folgenden dev.2–dev.7-Abschnitte dokumentieren die früheren Regressionen; neue Live- und Installationsabnahmen sind in [LIVE_TESTS.md](LIVE_TESTS.md) und [INSTALLATION_TESTS.md](INSTALLATION_TESTS.md) beschrieben.
+
 Entwicklungszweig: `develop`. Dies ist ein Entwicklungsstand für die erste ausführbare Alpha. Eine erfolgreiche Simulation ersetzt keinen Live-Test gegen TEST.
 
 ## Korrigierte und automatisiert geprüfte Fälle

@@ -132,6 +132,7 @@ final class SendAccess implements ResourceExchange {
                                             "test_certificate_required",
                                             "invalid_submission",
                                             "data_format_invalid",
+                                            "reply_metadata_required",
                                             "endpoint_blocked",
                                             "resource_denied",
                                             "resource_missing",
@@ -292,6 +293,11 @@ final class SendAccess implements ResourceExchange {
                             : input.fromDestinationId().toString();
             if (!expected.equals(id(document, "destinationId"))) throw error("invalid_resource");
         }
+        if (version == ApiVersion.V3
+                && input.replyOffer() != null
+                && endpoint.equals(base + "/destinations/" + input.fromDestinationId()))
+            ReplyMetadataVersions.require(
+                    document, !input.replyOffer().processMessages().isEmpty());
         if (endpoint.equals(target)) {
             if (!"active".equals(text(document, "status"))) throw error("invalid_submission");
             String kid = text(document, "encryptionKid");

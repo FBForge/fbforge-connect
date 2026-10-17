@@ -339,6 +339,18 @@ public final class V2Adapter implements SdkAdapter {
             receiver = null;
         }
 
+        public void discardKey(KeyReference reference) {
+            requireOpen();
+            keys.discard(reference);
+            receiver = null;
+        }
+
+        public void discardReplyChannel(UUID attemptId) {
+            requireOpen();
+            if (sender == null) throw new SessionException("key_missing");
+            sender.replyKeys.discard(attemptId);
+        }
+
         public void discardKeys() {
             requireOpen();
             keys.clear();

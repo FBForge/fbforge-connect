@@ -28,3 +28,18 @@ Der Test entfernt ausschließlich seinen in diesem Lauf angelegten Zustellpunkt.
 Falls eine Anlageantwort verloren geht, erfolgt nur eine begrenzte lesende Suche nach dem eindeutigen Laufnamen und anschließend der native Abgleich mit dem vorhandenen Schlüsselbund. Bei Mehrdeutigkeit oder ungewissem Ergebnis stoppt das Aufräumen. Ein hart abgebrochener Runner kann einen fiktiven Testzustellpunkt hinterlassen; ein solcher Restbestand braucht eine gezielte Prüfung. Es gibt keine pauschale Löschung anhand eines Namenspräfixes.
 
 Es werden keine Artefakte hochgeladen. Geschützte temporäre Checkpoints werden nach dem Test entfernt. Das Log nennt nur Prüfphasen und stabile Fehlercodes. Ein grüner Teilschritt ist keine Alpha-Freigabe; der vollständige Lauf und die übrigen Kriterien aus `ALPHA1_GOAL.md` müssen bestanden sein.
+
+## Erfolgreiche Abnahme und erforderliche Restbestände
+
+Lauf [38988235240](https://github.com/FBForge/fit-connect-testclient/actions/runs/38988235240) auf `9503027` bestand den vollständigen Ablauf einschließlich Rotation und anschließendem Austausch. Beide echten Actions-Clients wurden verwendet. Sieben fiktive Einreichungen prüften v2/v3, JSON/XML, Fragmente, Prozesskommunikation, Replies nach Neustart, Annahmen/Ablehnungen und die zugehörigen signierten Ereignisse.
+
+Die folgenden ausschließlich für diese CI-Abnahmen erzeugten Zustellpunkte wurden authentifiziert deaktiviert und sind ohne öffentliche Routing-Freigabe aufbewahrt. Die API verbietet die sofortige Außerbetriebnahme/Löschung vor ihrer Frist:
+
+| Generierter TEST-Zustellpunkt | Frühester serverseitiger Zeitpunkt |
+| --- | --- |
+| `55662cc0-2623-466b-ac86-fdb193a9e1fe` | 2026-11-16T00:29:38.679Z |
+| `eb094983-09ab-4771-acf2-eb8a733d12af` | 2026-11-16T00:36:29.915Z |
+| `a73bc879-c0d5-4174-b4c4-84272fd91753` | 2026-11-16T00:49:14.519Z |
+| `2569613d-3d95-4332-9406-0bac444a6da3` | 2026-11-16T00:54:45.997Z |
+
+Vor einer späteren Bereinigung müssen ID, eindeutiger Laufname, Eigentum und aktueller API-Zustand erneut geprüft werden. Es gibt keine pauschale Löschung aller ähnlich benannten Zustellpunkte und keine Umgehung der Frist. Eine noch nicht bestätigte fiktive Nachricht aus einem fehlgeschlagenen Teillauf ist kein erfolgreicher Anwendungsfall. Echte Zugangsdaten und private Schlüssel sind in dieser Liste nicht enthalten.

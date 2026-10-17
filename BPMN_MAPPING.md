@@ -34,6 +34,6 @@ Der Empfänger kann den Nachrichtenbezug einer technisch geprüften Submission o
 
 ## Grenzen und Testdatei
 
-Die fiktive Demo liegt unter `frontend/public/examples/test-process.bpmn`: Antrag, Nachforderung, Nachreichung und Rückmeldung mit ausdrücklichen Testkennungen. Sie setzt keine echten Zustellpunkte voraus; ein realer Test benötigt passende eigene Angebote und Berechtigungen.
+Die fiktive Demo liegt unter `frontend/src/examples/test-process.bpmn`: Antrag, Nachforderung, Nachreichung und Rückmeldung mit ausdrücklichen Testkennungen. Sie setzt keine echten Zustellpunkte voraus; ein realer Test benötigt passende eigene Angebote und Berechtigungen.
 
 UTF-8, höchstens 2 MiB, 10.000 XML-Elemente, 500 Diagrammelemente und 500 Nachrichten. Parsing läuft mit Zeitlimit in einem Worker. DTD, Entitäten, aktive Inhalte, externe Ressourcen sowie mehrdeutige oder nicht auflösbare Referenzen sind ausgeschlossen. Der Viewer lädt keine externen Modelldateien. Sein lizenzpflichtiges bpmn.io-Wasserzeichen bleibt sichtbar.

@@ -255,6 +255,14 @@ final class ReplyKeys {
         return keys.values().stream().map(Stored::reference).toList();
     }
 
+    void discard(UUID attempt) {
+        var stored = keys.get(attempt);
+        if (stored == null) throw new SessionException("key_missing");
+        if (!Set.of("bound", "recovered").contains(stored.reference().status()))
+            throw new SessionException("send_locked");
+        keys.remove(attempt);
+    }
+
     void clear() {
         keys.clear();
     }

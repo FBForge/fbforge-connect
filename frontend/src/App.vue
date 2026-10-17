@@ -22,6 +22,8 @@ import apacheLicense from '../../licenses/Apache-2.0.txt?raw';
 import { probeAdapter, errorMessage } from './diagnostics.js';
 import { openSession, updateSession, resetsSessions } from './sessions.js';
 import ProfileEditor from './ProfileEditor.vue';
+import KeyInventory from './KeyInventory.vue';
+import ProfileDefaults from './ProfileDefaults.vue';
 import DestinationKeys from './DestinationKeys.vue';
 const ProcessWorkspace = defineAsyncComponent(() => import('./ProcessWorkspace.vue'));
 import { processWorkspaceKey } from './process-context.js';
@@ -38,6 +40,7 @@ import {
   saveProfileState,
   exportProfileBackup,
   importProfileBackup,
+  getProfileDefaults,
 } from './profiles.js';
 import { createCaseWorkspace, caseWorkspaceKey } from './case-context.js';
 
@@ -90,6 +93,7 @@ const rememberProfile = ref(false),
   forgetDialog = ref(null);
 const sessions = ref({});
 const selectedDestination = ref('');
+const defaultDestinations = shallowRef(null);
 const keyRevision = ref(0);
 const submissionRevision = ref(0),
   replyRevision = ref(0);
@@ -105,6 +109,7 @@ watch(
   () => activeSession.value?.sessionId,
   () => {
     selectedDestination.value = '';
+    defaultDestinations.value = null;
     storageStatus.value = null;
     void refreshStorageStatus();
   },
@@ -305,7 +310,16 @@ async function refreshStorageStatus() {
   if (!isTauri() || !active) return;
   try {
     const status = await profileStatus(invoke, active.sessionId);
-    if (activeSession.value?.sessionId === active.sessionId) storageStatus.value = status;
+    if (activeSession.value?.sessionId !== active.sessionId) return;
+    storageStatus.value = status;
+    if (status.saved && defaultDestinations.value === null) {
+      const defaults = await getProfileDefaults(invoke, active);
+      if (activeSession.value?.sessionId === active.sessionId) {
+        defaultDestinations.value = defaults;
+        if (!selectedDestination.value && defaults?.receiverDestination)
+          selectedDestination.value = defaults.receiverDestination;
+      }
+    }
   } catch {
     /* A failed status read must not change a completed FIT-Connect operation. */
   }
@@ -552,6 +566,7 @@ function clearHistory() {
           </div>
           <p v-if="error" class="status-badge error" role="alert">{{ error }}</p>
           <SubmissionSender
+            :default-source="defaultDestinations?.sourceDestination || ''"
             :process-draft="processDraft"
             v-show="section === 'Senden'"
             :session="activeSession"
@@ -594,6 +609,7 @@ function clearHistory() {
             "
           />
           <DestinationKeys
+            :default-destination="defaultDestinations?.receiverDestination || ''"
             v-show="section === 'Empfangen'"
             :session="activeSession"
             :busy="busy"
@@ -986,6 +1002,30 @@ function clearHistory() {
         Sicherung nicht.
       </p>
     </section>
+    <ProfileDefaults
+      v-if="storageStatus?.saved && defaultDestinations"
+      :session="activeSession"
+      :defaults="defaultDestinations"
+      :busy="busy"
+      @busy="resourceBusy"
+      @fatal="fatal"
+      @saved="
+        (value) => {
+          defaultDestinations = value;
+        }
+      "
+    />
+    <KeyInventory
+      :session="activeSession"
+      :busy="busy"
+      @busy="resourceBusy"
+      @fatal="fatal"
+      @invalidate="
+        keyRevision++;
+        refreshProfiles();
+        refreshStorageStatus();
+      "
+    />
     <section class="tool-section">
       <h3>Geschützte Profilsicherung</h3>
       <p>

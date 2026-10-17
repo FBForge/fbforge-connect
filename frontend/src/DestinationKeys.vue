@@ -5,7 +5,7 @@ import { listDestinations, loadDestination, importKey, loadedKeys, discardKeys }
 import { resetsSessions } from './sessions.js';
 import { importKeyFiles } from './key-files.js';
 
-const props = defineProps({ session: Object, busy: Boolean });
+const props = defineProps({ session: Object, busy: Boolean, defaultDestination: String });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'destination', 'invalidate']);
 const id = ref('');
 const selected = ref(null);
@@ -20,6 +20,13 @@ const identity = computed(() =>
 );
 const disabled = computed(() => props.busy || pending.value || !props.session);
 let revision = 0;
+watch(
+  () => props.defaultDestination,
+  (value) => {
+    if (!id.value && value && props.session) id.value = value;
+  },
+  { immediate: true },
+);
 const messages = {
   invalid_input:
     'Bitte eine gültige Zustellpunkt-ID und höchstens 16 Schlüsseldateien mit jeweils maximal 32 KiB auswählen.',

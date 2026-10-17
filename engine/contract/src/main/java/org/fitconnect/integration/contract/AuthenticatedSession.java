@@ -165,6 +165,16 @@ public interface AuthenticatedSession extends AutoCloseable {
 
     void discardKeys();
 
+    /** Explicit local removal of one imported key; never alters a remote registration. */
+    default void discardKey(KeyReference reference) {
+        throw new SessionException("key_rejected");
+    }
+
+    /** Pending or unresolved reply keys must not be removed by this operation. */
+    default void discardReplyChannel(java.util.UUID attemptId) {
+        throw new SessionException("send_locked");
+    }
+
     /** Unload imported keys only after confirmed removal of their never-activated destination. */
     default void discardDestinationKeys(String destinationId) {
         if (loadedKeys().stream().anyMatch(key -> key.destinationId().equals(destinationId)))

@@ -42,3 +42,7 @@ Die vorhandenen SDKs übernehmen Kryptografie und FIT-Connect-Protokollverarbeit
 Mit einem Beitrag bestätigst du die Berechtigung, ihn unter der EUPL-1.2 dieses Projekts einzureichen. Bestehende Urheberrechts- und Lizenzhinweise bleiben erhalten. Sicherheitsprobleme bitte privat gemäß [SECURITY.md](SECURITY.md) melden. Größere Beiträge externer Mitwirkender sollten vorab in einem Issue abgestimmt werden.
 
 Formatierung: `npm run format`, im Engine-Verzeichnis `./mvnw spotless:apply`, für Rust `cargo fmt --manifest-path desktop/Cargo.toml --all`. Die Compiler-Modulfreigaben in `engine/.mvn/jvm.config` gelten nur für den Build-Formatter, nicht für die ausgelieferte Laufzeit. Live-Zugänge ausschließlich über echte Secret-Speicher verwenden; siehe [Sicherheitsprüfung](SECURITY_REVIEW.md).
+
+## Öffentliche Schema-Integrationstests
+
+Die normalen lokalen Tests benötigen keine Zugangsdaten. Für die zusätzlichen versionsgebundenen FIM-Beispiele einmal `node scripts/fetch-public-schemas.mjs` ausführen und anschließend die Browsertests starten. Ein vollständiger Cache kann mit `--offline` geprüft werden. Die Dateien werden nicht mit der Anwendung verteilt; Herkunft und Grenzen stehen in [PUBLIC_SCHEMA_TESTS.md](PUBLIC_SCHEMA_TESTS.md). Reale TEST-Schreibabläufe sind separat in [LIVE_TESTS.md](LIVE_TESTS.md) beschrieben und gehören nicht in gewöhnliche Beitragsprüfungen.

@@ -196,6 +196,12 @@ final class LocalTestKeys {
         }
     }
 
+    void remove(String id) {
+        var bundle = require(id);
+        if (!Set.of("ready", "bound").contains(bundle.status)) throw error("send_locked");
+        bundles.remove(bundle.id);
+    }
+
     void clear() {
         bundles.clear();
     }

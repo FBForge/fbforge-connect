@@ -12,7 +12,7 @@ import { loadBpmnModel } from './load-bpmn-model.js';
 import { searchProcessDestinations } from './process-discovery.js';
 import { processWorkspaceKey } from './process-context.js';
 const BpmnDiagram = defineAsyncComponent(() => import('./BpmnDiagram.vue'));
-import demo from '../public/examples/test-process.bpmn?raw';
+import demo from './examples/test-process.bpmn?raw';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 const props = defineProps({ session: Object, busy: Boolean, visible: Boolean, context: Object });

@@ -22,6 +22,7 @@ public final class SessionException extends RuntimeException {
                     "destination_conflict",
                     "destination_update_locked",
                     "destination_no_keys",
+                    "reply_metadata_required",
                     "verification_failed",
                     "schema_required",
                     "data_schema_invalid",

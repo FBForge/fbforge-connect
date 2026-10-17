@@ -2,7 +2,7 @@
 use crate::protocol::{
     valid_session_id, ApiVersion, SessionResource, SessionRole, SessionSnapshot,
 };
-use crate::vault::{Profile, ProfileSummary, Vault};
+use crate::vault::{Profile, ProfileDefaults, ProfileSummary, Vault};
 use crate::{request, EngineState};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -76,6 +76,7 @@ pub async fn save_opened(
     client_secret: String,
 ) -> Result<(), &'static str> {
     let profile = Profile {
+        defaults: ProfileDefaults::default(),
         version: 1,
         profile_id: id.clone(),
         name,
@@ -344,4 +345,63 @@ pub async fn update_profile(
     }
     store.save(&profile)?;
     Ok(profile.summary())
+}
+
+#[tauri::command]
+pub async fn get_profile_defaults(
+    app: tauri::AppHandle,
+    state: State<'_, EngineState>,
+    api_version: ApiVersion,
+    session_id: String,
+) -> Result<Option<ProfileDefaults>, &'static str> {
+    if !valid_session_id(&session_id) {
+        return Err("invalid_input");
+    }
+    let bindings = state.profiles.lock().await;
+    let Some(binding) = bindings.get(&session_id) else {
+        return Ok(None);
+    };
+    if binding.api != api_version {
+        return Err("session_missing");
+    }
+    let profile = vault(&app)?.load(&binding.profile_id)?;
+    if profile.api_version != api_version {
+        return Err("vault_invalid");
+    }
+    Ok(Some(profile.defaults.clone()))
+}
+
+#[tauri::command]
+pub async fn save_profile_defaults(
+    app: tauri::AppHandle,
+    state: State<'_, EngineState>,
+    api_version: ApiVersion,
+    session_id: String,
+    defaults: ProfileDefaults,
+) -> Result<ProfileDefaults, &'static str> {
+    if !valid_session_id(&session_id) {
+        return Err("invalid_input");
+    }
+    defaults
+        .validate(api_version)
+        .map_err(|_| "invalid_input")?;
+    require_profile(&state, api_version, &session_id).await?;
+    checkpoint(&app, &state, api_version, &session_id).await?;
+    let mut bindings = state.profiles.lock().await;
+    let binding = bindings
+        .get_mut(&session_id)
+        .ok_or("vault_profile_required")?;
+    if binding.api != api_version {
+        return Err("session_missing");
+    }
+    let store = vault(&app)?;
+    let mut profile = store.load(&binding.profile_id)?;
+    if profile.api_version != api_version {
+        return Err("vault_invalid");
+    }
+    profile.defaults = defaults.clone();
+    let result = store.save(&profile);
+    binding.error = result.as_ref().err().copied();
+    result?;
+    Ok(defaults)
 }

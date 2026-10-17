@@ -46,6 +46,8 @@ export function errorMessage(code) {
       'Gespeicherte Schlüssel konnten nicht vollständig wiederhergestellt oder gegen TEST geprüft werden. Das Profil bleibt erhalten. Du kannst zunächst nur seine Zugangsdaten verwenden und die Schlüsselzuordnung prüfen.',
     invalid_credentials:
       'Bitte eine Client-ID und ein Client-Secret innerhalb der zulässigen Länge eingeben.',
+    reply_metadata_required:
+      'Am Absenderzustellpunkt fehlt eine passende Metadatenversion für Replies. Der Betreiber muss in der Zustellpunktverwaltung 2.0.0 oder 3.0.0 freigeben; Prozessantworten benötigen 3.0.0. Es wurde nichts versendet.',
     destination_no_keys:
       'Onlinedienst-Zustellpunkte vom Typ C benötigen keine Zertifikate oder dauerhaften Zustellpunktschlüssel. Antwortschlüssel werden je Antwortkanal erzeugt.',
     authentication_failed: 'Die TEST-Anmeldung ist fehlgeschlagen. Bitte Client-ID und Client-Secret prüfen.',
@@ -73,6 +75,7 @@ const reportableCodes = new Set([
   'destination_conflict',
   'destination_update_locked',
   'destination_no_keys',
+  'reply_metadata_required',
   'desktop_required',
   'engine_not_staged',
   'engine_start_failed',

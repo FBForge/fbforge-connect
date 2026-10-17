@@ -156,6 +156,10 @@ final class PrivateKeys {
                 .toList();
     }
 
+    void discard(KeyReference reference) {
+        if (keys.remove(reference) == null) throw new SessionException("key_missing");
+    }
+
     List<KeyReference> references() {
         return List.copyOf(keys.keySet());
     }

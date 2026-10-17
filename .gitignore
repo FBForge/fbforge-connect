@@ -37,3 +37,6 @@ desktop/resources/.stage-*/
 
 /playwright-report/
 /test-results/
+
+# Downloaded immutable public schema fixtures are test-only and never distributed.
+/frontend/test-fixtures/.public-schema-cache/

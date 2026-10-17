@@ -181,6 +181,8 @@ final class Engine implements AutoCloseable {
                 case "reconcile_destination_creation", "use_generated_keys" ->
                         expected.addAll(Set.of("sessionId", "bundleId", "destinationId"));
                 case "generate_test_keys", "list_generated_keys" -> expected.add("sessionId");
+                case "list_key_inventory" -> expected.addAll(Set.of("sessionId", "offset"));
+                case "remove_key_inventory_item" -> expected.addAll(Set.of("sessionId", "itemId"));
                 case "export_session_item" -> expected.addAll(Set.of("sessionId", "offset"));
                 case "restore_session_item" ->
                         expected.addAll(Set.of("sessionId", "archiveDocument"));
@@ -447,6 +449,13 @@ final class Engine implements AutoCloseable {
                             case "generate_test_keys", "list_generated_keys" ->
                                     sessions.generatedKeys(
                                             version, values.get("sessionId"), command);
+                            case "list_key_inventory", "remove_key_inventory_item" ->
+                                    sessions.keyInventory(
+                                            version,
+                                            values.get("sessionId"),
+                                            command,
+                                            values.get("itemId"),
+                                            offset);
                             case "export_session_item" ->
                                     sessions.exportSessionItem(
                                             version, values.get("sessionId"), offset);
