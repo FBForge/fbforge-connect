@@ -155,6 +155,8 @@ jobs:
           [IO.File]::WriteAllText((Join-Path $setup[0].DirectoryName 'SHA256SUMS.txt'), ($hash + '  ' + $setup[0].Name + "`n"), $utf8)
           $build = [ordered]@{ application = 'FBForge Connect'; version = (Get-Content 'desktop/tauri.conf.json' -Raw | ConvertFrom-Json).version; repository = $env:GITHUB_REPOSITORY; commit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; platform = 'windows-x64'; signing = 'unsigned'; installer = $setup[0].Name; bytes = $setup[0].Length; sha256 = $hash }
           [IO.File]::WriteAllText((Join-Path $setup[0].DirectoryName 'build-info.json'), (($build | ConvertTo-Json) + "`n"), $utf8)
+      - name: Verify installer bytes and expected build provenance before upload
+        run: node scripts/verify-installer.mjs desktop/target/release/bundle/nsis "$env:GITHUB_SHA" "$env:GITHUB_RUN_ID" "$env:GITHUB_REPOSITORY"
       - name: Retain unsigned alpha installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

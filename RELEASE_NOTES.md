@@ -17,6 +17,8 @@ Die frühere Anzeige „FIT-Connect Test-Client“ wird ersetzt. Interne App-Ken
 
 Das Windows-Actions-Artefakt enthält nach erfolgreicher Installationsprüfung den Setup-Installer, `SHA256SUMS.txt` und `build-info.json` mit Version, Commit und Workflow-Lauf. Eine Prüfsumme bestätigt Dateigleichheit und ersetzt keine Herausgebersignatur. Eine Anleitung für den ersten Testvorgang steht in [BEDIENUNG.md](BEDIENUNG.md).
 
+Das Repository heißt jetzt `FBForge/fbforge-connect`. Die Paketprüfung vergleicht vor dem Upload die Installerbytes mit Prüfsumme und Manifest sowie die Herkunft mit dem erwarteten Commit, Workflow-Lauf, Repository und der Produktversion. Sicherheitsprobleme können über den in [SECURITY.md](SECURITY.md) verlinkten privaten GitHub-Meldeweg gemeldet werden.
+
 ## Bekannte Grenzen
 
 - Ausschließlich TEST und fiktive Daten; keine PROD-Unterstützung. macOS/Linux benötigen weitere sichere Speicherintegration und eigene Abnahmen.
@@ -24,4 +26,4 @@ Das Windows-Actions-Artefakt enthält nach erfolgreicher Installationsprüfung d
 - Kein universeller FIM-Formulareditor, vollständiger BPMN-Editor oder Prozessmotor. Unvollständige Schema-/Modellzuordnungen werden nicht durch Vermutungen ersetzt.
 - Aktivierte TEST-Zustellpunkte können nach Deaktivierung bis zum Ablauf der serverseitigen Frist nicht gelöscht werden. Restbestände der eigenen CI-Abnahmen sind in [LIVE_TESTS.md](LIVE_TESTS.md) dokumentiert.
 - Ein ungewisser Schreibausgang wird nicht automatisch wiederholt. Offene Vorgänge vor einem manuellen Neuversand prüfen.
-- Reale Screenreader-/Skalierungsabnahme, Herausgebersignierung beziehungsweise vereinbarte unsignierte Alpha-Verteilung und der private Sicherheitsmeldeweg sind vor einer Alpha-1-Freigabe zu klären. Keine BSI- oder vollständige WCAG-Konformitätsbehauptung.
+- Reale Screenreader-/Skalierungsabnahme sowie Herausgebersignierung beziehungsweise vereinbarte unsignierte Alpha-Verteilung sind vor einer Alpha-1-Freigabe zu klären. Ein [Abnahmeprotokoll](ZIELGERAETE_TEST.md) hält Build und Ergebnisse fest. Keine BSI- oder vollständige WCAG-Konformitätsbehauptung.
