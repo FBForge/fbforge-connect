@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-search-process-destinations"
+description = "Enables the search_process_destinations command without any pre-configured scope."
+commands.allow = ["search_process_destinations"]
+
+[[permission]]
+identifier = "deny-search-process-destinations"
+description = "Denies the search_process_destinations command without any pre-configured scope."
+commands.deny = ["search_process_destinations"]

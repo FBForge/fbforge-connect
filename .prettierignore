@@ -1,0 +1,10 @@
+node_modules/
+frontend/dist/
+desktop/target/
+desktop/resources/
+engine/**/target/
+package-lock.json
+playwright-report/
+test-results/
+licenses/
+LICENSE

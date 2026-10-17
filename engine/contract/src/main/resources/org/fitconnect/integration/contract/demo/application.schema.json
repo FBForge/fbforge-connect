@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fit-connect:test-client:demo:application:1",
+  "title": "Fiktiver TEST-Antrag",
+  "description": "Ausschließlich fiktive Beispieldaten. Kein amtliches Fachschema.",
+  "type": "object",
+  "required": ["antragstellendePerson", "anliegen"],
+  "additionalProperties": false,
+  "properties": {
+    "antragstellendePerson": {
+      "title": "Antragstellende Person", "type": "object", "required": ["vorname", "nachname"], "additionalProperties": false,
+      "properties": {
+        "vorname": {"title": "Vorname", "type": "string", "minLength": 1, "maxLength": 100, "examples": ["Erika"]},
+        "nachname": {"title": "Nachname", "type": "string", "minLength": 1, "maxLength": 100, "examples": ["Musterfrau"]},
+        "geburtsdatum": {"title": "Geburtsdatum", "description": "Fiktives Datum im Format JJJJ-MM-TT.", "type": "string", "format": "date", "examples": ["1990-01-15"]},
+        "anschrift": {"title": "Anschrift", "type": "object", "additionalProperties": false, "properties": {
+          "strasse": {"title": "Straße und Hausnummer", "type": "string", "maxLength": 200, "examples": ["Musterstraße 1"]},
+          "postleitzahl": {"title": "Postleitzahl", "type": "string", "pattern": "^[0-9]{5}$", "examples": ["12345"]},
+          "ort": {"title": "Ort", "type": "string", "maxLength": 100, "examples": ["Musterstadt"]}
+        }}
+      }
+    },
+    "anliegen": {"title": "Anliegen", "description": "Was soll in diesem Test bearbeitet werden?", "type": "string", "minLength": 1, "maxLength": 2000, "examples": ["Dies ist ein fiktiver Testantrag. Bitte keine echten Personendaten verwenden."]},
+    "referenz": {"title": "Eigene Referenz", "type": "string", "maxLength": 100, "examples": ["TEST-001"]}
+  }
+}
