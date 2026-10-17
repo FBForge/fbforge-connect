@@ -72,6 +72,8 @@ Die Browserprüfung verwendet eine synthetische native Schnittstelle. Sie prüft
 
 ## Zusätzliche Abnahme von dev.5
 
+Historischer Produktname: Die folgende Namensprüfung gilt für dev.5. Seit dev.8 heißt die Anwendung **FBForge Connect**; aktuelle Nachweise stehen in [ALPHA1_PROGRESS.md](ALPHA1_PROGRESS.md).
+
 1. Installer, Fenstertitel, Hauptnavigation/Programminformationen und Diagnosebericht müssen „FIT-Connect Test-Client“ verwenden. Installation beziehungsweise Aktualisierung von dev.4 gesondert prüfen; das Umbenennen ist kein bereits getesteter Upgrade-Nachweis.
 2. Beim Versand JSON über Eingabefeld und Datei vorbereiten. „Fachdaten visuell ansehen“ öffnen: Feldgruppen, Suche, JSON-Struktur und Quelltext prüfen. Werte und Dateiauswahl müssen nach dem Schließen unverändert sein. Öffnen/Schließen darf keine Übertragung auslösen. Für XML dasselbe prüfen.
 3. Eine JSON-Einreichung entschlüsseln und prüfen. „Antrag lesen“ muss direkt erscheinen; Namens-/Adressfelder, verschachtelte Gruppen und Listen müssen den Originaldaten entsprechen. Feldherkunft muss den Originalschlüssel und JSON-Pointer zeigen. Insbesondere große Ganzzahlen, Exponenten, leere Werte und doppelte Schlüssel prüfen.

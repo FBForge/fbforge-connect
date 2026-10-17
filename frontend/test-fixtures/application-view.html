@@ -9,6 +9,7 @@
     <div id="app"></div>
     <script type="module">
       import { createApp, ref, h } from 'vue';
+      import { productName } from '../src/product.js';
       import ReceivePanel from '../src/ReceivePanel.vue';
       import SubmissionBrowser from '../src/SubmissionBrowser.vue';
       import EventLogPanel from '../src/EventLogPanel.vue';
@@ -314,7 +315,7 @@
           return () =>
             h('div', { class: 'desktop-shell', style: 'grid-template-columns:1fr' }, [
               h('header', { class: 'app-topbar' }, [
-                h('strong', 'FIT-Connect Test-Client'),
+                h('strong', productName),
                 h('span', { class: 'environment-tag' }, 'SYNTHETISCHE TESTDATEN'),
               ]),
               h('main', { class: 'workspace-scroll', style: 'grid-column:1;grid-row:2' }, [

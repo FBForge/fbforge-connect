@@ -1,6 +1,6 @@
 # BPMN und FIT-Connect-Zuordnung
 
-Der Test-Client liest BPMN 2.0, führt aber keine Modelle aus. BPMN-IDs und Anzeigenamen werden nicht als FIT-Connect-Kennungen interpretiert. Ein Diagrammklick, ein Import und eine Empfängersuche schreiben nichts an TEST.
+FBForge Connect liest BPMN 2.0, führt aber keine Modelle aus. BPMN-IDs und Anzeigenamen werden nicht als FIT-Connect-Kennungen interpretiert. Ein Diagrammklick, ein Import und eine Empfängersuche schreiben nichts an TEST.
 
 ## Explizite Konvention
 

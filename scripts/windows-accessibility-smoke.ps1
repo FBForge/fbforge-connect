@@ -14,12 +14,23 @@ using System.Runtime.InteropServices;
 public static class AccessibilityKeys {
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
     [DllImport("user32.dll")] private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
-    public static void Press(byte key) { keybd_event(key,0,0,UIntPtr.Zero); keybd_event(key,0,2,UIntPtr.Zero); }
+    [DllImport("user32.dll")] private static extern uint MapVirtualKey(uint key, uint mode);
+    private static void Key(byte key, bool released) {
+        uint flags = (key == 0x2d ? 1u : 0u) | (released ? 2u : 0u);
+        keybd_event(key, (byte)MapVirtualKey(key, 0), flags, UIntPtr.Zero);
+    }
+    public static void Press(byte key) {
+        Key(key, false);
+        System.Threading.Thread.Sleep(60);
+        Key(key, true);
+        System.Threading.Thread.Sleep(250);
+    }
     public static void ReportFocus() {
-        keybd_event(0x2d,0,0,UIntPtr.Zero); // NVDA's standard Insert+Tab command.
+        Key(0x2d, false); // NVDA's standard Insert+Tab command.
         System.Threading.Thread.Sleep(40);
         Press(0x09);
-        keybd_event(0x2d,0,2,UIntPtr.Zero);
+        Key(0x2d, true);
+        System.Threading.Thread.Sleep(250);
     }
 }
 '@
@@ -54,7 +65,7 @@ function Read-Capture {
 }
 function Check-Spoken([string]$Name, $Type) {
     $element = Wait-Check { Find-Control $Name $Type } ('a11y_control_missing:' + $Name)
-    if (-not $element.Current.IsKeyboardFocusable) { throw ('a11y_not_focusable:' + $Name) }
+    if (-not $element.Current.IsEnabled -or -not $element.Current.IsKeyboardFocusable) { throw ('a11y_not_focusable:' + $Name) }
     $before = @(Read-Capture).Count
     $null = [AccessibilityKeys]::SetForegroundWindow([IntPtr]$taskWindow.Current.NativeWindowHandle)
     $element.SetFocus()
@@ -137,7 +148,9 @@ automaticUpdates = disabled
     [AccessibilityKeys]::Press(0x09)
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Client-Secret' } 'native_tab_order_invalid'
     $null = Check-Spoken 'Client-Secret' $editType
-    $null = Check-Spoken 'Bei TEST anmelden' $buttonType
+    $login = Find-Control 'Bei TEST anmelden' $buttonType
+    if (-not $login -or $login.Current.IsEnabled) { throw 'empty_credentials_login_not_disabled' }
+    $null = Check-Spoken 'Verbindungsdialog schließen' $buttonType
     [AccessibilityKeys]::Press(0x1b)
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Verbinden' } 'native_dialog_focus_not_restored'
     foreach ($name in @('Senden','Empfangen','Prozesse')) {
@@ -150,6 +163,15 @@ automaticUpdates = disabled
     Write-Output ('Actual NVDA 2026.2 speech observation, ' + $checks.Count + ' control labels, protected field, native Tab order and Escape focus restoration passed')
     $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); keyboardTab = 'passed'; modalFocusRestoration = 'passed' }
     [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'fbforge-accessibility-result.json'), ($report | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
+} catch {
+    # The test never enters credentials. Log only known synthetic control names.
+    $knownNames = @('Verbinden','Client-ID','Client-Secret','Bei TEST anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen')
+    $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
+    if ($focused) {
+        $label = if ($knownNames -contains $focused.Current.Name) { $focused.Current.Name } else { '(other control)' }
+        Write-Host ('Accessibility failure focus: ' + $label + '; role=' + $focused.Current.ControlType.ProgrammaticName)
+    }
+    throw
 } finally {
     if ($taskNvda) { if (-not $taskNvda.HasExited) { $taskNvda.Kill(); $taskNvda.WaitForExit() }; $taskNvda.Dispose() }
     if ($taskApp) {

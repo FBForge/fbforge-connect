@@ -29,4 +29,6 @@ Der Windows-Workflow lädt zusätzlich ausschließlich die offizielle NVDA-Versi
 
 NVDA-Update-/Nutzungsstatistik- und Add-on-Updates sind im temporären Profil deaktiviert. Das Hilfsplugin und NVDA selbst gehören nicht zum ausgelieferten Produkt. Ein vorhandener Screenreader führt zum Abbruch, statt ihn zu beenden. Nur eigene Prozesse und temporäre Dateien werden aufgeräumt. Ein erfolgreiches Ergebnis wird als begrenzte JSON-Datei bereitgestellt; fehlende Sprachdaten werden als Fehler behandelt.
 
-Dieser neue NVDA-Ablauf gilt erst nach einem erfolgreichen tatsächlichen Windows-Lauf als bestätigt. Er ersetzt keinen vollständigen manuellen Screenreader-Test, keine Prüfung hörbarer Sprachqualität und keine echte Monitor-DPI-/Behördenumgebungsabnahme.
+Der erste tatsächliche NVDA-Lauf erkannte „Verbinden“ und „Client-ID“, scheiterte dann am nativen Tab-Wechsel. Der Testaufbau übergibt nun echte Tastatur-Scancodes und wartet auf die Tastenfreigabe; außerdem wird die bei leeren Zugangsdaten korrekt deaktivierte Anmeldeschaltfläche nicht mehr als fokussierbares Ziel verwendet. Der korrigierte Ablauf gilt erst nach einem erfolgreichen vollständigen Windows-Lauf als bestätigt. Er ersetzt keinen vollständigen manuellen Screenreader-Test, keine Prüfung hörbarer Sprachqualität und keine echte Monitor-DPI-/Behördenumgebungsabnahme.
+
+Ein kurzer ergänzender Test ohne Zugangsdaten auf dem eigenen Gerät steht in [ZIELGERAETE_TEST.md](ZIELGERAETE_TEST.md).
