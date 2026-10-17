@@ -156,7 +156,7 @@ async function run(action, operation) {
 async function openCreated(id) {
   setupOpen.value = false;
   setupNotice.value =
-    'Zustellpunkt und öffentliche Schlüssel sind angelegt. Prüfe die Konfiguration und bestätige die Aktivierung separat.';
+    'Zustellpunkt und öffentliche Schlüssel sind angelegt. Prüfen Sie die Konfiguration und bestätigen Sie die Aktivierung separat.';
   await nextTick();
   await edit({ destinationId: id });
   if (detail.value?.destinationId === id && detail.value.possibleNextStatus.includes('active')) {
@@ -312,7 +312,7 @@ function difference(row) {
       </p>
       <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
       <p v-else-if="!canEdit">
-        Die Bearbeitung steht zunächst über API v3 bereit. Du kannst eigene Zustellpunkte mit v2 ansehen oder
+        Die Bearbeitung steht zunächst über API v3 bereit. Sie können eigene Zustellpunkte mit v2 ansehen oder
         oben eine v3-Sitzung öffnen.
       </p>
       <div class="client-actions">
@@ -553,13 +553,14 @@ function difference(row) {
       <section v-if="preview" class="tool-section" aria-labelledby="update-preview-title">
         <h3 id="update-preview-title">{{ statuses[preview.status] || preview.status }}</h3>
         <p v-if="preview.status === 'prepared'">
-          Noch nichts gespeichert. Prüfe die Werte für jeden Zustellpunkt. Die Vorschau gilt zwei Minuten. Vor
-          dem Speichern werden alle ausgewählten Zustellpunkte erneut auf zwischenzeitliche Änderungen
-          geprüft.
+          Noch nichts gespeichert. Prüfen Sie die Werte für jeden Zustellpunkt. Die Vorschau gilt zwei
+          Minuten. Vor dem Speichern werden alle ausgewählten Zustellpunkte erneut auf zwischenzeitliche
+          Änderungen geprüft.
         </p>
         <p v-if="preview.status === 'uncertain'">
-          Der Ausgang mindestens einer Änderung ist ungewiss. Es wird nichts automatisch wiederholt. Rufe das
-          Ergebnis ab und lade die Zustellpunkte neu. Weitere Schreibversuche sind in dieser Sitzung gesperrt.
+          Der Ausgang mindestens einer Änderung ist ungewiss. Es wird nichts automatisch wiederholt. Rufen Sie
+          das Ergebnis ab und laden Sie die Zustellpunkte neu. Weitere Schreibversuche sind in dieser Sitzung
+          gesperrt.
         </p>
         <p v-if="preview.status === 'conflict'">{{ messages.destination_conflict }}</p>
         <article v-for="row in preview.changes" :key="row.destinationId" class="tool-section">

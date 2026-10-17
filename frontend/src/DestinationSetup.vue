@@ -378,7 +378,7 @@ async function loadKeys() {
   <section class="tool-section" aria-labelledby="destination-setup-title" :aria-busy="working">
     <h2 id="destination-setup-title">Eigenen TEST-Zustellpunkt anlegen</h2>
     <p>
-      Ein Zustellpunkt ist die Adresse deiner Testanwendung bei FIT-Connect. Du benötigst ein TEST-Konto mit
+      Ein Zustellpunkt ist die Adresse Ihrer Testanwendung bei FIT-Connect. Sie benötigen ein TEST-Konto mit
       Berechtigung für die Destination API und ein gespeichertes Windows-Profil.
     </p>
     <p class="small-note">
@@ -474,7 +474,7 @@ async function loadKeys() {
       <fieldset v-if="kind === 'A'" v-show="wizardStep === 1" data-setup-step="1" :disabled="disabled">
         <legend>Empfangene Fachdaten festlegen</legend>
         <p>
-          Das Schema beschreibt die Struktur deiner Testdaten. Verwende die Kennung aus deiner
+          Das Schema beschreibt die Struktur Ihrer Testdaten. Verwenden Sie die Kennung aus Ihrer
           Testkonfiguration. Ein Zustellpunkt kann später um weitere Angebote ergänzt werden.
         </p>
         <div class="client-fields">
@@ -641,8 +641,8 @@ async function loadKeys() {
         Die Aktivierung wird separat bestätigt.
       </p>
       <p v-else-if="outcome.status === 'uncertain'">
-        Die Anlage kann bereits erfolgt sein. Bitte keinen neuen Anlageversuch starten. Lade die eigenen
-        Zustellpunkte und prüfe den vorhandenen Eintrag.
+        Die Anlage kann bereits erfolgt sein. Bitte keinen neuen Anlageversuch starten. Laden Sie die eigenen
+        Zustellpunkte und prüfen Sie den vorhandenen Eintrag.
         <span v-if="outcome.bundleId">
           Ordne ihn unten seinem gesicherten Schlüsselpaar zu. Die privaten Schlüssel bleiben gespeichert.
         </span>

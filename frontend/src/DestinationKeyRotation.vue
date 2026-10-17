@@ -181,7 +181,7 @@ function use(row) {
     <section v-if="preview" aria-labelledby="rotation-preview-title">
       <h4 id="rotation-preview-title">{{ statuses[preview.status] }}</h4>
       <p v-if="preview.status === 'prepared'">
-        Noch keine Schlüssel registriert. Prüfe die Zuordnung. Die Vorschau gilt zwei Minuten; vor der
+        Noch keine Schlüssel registriert. Prüfen Sie die Zuordnung. Die Vorschau gilt zwei Minuten; vor der
         Änderung werden alle Zustellpunkte erneut gelesen.
       </p>
       <p v-if="['uncertain', 'partial'].includes(preview.status)">

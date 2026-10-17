@@ -23,7 +23,7 @@ test('destination-cleanup with synthetic native fixtures', async ({ browser }) =
   await page.getByRole('dialog').waitFor();
   await page.getByRole('button', { name: 'Diesen TEST-Entwurf endgültig entfernen', exact: true }).click();
   await page
-    .getByText('Der TEST-Zustellpunkt wurde entfernt. Lade die Liste neu.', { exact: true })
+    .getByText('Der TEST-Zustellpunkt wurde entfernt. Laden Sie die Liste neu.', { exact: true })
     .waitFor();
   assert.equal(await page.evaluate(() => window.__destinationFixture.writes), 1);
   assert.deepEqual(errors, []);

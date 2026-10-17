@@ -80,6 +80,7 @@ test('failed durable opt-in keeps session copies and reflects the native prefere
   page,
 }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(3);
   await page.evaluate(() => (window.__caseFixture.failStorage = true));
   const choice = page.getByRole('checkbox', {
     name: 'Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren',

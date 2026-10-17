@@ -154,11 +154,11 @@ export function caseErrorMessage(cause) {
   const code = typeof cause === 'string' ? cause : cause?.message;
   return {
     vault_limit:
-      'Die geschützte Vorgangsablage hat ihre Größen- oder Datensatzgrenze erreicht. Lösche nicht mehr benötigte lokale Kopien.',
+      'Die geschützte Vorgangsablage hat ihre Größen- oder Datensatzgrenze erreicht. Löschen Sie nicht mehr benötigte lokale Kopien.',
     vault_invalid:
       'Diese lokale Kopie ist beschädigt oder kann mit diesem Windows-Benutzerkonto nicht gelesen werden. Andere Kopien bleiben erhalten.',
     vault_unavailable:
-      'Die geschützte Vorgangsablage ist nicht verfügbar. Prüfe das Benutzerkonto, Dateizugriffsrechte und den freien Speicherplatz.',
+      'Die geschützte Vorgangsablage ist nicht verfügbar. Prüfen Sie das Benutzerkonto, Dateizugriffsrechte und den freien Speicherplatz.',
   }[code];
 }
 
@@ -172,9 +172,9 @@ export async function caseStorageNotice(invoke, session) {
     )
       throw new Error('engine_protocol_error');
     return result.storageError
-      ? 'Die Serveraktion ist abgeschlossen, aber die dauerhafte Vorgangssicherung ist fehlgeschlagen. Lass die Anwendung geöffnet und prüfe unter „Vorgänge“ den Speicherstatus. Sende die Nachricht deshalb nicht erneut.'
+      ? 'Die Serveraktion ist abgeschlossen, aber die dauerhafte Vorgangssicherung ist fehlgeschlagen. Lassen Sie die Anwendung geöffnet und prüfen Sie unter „Vorgänge“ den Speicherstatus. Senden Sie die Nachricht deshalb nicht erneut.'
       : '';
   } catch {
-    return 'Die Serveraktion ist abgeschlossen. Der lokale Speicherstatus konnte danach nicht geprüft werden. Prüfe deine Kopie unter „Vorgänge“, bevor du die Anwendung beendest.';
+    return 'Die Serveraktion ist abgeschlossen. Der lokale Speicherstatus konnte danach nicht geprüft werden. Prüfen Sie Ihre Kopie unter „Vorgänge“, bevor Sie die Anwendung beenden.';
   }
 }

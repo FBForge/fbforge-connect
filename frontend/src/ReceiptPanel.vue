@@ -253,7 +253,7 @@ async function confirm() {
   <section class="tool-section" aria-labelledby="receipt-title" :aria-busy="working">
     <h2 id="receipt-title">Empfang abschließen</h2>
     <p>
-      Die Aktion wird mit einem geladenen privaten Testschlüssel lokal signiert. Erst deine Bestätigung
+      Die Aktion wird mit einem geladenen privaten Testschlüssel lokal signiert. Erst Ihre Bestätigung
       überträgt sie an FIT-Connect TEST.
     </p>
     <form v-if="!locked" @submit.prevent="prepare">
@@ -338,7 +338,7 @@ async function confirm() {
       </p>
       <p v-if="outcome.status === 'uncertain'">
         Die Antwort fehlt oder war nicht eindeutig. Die Aktion kann bereits erfolgt sein. Der erneute Versand
-        bleibt gesperrt. Prüfe den Vorgang über die bekannten Kennungen.
+        bleibt gesperrt. Prüfen Sie den Vorgang über die bekannten Kennungen.
       </p>
       <p v-if="outcome.status === 'failed'">{{ explain(outcome.error) }}</p>
       <dl class="receipt-dialog-context">
@@ -403,7 +403,7 @@ async function confirm() {
         <li v-for="stage in prepared.warnings" :key="stage">{{ warning(stage) }}</li>
       </ul>
       <p>
-        Prüfe die Angaben und verbleibenden Prüfhinweise für deinen Integrationstest. Die signierte Aktion
+        Prüfen Sie die Angaben und verbleibenden Prüfhinweise für Ihren Integrationstest. Die signierte Aktion
         wird einmalig gesendet. Die Freigabe gilt höchstens 60 Sekunden.
       </p>
       <div class="client-actions">

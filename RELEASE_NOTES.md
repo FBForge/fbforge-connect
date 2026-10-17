@@ -1,5 +1,15 @@
 # Versionshinweise
 
+## 0.1.0-alpha.1.rc.1
+
+Prüfkandidat für Alpha 1. Noch keine endgültige Alpha-Freigabe.
+
+- Einheitliche Sie-Anrede in Oberfläche, Hinweisen, Hilfe und Dokumentation.
+- Verständlichere Hinweise zum Verbinden und Senden; Anleitung an die tatsächlichen Bedienelemente angepasst.
+- Bebilderte Anleitung im GitHub-Wiki und offline in der Anwendung.
+
+Der [geprüfte Windows-Installer](https://github.com/FBForge/fbforge-connect/actions/runs/39077541393/artifacts/12117903402) stammt aus dem [erfolgreichen Paketlauf](https://github.com/FBForge/fbforge-connect/actions/runs/39077541393). Neuinstallation, Updates von dev.7 und dev.9 mit erhaltenem Profil sowie 13 NVDA-Kontrollen sind bestanden. Installer, Build-Manifest, Prüfsumme und NVDA-Bericht wurden unabhängig abgeglichen. Die [reale TEST-Abnahme](https://github.com/FBForge/fbforge-connect/actions/runs/39076803683) besteht alle sieben Austauschfälle auf demselben Anwendungsstand.
+
 ## 0.1.0-dev.9
 
 Entwicklungsbau für Windows x64 und FIT-Connect TEST. Noch keine Alpha-1-Freigabe; der Installer ist unsigniert.

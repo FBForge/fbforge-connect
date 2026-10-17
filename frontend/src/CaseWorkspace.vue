@@ -264,7 +264,8 @@ onBeforeUnmount(() => {
         </button>
       </div>
       <p v-if="!session">
-        Verbinde zuerst das gewünschte TEST-Profil. Die Übersicht zeigt ausschließlich dessen API und Zugang.
+        Verbinden Sie zuerst das gewünschte TEST-Profil. Die Übersicht zeigt ausschließlich dessen API und
+        Zugang.
       </p>
       <p class="small-note">
         {{
@@ -321,7 +322,7 @@ onBeforeUnmount(() => {
         {{
           records.length
             ? 'Keine Vorgänge passen zur Suche.'
-            : 'Noch keine Vorgänge vorhanden. Sende eine Nachricht oder öffne und prüfe eine empfangene Einreichung.'
+            : 'Noch keine Vorgänge vorhanden. Senden Sie eine Nachricht oder öffnen und prüfen Sie eine empfangene Einreichung.'
         }}
       </p>
       <ul v-else class="case-list" aria-label="Lokale Vorgänge">
@@ -402,8 +403,8 @@ onBeforeUnmount(() => {
       />
       <p v-else-if="!parts.some((part) => part.kind === 'data')">
         Für diese Kopie wurden noch keine entschlüsselten Fachdaten gespeichert. Die Transportinformationen
-        stehen unter „Technische Inhalte und Kennungen“. Prüfe die Nachricht im Empfang, wenn sie noch auf dem
-        Server verfügbar ist.
+        stehen unter „Technische Inhalte und Kennungen“. Prüfen Sie die Nachricht im Empfang, wenn sie noch
+        auf dem Server verfügbar ist.
       </p>
       <p v-else>
         Für diese Fachdaten ist keine Formularansicht verfügbar oder die Grenze von 256 KiB wurde

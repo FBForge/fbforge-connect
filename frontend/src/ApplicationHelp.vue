@@ -78,7 +78,7 @@ function enlarge() {
         </button>
       </nav>
       <p v-if="!filtered.length" role="status">
-        Keine passenden Hilfethemen. Versuche einen anderen Begriff.
+        Keine passenden Hilfethemen. Versuchen Sie einen anderen Begriff.
       </p>
     </section>
     <article class="tool-section help-article" aria-labelledby="help-topic-title">

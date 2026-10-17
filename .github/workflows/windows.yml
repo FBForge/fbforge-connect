@@ -145,12 +145,26 @@ jobs:
           $previous = @(Get-ChildItem "$env:RUNNER_TEMP/fitconnect-dev7" -Filter '*-setup.exe' -Recurse -File)
           if ($previous.Count -ne 1) { throw 'previous_installer_missing' }
           Add-Content -Path $env:GITHUB_ENV -Value "FITCONNECT_PREVIOUS_INSTALLER=$($previous[0].FullName)"
+      - name: Download the verified dev.9 installer for RC upgrade validation
+        if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $run = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/39063273538" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $run.head_sha -ne '60c9287ce47c873901337ea47428ac3a8ff36ee8' -or $run.conclusion -ne 'success') { throw 'recent_installer_provenance_failed' }
+          gh run download 39063273538 --repo "$env:GITHUB_REPOSITORY" --name windows-alpha-unsigned-setup --dir "$env:RUNNER_TEMP/fitconnect-dev9"
+          if ($LASTEXITCODE -ne 0) { throw 'recent_installer_download_failed' }
+          $recent = @(Get-ChildItem "$env:RUNNER_TEMP/fitconnect-dev9" -Filter '*-setup.exe' -Recurse -File)
+          if ($recent.Count -ne 1) { throw 'recent_installer_missing' }
+          if ((Get-FileHash -LiteralPath $recent[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne '859355daa84d362d8169c2471a701bbea256c7496d6202b9e012cf2a713aaf55') { throw 'recent_installer_integrity_failed' }
+          Add-Content -Path $env:GITHUB_ENV -Value "FITCONNECT_RECENT_INSTALLER=$($recent[0].FullName)"
       - name: Install the real desktop application and verify bundled runtime and profile preservation
         run: |
           $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
           if ($setup.Count -ne 1) { throw 'installer_missing' }
           $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', './scripts/windows-install-smoke.ps1', '-InstallerPath', $setup[0].FullName, '-CheckpointBridge', 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe', '-ExpectedBinaryPath', 'desktop/target/release/fit-connect-integration-client.exe')
           if ($env:FITCONNECT_PREVIOUS_INSTALLER) { $arguments += @('-PreviousInstallerPath', $env:FITCONNECT_PREVIOUS_INSTALLER) }
+          if ($env:FITCONNECT_RECENT_INSTALLER) { $arguments += @('-RecentInstallerPath', $env:FITCONNECT_RECENT_INSTALLER) }
           & powershell.exe @arguments
           if ($LASTEXITCODE -ne 0) { throw 'installed_desktop_validation_failed' }
       - name: Prepare pinned official NVDA for desktop accessibility checks

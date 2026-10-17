@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory)][string]$InstallerPath,
     [Parameter(Mandatory)][string]$CheckpointBridge,
     [Parameter(Mandatory)][string]$ExpectedBinaryPath,
-    [string]$PreviousInstallerPath = ''
+    [string]$PreviousInstallerPath = '',
+    [string]$RecentInstallerPath = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -134,13 +135,14 @@ try {
     Uninstall-Owned
     if (-not (Test-Path -LiteralPath $taskProfileFile)) { throw 'uninstall_removed_saved_profile' }
     Write-Output 'Fresh installation, native SDK loading and uninstall preserving the protected profile passed'
-    if ($PreviousInstallerPath) {
-        Install-Owned ([IO.Path]::GetFullPath($PreviousInstallerPath))
+    foreach ($previous in @($PreviousInstallerPath, $RecentInstallerPath)) {
+        if (-not $previous) { continue }
+        Install-Owned ([IO.Path]::GetFullPath($previous))
         Install-Owned ([IO.Path]::GetFullPath($InstallerPath))
         Check-Installed $true
         Uninstall-Owned
         if (-not (Test-Path -LiteralPath $taskProfileFile)) { throw 'upgrade_removed_saved_profile' }
-        Write-Output 'Upgrade from the pinned dev.7 installer preserved the DPAPI profile and loaded both SDKs'
+        Write-Output ('Upgrade from pinned ' + [IO.Path]::GetFileName($previous) + ' preserved the DPAPI profile and loaded both SDKs')
     }
 } finally {
     Stop-OwnedApp

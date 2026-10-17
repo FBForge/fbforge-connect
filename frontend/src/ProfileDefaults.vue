@@ -58,9 +58,9 @@ async function save() {
   <details class="tool-section">
     <summary>Standard-Zustellpunkte im aktiven Profil</summary>
     <p>
-      Diese Kennungen werden beim nächsten Verbinden vorausgefüllt. Du kannst sie im jeweiligen Arbeitsbereich
-      ändern. Ein leeres Feld entfernt die Voreinstellung. Berechtigungen und Schlüssel werden bei der
-      Verwendung weiterhin geprüft.
+      Diese Kennungen werden beim nächsten Verbinden vorausgefüllt. Sie können sie im jeweiligen
+      Arbeitsbereich ändern. Ein leeres Feld entfernt die Voreinstellung. Berechtigungen und Schlüssel werden
+      bei der Verwendung weiterhin geprüft.
     </p>
     <form @submit.prevent="save">
       <label v-if="session?.apiVersion === 'v3'" for="profile-default-source">

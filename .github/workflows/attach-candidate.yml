@@ -1,0 +1,54 @@
+name: Attach verified candidate to draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run:
+        description: Successful Windows validation run ID
+        required: true
+        type: string
+      candidate_commit:
+        description: Exact validated source commit
+        required: true
+        type: string
+      candidate_sha256:
+        description: Independently verified installer SHA-256
+        required: true
+        type: string
+      candidate_version:
+        description: Exact candidate version
+        required: true
+        type: string
+      draft_id:
+        description: Existing unpublished prerelease ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: attach-candidate-${{ inputs.draft_id }}
+  cancel-in-progress: false
+
+jobs:
+  attach:
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify exact candidate and attach files without publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RC_RUN: ${{ inputs.candidate_run }}
+          RC_COMMIT: ${{ inputs.candidate_commit }}
+          RC_SHA256: ${{ inputs.candidate_sha256 }}
+          RC_VERSION: ${{ inputs.candidate_version }}
+          RC_DRAFT: ${{ inputs.draft_id }}
+        run: python3 scripts/attach-candidate.py
