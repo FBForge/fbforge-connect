@@ -1,37 +1,43 @@
-# FIT-Connect Testclient
+# FBForge Connect
 
-Der **FIT-Connect Testclient** von **FBForge** ist eine Desktop-Anwendung für Integrationstests mit FIT-Connect. Entwickler und Integratoren können damit Onlinedienste und Fachverfahren simulieren und Einreichungen über die FIT-Connect-Testumgebung austauschen.
+<img src="assets/brand/connect.png" alt="" width="72" height="72">
 
-Das Projekt ist unabhängig von FITKO und unterstützt ausschließlich die Testumgebung.
+**Integrationstests für FIT-Connect.**
+
+FBForge Connect ist ein unabhängiges Open-Source-Testwerkzeug von FBForge für öffentliche Verwaltungen, Integratoren und Entwickler. Die Desktop-Anwendung simuliert Onlinedienste und Fachverfahren: Einreichungen senden, empfangen, prüfen und beantworten.
+
+Ausschließlich **FIT-Connect TEST und fiktive Daten**. Kein offizielles Produkt von FITKO.
 
 ## Entwicklungsstand
 
-Wir arbeiten an der ersten Alpha. Der Funktionsumfang wird schrittweise erweitert und gegen die FIT-Connect-Testumgebung erprobt. Ein erster Versand über API v2 wurde erfolgreich getestet. Für API v3 und weitere Abläufe laufen noch Fehlerbehebung und Integrationstests.
+Der aktuelle Stand ist ein **Alpha-1-Kandidat für Windows x64**, noch keine freigegebene Alpha 1. Normale Einreichungen und Replies über v2/v3, signierte Ereignisse, Neustart mit geschützten Schlüsseln, Zustellpunktanlage, Rotation und v3-Prozesskommunikation wurden real gegen TEST geprüft. Die echte Windows-Neuinstallation und das Upgrade von dev.7 einschließlich Profil-Erhalt sind ebenfalls erfolgreich getestet.
 
-Dieser Branch enthält die öffentliche Projektübersicht. Der aktuelle Anwendungscode liegt auf [develop](https://github.com/FBForge/fit-connect-testclient/tree/develop). Die nächsten Schritte stehen in der [Roadmap](ROADMAP.md). Eine veröffentlichte Alpha und ausführbare Downloads stehen noch nicht bereit.
+Der Kandidat ist **unsigniert**; das bestellte Certum-Zertifikat steht noch aus. Zusätzliche Screenreader- und Skalierungsprüfungen werden vor der Freigabe dokumentiert. Es wird keine BSI- oder vollständige WCAG-Konformität behauptet.
 
-## Ziel der Alpha
+- [Alpha-1-Kandidat und aktuelle Nachweise](https://github.com/FBForge/fbforge-connect/blob/alpha1-work/ALPHA1_PROGRESS.md)
+- [Anwendungscode im Kandidatenzweig](https://github.com/FBForge/fbforge-connect/tree/alpha1-work)
+- [Zusammengeführter Entwicklungsstand](https://github.com/FBForge/fbforge-connect/tree/develop)
+- [Geprüfter unsignierter Windows-Kandidat](https://github.com/FBForge/fbforge-connect/actions/runs/39038478823/artifacts/12103363136)
 
-Die erste Alpha konzentriert sich auf den Austausch von Einreichungen über API v2 und v3: Senden mit Fachdaten und Anlagen, Abrufen, lokales Entschlüsseln und Prüfen sowie Annehmen und Ablehnen.
+`main` enthält die öffentliche Projektübersicht. Quellcode, Build-Anleitung und vollständige Entwicklungsdokumentation liegen in den verlinkten Entwicklungszweigen.
 
-Ein gemeinsamer Verbindungsbereich verwaltet die Zugangsdaten für die laufende Sitzung. Die technische Diagnose soll API-Aufrufe, Prüfergebnisse und Fehler nachvollziehbar machen. Der FIT-Connect Event Log ergänzt diese lokale Sicht um die Ereignisse einer Einreichung.
+## Funktionen im Alpha-Kandidaten
 
-Antworten, Prozessnachrichten, interaktive BPMN-Darstellungen und die Zustellpunktverwaltung einschließlich Sammelbearbeitung werden schrittweise ergänzt.
+- Anträge und Antworten über API v2/v3 mit JSON/XML und Anlagen austauschen; technische Prüfung und bestätigte Annahme/Ablehnung getrennt ausführen.
+- Ereignisse anhand von Case-, Submission- und Reply-ID verifizieren und nachvollziehen.
+- Zugangsdaten, private Schlüssel und Antwortkanäle optional mit Windows-DPAPI schützen; Profile, Voreinstellungen und geschützte Sicherungen verwalten.
+- Eigene v3-TEST-Zustellpunkte anlegen, Testschlüssel erzeugen, öffentliche Registrierung prüfen und Schlüssel beziehungsweise Angebote für bis zu zehn Ziele bearbeiten.
+- BPMN-Nachrichten per Diagrammklick oder Tastatur wählen, ausdrückliche FIT-Connect-Kennungen übernehmen und passende Prozess-Empfänger suchen.
+- Fachdaten mit Schema-Beschriftungen und Feldherkunft lesen; alle Dateiimporte per Drag-and-drop oder Dateiauswahl übernehmen.
 
-## Technische Grundlage
+Die Anwendung führt keinen vollständigen BPMN-Prozess aus und unterstützt keine Produktivumgebung. macOS/Linux sind nach der Aufwandseinschätzung eigene Folgeschritte.
 
-Die Oberfläche basiert auf Vue und Tauri. Ein lokaler Java-Kern bindet die FIT-Connect-Java-SDKs über getrennte Adapter für API v2 und v3 ein.
+## Einstieg und Mitwirkung
 
-Windows ist die erste Zielplattform. Die Java-Laufzeit soll mit der Anwendung ausgeliefert werden. Ein separat betriebener Backend-Server ist nicht erforderlich.
+[Kurzanleitung](https://github.com/FBForge/fbforge-connect/blob/alpha1-work/BEDIENUNG.md) · [Build und Entwicklung](https://github.com/FBForge/fbforge-connect/blob/alpha1-work/README.md) · [Mitwirken](https://github.com/FBForge/fbforge-connect/blob/alpha1-work/CONTRIBUTING.md) · [Roadmap](ROADMAP.md)
 
-Zugangsdaten werden vom Benutzer eingegeben und standardmäßig nicht dauerhaft gespeichert. Private Schlüssel werden lokal verarbeitet. Für registrierte Zustellpunktschlüssel werden passende selbstsignierte Testzertifikate geprüft.
-
-## Mitwirken
-
-Fehlerberichte, Anwendungsfälle und Verbesserungsvorschläge sind über die [GitHub Issues](https://github.com/FBForge/fit-connect-testclient/issues) willkommen.
-
-Bitte keine Zugangsdaten, privaten Schlüssel oder echten Einreichungsdaten veröffentlichen. Build- und Installationsanleitungen stehen in der [README auf develop](https://github.com/FBForge/fit-connect-testclient/blob/develop/README.md).
+Normale Fehler und Vorschläge: [GitHub Issues](https://github.com/FBForge/fbforge-connect/issues). Sicherheitslücken bitte privat gemäß [SECURITY.md](SECURITY.md) melden. Keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten veröffentlichen.
 
 ## Lizenz
 
-Das Projekt steht unter [EUPL-1.2](LICENSE). Abhängigkeiten behalten ihre jeweiligen Lizenzen.
+[EUPL-1.2](LICENSE). Abhängigkeiten behalten ihre jeweiligen Lizenzen.
