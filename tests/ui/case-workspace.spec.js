@@ -75,3 +75,29 @@ test('case workspace is keyboard reachable, accessible and reflows at 200 percen
     .analyze();
   expect(result.violations.map((v) => ({ id: v.id, targets: v.nodes.map((n) => n.target) }))).toEqual([]);
 });
+
+test('failed durable opt-in keeps session copies and reflects the native preference before retry', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  await page.evaluate(() => (window.__caseFixture.failStorage = true));
+  const choice = page.getByRole('checkbox', {
+    name: 'Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren',
+    exact: true,
+  });
+  await choice.click();
+  await expect(page.getByRole('alert')).toContainText(
+    'Vorgangsablage hat ihre Größen- oder Datensatzgrenze erreicht',
+  );
+  await expect(choice).not.toBeChecked();
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(3);
+  await page.evaluate(() => (window.__caseFixture.failStorage = false));
+  await choice.click();
+  await expect(choice).toBeChecked();
+  await expect(
+    page.getByText(
+      'Vorhandene Vorgänge sind geschützt gespeichert. Neue Vorgänge werden ebenfalls gesichert.',
+      { exact: true },
+    ),
+  ).toBeVisible();
+});

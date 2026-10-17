@@ -223,8 +223,21 @@ pub async fn case_workspace(
     }
     if operation == "storage" {
         let store = store.as_ref().ok_or("vault_profile_required")?;
+        let previous = store.enabled().unwrap_or(false);
         store.enable(persistent.ok_or("invalid_input")?)?;
-        checkpoint(&app, &state, api_version, &session_id).await?;
+        if let Err(code) = checkpoint(&app, &state, api_version, &session_id).await {
+            state
+                .case_errors
+                .lock()
+                .await
+                .insert(session_id.clone(), code);
+            // A failed first checkpoint must not silently opt a profile into future persistence.
+            if !previous {
+                let _ = store.enable(false);
+            }
+            return Err(code);
+        }
+        state.case_errors.lock().await.remove(&session_id);
     }
     if matches!(operation.as_str(), "list" | "storage") {
         let saved = if let Some(store) = &store {

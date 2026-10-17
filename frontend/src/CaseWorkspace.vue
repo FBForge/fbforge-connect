@@ -227,7 +227,16 @@ function storage(event) {
   const enabled = event.target.checked;
   event.target.checked = persistent.value;
   void run(async (session) => {
-    await caseRequest(invoke, session, 'storage', { persistent: enabled });
+    try {
+      await caseRequest(invoke, session, 'storage', { persistent: enabled });
+    } catch (cause) {
+      try {
+        await refresh(session);
+      } catch {
+        /* Keep the original storage failure visible. */
+      }
+      throw cause;
+    }
     await refresh(session);
     notice.value = enabled
       ? 'Vorhandene Vorgänge sind geschützt gespeichert. Neue Vorgänge werden ebenfalls gesichert.'

@@ -179,6 +179,7 @@
               storageError: null,
             });
           if (args.operation === 'storage') {
+            if (state.failStorage) throw 'vault_limit';
             state.persistent = args.persistent;
             return envelope({
               records: [...data],

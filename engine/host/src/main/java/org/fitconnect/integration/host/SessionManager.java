@@ -151,7 +151,8 @@ final class SessionManager implements AutoCloseable {
                                             : resourceTransport.forReplyReceipt(version)));
             entries.put(key, entry);
             caseScopes.put(
-                    entry.id(), version.wireValue() + "/" + role.wireValue() + "/" + clientId);
+                    entry.id(),
+                    version.wireValue() + "/" + role.wireValue() + "/client/" + clientId);
             return entry.snapshot(true);
         } catch (Exception | LinkageError e) {
             if (candidate != null) candidate.close();
