@@ -32,3 +32,9 @@ NVDA-Update-/Nutzungsstatistik- und Add-on-Updates sind im temporären Profil de
 Der erste tatsächliche NVDA-Lauf erkannte „Verbinden“ und „Client-ID“, scheiterte dann am nativen Tab-Wechsel. Der Testaufbau übergibt nun echte Tastatur-Scancodes und wartet auf die Tastenfreigabe; außerdem wird die bei leeren Zugangsdaten korrekt deaktivierte Anmeldeschaltfläche nicht mehr als fokussierbares Ziel verwendet. Der korrigierte Ablauf gilt erst nach einem erfolgreichen vollständigen Windows-Lauf als bestätigt. Er ersetzt keinen vollständigen manuellen Screenreader-Test, keine Prüfung hörbarer Sprachqualität und keine echte Monitor-DPI-/Behördenumgebungsabnahme.
 
 Ein kurzer ergänzender Test ohne Zugangsdaten auf dem eigenen Gerät steht in [ZIELGERAETE_TEST.md](ZIELGERAETE_TEST.md).
+
+## Getrennte Diagnose des NVDA-Testaufbaus
+
+Der zweite Windows-Lauf erkannte erneut die Feldnamen, ließ den Fokus beim Tab-Test aber auf Client-ID. Der Test prüft nun zusätzlich den tatsächlichen Windows-Vordergrund und stellt ihn vor Tastenereignissen her. Numerische Beobachtungen ausschließlich von Tab, Escape und Insert im eigenen Testfenster helfen bei der Diagnose; sie erzeugen keine Sprachbeschriftungen.
+
+Der getrennte Workflow `windows-accessibility.yml` läuft nur auf `alpha1-accessibility-tests` im bestehenden Repository. Er verwendet den zuvor unabhängig geprüften Installer aus Lauf 39038478823, prüft dessen unveränderlichen SHA-256 vor der Ausführung und verwendet dieselbe gepinnte NVDA-Vorbereitung und dasselbe Prüfskript. Er benötigt keine TEST-Zugangsdaten und löst keine FIT-Connect-Schreibaktionen aus. Das Ergebnis nennt Installerprüfsumme, Prüfskript-Commit und Lauf-ID. Ein Erfolg gegen diesen älteren Kandidaten ersetzt nicht den vollständigen Paketlauf des aktuellen Builds.

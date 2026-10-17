@@ -1,18 +1,48 @@
 ﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$InstallerPath,
-    [Parameter(Mandatory)][string]$ExpectedBinaryPath,
+    [string]$ExpectedBinaryPath,
+    [ValidatePattern('^[a-f0-9]{64}$')][string]$ExpectedInstallerSha256,
     [Parameter(Mandatory)][string]$NvdaPath
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+if ([bool]$ExpectedBinaryPath -eq [bool]$ExpectedInstallerSha256) { throw 'a11y_expected_artifact_required' }
+if ($ExpectedInstallerSha256 -and (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedInstallerSha256) { throw 'a11y_installer_integrity_failed' }
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 public static class AccessibilityKeys {
-    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
+    [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr window);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
+    [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] private static extern bool AttachThreadInput(uint first, uint second, bool attach);
+    [DllImport("user32.dll")] private static extern bool BringWindowToTop(IntPtr window);
+    [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr window, int command);
+    public static bool FocusWindow(IntPtr window) {
+        if (GetForegroundWindow() == window) return true;
+        uint process;
+        uint current = GetCurrentThreadId();
+        uint foreground = GetWindowThreadProcessId(GetForegroundWindow(), out process);
+        uint target = GetWindowThreadProcessId(window, out process);
+        bool attachedForeground = false, attachedTarget = false;
+        try {
+            if (foreground != 0 && foreground != current)
+                attachedForeground = AttachThreadInput(current, foreground, true);
+            if (target != current && target != foreground)
+                attachedTarget = AttachThreadInput(current, target, true);
+            ShowWindow(window, 9);
+            BringWindowToTop(window);
+            SetForegroundWindow(window);
+        } finally {
+            if (attachedTarget) AttachThreadInput(current, target, false);
+            if (attachedForeground) AttachThreadInput(current, foreground, false);
+        }
+        return GetForegroundWindow() == window;
+    }
     [DllImport("user32.dll")] private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
     [DllImport("user32.dll")] private static extern uint MapVirtualKey(uint key, uint mode);
     private static void Key(byte key, bool released) {
@@ -67,7 +97,7 @@ function Check-Spoken([string]$Name, $Type) {
     $element = Wait-Check { Find-Control $Name $Type } ('a11y_control_missing:' + $Name)
     if (-not $element.Current.IsEnabled -or -not $element.Current.IsKeyboardFocusable) { throw ('a11y_not_focusable:' + $Name) }
     $before = @(Read-Capture).Count
-    $null = [AccessibilityKeys]::SetForegroundWindow([IntPtr]$taskWindow.Current.NativeWindowHandle)
+    if (-not [AccessibilityKeys]::FocusWindow([IntPtr]$taskWindow.Current.NativeWindowHandle)) { throw 'a11y_window_not_foreground' }
     $element.SetFocus()
     Start-Sleep -Milliseconds 300
     [AccessibilityKeys]::ReportFocus()
@@ -109,6 +139,8 @@ playStartAndExitSounds = False
 showWelcomeDialogAtStartup = False
 [speech]
 synth = silence
+[keyboard]
+handleInjectedKeys = True
 [development]
 enableScratchpadDir = True
 [update]
@@ -123,7 +155,7 @@ automaticUpdates = disabled
     $setup = Start-Process -FilePath ([IO.Path]::GetFullPath($InstallerPath)) -ArgumentList ('/S /D=' + $taskInstall) -PassThru
     if (-not $setup.WaitForExit(120000) -or $setup.ExitCode -ne 0) { throw 'a11y_install_failed' }
     $binary = Join-Path $taskInstall 'fit-connect-integration-client.exe'
-    if ((Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedBinaryPath -Algorithm SHA256).Hash) { throw 'a11y_binary_revision_mismatch' }
+    if ($ExpectedBinaryPath -and (Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedBinaryPath -Algorithm SHA256).Hash) { throw 'a11y_binary_revision_mismatch' }
     $taskApp = [Diagnostics.Process]::Start((Start-Clean $binary))
     $taskWindow = Wait-Check {
         if ($taskApp.HasExited) { throw 'a11y_app_exited' }
@@ -161,7 +193,7 @@ automaticUpdates = disabled
     Invoke-Control $demo
     $null = Check-Spoken 'Modell einpassen' $buttonType
     Write-Output ('Actual NVDA 2026.2 speech observation, ' + $checks.Count + ' control labels, protected field, native Tab order and Escape focus restoration passed')
-    $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); keyboardTab = 'passed'; modalFocusRestoration = 'passed' }
+    $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; installerSha256 = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant(); harnessCommit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; candidate = $(if ($ExpectedBinaryPath) { 'current build' } else { 'pinned previously verified installer' }); scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); keyboardTab = 'passed'; modalFocusRestoration = 'passed' }
     [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'fbforge-accessibility-result.json'), ($report | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 } catch {
     # The test never enters credentials. Log only known synthetic control names.
@@ -169,8 +201,10 @@ automaticUpdates = disabled
     $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
     if ($focused) {
         $label = if ($knownNames -contains $focused.Current.Name) { $focused.Current.Name } else { '(other control)' }
-        Write-Host ('Accessibility failure focus: ' + $label + '; role=' + $focused.Current.ControlType.ProgrammaticName)
+        $foreground = $taskWindow -and [AccessibilityKeys]::GetForegroundWindow() -eq [IntPtr]$taskWindow.Current.NativeWindowHandle
+        Write-Host ('Accessibility failure focus: ' + $label + '; role=' + $focused.Current.ControlType.ProgrammaticName + '; foreground=' + $foreground)
     }
+    foreach ($record in @(Read-Capture | Where-Object { $_.PSObject.Properties.Name -contains 'key' } | Select-Object -Last 12)) { Write-Host ('Observed NVDA key: ' + ($record | ConvertTo-Json -Compress)) }
     throw
 } finally {
     if ($taskNvda) { if (-not $taskNvda.HasExited) { $taskNvda.Kill(); $taskNvda.WaitForExit() }; $taskNvda.Dispose() }

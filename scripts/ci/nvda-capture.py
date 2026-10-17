@@ -13,6 +13,7 @@ from pathlib import Path
 import api
 import buildVersion
 import globalPluginHandler
+import inputCore
 from speech.extensions import pre_speech
 
 
@@ -26,6 +27,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self.ancestor.argtypes = (wintypes.HWND, wintypes.UINT)
         self.ancestor.restype = wintypes.HWND
         pre_speech.register(self.observe)
+        inputCore.decide_handleRawKey.register(self.observe_key)
         self.write({"ready": True, "nvdaVersion": buildVersion.version})
 
     def write(self, value):
@@ -35,11 +37,18 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             stream.write(json.dumps(value, ensure_ascii=True) + "\n")
         self.count += 1
 
-    def observe(self, speechSequence, **kwargs):
+    def owns_focus(self):
         obj = api.getFocusObject()
-        if not obj or not obj.windowHandle:
-            return
-        if self.ancestor(obj.windowHandle, 2) != self.window:
+        return bool(obj and obj.windowHandle and self.ancestor(obj.windowHandle, 2) == self.window)
+
+    def observe_key(self, vkCode, scanCode, extended, pressed):
+        # Observe only navigation keys in our own credential-free test window.
+        if vkCode in (9, 27, 45) and self.owns_focus():
+            self.write({"key": vkCode, "scan": scanCode, "extended": bool(extended), "pressed": bool(pressed)})
+        return True
+
+    def observe(self, speechSequence, **kwargs):
+        if not self.owns_focus():
             return
         # Capture only NVDA-generated text for this window, never command objects.
         text = " ".join(part for part in speechSequence if isinstance(part, str))[:2048]
@@ -48,4 +57,5 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def terminate(self):
         pre_speech.unregister(self.observe)
+        inputCore.decide_handleRawKey.unregister(self.observe_key)
         super().terminate()

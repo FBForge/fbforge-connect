@@ -23,7 +23,7 @@ Für den ersten vollständigen Austausch: [Kurzanleitung für Anwender](BEDIENUN
 - Zustellpunkte und registrierte Testschlüssel abfragen, private Testschlüssel lokal laden.
 - Event Logs nach Case-, Submission- und Reply-ID verifizieren, Ereignisse durchsuchen und ihre signierten JSON-Daten anzeigen.
 - Eigene Zustellpunkte über die Destination API laden. Über v3 Name, Kontakt, Metadatenversionen und zulässige Aktiv-/Inaktiv-Wechsel einzeln oder für bis zu zehn Zustellpunkte mit Vorschau bearbeiten.
-- Beim Versand einen FIT-Connect-Antwortkanal mit eigenem Antwortschema und sitzungsgebundenem Schlüssel anbieten. Verfügbare Antworten (Replies) und lokale Antwortkanäle auflisten. Replies mit dem zugehörigen temporären Schlüssel entschlüsseln, technisch prüfen, anzeigen und herunterladen.
+- Beim Versand einen FIT-Connect-Antwortkanal mit eigenem Antwortschema und zugehörigem Antwortschlüssel anbieten. Optionale geschützte Profile erlauben den Reply-Empfang nach einem Neustart. Verfügbare Antworten (Replies) und lokale Antwortkanäle auflisten. Replies mit dem zugehörigen Antwortschlüssel entschlüsseln, technisch prüfen, anzeigen und herunterladen.
 - Auf geprüfte Einreichungen mit verschlüsselten Fachdaten und Anlagen antworten, bei v3 auch als Prozessnachricht. Der Versand erfordert eine eigene Bestätigung.
 
 ## Entwicklungsstand
