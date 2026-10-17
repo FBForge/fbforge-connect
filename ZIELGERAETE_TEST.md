@@ -14,7 +14,7 @@ Dieser Test kann später erfolgen. Installation/Upgrade, Protokollabläufe und a
 
 Mit der tatsächlich eingesetzten NVDA-/JAWS-/Narrator-Version prüfen, ob Navigation, Überschriften, Dialog, beschriftete Eingaben und Auswahlzustände verständlich angesagt werden. Das Secret-Feld muss als geschützt erkennbar sein. Nicht nur einzelne Beschriftungen, sondern einen zusammenhängenden Ablauf ohne Maus durchführen: Navigation → Verbindungsdialog → zurück → Demo-Modell → Nachrichtenauswahl. Auch die Reihenfolge und Verständlichkeit der hörbaren Ausgabe bewerten.
 
-Der automatische NVDA-Test erfasst erzeugte Sprachsequenzen für ausgewählte Bedienelemente in der installierten Anwendung. Er bestätigt keine allgemeine Unterstützung jedes Screenreaders, keine hörbare Sprachqualität und keine vollständige WCAG-/BITV-Konformität.
+Der automatische NVDA-Test erfasst erzeugte Sprachsequenzen für ausgewählte Bedienelemente in der installierten Anwendung. Er aktiviert die WebView zunächst einmal mit einem echten Klick im leeren ID-Feld und prüft danach Tab und Escape; dies ist keine vollständige Prüfung eines Ablaufs ohne Maus. Er bestätigt keine allgemeine Unterstützung jedes Screenreaders, keine hörbare Sprachqualität und keine vollständige WCAG-/BITV-Konformität.
 
 ## Rückmeldung
 
