@@ -20,7 +20,7 @@ Das Windows-Actions-Artefakt enthält nach erfolgreicher Installationsprüfung d
 
 ## Geprüfter Download
 
-[Vollständiger Windows-Lauf 39046768207](https://github.com/FBForge/fbforge-connect/actions/runs/39046768207), Quellstand `9e3794a67ccea3eb844cc4c511569b96846060d1`. Das [Installer-Artefakt](https://github.com/FBForge/fbforge-connect/actions/runs/39046768207/artifacts/12106497088) enthält Setup, Prüfsumme und Build-Manifest. Der unabhängige Downloadabgleich bestätigt 54.640.120 Installerbytes und SHA-256 `4f4ea61240a24f77a283bc289e058d87d0df3c06f7c42daad2ebe80af1f0d4fb`. Der tatsächliche NVDA-Bericht ist an dieselbe Datei gebunden. Der Nachweis gilt für genau diesen Quellstand und Installer.
+[Vollständiger Prüflauf 39054324070](https://github.com/FBForge/fbforge-connect/actions/runs/39054324070), Quellstand `ea856f6137abee8a5b16174ad714b822f165891a`. Das [Installer-Artefakt](https://github.com/FBForge/fbforge-connect/actions/runs/39054324070/artifacts/12108794327) enthält Setup, Prüfsumme und Build-Manifest. Der unabhängige Downloadabgleich bestätigt 54.636.300 Installerbytes und SHA-256 `759fc857cad5beb17c9042eb582bec53b450c8e809d15a5c9cc3c4202af80499`. Der NVDA-Bericht ist an dieselbe Datei gebunden. Windows-Installation, dev.7-Upgrade und Profil-Erhalt sind bestanden; die reale API-Leseprüfung einschließlich authentifizierter Prozesssuche läuft getrennt mit denselben SDK-Adaptern. Der Nachweis gilt für genau diesen Quellstand und Installer.
 
 ## Bekannte Grenzen
 

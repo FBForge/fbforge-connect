@@ -2,7 +2,7 @@
 
 ## Alpha 1 · Windows
 
-Der Funktionsumfang ist umgesetzt: Einreichungen und Replies über v2/v3, Ereignissuche, geschützte Profile, v3-Zustellpunkte mit Testschlüsseln sowie BPMN-Nachrichtenauswahl.
+Die Kernfunktionen sind umgesetzt: Einreichungen und Replies über v2/v3, Ereignissuche, geschützte Profile, v3-Zustellpunkte mit Testschlüsseln sowie BPMN-Nachrichtenauswahl. Als [Folgepaket](planning/case-workspace.md) sind eine Vorgangsübersicht mit optionaler geschützter Ablage, weniger Leseschritte und eine PDF-Vorschau vorgesehen.
 
 Vor der Veröffentlichung stehen noch an:
 

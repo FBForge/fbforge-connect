@@ -67,7 +67,7 @@ Implementierung:
 4. Nach Neustart neue Authentifizierung durchführen, Berechtigungen/Registrierung/Gültigkeit prüfen und neue native Nachweise aufbauen. Ein gespeicherter alter Prüfstatus autorisiert keine Aktion.
 5. Funktionen: Speichern aktivieren, Profil wechseln, Secret ersetzen, gespeicherte Daten vergessen, einzelne Schlüssel entfernen und geschützte Sicherung ausdrücklich exportieren/importieren. Erforderliche Schlüssel für offene Vorgänge vor Entfernen kenntlich machen.
 6. Atomare Speicherung, versioniertes Format und Migration; bei defektem oder nicht entschlüsselbarem Speicher verständlich abbrechen und sitzungsgebundene Nutzung anbieten. Keine stillschweigende Neugenerierung verlorener Schlüssel.
-7. Personenbezogene Nutzdaten werden dadurch nicht automatisch archiviert. Lokaler Verlauf enthält nur die nötigen technischen Bezüge und ist löschbar.
+7. Das Speichern von Zugangsdaten aktiviert keine automatische Nutzdatenarchivierung. Der ursprüngliche technische Verlauf wird durch das gesondert geplante [Vorgangspaket](planning/case-workspace.md) erweitert: automatische Sitzungsübersicht und ausdrücklich gewählte geschützte Aufbewahrung mit Löschfunktion.
 
 Tests/Abnahme:
 

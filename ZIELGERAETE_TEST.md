@@ -4,7 +4,7 @@ Die automatisierten Protokoll-, Installations- und ausgewählten NVDA-Prüfungen
 
 ## Vorbereitung
 
-Den [geprüften dev.8-Kandidaten](https://github.com/FBForge/fbforge-connect/actions/runs/39046768207/artifacts/12106497088) herunterladen und die enthaltene Prüfsumme vergleichen. Der Installer ist unsigniert. Für den Austausch werden ein Onlinedienstzugang und ein Fachverfahrenszugang mit den erforderlichen TEST-Berechtigungen benötigt. Der Ablauf ist in [BEDIENUNG.md](BEDIENUNG.md) erklärt.
+Den [geprüften dev.8-Kandidaten](https://github.com/FBForge/fbforge-connect/actions/runs/39054324070/artifacts/12108794327) herunterladen und die enthaltene Prüfsumme vergleichen. Der Installer ist unsigniert. Für den Austausch werden ein Onlinedienstzugang und ein Fachverfahrenszugang mit den erforderlichen TEST-Berechtigungen benötigt. Der Ablauf ist in [BEDIENUNG.md](BEDIENUNG.md) erklärt.
 
 ## Prüfliste
 
