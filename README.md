@@ -24,3 +24,5 @@ Die [Anleitung mit Screenshots](https://github.com/FBForge/fbforge-connect/wiki)
 ## Lizenz
 
 [EUPL-1.2](LICENSE). Siehe auch [Drittanbieter-Lizenzen](THIRD_PARTY_NOTICES.md).
+
+FBForge Connect ist ein Projekt von Fabian Braun.
