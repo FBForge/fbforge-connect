@@ -546,7 +546,7 @@ async function send() {
         }}
       </h3>
       <p v-if="outcome.replyId">
-        Reply-ID:
+        Reply ID:
         <code>{{ outcome.replyId }}</code>
       </p>
       <p>

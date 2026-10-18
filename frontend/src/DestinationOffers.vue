@@ -54,7 +54,7 @@ const csv = (value) =>
     <legend>Unterstützte Leistungen und Prozessnachrichten ({{ total }})</legend>
     <p>
       Leistungen verwenden einen LeiKa-Schlüssel. Prozessnachrichten verwenden die vereinbarte Modell- und
-      Nachrichtenkennung. Schemata beschreiben die erwarteten Fachdaten; ihre Kennungen müssen mit dem
+      Nachrichtenkennung. Schemata beschreiben die erwarteten Fachdaten. Ihre Kennungen müssen mit dem
       sendenden System übereinstimmen.
     </p>
     <section v-for="group in groups" :key="group.key">
@@ -104,7 +104,7 @@ const csv = (value) =>
               maxlength="1056"
               @input="set(group.key, index, 'regions', csv($event.target.value))"
             />
-            <small>DE für bundesweit; weitere Regionalkennungen mit Komma trennen.</small>
+            <small>DE für bundesweit. Weitere Regionalkennungen mit Komma trennen.</small>
           </label>
         </div>
         <div v-for="(item, schemaIndex) in row[group.schema]" :key="schemaIndex" class="client-fields">
@@ -117,7 +117,7 @@ const csv = (value) =>
               maxlength="4096"
               @input="schema(group.key, index, group.schema, schemaIndex, 'schemaUri', $event.target.value)"
             />
-            <small>Vereinbarte HTTPS- oder URN-Kennung; keine lokale Dateiangabe.</small>
+            <small>Vereinbarte HTTPS- oder URN-Kennung. Keine lokale Dateiangabe.</small>
           </label>
           <label :for="`${prefix}-${group.key}-${index}-mime-${schemaIndex}`">
             Datenformat

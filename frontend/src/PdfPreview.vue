@@ -177,7 +177,7 @@ onBeforeUnmount(() => {
       v-show="!error"
       ref="canvas"
       role="img"
-      :aria-label="`PDF-Seite ${pageNumber}; zugänglicher Text folgt unter der Vorschau`"
+      :aria-label="`PDF-Seite ${pageNumber}. Zugänglicher Text folgt unter der Vorschau`"
     />
     <details v-if="text">
       <summary>Seitentext lesen</summary>

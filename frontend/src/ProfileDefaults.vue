@@ -43,7 +43,7 @@ async function save() {
     });
     if (stamp === revision) {
       emit('saved', result);
-      notice.value = 'Die Standard-Zustellpunkte sind im Profil gespeichert.';
+      notice.value = 'Die Standard-Destinations sind im Profil gespeichert.';
     }
   } catch (cause) {
     if (stamp === revision) error.value = errorMessage(cause);
@@ -56,7 +56,7 @@ async function save() {
 </script>
 <template>
   <details class="tool-section">
-    <summary>Standard-Zustellpunkte im aktiven Profil</summary>
+    <summary>Standard-Destinations im aktiven Profil</summary>
     <p>
       Diese Kennungen werden beim nächsten Verbinden vorausgefüllt. Sie können sie im jeweiligen
       Arbeitsbereich ändern. Ein leeres Feld entfernt die Voreinstellung. Berechtigungen und Schlüssel werden
@@ -64,7 +64,7 @@ async function save() {
     </p>
     <form @submit.prevent="save">
       <label v-if="session?.apiVersion === 'v3'" for="profile-default-source">
-        Eigener Absenderzustellpunkt
+        Eigene Absender-Destination
         <input
           id="profile-default-source"
           v-model="source"
@@ -75,7 +75,7 @@ async function save() {
         />
       </label>
       <label for="profile-default-receiver">
-        Eigener Empfangszustellpunkt
+        Eigene Empfangs-Destination
         <input
           id="profile-default-receiver"
           v-model="receiver"
@@ -86,7 +86,7 @@ async function save() {
         />
       </label>
       <button type="submit" class="button secondary" :disabled="disabled">
-        Standard-Zustellpunkte speichern
+        Standard-Destinations speichern
       </button>
     </form>
     <p v-if="pending" role="status">Voreinstellungen werden gespeichert …</p>

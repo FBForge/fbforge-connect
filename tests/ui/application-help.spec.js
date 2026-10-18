@@ -20,6 +20,7 @@ test('bundled illustrated help covers every workflow without external documentat
   });
   await page.goto('http://127.0.0.1:1420/');
   await page.getByRole('button', { name: 'Hilfe', exact: true }).click();
+  await expect(page.locator('.connection-notice')).toHaveCount(0);
   const navigation = page.getByRole('navigation', { name: 'Hilfethemen' });
   await expect(navigation.getByRole('button')).toHaveCount(helpTopics.length);
   for (const topic of helpTopics) {

@@ -26,8 +26,8 @@ test('process-workspace with synthetic native fixtures', async ({ browser }) => 
     .getByRole('heading', { name: 'Ausgewählte Nachricht: 2 · Nachforderung', exact: true })
     .waitFor();
   assert.equal(await page.locator('#bpmn-message-id').inputValue(), 'request-more');
-  await page.getByRole('button', { name: 'Passende Prozess-Zustellpunkte suchen', exact: true }).click();
-  await page.getByRole('heading', { name: 'Passende TEST-Zustellpunkte (1)', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Passende Prozess-Destinations suchen', exact: true }).click();
+  await page.getByRole('heading', { name: 'Passende TEST-Destinations (1)', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__processFixture.searches), 1);
   await page.getByRole('button', { name: 'Als Prozess-Einreichung vorbereiten', exact: true }).click();
   const draft = await page.evaluate(() => window.__processFixture.draft);
@@ -38,7 +38,7 @@ test('process-workspace with synthetic native fixtures', async ({ browser }) => 
   await page.locator('#bpmn-message-id').fill('changed');
   assert.ok(
     await page
-      .getByRole('button', { name: 'Passende Prozess-Zustellpunkte suchen', exact: true })
+      .getByRole('button', { name: 'Passende Prozess-Destinations suchen', exact: true })
       .isDisabled(),
   );
   await page.locator('#bpmn-message-id').fill('request-more');

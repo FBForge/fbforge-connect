@@ -283,12 +283,12 @@ const navigation = [
   {
     name: 'Prozesse',
     icon: 'process',
-    description: 'BPMN-Nachrichten auswählen und passende TEST-Prozesszustellpunkte finden.',
+    description: 'BPMN-Nachrichten auswählen und passende TEST-Prozess-Destinations finden.',
   },
   {
-    name: 'Zustellpunkte',
+    name: 'Destinations',
     icon: 'destinations',
-    description: 'Eigene Zustellpunkte ansehen und über API v3 verwalten.',
+    description: 'Eigene Destinations ansehen und über API v3 verwalten.',
   },
   {
     name: 'Hilfe',
@@ -587,7 +587,7 @@ function clearHistory() {
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div class="workspace-content">
           <div
-            v-if="!activeSession && !['Diagnose', 'Info', 'Prozesse'].includes(section)"
+            v-if="!activeSession && !['Diagnose', 'Info', 'Prozesse', 'Hilfe'].includes(section)"
             class="connection-notice"
           >
             <AppIcon name="connection" />
@@ -630,7 +630,7 @@ function clearHistory() {
             @fatal="fatal"
           />
           <DestinationManager
-            v-show="section === 'Zustellpunkte'"
+            v-show="section === 'Destinations'"
             :session="activeSession"
             :busy="busy"
             @busy="resourceBusy"
@@ -725,8 +725,8 @@ function clearHistory() {
                 </div>
               </div>
               <p class="small-note" aria-live="polite" :aria-busy="pendingAction === 'probe'">
-                Die lokale Prüfung bestätigt das Laden der Komponenten. Anmeldung und
-                Zustellpunktberechtigungen werden separat geprüft.
+                Die lokale Prüfung bestätigt das Laden der Komponenten. Anmeldung und Berechtigungen für
+                Destinations werden separat geprüft.
               </p>
             </section>
             <section class="tool-section" aria-labelledby="report-title">
@@ -827,7 +827,7 @@ function clearHistory() {
               <div>
                 <p class="workspace-eyebrow">Desktop-Anwendung</p>
                 <h2 id="about-title">{{ productName }}</h2>
-                <p>Version {{ version }} · Alpha 1 RC1</p>
+                <p>Version {{ version }} · Alpha 1 RC2</p>
                 <p>{{ productPurpose }}.</p>
               </div>
             </section>
@@ -841,10 +841,10 @@ function clearHistory() {
                   Senden, Empfangen, lokale Entschlüsselung und technische Fachdatenprüfung über API v2 und v3
                 </dd>
                 <dt>Verwaltung</dt>
-                <dd>Vorhandene eigene Zustellpunkte ansehen; Änderungen und Bulk-Edit über API v3</dd>
+                <dd>Vorhandene eigene Destinations ansehen. Änderungen und Bulk-Edit über API v3</dd>
                 <dt>Entwicklungsstand</dt>
                 <dd>
-                  Alpha 1 RC1 für Integrationstests. Installation und Verhalten auf Ihren Zielgeräten vor dem
+                  Alpha 1 RC2 für Integrationstests. Installation und Verhalten auf Ihren Zielgeräten vor dem
                   Einsatz prüfen.
                 </dd>
               </dl>
@@ -968,6 +968,7 @@ function clearHistory() {
           {{ activeSession ? 'Mit anderen Zugangsdaten anmelden' : 'Bei TEST anmelden' }}
         </button>
         <button
+          v-if="activeSession"
           class="button secondary"
           type="button"
           :disabled="busy || !activeSession"
@@ -976,6 +977,7 @@ function clearHistory() {
           Sitzung prüfen
         </button>
         <button
+          v-if="activeSession"
           class="button secondary"
           type="button"
           :disabled="busy || !activeSession"

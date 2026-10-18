@@ -17,7 +17,7 @@ const dialog = ref(null),
 const disabled = computed(() => props.busy || pending.value || !props.session);
 let revision = 0;
 const kind = {
-  imported: 'Importierter Zustellpunktschlüssel',
+  imported: 'Importierter Destination-Schlüssel',
   generated: 'Erzeugtes Schlüsselpaar',
   reply: 'Antwortschlüssel',
 };
@@ -133,8 +133,8 @@ async function remove() {
   <details class="tool-section" v-if="session">
     <summary>Schlüsselbestand dieser Verbindung</summary>
     <p>
-      Hier sehen Sie importierte Zustellpunktschlüssel, erzeugte Schlüsselpaare und Antwortschlüssel. Private
-      Schlüssel werden nicht angezeigt. Fingerabdrücke dienen dem Vergleich; sie sind SHA-256-Werte des
+      Hier sehen Sie importierte Destination-Schlüssel, erzeugte Schlüsselpaare und Antwortschlüssel. Private
+      Schlüssel werden nicht angezeigt. Fingerabdrücke dienen dem Vergleich. Sie sind SHA-256-Werte des
       öffentlichen Schlüssels.
     </p>
     <button ref="refreshButton" type="button" class="button secondary" :disabled="disabled" @click="refresh">
@@ -156,7 +156,7 @@ async function remove() {
           <template v-else>· Keine Zertifikatslaufzeit</template>
         </p>
         <p v-if="row.destinationId">
-          {{ row.kind === 'reply' ? 'Empfänger' : 'Zustellpunkt' }}:
+          {{ row.kind === 'reply' ? 'Empfänger' : 'Destination' }}:
           <code class="break-all">{{ row.destinationId }}</code>
         </p>
         <p v-if="row.caseId">
@@ -182,7 +182,7 @@ async function remove() {
     </ul>
     <p class="small-note">
       Bei einer gespeicherten Verbindung wird auch das aktive Profil aktualisiert. Entfernen verändert keine
-      öffentlichen Schlüssel am Zustellpunkt. Bereits exportierte Sicherungen bleiben erhalten. Ältere
+      öffentlichen Schlüssel an der Destination. Bereits exportierte Sicherungen bleiben erhalten. Ältere
       Schlüssel können noch für wartende Nachrichten nötig sein.
     </p>
   </details>

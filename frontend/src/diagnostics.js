@@ -51,9 +51,9 @@ export function errorMessage(code) {
     invalid_credentials:
       'Bitte eine Client-ID und ein Client-Secret innerhalb der zulässigen Länge eingeben.',
     reply_metadata_required:
-      'Am Absenderzustellpunkt fehlt eine passende Metadatenversion für Replies. Der Betreiber muss in der Zustellpunktverwaltung 2.0.0 oder 3.0.0 freigeben; Prozessantworten benötigen 3.0.0. Es wurde nichts versendet.',
+      'An der Absender-Destination fehlt eine passende Metadatenversion für Replies. Der Betreiber muss in der Destination-Verwaltung 2.0.0 oder 3.0.0 freigeben. Prozessantworten benötigen 3.0.0. Es wurde nichts versendet.',
     destination_no_keys:
-      'Onlinedienst-Zustellpunkte vom Typ C benötigen keine Zertifikate oder dauerhaften Zustellpunktschlüssel. Antwortschlüssel werden je Antwortkanal erzeugt.',
+      'Onlinedienst-Destinations vom Typ C benötigen keine Zertifikate oder dauerhaften Destination-Schlüssel. Antwortschlüssel werden je Antwortkanal erzeugt.',
     authentication_failed: 'Die TEST-Anmeldung ist fehlgeschlagen. Bitte Client-ID und Client-Secret prüfen.',
     auth_unavailable: 'Der TEST-Anmeldedienst konnte nicht sicher erreicht werden. Bitte erneut versuchen.',
     endpoint_blocked:

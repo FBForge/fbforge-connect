@@ -19,30 +19,34 @@ test('profile defaults survive reconnect, preserve edited fields and clear witho
     .getByRole('button', { name: /Verbinden|Verbindung|Verbunden/ })
     .first()
     .click();
-  await page.getByText('Standard-Zustellpunkte im aktiven Profil', { exact: true }).click();
+  await page.getByText('Standard-Destinations im aktiven Profil', { exact: true }).click();
   await page.locator('#profile-default-source').fill(source);
   await page.locator('#profile-default-receiver').fill(receiver);
-  await page.getByRole('button', { name: 'Standard-Zustellpunkte speichern', exact: true }).click();
+  await page.getByRole('button', { name: 'Standard-Destinations speichern', exact: true }).click();
   await expect(
-    page.getByText('Die Standard-Zustellpunkte sind im Profil gespeichert.', { exact: true }),
+    page.getByText('Die Standard-Destinations sind im Profil gespeichert.', { exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Abmelden', exact: true }).click();
   await page.getByRole('button', { name: 'Mit Profil verbinden', exact: true }).click();
   await expect(connection).toBeHidden();
   await expect(page.locator('#send-source')).toHaveValue(source);
+  await expect(
+    page.getByRole('textbox', { name: 'Absender-Destination', exact: true }),
+  ).toHaveAccessibleDescription(/Zugangsdaten/);
+  await expect(page.getByRole('textbox', { name: 'Empfänger-Destination', exact: true })).toBeVisible();
   const edited = '44444444-4444-4444-8444-444444444444';
   await page.locator('#send-source').fill(edited);
   await page
     .getByRole('button', { name: /Verbinden|Verbindung|Verbunden/ })
     .first()
     .click();
-  await page.getByText('Standard-Zustellpunkte im aktiven Profil', { exact: true }).click();
+  await page.getByText('Standard-Destinations im aktiven Profil', { exact: true }).click();
   await expect(page.locator('#profile-default-receiver')).toHaveValue(receiver);
   await page.locator('#profile-default-source').fill('');
   await page.locator('#profile-default-receiver').fill('');
-  await page.getByRole('button', { name: 'Standard-Zustellpunkte speichern', exact: true }).click();
+  await page.getByRole('button', { name: 'Standard-Destinations speichern', exact: true }).click();
   await expect(
-    page.getByText('Die Standard-Zustellpunkte sind im Profil gespeichert.', { exact: true }),
+    page.getByText('Die Standard-Destinations sind im Profil gespeichert.', { exact: true }),
   ).toBeVisible();
   await connection.getByRole('button', { name: 'Verbindungsdialog schließen', exact: true }).click();
   await expect(page.locator('#send-source')).toHaveValue(edited);

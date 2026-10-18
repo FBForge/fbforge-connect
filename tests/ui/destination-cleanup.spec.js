@@ -7,7 +7,7 @@ test('destination-cleanup with synthetic native fixtures', async ({ browser }) =
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://127.0.0.1:1420/test-fixtures/destination-manager.html');
   await page.evaluate(() => (window.__destinationFixture.records.values().next().value.status = 'created'));
-  await page.getByRole('button', { name: 'Eigene Zustellpunkte laden', exact: true }).click();
+  await page.getByRole('button', { name: 'Eigene Destinations laden', exact: true }).click();
   await page.getByRole('button', { name: 'Bearbeiten', exact: true }).first().click();
   await page
     .getByRole('button', { name: 'Entfernung dieses TEST-Entwurfs vorbereiten', exact: true })
@@ -23,7 +23,7 @@ test('destination-cleanup with synthetic native fixtures', async ({ browser }) =
   await page.getByRole('dialog').waitFor();
   await page.getByRole('button', { name: 'Diesen TEST-Entwurf endgültig entfernen', exact: true }).click();
   await page
-    .getByText('Der TEST-Zustellpunkt wurde entfernt. Laden Sie die Liste neu.', { exact: true })
+    .getByText('Die TEST-Destination wurde entfernt. Laden Sie die Liste neu.', { exact: true })
     .waitFor();
   assert.equal(await page.evaluate(() => window.__destinationFixture.writes), 1);
   assert.deepEqual(errors, []);

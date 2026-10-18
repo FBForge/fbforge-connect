@@ -279,7 +279,7 @@ function openEvents() {
               ? 'TEST hat die Annahme bestätigt.'
               : 'TEST hat die Ablehnung bestätigt.'
             : outcome.status === 'uncertain'
-              ? 'Ausgang ungewiss. Bitte nicht erneut senden; die Aktion kann bereits erfolgt sein.'
+              ? 'Ausgang ungewiss. Bitte nicht erneut senden. Die Aktion kann bereits erfolgt sein.'
               : explain(outcome.error)
         }}
       </p>

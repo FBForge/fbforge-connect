@@ -353,7 +353,7 @@ onBeforeUnmount(() => {
               }}{{ record.archived ? ' · Gespeicherte Kopie' : '' }}
             </span>
             <p v-if="record.caseId" class="small-note case-identifier">Vorgang: {{ record.caseId }}</p>
-            <p v-else class="small-note">Lokaler Versuch – noch keine bestätigte Vorgangs-ID.</p>
+            <p v-else class="small-note">Lokaler Versuch – noch keine bestätigte Case ID.</p>
           </div>
           <button
             class="button secondary"
@@ -378,7 +378,7 @@ onBeforeUnmount(() => {
         </button>
       </div>
       <p class="small-note">
-        Lokale Kopie. Prüfergebnisse stammen vom damaligen Abruf; Serverzustand und Berechtigungen werden
+        Lokale Kopie. Prüfergebnisse stammen vom damaligen Abruf. Serverzustand und Berechtigungen werden
         dadurch nicht erneut bestätigt.
       </p>
       <p v-if="selected.status === 'uncertain'" role="status">
@@ -390,7 +390,7 @@ onBeforeUnmount(() => {
           warning === 'MALWARE_SCAN_NOT_CONFIGURED'
             ? 'Kein Malwarescanner eingerichtet.'
             : warning === 'XML_SCHEMA_NOT_CHECKED'
-              ? 'XML-Syntax geprüft; keine XSD-Prüfung durchgeführt.'
+              ? 'XML-Syntax geprüft. Keine XSD-Prüfung durchgeführt.'
               : warning
         }}
       </p>
@@ -474,7 +474,7 @@ onBeforeUnmount(() => {
           <dd>{{ selected.submissionId || '–' }}</dd>
           <dt>Antwort</dt>
           <dd>{{ selected.replyId || '–' }}</dd>
-          <dt>Zustellpunkt</dt>
+          <dt>Destination</dt>
           <dd>{{ selected.destinationId || '–' }}</dd>
         </dl>
         <ul>

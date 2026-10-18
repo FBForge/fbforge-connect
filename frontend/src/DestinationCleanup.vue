@@ -44,7 +44,7 @@ async function run(action, operation) {
   } finally {
     pending.value = false;
     emit('busy', false);
-    emit('activity', { api: session.apiVersion, role: 'Zustellpunktverwaltung', action, status, started });
+    emit('activity', { api: session.apiVersion, role: 'Destination-Verwaltung', action, status, started });
   }
 }
 function prepare() {
@@ -92,12 +92,12 @@ function execute() {
   <section class="tool-section" aria-labelledby="cleanup-title">
     <h3 id="cleanup-title">Nicht aktivierten TEST-Entwurf entfernen</h3>
     <p>
-      Nur eigene Zustellpunkte im Status „draft“ oder „created“ können hier entfernt werden. Die privaten
+      Nur eigene Destinations im Status „draft“ oder „created“ können hier entfernt werden. Die privaten
       Schlüssel bleiben im lokalen Profil erhalten.
     </p>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="preview?.status === 'removed'" role="status">
-      Der TEST-Zustellpunkt wurde entfernt. Laden Sie die Liste neu.
+      Die TEST-Destination wurde entfernt. Laden Sie die Liste neu.
     </p>
     <p v-if="preview?.status === 'uncertain'" role="alert">
       Die Entfernung wurde nicht sicher bestätigt. Bitte die Liste neu laden und den Serverzustand klären. Es
@@ -122,8 +122,8 @@ function execute() {
         <code>{{ preview?.destinationId }}</code>
       </p>
       <p>
-        Der Zustellpunkt wird auf TEST gelöscht. Diese Aktion kann nicht rückgängig gemacht werden. Vorher
-        wird geprüft, ob er seit der Vorschau geändert oder aktiviert wurde.
+        Die Destination wird auf TEST gelöscht. Diese Aktion kann nicht rückgängig gemacht werden. Vorher wird
+        geprüft, ob er seit der Vorschau geändert oder aktiviert wurde.
       </p>
       <div class="client-actions">
         <button class="button secondary" autofocus :disabled="disabled" @click="cancel">Abbrechen</button>

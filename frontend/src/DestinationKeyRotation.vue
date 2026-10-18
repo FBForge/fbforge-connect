@@ -70,7 +70,7 @@ async function run(action, operation) {
     pending.value = false;
     progress.value = '';
     emit('busy', false);
-    emit('activity', { api: session.apiVersion, role: 'Zustellpunktverwaltung', action, status, started });
+    emit('activity', { api: session.apiVersion, role: 'Destination-Verwaltung', action, status, started });
   }
 }
 function prepare() {
@@ -100,7 +100,7 @@ function prepare() {
       });
     }
     if (!current()) return;
-    progress.value = 'Eigene Zustellpunkte und registrierte Schlüssel werden geprüft …';
+    progress.value = 'Eigene Destinations und registrierte Schlüssel werden geprüft …';
     const result = await prepareDestinationRotation(invoke, session, targets);
     if (current()) preview.value = result;
     else await cancelDestinationRotation(invoke, session, result.attemptId);
@@ -153,7 +153,7 @@ function use(row) {
   <section class="tool-section" aria-labelledby="rotation-title" :aria-busy="pending">
     <h3 id="rotation-title">Schlüssel wechseln</h3>
     <p>
-      Für die ausgewählten Zustellpunkte neue TEST-Schlüssel mit Testzertifikaten erzeugen. Der Client
+      Für die ausgewählten Destinations neue TEST-Schlüssel mit Testzertifikaten erzeugen. Der Client
       registriert beide öffentlichen Schlüssel und schaltet anschließend den Verschlüsselungsschlüssel um.
       Alte Schlüssel bleiben für frühere Nachrichten erhalten.
     </p>
@@ -162,8 +162,8 @@ function use(row) {
       aufbewahrt. Eine gespeicherte Sitzung ist erforderlich.
     </p>
     <p v-if="selected.some((row) => row.type === 'C')" role="status">
-      Onlinedienst-Zustellpunkte vom Typ C haben keine Zertifikate. Wählen Sie für einen Schlüsselwechsel
-      ausschließlich empfangende Zustellpunkte aus.
+      Onlinedienst-Destinations vom Typ C haben keine Zertifikate. Wählen Sie für einen Schlüsselwechsel
+      ausschließlich empfangende Destinations aus.
     </p>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="progress" role="status">{{ progress }}</p>
@@ -181,8 +181,8 @@ function use(row) {
     <section v-if="preview" aria-labelledby="rotation-preview-title">
       <h4 id="rotation-preview-title">{{ statuses[preview.status] }}</h4>
       <p v-if="preview.status === 'prepared'">
-        Noch keine Schlüssel registriert. Prüfen Sie die Zuordnung. Die Vorschau gilt zwei Minuten; vor der
-        Änderung werden alle Zustellpunkte erneut gelesen.
+        Noch keine Schlüssel registriert. Prüfen Sie die Zuordnung. Die Vorschau gilt zwei Minuten. Vor der
+        Änderung werden alle Destinations erneut gelesen.
       </p>
       <p v-if="['uncertain', 'partial'].includes(preview.status)">
         Mindestens ein Schlüsselwechsel wurde nicht vollständig bestätigt. Es wird nichts automatisch
@@ -190,13 +190,13 @@ function use(row) {
         Schritte vor.
       </p>
       <p v-if="preview.status === 'conflict'">
-        Ein Zustellpunkt wurde zwischenzeitlich geändert. Es wurde nichts geschrieben. Bitte eine neue
+        Eine Destination wurde zwischenzeitlich geändert. Es wurde nichts geschrieben. Bitte eine neue
         Vorschau erstellen.
       </p>
       <article v-for="row in preview.changes" :key="row.destinationId" class="tool-section">
         <h5>{{ row.name }} · {{ statuses[row.status] }}</h5>
         <dl>
-          <dt>Zustellpunkt</dt>
+          <dt>Destination</dt>
           <dd>
             <code>{{ row.destinationId }}</code>
           </dd>
@@ -228,7 +228,7 @@ function use(row) {
       </article>
       <div v-if="preview.status === 'prepared'" class="client-actions">
         <button class="button" :disabled="disabled" @click="execute">
-          Schlüssel dieser Zustellpunkte auf TEST wechseln
+          Schlüssel dieser Destinations auf TEST wechseln
         </button>
         <button class="button secondary" :disabled="disabled" @click="cancel">Abbrechen</button>
       </div>

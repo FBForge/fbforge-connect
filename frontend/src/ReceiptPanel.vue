@@ -53,7 +53,7 @@ const reasons = {
   'data-schema-violation': 'Fachdaten entsprechen nicht dem Schema',
 };
 const messages = {
-  key_missing: 'Bitte oben unter Zustellpunktschlüssel einen privaten Testschlüssel zum Signieren laden.',
+  key_missing: 'Bitte oben unter Destination-Schlüssel einen privaten Testschlüssel zum Signieren laden.',
   signing_selection_required:
     'Mehrere Signaturschlüssel sind geladen. Bitte den gewünschten Schlüssel auswählen.',
   key_rejected:
@@ -305,7 +305,7 @@ async function confirm() {
         Entschlüsselung möglich.
       </p>
       <p class="small-note">
-        Der Signaturschlüssel wird aus den oben geladenen Zustellpunktschlüsseln gewählt. Ein einzelner
+        Der Signaturschlüssel wird aus den oben geladenen Destination-Schlüsseln gewählt. Ein einzelner
         passender Schlüssel wird automatisch verwendet.
       </p>
       <div class="client-actions">
