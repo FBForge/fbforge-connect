@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-load-reply-event-log"
+description = "Enables the load_reply_event_log command without any pre-configured scope."
+commands.allow = ["load_reply_event_log"]
+
+[[permission]]
+identifier = "deny-load-reply-event-log"
+description = "Denies the load_reply_event_log command without any pre-configured scope."
+commands.deny = ["load_reply_event_log"]

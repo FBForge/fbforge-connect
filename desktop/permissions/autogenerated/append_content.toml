@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-append-content"
+description = "Enables the append_content command without any pre-configured scope."
+commands.allow = ["append_content"]
+
+[[permission]]
+identifier = "deny-append-content"
+description = "Denies the append_content command without any pre-configured scope."
+commands.deny = ["append_content"]

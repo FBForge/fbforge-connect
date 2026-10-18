@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-case-workspace"
+description = "Enables the case_workspace command without any pre-configured scope."
+commands.allow = ["case_workspace"]
+
+[[permission]]
+identifier = "deny-case-workspace"
+description = "Denies the case_workspace command without any pre-configured scope."
+commands.deny = ["case_workspace"]

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dateiablage · synthetischer UI-Test</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp, h, ref } from 'vue';
+      import FileDropInput from '../src/FileDropInput.vue';
+      import '../src/site.css';
+      import '../src/layout.css';
+      const disabled = ref(false),
+        names = ref([]),
+        count = ref(0);
+      createApp({
+        setup() {
+          return () =>
+            h('main', { class: 'page client-page' }, [
+              h('h1', 'Dateiablage testen'),
+              h(
+                'button',
+                { onClick: () => (disabled.value = !disabled.value) },
+                'Dateiablage sperren oder freigeben',
+              ),
+              h(
+                FileDropInput,
+                {
+                  id: 'single-file',
+                  label: 'Einzelne Datei',
+                  disabled: disabled.value,
+                  onFiles: (files) => {
+                    names.value = files.map((f) => f.name);
+                    count.value++;
+                  },
+                },
+                () => 'JSON und XML werden im jeweiligen Arbeitsbereich geprüft.',
+              ),
+              h(FileDropInput, {
+                id: 'many-files',
+                label: 'Mehrere Dateien',
+                multiple: true,
+                onFiles: (files) => {
+                  names.value = files.map((f) => f.name);
+                  count.value++;
+                },
+              }),
+              h('output', { 'aria-label': 'Übernahmen' }, String(count.value)),
+              h('p', { 'data-testid': 'file-names' }, names.value.join(', ')),
+            ]);
+        },
+      }).mount('#app');
+    </script>
+  </body>
+</html>

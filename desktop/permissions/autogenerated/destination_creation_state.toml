@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-destination-creation-state"
+description = "Enables the destination_creation_state command without any pre-configured scope."
+commands.allow = ["destination_creation_state"]
+
+[[permission]]
+identifier = "deny-destination-creation-state"
+description = "Denies the destination_creation_state command without any pre-configured scope."
+commands.deny = ["destination_creation_state"]

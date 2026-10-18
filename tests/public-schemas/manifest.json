@@ -1,0 +1,16 @@
+[
+  {
+    "file": "fim-seefischerei.schema.json",
+    "format": "json",
+    "name": "FIM S00000092 Version 1.1 – Antrag Selbstauskunft Verstoßdatei Seefischereigesetz",
+    "url": "https://schema.fim.fitko.net/immutable/schemas/S00000092V1.1_2025-11-25-1764058855246.schema.json",
+    "sha256": "4e05ed02940ec1ef45aef3eb9a091b466fc4b3a3a4e80a035de2b9612e68ef2c"
+  },
+  {
+    "file": "fim-wohngeld.xsd",
+    "format": "xml",
+    "name": "FIM S00000000159 Version 2.0.0 – Erstantrag Wohngeld Mietzuschuss",
+    "url": "https://schema.fim.fitko.net/immutable/schemas/S00000000159V2.0.0_2026-08-02-1785691042175.xsd",
+    "sha256": "35ce238348ebd8ff3d9321d8a9d86b6730cf351dbfdb175718e7449d55a11b53"
+  }
+]

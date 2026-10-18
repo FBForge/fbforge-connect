@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-execute-receipt"
+description = "Enables the execute_receipt command without any pre-configured scope."
+commands.allow = ["execute_receipt"]
+
+[[permission]]
+identifier = "deny-execute-receipt"
+description = "Denies the execute_receipt command without any pre-configured scope."
+commands.deny = ["execute_receipt"]

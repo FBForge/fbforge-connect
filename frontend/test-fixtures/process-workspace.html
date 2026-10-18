@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BPMN · synthetische Testdaten</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp, ref, shallowRef, provide, h } from 'vue';
+      import ProcessWorkspace from '../src/ProcessWorkspace.vue';
+      import { processWorkspaceKey } from '../src/process-context.js';
+      import '../src/site.css';
+      import '../src/layout.css';
+      import '../src/desktop.css';
+      const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
+      const session = { apiVersion: 'v3', sessionId: id(1), environment: 'TEST', connected: true };
+      const fixture = (window.__processFixture = { searches: 0, calls: [], draft: null, context: null });
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args) {
+          fixture.calls.push(command);
+          if (command !== 'search_process_destinations') throw 'endpoint_blocked';
+          fixture.searches++;
+          const request = JSON.parse(args.destinationDocument);
+          return {
+            apiVersion: 'v3',
+            sessionId: id(1),
+            environment: 'TEST',
+            data: {
+              ...request,
+              totalCount: 1,
+              destinations: [
+                {
+                  destinationId: id(2),
+                  type: 'A',
+                  schemas: [
+                    {
+                      schemaUri: `urn:fit-connect:test-client:demo:${['request-more', 'result'].includes(request.messageId) ? 'reply' : 'application'}:1`,
+                      mimeType: 'application/json',
+                    },
+                  ],
+                  serviceIdentifiers: ['urn:de:fim:leika:leistung:99008001014002'],
+                },
+              ],
+            },
+          };
+        },
+      };
+      createApp({
+        setup() {
+          const busy = ref(false),
+            context = shallowRef(null),
+            selection = shallowRef(null);
+          fixture.showContext = (value) => (context.value = value);
+          provide(processWorkspaceKey, { selection });
+          return () =>
+            h('main', { class: 'workspace-content' }, [
+              h('p', 'SYNTHETISCHE TESTDATEN · kein FIT-Connect-Zugriff'),
+              h(ProcessWorkspace, {
+                session,
+                busy: busy.value,
+                visible: true,
+                context: context.value,
+                onBusy: (value) => (busy.value = value),
+                onSend: (value) => (fixture.draft = value),
+              }),
+            ]);
+        },
+      }).mount('#app');
+    </script>
+  </body>
+</html>

@@ -1,0 +1,208 @@
+/* Layout only. Surfaces, controls, typography and status colors come from site.css. */
+.client-page h1 {
+  margin-top: 0;
+}
+.client-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 18px 0;
+}
+.client-fields label {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+.client-fields select {
+  width: 100%;
+}
+.client-fields small {
+  display: block;
+}
+.client-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+.client-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.client-table table {
+  width: 100%;
+}
+/* This client has a text brand instead of the portal logo, including on narrow windows. */
+.site-header .brand-name {
+  display: grid;
+}
+.receive-schema-list {
+  padding: 0;
+  list-style: none;
+}
+.receive-schema-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0;
+}
+.receive-schema-list li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.receive-content-table th {
+  text-align: left;
+}
+.receive-content-table th:first-child {
+  width: 32%;
+  overflow-wrap: anywhere;
+}
+.receive-content-table td {
+  vertical-align: top;
+}
+.receive-content-table .client-actions {
+  margin: 0;
+}
+.receive-content-table details {
+  margin-top: 8px;
+}
+.receive-content-table code {
+  overflow-wrap: anywhere;
+}
+.submission-preview-dialog .json-toolbar {
+  grid-template-columns: minmax(0, 1fr);
+}
+.submission-preview-dialog .json-toolbar-actions {
+  justify-content: flex-start;
+}
+.receipt-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.receipt-history-table code {
+  overflow-wrap: anywhere;
+}
+.receipt-dialog-context dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.receipt-dialog-context dt {
+  overflow-wrap: anywhere;
+}
+.event-log-list {
+  padding-left: 24px;
+}
+.event-log-entry {
+  padding: 18px 0;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--line);
+}
+.event-log-entry-heading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.event-log-entry .client-actions {
+  align-items: flex-start;
+  margin-bottom: 0;
+}
+.event-log-entry .client-actions details {
+  flex-basis: 100%;
+}
+.event-log-entry dd {
+  margin-left: 0;
+}
+.event-log-search {
+  display: grid;
+  gap: 8px;
+}
+.event-log-search input {
+  width: 100%;
+}
+.submission-result-table .client-actions {
+  margin: 0;
+}
+.send-history-list {
+  list-style: none;
+  padding: 0;
+}
+.send-history-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0;
+}
+.send-history-list code {
+  overflow-wrap: anywhere;
+}
+@media (min-width: 601px) {
+  .receipt-dialog-context {
+    grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+    column-gap: 20px;
+  }
+}
+@media (max-width: 760px) {
+  .receive-content-table th[scope='row'] {
+    display: block;
+    grid-column: 1 / -1;
+    width: auto;
+    padding: 8px;
+    border: 0;
+  }
+}
+@media (max-width: 640px) {
+  .client-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.file-drop-zone {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  background: var(--surface-soft);
+}
+.file-drop-zone:focus-within,
+.file-drop-zone:hover,
+.file-drop-zone.is-dragging {
+  border-color: var(--accent);
+}
+.file-drop-zone.is-dragging {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.file-drop-zone.is-disabled {
+  opacity: 0.65;
+}
+.file-drop-zone > label {
+  display: block;
+  font-weight: 600;
+}
+.file-drop-zone > input {
+  width: 100%;
+  max-width: 100%;
+}
+.connection-panel > details > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.client-fields output {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.client-fields .destination-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.destination-toggle input[type='checkbox'] {
+  width: auto;
+  flex: 0 0 auto;
+}
