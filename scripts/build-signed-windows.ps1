@@ -17,7 +17,9 @@ Assert-CodeSigningCertificate $certificate
 $root = Split-Path -Parent $PSScriptRoot
 $temporary = Join-Path $env:RUNNER_TEMP ('fbforge-signing-' + [Guid]::NewGuid().ToString('N') + '.json')
 $output = Join-Path $env:RUNNER_TEMP ('fbforge-signed-' + [Guid]::NewGuid().ToString('N'))
-$config = @{ bundle = @{ windows = @{ certificateThumbprint = $Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = $TimestampUrl; tsp = $true } } }
+$binary = Join-Path $output 'fit-connect-integration-client.exe'
+$signer = Join-Path $PSScriptRoot 'sign-windows-file.ps1'
+$config = @{ bundle = @{ windows = @{ certificateThumbprint = $Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = $TimestampUrl; tsp = $true; signCommand = @{ cmd = 'powershell.exe'; args = @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',$signer,'-Thumbprint',$Thumbprint,'-TimestampUrl',$TimestampUrl,'-SignedMainBinaryPath',$binary,'-Path','%1') } } } }
 [IO.File]::WriteAllText($temporary, ($config | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 Push-Location $root
 try {
@@ -27,20 +29,19 @@ try {
     if ($LASTEXITCODE -ne 0 -or $dirty) { throw 'signing_checkout_modified' }
     $bundle = Join-Path $root 'desktop\target\release\bundle\nsis'
     if (Test-Path -LiteralPath $bundle) { Remove-Item -LiteralPath $bundle -Recurse -Force }
+    $null = New-Item -ItemType Directory -Path $output
     & npm.cmd run desktop:build -- --config $temporary -- --locked
     if ($LASTEXITCODE -ne 0) { throw 'signing_build_failed' }
     $dirty = & git status --porcelain --untracked-files=no
     if ($LASTEXITCODE -ne 0 -or $dirty) { throw 'signing_source_changed_during_build' }
     $setup = @(Get-ChildItem -LiteralPath $bundle -Filter '*-setup.exe' -File)
     if ($setup.Count -ne 1) { throw 'signing_installer_ambiguous' }
-    $binary = Join-Path $root 'desktop\target\release\fit-connect-integration-client.exe'
+    if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) { throw 'signing_application_snapshot_missing' }
     $signatures = @(
         (Assert-WindowsSignature -Path $binary -Thumbprint $Thumbprint -SignTool $signTool),
         (Assert-WindowsSignature -Path $setup[0].FullName -Thumbprint $Thumbprint -SignTool $signTool)
     )
-    $null = New-Item -ItemType Directory -Path $output
     Copy-Item -LiteralPath $setup[0].FullName -Destination $output
-    Copy-Item -LiteralPath $binary -Destination $output
     $version = (Get-Content -LiteralPath 'desktop/tauri.conf.json' -Raw | ConvertFrom-Json).version
     $manifest = [ordered]@{ application = 'FBForge Connect'; version = $version; repository = $env:GITHUB_REPOSITORY; commit = $head; runId = $env:GITHUB_RUN_ID; validationRunId = $env:VALIDATION_RUN; platform = 'windows-x64'; signing = 'authenticode'; certificateThumbprint = $Thumbprint.ToUpperInvariant(); installer = $setup[0].Name; bytes = $setup[0].Length; sha256 = $signatures[1].sha256 }
     [IO.File]::WriteAllText((Join-Path $output 'build-info.json'), ($manifest | ConvertTo-Json), [Text.UTF8Encoding]::new($false))

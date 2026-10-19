@@ -27,6 +27,7 @@ function Assert-WindowsSignature {
     )
     $file = [IO.Path]::GetFullPath($Path)
     $signature = Get-AuthenticodeSignature -LiteralPath $file
+    Write-Host ('Authenticode: ' + [IO.Path]::GetFileName($file) + ' [' + $signature.Status + ']')
     if ($signature.Status -ne 'Valid') { throw 'signing_signature_invalid' }
     if (-not $signature.SignerCertificate -or $signature.SignerCertificate.Thumbprint -ne $Thumbprint) { throw 'signing_certificate_mismatch' }
     if (-not $signature.TimeStamperCertificate) { throw 'signing_timestamp_missing' }
@@ -41,4 +42,24 @@ function Assert-WindowsSignature {
     }
 }
 
-Export-ModuleMember -Function Get-WindowsSignTool, Assert-CodeSigningCertificate, Assert-WindowsSignature
+function Invoke-WindowsFileSigning {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{40}$')][string]$Thumbprint,
+        [Parameter(Mandatory)][string]$TimestampUrl,
+        [Parameter(Mandatory)][string]$SignTool,
+        [Parameter(Mandatory)][string]$MainBinaryPath,
+        [Parameter(Mandatory)][string]$SignedMainBinaryPath
+    )
+    $file = [IO.Path]::GetFullPath($Path)
+    & $SignTool sign /fd SHA256 /sha1 $Thumbprint /d 'FBForge Connect' /tr $TimestampUrl /td SHA256 $file | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw 'signing_file_failed' }
+    $null = Assert-WindowsSignature -Path $file -Thumbprint $Thumbprint -SignTool $SignTool
+    if ($file -eq [IO.Path]::GetFullPath($MainBinaryPath)) {
+        # Tauri restores the unsigned original after bundling. Save the exact signed
+        # bytes now, while NSIS will still read this same executable into the setup.
+        Copy-Item -LiteralPath $file -Destination $SignedMainBinaryPath
+    }
+}
+
+Export-ModuleMember -Function Get-WindowsSignTool, Assert-CodeSigningCertificate, Assert-WindowsSignature, Invoke-WindowsFileSigning

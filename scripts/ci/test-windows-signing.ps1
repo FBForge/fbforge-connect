@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-foreach ($name in @('scripts/windows-signing.psm1','scripts/build-signed-windows.ps1','scripts/ci/check-signed-package.ps1','scripts/windows-install-smoke.ps1')) {
+foreach ($name in @('scripts/windows-signing.psm1','scripts/sign-windows-file.ps1','scripts/build-signed-windows.ps1','scripts/ci/check-signed-package.ps1','scripts/windows-install-smoke.ps1')) {
     $tokens = $null
     $errors = $null
     $null = [Management.Automation.Language.Parser]::ParseFile((Join-Path $root $name), [ref]$tokens, [ref]$errors)
@@ -59,6 +59,14 @@ try {
     & $module { param($Value) $script:testSignature = $Value } $signature
     $verified = Assert-WindowsSignature -Path $file -Thumbprint $thumbprint -SignTool $tool
     if (-not $verified.verified -or $verified.sha256 -ne (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'signing_hash_contract_failed' }
+    $snapshot = Join-Path $temporary 'packaged-application.exe'
+    Invoke-WindowsFileSigning -Path $file -Thumbprint $thumbprint -TimestampUrl 'https://timestamp.example.invalid' -SignTool $tool -MainBinaryPath $file -SignedMainBinaryPath $snapshot
+    [IO.File]::WriteAllText($file, 'restored unsigned original')
+    if ([IO.File]::ReadAllText($snapshot) -ne 'fictional bytes') { throw 'signing_packaged_snapshot_changed' }
+    $plugin = Join-Path $temporary 'plugin.dll'
+    [IO.File]::WriteAllText($plugin, 'fictional plugin')
+    Invoke-WindowsFileSigning -Path $plugin -Thumbprint $thumbprint -TimestampUrl 'https://timestamp.example.invalid' -SignTool $tool -MainBinaryPath $file -SignedMainBinaryPath $snapshot
+    if ([IO.File]::ReadAllText($snapshot) -ne 'fictional bytes') { throw 'signing_plugin_replaced_application' }
     $signature.Status = 'NotSigned'
     Expect-Rejection { Assert-WindowsSignature -Path $file -Thumbprint $thumbprint -SignTool $tool } 'signing_signature_invalid'
     $signature.Status = 'Valid'
@@ -70,6 +78,9 @@ try {
     $signature.TimeStamperCertificate = [pscustomobject]@{ Thumbprint = ('b' * 40) }
     [IO.File]::WriteAllText($tool, "@echo off`r`nexit /b 1`r`n")
     Expect-Rejection { Assert-WindowsSignature -Path $file -Thumbprint $thumbprint -SignTool $tool } 'signing_verification_failed'
+    Remove-Item -LiteralPath $snapshot
+    Expect-Rejection { Invoke-WindowsFileSigning -Path $file -Thumbprint $thumbprint -TimestampUrl 'https://timestamp.example.invalid' -SignTool $tool -MainBinaryPath $file -SignedMainBinaryPath $snapshot } 'signing_file_failed'
+    if (Test-Path -LiteralPath $snapshot) { throw 'signing_failed_file_captured' }
 } finally {
     Remove-Module windows-signing
     Remove-Item -LiteralPath $temporary -Recurse -Force
