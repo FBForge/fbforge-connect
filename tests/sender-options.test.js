@@ -118,6 +118,37 @@ test('recursive, unresolved and impossible example schemas fail explicitly', () 
     assert.throws(() => jsonExample(schema));
 });
 
+test('schema type names cannot invoke inherited object methods or accept their results', () => {
+  for (const type of [
+    '__proto__',
+    'constructor',
+    'toString',
+    'valueOf',
+    'hasOwnProperty',
+    '__defineSetter__',
+    'unknown',
+  ]) {
+    for (const declared of [type, [type, 'null']]) {
+      assert.throws(() => jsonExample({ type: declared, enum: ['fictional'] }), {
+        name: 'Error',
+        message: 'Kein erlaubter Auswahlwert erfüllt die Feldvorgaben.',
+      });
+    }
+  }
+  for (const [type, value] of [
+    ['object', { fictional: true }],
+    ['array', [1]],
+    ['integer', 1],
+    ['number', 1.5],
+    ['boolean', false],
+    ['null', null],
+    ['string', 'fictional'],
+    [['null', 'string'], 'fictional'],
+  ]) {
+    assert.deepEqual(JSON.parse(jsonExample({ type, enum: [value] })), value);
+  }
+});
+
 test('fictional data also follows the loaded external schema graph', () => {
   const bundle = {
     schemaPackage: 1,
