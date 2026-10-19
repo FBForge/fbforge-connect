@@ -104,7 +104,7 @@ print('candidate trust boundary passed')
 
 test('CI selects affected modules without building installers for documentation changes', () => {
   const program = `
-import importlib.util, sys
+import importlib.util, json, os, pathlib, subprocess, sys, tempfile
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location('changes', 'scripts/ci/changed-components.py')
 m = importlib.util.module_from_spec(spec)
@@ -115,6 +115,28 @@ assert m.components(['engine/host/pom.xml']) == dict(frontend=True, engine=True,
 assert m.components(['desktop/src/vault.rs']) == dict(frontend=True, engine=False, native=True)
 assert all(m.components(['.github/workflows/checks.yml']).values())
 assert all(m.components(['scripts/windows-signing.psm1']).values())
+script = str(pathlib.Path('scripts/ci/changed-components.py').resolve())
+with tempfile.TemporaryDirectory() as directory:
+    root = pathlib.Path(directory)
+    def git(*args):
+        return subprocess.check_output(['git', *args], cwd=root, stderr=subprocess.DEVNULL, text=True).strip()
+    git('init', '-b', 'main')
+    git('config', 'user.name', 'CI Fixture')
+    git('config', 'user.email', 'ci@example.invalid')
+    (root / 'README.md').write_text('First version')
+    git('add', 'README.md')
+    git('-c', 'commit.gpgsign=false', 'commit', '-m', 'Initial fixture')
+    previous = git('rev-parse', 'HEAD')
+    (root / 'README.md').write_text('Updated documentation')
+    git('add', 'README.md')
+    git('-c', 'commit.gpgsign=false', 'commit', '-m', 'Update fixture')
+    event, output = root / 'event.json', root / 'output.txt'
+    for before, expected in [(previous, False), ('f' * 40, True), ('0' * 40, True)]:
+        event.write_text(json.dumps({'before': before}))
+        output.write_text('')
+        env = dict(os.environ, GITHUB_EVENT_PATH=str(event), GITHUB_OUTPUT=str(output))
+        subprocess.run([sys.executable, script], cwd=root, env=env, check=True)
+        assert output.read_text().splitlines() == [f'{name}={str(expected).lower()}' for name in ['frontend', 'engine', 'native']]
 print('component selection passed')
 `;
   assert.match(execFileSync(python, ['-c', program], { cwd: root, encoding: 'utf8' }), /selection passed/);

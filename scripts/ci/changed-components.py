@@ -30,8 +30,17 @@ def main():
     if base and base != "0" * 40:
         if not re.fullmatch(r"[a-f0-9]{40}", base):
             raise RuntimeError("invalid_base_commit")
-        changed = subprocess.check_output(["git", "diff", "--name-only", "--no-renames", "-z", base, "HEAD"])
-        selected = components(changed.decode("utf-8", errors="replace").split("\0"))
+        available = subprocess.run(
+            ["git", "cat-file", "-e", base + "^{commit}"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False,
+        ).returncode == 0
+        if available:
+            changed = subprocess.check_output(["git", "diff", "--name-only", "--no-renames", "-z", base, "HEAD"])
+            selected = components(changed.decode("utf-8", errors="replace").split("\0"))
+        else:
+            # A rewritten history may no longer contain the previous push head.
+            # Run every check instead of guessing which components changed.
+            selected = dict.fromkeys(("frontend", "engine", "native"), True)
     else:
         selected = dict.fromkeys(("frontend", "engine", "native"), True)
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
