@@ -20,6 +20,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  signing-contracts:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test Windows signing checks without a signing certificate
+        shell: powershell
+        run: ./scripts/ci/test-windows-signing.ps1
+
   test-readonly:
     if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-24.04

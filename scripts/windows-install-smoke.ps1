@@ -4,10 +4,19 @@ param(
     [Parameter(Mandatory)][string]$CheckpointBridge,
     [Parameter(Mandatory)][string]$ExpectedBinaryPath,
     [string]$PreviousInstallerPath = '',
-    [string]$RecentInstallerPath = ''
+    [string]$RecentInstallerPath = '',
+    [ValidatePattern('^$|^[a-fA-F0-9]{40}$')][string]$ExpectedSignerThumbprint = '',
+    [string]$SignatureReportPath = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+if ($SignatureReportPath -and -not $ExpectedSignerThumbprint) { throw 'installer_signature_context_missing' }
+$taskSignatures = @{}
+if ($ExpectedSignerThumbprint) {
+    Import-Module (Join-Path $PSScriptRoot 'windows-signing.psm1') -Force
+    $taskSignTool = Get-WindowsSignTool
+    $taskSignatures['setup'] = Assert-WindowsSignature -Path $InstallerPath -Thumbprint $ExpectedSignerThumbprint -SignTool $taskSignTool
+}
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 Add-Type -TypeDefinition @'
@@ -69,6 +78,10 @@ function Invoke-Named($Root, [string]$Name) {
 function Check-Installed([bool]$ExpectProfile) {
     $installedBinary = Join-Path $taskInstall 'fit-connect-integration-client.exe'
     if ((Get-FileHash -LiteralPath $installedBinary -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedBinaryPath -Algorithm SHA256).Hash) { throw 'installed_binary_revision_mismatch' }
+    if ($ExpectedSignerThumbprint) {
+        $script:taskSignatures['application'] = Assert-WindowsSignature -Path $installedBinary -Thumbprint $ExpectedSignerThumbprint -SignTool $taskSignTool
+        $script:taskSignatures['uninstaller'] = Assert-WindowsSignature -Path (Join-Path $taskInstall 'uninstall.exe') -Thumbprint $ExpectedSignerThumbprint -SignTool $taskSignTool
+    }
     $registration = Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FIT-Connect Test-Client'
     if ($registration.DisplayName -ne 'FBForge Connect' -or $registration.Publisher -ne 'FBForge' -or $registration.MainBinaryName -ne 'fit-connect-integration-client.exe' -or $registration.InstallLocation.Trim('"') -ne $taskInstall) { throw 'installed_upgrade_identity_mismatch' }
     if (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FBForge Connect') { throw 'duplicate_upgrade_registration' }
@@ -143,6 +156,10 @@ try {
         Uninstall-Owned
         if (-not (Test-Path -LiteralPath $taskProfileFile)) { throw 'upgrade_removed_saved_profile' }
         Write-Output ('Upgrade from pinned ' + [IO.Path]::GetFileName($previous) + ' preserved the DPAPI profile and loaded both SDKs')
+    }
+    if ($SignatureReportPath) {
+        if ($taskSignatures.Count -ne 3) { throw 'installer_signature_report_incomplete' }
+        [IO.File]::WriteAllText([IO.Path]::GetFullPath($SignatureReportPath), (@($taskSignatures.Values) | ConvertTo-Json -Depth 4), [Text.UTF8Encoding]::new($false))
     }
 } finally {
     Stop-OwnedApp
