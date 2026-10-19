@@ -2,6 +2,8 @@
 * text=auto eol=lf
 *.cmd text eol=crlf
 *.bat text eol=crlf
+# Preserve the upstream Maven wrapper's committed CRLF bytes.
+engine/mvnw.cmd -text
 *.ps1 text eol=crlf
 *.png binary
 *.ico binary
