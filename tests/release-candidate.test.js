@@ -7,10 +7,11 @@ const python = process.platform === 'win32' ? 'python' : 'python3';
 const root = fileURLToPath(new URL('../', import.meta.url));
 test('release candidates require signed provenance, matching signatures and bounded archives', () => {
   const program = `
-import copy, hashlib, importlib.util, io, json, sys, zipfile
+import copy, hashlib, importlib.util, io, json, sys, types, zipfile
 sys.dont_write_bytecode = True
 sys.path.insert(0, 'scripts')
 import candidate as c
+real_gh = c.gh
 commit, thumb = 'a' * 40, 'b' * 40
 version, run_id = '0.1.0-alpha.1', '123'
 installer = f'FBForge Connect_{version}_x64-setup.exe'
@@ -81,6 +82,14 @@ c.api, c.gh = api, lambda *args: blob
 assert c.download_candidate(run_id)[2] == manifest
 artifact['digest'] = 'sha256:' + '0' * 64
 rejected(lambda: c.download_candidate(run_id), 'artifact_digest_mismatch')
+original_run = c.subprocess.run
+try:
+    c.subprocess.run = lambda *args, **kwargs: types.SimpleNamespace(returncode=1, stderr=b'private details (HTTP 404)', stdout=b'')
+    rejected(lambda: real_gh('api', 'synthetic'), 'github_operation_failed_http_404')
+    c.subprocess.run = lambda *args, **kwargs: types.SimpleNamespace(returncode=1, stderr=b'private details', stdout=b'')
+    rejected(lambda: real_gh('api', 'synthetic'), 'github_operation_failed')
+finally:
+    c.subprocess.run = original_run
 spec = importlib.util.spec_from_file_location('attach', 'scripts/attach-candidate.py')
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
@@ -115,6 +124,9 @@ assert m.components(['engine/host/pom.xml']) == dict(frontend=True, engine=True,
 assert m.components(['desktop/src/vault.rs']) == dict(frontend=True, engine=False, native=True)
 assert all(m.components(['.github/workflows/checks.yml']).values())
 assert all(m.components(['scripts/windows-signing.psm1']).values())
+assert all(m.components(['.npmrc']).values())
+for path in ['licenses/frontend.txt', 'THIRD_PARTY_NOTICES.md', 'LICENSE', '.prettierignore', '.editorconfig']:
+    assert m.components([path]) == dict(frontend=True, engine=False, native=False)
 script = str(pathlib.Path('scripts/ci/changed-components.py').resolve())
 with tempfile.TemporaryDirectory() as directory:
     root = pathlib.Path(directory)

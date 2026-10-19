@@ -44,6 +44,7 @@ jobs:
           node-version: 24.20.0
           package-manager-cache: false
       - run: npm ci --ignore-scripts
+      - run: npm run licenses:check
       - run: npm run lint
       - run: npm run format:check
       - run: npm test

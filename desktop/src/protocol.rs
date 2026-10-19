@@ -168,18 +168,6 @@ impl ProbeResult {
     }
 }
 
-impl EngineResponse {
-    pub fn into_result(self, id: &str, version: ApiVersion) -> Result<ProbeResult, &'static str> {
-        let value = self.payload(id).map_err(|failure| match failure {
-            EngineFailure::Fatal(code) | EngineFailure::Remote(code) => code,
-        })?;
-        if !value.validate(version) {
-            return Err("engine_protocol_error");
-        }
-        Ok(value)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,27 +189,28 @@ mod tests {
     #[test]
     fn validates_identity_version_and_environment() {
         assert!(response(ApiVersion::V2)
-            .into_result("op-1", ApiVersion::V2)
-            .is_ok());
-        assert!(response(ApiVersion::V2)
-            .into_result("other", ApiVersion::V2)
-            .is_err());
-        assert!(response(ApiVersion::V2)
-            .into_result("op-1", ApiVersion::V3)
-            .is_err());
+            .payload("op-1")
+            .is_ok_and(|value| value.validate(ApiVersion::V2) && !value.validate(ApiVersion::V3)));
+        assert!(matches!(
+            response(ApiVersion::V2).payload("other"),
+            Err(EngineFailure::Fatal("engine_protocol_error"))
+        ));
         let mut prod = response(ApiVersion::V2);
         prod.result.as_mut().unwrap().environment = "PROD".into();
-        assert!(prod.into_result("op-1", ApiVersion::V2).is_err());
+        assert!(prod
+            .payload("op-1")
+            .is_ok_and(|value| !value.validate(ApiVersion::V2)));
     }
     #[test]
     fn unknown_errors_never_escape_to_renderer() {
         let mut error = response(ApiVersion::V2);
         error.ok = false;
+        error.result = None;
         error.error = Some("synthetic-secret".into());
-        assert_eq!(
-            error.into_result("op-1", ApiVersion::V2).err(),
-            Some("engine_protocol_error")
-        );
+        assert!(matches!(
+            error.payload("op-1"),
+            Err(EngineFailure::Fatal("engine_protocol_error"))
+        ));
     }
     #[test]
     fn only_two_api_values_are_accepted() {

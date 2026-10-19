@@ -10,10 +10,12 @@ def components(paths):
     checks = {"frontend": False, "engine": False, "native": False}
     for path in paths:
         if path.startswith((".github/workflows/", "scripts/ci/")) or path in (
-            "package.json", "package-lock.json", ".gitattributes",
+            "package.json", "package-lock.json", ".gitattributes", ".npmrc",
         ):
             return dict.fromkeys(checks, True)
-        if path.startswith(("frontend/", "tests/")) or path.endswith(".config.js") or path == ".prettierrc.json":
+        if path.startswith(("frontend/", "tests/", "licenses/")) or path.endswith(".config.js") or path in (
+            ".prettierrc.json", ".prettierignore", ".editorconfig", "LICENSE", "THIRD_PARTY_NOTICES.md",
+        ):
             checks["frontend"] = True
         if path.startswith("engine/"):
             checks["engine"] = checks["frontend"] = True

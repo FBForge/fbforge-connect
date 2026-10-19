@@ -31,6 +31,8 @@ Browsertests: `npx playwright install chromium`, danach `npm run test:ui`. Öffe
 
 Formatieren: `npm run format`, `./mvnw spotless:apply` im Engine-Verzeichnis und `cargo fmt --manifest-path desktop/Cargo.toml --all`.
 
+Nach Updates der Frontend-Abhängigkeiten `npm run licenses:update` ausführen. `npm run licenses:check` prüft die mitgelieferten Lizenztexte gegen die installierten, festgelegten Versionen.
+
 ## Änderungen
 
 - Logik im zuständigen Modul halten. SDK-Unterschiede gehören in die Adapter.

@@ -9,6 +9,8 @@ desktop/resources/.stage-*/
 .vscode/
 .DS_Store
 *.log
+__pycache__/
+*.py[cod]
 .env
 .env.*
 !.env.example
@@ -33,7 +35,6 @@ desktop/resources/.stage-*/
 /.agents/
 /AGENTS.md
 /CLAUDE.md
-
 
 /playwright-report/
 /test-results/

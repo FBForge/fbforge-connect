@@ -18,7 +18,10 @@ def require(condition, reason):
 
 def gh(*arguments):
     result = subprocess.run(["gh", *arguments], capture_output=True, check=False)
-    require(result.returncode == 0, "github_operation_failed")
+    if result.returncode != 0:
+        status = re.search(rb"\bHTTP ([1-5][0-9]{2})\b", result.stderr)
+        suffix = "_http_" + status[1].decode("ascii") if status else ""
+        raise RuntimeError("github_operation_failed" + suffix)
     return result.stdout
 
 
