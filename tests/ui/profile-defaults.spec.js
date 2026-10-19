@@ -29,6 +29,7 @@ test('profile defaults survive reconnect, preserve edited fields and clear witho
   await page.getByRole('button', { name: 'Abmelden', exact: true }).click();
   await page.getByRole('button', { name: 'Mit Profil verbinden', exact: true }).click();
   await expect(connection).toBeHidden();
+  await page.getByRole('button', { name: 'Senden', exact: true }).click();
   await expect(page.locator('#send-source')).toHaveValue(source);
   await expect(
     page.getByRole('textbox', { name: 'Absender-Destination', exact: true }),

@@ -1,6 +1,7 @@
 <script setup>
 defineProps({ name: String });
 const paths = {
+  home: 'm3 10 9-7 9 7v11h-6v-7H9v7H3V10Z',
   send: 'm21 3-7 18-4-7-7-4 18-7ZM21 3 10 14',
   receive: 'M12 3v12m-5-5 5 5 5-5M5 14H3v7h18v-7h-2',
   events: 'M8 5h13M8 12h13M8 19h13M3 5h.01M3 12h.01M3 19h.01',

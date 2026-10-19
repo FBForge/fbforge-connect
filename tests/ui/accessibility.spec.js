@@ -19,6 +19,7 @@ test('main workspaces support keyboard navigation, reflow and automated accessib
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
   for (const name of [
+    'Start',
     'Vorgänge',
     'Hilfe',
     'Senden',
@@ -63,6 +64,7 @@ test('connected sender keeps labels and keyboard focus in high contrast', async 
   await expect(page.getByRole('button', { name: 'Abmelden', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
+  await page.getByRole('button', { name: 'Senden', exact: true }).click();
   const source = page.getByRole('textbox', { name: 'Absender-Destination', exact: true });
   const target = page.getByRole('textbox', { name: 'Empfänger-Destination', exact: true });
   await expect(source).toHaveAccessibleDescription(/Zugangsdaten/);

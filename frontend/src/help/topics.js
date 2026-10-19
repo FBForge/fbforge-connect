@@ -3,7 +3,7 @@ export const helpTopics = [
   {
     id: 'start',
     title: 'Schnellstart',
-    section: 'Senden',
+    section: 'Start',
     image: 'overview',
     caption: 'Arbeitsbereiche von FBForge Connect. Die Hilfe steht auch ohne Verbindung zur Verfügung.',
     intro:
@@ -12,7 +12,7 @@ export const helpTopics = [
       'Wählen Sie oben API v3 für neue Tests. API v2 bleibt für bestehende Integrationen verfügbar.',
       'Öffnen Sie „Verbinden“ und geben Sie die TEST-Client-ID sowie das Client-Secret Ihres Onlinediensts oder Fachverfahrens ein.',
       'Eine Destination ist ein Zustellpunkt bei FIT-Connect. Ein Onlinedienst sendet Einreichungen und empfängt angebotene Antworten. Ein Subscriber ist das empfangende Fachverfahren. Er ruft Einreichungen ab und kann darauf antworten. Die API und der Zugang müssen zu Ihrem Test passen.',
-      'Wählen Sie „Senden“ für einen Testantrag oder „Empfangen“ für den Eingang. Unter „Vorgänge“ finden Sie lokale Kopien.',
+      'Wählen Sie auf „Start“ Ihre Testaufgabe: „Einreichung senden“ für einen Testantrag oder „Einreichung empfangen“ für den Eingang. Die Bereiche sind auch direkt über die Navigation erreichbar. Unter „Vorgänge“ finden Sie lokale Kopien.',
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
     ],
     notes: [

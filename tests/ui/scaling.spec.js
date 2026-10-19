@@ -24,6 +24,7 @@ for (const scale of [1.25, 1.5, 2]) {
     await page.goto('http://127.0.0.1:1420/');
     expect(await page.evaluate(() => devicePixelRatio)).toBe(scale);
     for (const name of [
+      'Start',
       'Vorgänge',
       'Hilfe',
       'Senden',

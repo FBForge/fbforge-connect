@@ -19,6 +19,7 @@ import {
   diagnosticResult,
 } from './support-report.js';
 import AppIcon from './AppIcon.vue';
+import StartWorkspace from './StartWorkspace.vue';
 import appLogo from './assets/test-client.png';
 import { productName, productBrand, productEdition, productPurpose } from './product.js';
 import FileDropInput from './FileDropInput.vue';
@@ -81,7 +82,7 @@ provide(processWorkspaceKey, {
     void navigate('Prozesse');
   },
 });
-const section = ref('Senden');
+const section = ref('Start');
 const apiVersion = ref('v3');
 let savedTheme;
 try {
@@ -265,6 +266,11 @@ async function probe(versions) {
 const version = packageInfo.version;
 const navigation = [
   {
+    name: 'Start',
+    icon: 'home',
+    description: 'Verbinden Sie Ihren TEST-Zugang und wählen Sie die passende Aufgabe.',
+  },
+  {
     name: 'Vorgänge',
     icon: 'events',
     description: 'Gesendete und empfangene Anträge, Antworten und Anlagen lokal wieder öffnen.',
@@ -291,21 +297,31 @@ const navigation = [
   },
   {
     name: 'Destinations',
+    utility: true,
     icon: 'destinations',
     description: 'Eigene Destinations ansehen und über API v3 verwalten.',
   },
   {
     name: 'Hilfe',
+    utility: true,
     icon: 'info',
     description: 'Schritt für Schritt: verbinden, testen und Ergebnisse nachvollziehen.',
   },
   {
     name: 'Diagnose',
+    utility: true,
     icon: 'diagnostics',
     description: 'Lokale Komponenten prüfen und einen technischen Bericht für die Fehleranalyse speichern.',
   },
-  { name: 'Info', icon: 'info', description: 'Programmversion, Funktionsumfang und Lizenzinformationen.' },
+  {
+    name: 'Info',
+    utility: true,
+    icon: 'info',
+    description: 'Programmversion, Funktionsumfang und Lizenzinformationen.',
+  },
 ];
+const workspaceNavigation = navigation.filter((item) => !item.utility);
+const utilityNavigation = navigation.filter((item) => item.utility);
 const currentView = computed(() => navigation.find((item) => item.name === section.value));
 const workspace = ref(null),
   viewHeading = ref(null),
@@ -557,7 +573,7 @@ function clearHistory() {
       <nav class="app-navigation" aria-label="Hauptnavigation">
         <p class="nav-caption">Arbeitsbereich</p>
         <button
-          v-for="item in navigation.slice(0, 5)"
+          v-for="item in workspaceNavigation"
           :key="item.name"
           type="button"
           class="nav-item"
@@ -571,7 +587,7 @@ function clearHistory() {
         <div class="nav-utilities">
           <p class="nav-caption">Anwendung</p>
           <button
-            v-for="item in navigation.slice(5)"
+            v-for="item in utilityNavigation"
             :key="item.name"
             type="button"
             class="nav-item"
@@ -602,7 +618,7 @@ function clearHistory() {
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div class="workspace-content">
           <div
-            v-if="!activeSession && !['Diagnose', 'Info', 'Prozesse', 'Hilfe'].includes(section)"
+            v-if="!activeSession && !['Start', 'Diagnose', 'Info', 'Prozesse', 'Hilfe'].includes(section)"
             class="connection-notice"
           >
             <AppIcon name="connection" />
@@ -617,6 +633,15 @@ function clearHistory() {
             </button>
           </div>
           <p v-if="error" class="status-badge error" role="alert">{{ error }}</p>
+          <StartWorkspace
+            v-if="section === 'Start'"
+            :session="activeSession"
+            :api-version="apiVersion"
+            :busy="busy"
+            @connect="showConnection"
+            @navigate="navigate"
+            @help="showHelp"
+          />
           <SubmissionSender
             :visible="section === 'Senden'"
             :default-source="defaultDestinations?.sourceDestination || ''"
