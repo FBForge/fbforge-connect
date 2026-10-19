@@ -1,0 +1,110 @@
+name: Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      frontend: ${{ steps.changed.outputs.frontend }}
+      engine: ${{ steps.changed.outputs.engine }}
+      native: ${{ steps.changed.outputs.native }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: changed
+        run: python3 scripts/ci/changed-components.py
+
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.20.0
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build:frontend
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+
+  engine:
+    needs: changes
+    if: needs.changes.outputs.engine == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.20.0
+          package-manager-cache: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: engine/**/pom.xml
+      - working-directory: engine
+        run: ./mvnw --batch-mode verify
+      - run: npm run stage:engine
+      - run: npm run test:engine
+
+  native:
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
+    runs-on: windows-2025
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt
+      - run: cargo +1.99.0 fmt --manifest-path desktop/Cargo.toml --all -- --check
+      - run: cargo +1.99.0 fmt --manifest-path desktop/native-contracts/Cargo.toml --all -- --check
+      - run: cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked
+      - run: cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked --example profile-checkpoint
+      - shell: powershell
+        run: ./scripts/ci/test-windows-signing.ps1
+
+  result:
+    name: Checks passed
+    if: always()
+    needs: [changes, frontend, engine, native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ['RESULTS'])
+          assert results['changes']['result'] == 'success', 'Change detection failed'
+          assert all(job['result'] in ('success', 'skipped') for job in results.values()), 'A required check failed'
+          PY

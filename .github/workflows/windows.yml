@@ -1,11 +1,12 @@
-name: Alpha Windows validation
+name: Windows release validation
 
 on:
-  pull_request:
-  push:
-    branches: [main, develop]
   workflow_dispatch:
     inputs:
+      upgrade_run:
+        description: Optional successful signed run to test upgrading from an earlier version
+        required: false
+        type: string
       offline:
         description: Also build the larger offline WebView2 installer
         type: boolean
@@ -20,8 +21,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  signing-contracts:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test Windows signing checks without a signing certificate
+        shell: powershell
+        run: ./scripts/ci/test-windows-signing.ps1
+
   test-readonly:
-    if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -53,10 +65,13 @@ jobs:
         run: node scripts/live-readonly.mjs
 
   windows:
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: windows-2025
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.20.0
@@ -133,38 +148,24 @@ jobs:
             desktop/target
             desktop/native-contracts/target
           key: ${{ steps.rust-cache.outputs.cache-primary-key }}
-      - name: Download the pinned dev.7 installer for upgrade validation
-        if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+      - name: Load a verified signed upgrade baseline
+        if: inputs.upgrade_run != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          UPGRADE_RUN: ${{ inputs.upgrade_run }}
+        run: python scripts/load-upgrade-baseline.py
+      - name: Verify baseline signature and timestamp
+        if: inputs.upgrade_run != ''
         run: |
-          $revision = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/38967495361" --jq '.head_sha'
-          if ($LASTEXITCODE -ne 0 -or $revision -ne 'bc12b4ad0f0f47a77024e82a070dc2df993da438') { throw 'previous_installer_provenance_failed' }
-          gh run download 38967495361 --repo "$env:GITHUB_REPOSITORY" --name windows-alpha-unsigned-setup --dir "$env:RUNNER_TEMP/fitconnect-dev7"
-          if ($LASTEXITCODE -ne 0) { throw 'previous_installer_download_failed' }
-          $previous = @(Get-ChildItem "$env:RUNNER_TEMP/fitconnect-dev7" -Filter '*-setup.exe' -Recurse -File)
-          if ($previous.Count -ne 1) { throw 'previous_installer_missing' }
-          Add-Content -Path $env:GITHUB_ENV -Value "FITCONNECT_PREVIOUS_INSTALLER=$($previous[0].FullName)"
-      - name: Download the verified dev.9 installer for RC upgrade validation
-        if: github.repository_id == '1421171092' && github.event_name == 'push' && !github.event.deleted && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $run = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/39063273538" | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0 -or $run.head_sha -ne '60c9287ce47c873901337ea47428ac3a8ff36ee8' -or $run.conclusion -ne 'success') { throw 'recent_installer_provenance_failed' }
-          gh run download 39063273538 --repo "$env:GITHUB_REPOSITORY" --name windows-alpha-unsigned-setup --dir "$env:RUNNER_TEMP/fitconnect-dev9"
-          if ($LASTEXITCODE -ne 0) { throw 'recent_installer_download_failed' }
-          $recent = @(Get-ChildItem "$env:RUNNER_TEMP/fitconnect-dev9" -Filter '*-setup.exe' -Recurse -File)
-          if ($recent.Count -ne 1) { throw 'recent_installer_missing' }
-          if ((Get-FileHash -LiteralPath $recent[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne '859355daa84d362d8169c2471a701bbea256c7496d6202b9e012cf2a713aaf55') { throw 'recent_installer_integrity_failed' }
-          Add-Content -Path $env:GITHUB_ENV -Value "FITCONNECT_RECENT_INSTALLER=$($recent[0].FullName)"
+          Import-Module './scripts/windows-signing.psm1' -Force
+          $tool = Get-WindowsSignTool
+          $null = Assert-WindowsSignature -Path $env:FITCONNECT_PREVIOUS_INSTALLER -Thumbprint $env:FITCONNECT_PREVIOUS_SIGNER -SignTool $tool
       - name: Install the real desktop application and verify bundled runtime and profile preservation
         run: |
           $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
           if ($setup.Count -ne 1) { throw 'installer_missing' }
           $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', './scripts/windows-install-smoke.ps1', '-InstallerPath', $setup[0].FullName, '-CheckpointBridge', 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe', '-ExpectedBinaryPath', 'desktop/target/release/fit-connect-integration-client.exe')
           if ($env:FITCONNECT_PREVIOUS_INSTALLER) { $arguments += @('-PreviousInstallerPath', $env:FITCONNECT_PREVIOUS_INSTALLER) }
-          if ($env:FITCONNECT_RECENT_INSTALLER) { $arguments += @('-RecentInstallerPath', $env:FITCONNECT_RECENT_INSTALLER) }
           & powershell.exe @arguments
           if ($LASTEXITCODE -ne 0) { throw 'installed_desktop_validation_failed' }
       - name: Prepare pinned official NVDA for desktop accessibility checks

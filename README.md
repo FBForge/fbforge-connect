@@ -5,24 +5,24 @@
 Desktop-Testclient für FIT-Connect. Für Entwickler, Integratoren und Mitarbeitende der öffentlichen Verwaltung.
 
 - Einreichungen und Antworten über API v2/v3 senden, empfangen und prüfen.
-- JSON/XML anzeigen, Anlagen ansehen und Vorgänge lokal speichern.
-- Event-Logs durchsuchen, v3-Zustellpunkte verwalten und BPMN-Nachrichten auswählen.
+- JSON/XML lesen, Anlagen ansehen und Vorgänge lokal aufbewahren.
+- Event Logs durchsuchen, eigene v3-Destinations verwalten und BPMN-Nachrichten auswählen.
 - Zugänge und Schlüssel optional mit Windows-DPAPI speichern.
 
-Nur **Windows x64 und FIT-Connect TEST**. Kein offizielles Produkt der FITKO.
+Für **Windows x64 und FIT-Connect TEST**. Kein offizielles Produkt der FITKO. Verwenden Sie fiktive Daten.
 
-## Einstieg
+## Installation
 
-**Alpha 1 RC1**, unsigniert. Noch keine öffentliche Alpha-Freigabe.
+1. Das signierte Windows-Setup unter [Releases](https://github.com/FBForge/fbforge-connect/releases) herunterladen und installieren.
+2. FBForge Connect starten und mit eigenen TEST-Zugangsdaten verbinden.
+3. Einen Testantrag senden oder eine Einreichung empfangen und prüfen.
 
-[Windows-Paket](https://github.com/FBForge/fbforge-connect/actions/runs/39077541393/artifacts/12117903402) herunterladen, installieren und mit eigenen TEST-Zugängen verbinden. Der Download erfordert eine GitHub-Anmeldung. Verwenden Sie fiktive Daten.
+Die Pakete werden mit digitaler Signatur, Zeitstempel und SHA-256-Prüfsumme bereitgestellt. Java wird mitgeliefert.
 
-Die [Anleitung mit Screenshots](https://github.com/FBForge/fbforge-connect/wiki) ist auch in der Anwendung verfügbar.
+Die [Anleitung mit Bildern und Beispielen](https://github.com/FBForge/fbforge-connect/wiki) ist auch direkt in der Anwendung verfügbar.
 
 [Versionshinweise](RELEASE_NOTES.md) · [Roadmap](ROADMAP.md) · [Mitwirken](CONTRIBUTING.md) · [Issues](https://github.com/FBForge/fbforge-connect/issues) · [Sicherheit](SECURITY.md)
 
 ## Lizenz
 
 [EUPL-1.2](LICENSE). Siehe auch [Drittanbieter-Lizenzen](THIRD_PARTY_NOTICES.md).
-
-FBForge Connect ist ein Projekt von Fabian Braun.

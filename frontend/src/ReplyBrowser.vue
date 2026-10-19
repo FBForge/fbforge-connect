@@ -47,7 +47,7 @@ function open(
   const uuid = (value) =>
     typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
   if (!uuid(item.replyId) || !uuid(item.caseId)) {
-    error.value = 'Bitte gültige Reply- und Vorgangs-IDs eingeben.';
+    error.value = 'Bitte gültige Reply ID und Case ID eingeben.';
     return;
   }
   caseWorkspace?.remember(props.session, item);
@@ -148,11 +148,11 @@ async function loadChannels() {
       <form @submit.prevent="open()">
         <div class="client-fields">
           <label for="reply-lookup-case">
-            Vorgangs-ID
+            Case ID
             <input id="reply-lookup-case" v-model="caseId" type="text" maxlength="36" :disabled="disabled" />
           </label>
           <label for="reply-lookup-id">
-            Reply-ID
+            Reply ID
             <input id="reply-lookup-id" v-model="replyId" type="text" maxlength="36" :disabled="disabled" />
           </label>
         </div>
@@ -181,17 +181,17 @@ async function loadChannels() {
           <table class="receipt-history-table">
             <thead>
               <tr>
-                <th scope="col">Reply-ID</th>
-                <th scope="col">Vorgangs-ID</th>
+                <th scope="col">Reply ID</th>
+                <th scope="col">Case ID</th>
                 <th scope="col">Aktion</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in page.replies" :key="item.replyId">
-                <td data-label="Reply-ID">
+                <td data-label="Reply ID">
                   <code>{{ item.replyId }}</code>
                 </td>
-                <td data-label="Vorgangs-ID">
+                <td data-label="Case ID">
                   <code>{{ item.caseId }}</code>
                 </td>
                 <td data-label="Aktion">
@@ -234,7 +234,7 @@ async function loadChannels() {
         <h3 id="reply-channels-title">Antwortkanäle dieser Sitzung ({{ channels.length }})</h3>
         <p class="small-note">
           Private Antwortschlüssel bleiben im nativen Kern. Bei aktiviertem Profil werden sie zusätzlich
-          geschützt gespeichert; ohne Profil gelten sie nur für die Sitzung. Diese Übersicht zeigt nur
+          geschützt gespeichert. Ohne Profil gelten sie nur für die Sitzung. Diese Übersicht zeigt nur
           öffentliche Kennungen.
         </p>
         <p v-if="!channels.length">In dieser Sitzung wurde noch kein Antwortkanal beim Versand angelegt.</p>
@@ -264,7 +264,7 @@ async function loadChannels() {
                   <code>{{ item.submissionId }}</code>
                 </template>
                 <span v-else>
-                  Die ursprüngliche Einreichungs-ID ist nach dem unterbrochenen Versand nicht bekannt. Der
+                  Die ursprüngliche Submission ID ist nach dem unterbrochenen Versand nicht bekannt. Der
                   Vorgang wurde über eine vollständig geprüfte Antwort zugeordnet.
                 </span>
               </p>
@@ -287,7 +287,7 @@ async function loadChannels() {
                 Versuch:
                 <code>{{ item.attemptId }}</code>
                 . Noch keine bestätigte Vorgangszuordnung. Nach einem unterbrochenen Versand kann eine
-                verfügbare Antwort über ihre Case- und Reply-ID geöffnet werden. Erst nach erfolgreicher
+                verfügbare Antwort über ihre Case ID und Reply ID geöffnet werden. Erst nach erfolgreicher
                 Entschlüsselung und Signatur-/Hashprüfung wird ihr Vorgang diesem Schlüssel zugeordnet.
               </p>
             </div>
@@ -314,13 +314,13 @@ async function loadChannels() {
       </button>
       <dl class="send-summary">
         <div>
-          <dt>Reply-ID</dt>
+          <dt>Reply ID</dt>
           <dd>
             <code>{{ detail.replyId }}</code>
           </dd>
         </div>
         <div>
-          <dt>Vorgangs-ID</dt>
+          <dt>Case ID</dt>
           <dd>
             <code>{{ detail.caseId }}</code>
           </dd>

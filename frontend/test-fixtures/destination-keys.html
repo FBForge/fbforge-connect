@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Zustellpunkt und Testschlüssel · UI-Testdaten</title>
+    <title>Destination und Testschlüssel · UI-Testdaten</title>
   </head>
   <body>
     <div id="app"></div>
@@ -72,7 +72,7 @@
                   status: 'active',
                   metadataVersions: ['2.1.0'],
                   description:
-                    'Ausschließlich synthetische öffentliche Zustellpunktdaten für die lokale UI-Prüfung.',
+                    'Ausschließlich synthetische öffentliche Destination-Daten für die lokale UI-Prüfung.',
                 }),
                 keys: [
                   registration(decryptId, 'decrypt'),
@@ -117,7 +117,7 @@
                   'p',
                   'Diese Entwicklungsansicht verwendet ausschließlich synthetische Daten. Keine echten Schlüssel auswählen.',
                 ),
-                h('p', ['Testzustellpunkt: ', h('code', destinationId)]),
+                h('p', ['Test-Destination: ', h('code', destinationId)]),
                 h('div', { class: 'client-actions' }, [
                   h(
                     'button',

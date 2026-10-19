@@ -6,7 +6,7 @@ test('destination-offers with synthetic native fixtures', async ({ browser }) =>
     errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://127.0.0.1:1420/test-fixtures/destination-manager.html');
-  await page.getByRole('button', { name: 'Eigene Zustellpunkte laden', exact: true }).click();
+  await page.getByRole('button', { name: 'Eigene Destinations laden', exact: true }).click();
   await page.getByRole('button', { name: 'Bearbeiten', exact: true }).first().click();
   await page.getByLabel('Leistungen, Schemata und Prozessnachrichten bearbeiten', { exact: true }).check();
   await page.getByRole('button', { name: 'Leistung hinzufügen', exact: true }).click();

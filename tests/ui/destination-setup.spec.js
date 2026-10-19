@@ -7,6 +7,11 @@ test('destination-setup with synthetic native fixtures', async ({ browser }) => 
       errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('http://127.0.0.1:1420/test-fixtures/destination-setup.html');
+    for (const id of ['setup-name', 'setup-email', 'setup-phone']) {
+      assert.ok(
+        await page.locator('#' + id).evaluate((el) => parseFloat(getComputedStyle(el).minHeight) >= 36),
+      );
+    }
     await page.locator('#setup-name').fill('Bauamt TEST');
     await page.locator('#setup-organisation').fill('Teststadt');
     await page.locator('#setup-email').fill('test@example.invalid');
@@ -22,7 +27,7 @@ test('destination-setup with synthetic native fixtures', async ({ browser }) => 
     if (scenario === 'profile-required')
       await page.evaluate(() => (window.__creationFixture.profileMissing = true));
     if (scenario === 'uncertain') await page.evaluate(() => (window.__creationFixture.uncertain = true));
-    await page.getByRole('button', { name: 'Zustellpunkt vorbereiten', exact: true }).click();
+    await page.getByRole('button', { name: 'Destination vorbereiten', exact: true }).click();
     if (scenario === 'profile-required') {
       await page.getByRole('alert').filter({ hasText: 'gespeicherten Windows-Profil' }).waitFor();
       assert.equal(await page.evaluate(() => window.__creationFixture.writes), 0);
@@ -31,35 +36,35 @@ test('destination-setup with synthetic native fixtures', async ({ browser }) => 
       await page.close();
       continue;
     }
-    await page.getByRole('dialog', { name: 'Diesen Zustellpunkt in TEST anlegen?', exact: true }).waitFor();
+    await page.getByRole('dialog', { name: 'Diese Destination in TEST anlegen?', exact: true }).waitFor();
     assert.equal(await page.evaluate(() => window.__creationFixture.writes), 0);
     await page.keyboard.press('Escape');
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
     assert.equal(await page.evaluate(() => window.__creationFixture.writes), 0);
-    await page.getByRole('button', { name: 'Zustellpunkt vorbereiten', exact: true }).click();
+    await page.getByRole('button', { name: 'Destination vorbereiten', exact: true }).click();
     await page.getByRole('dialog').waitFor();
     assert.equal(
       await page.evaluate(() => window.__creationFixture.generated),
       scenario === 'type-c' ? 0 : 1,
     );
-    await page.getByRole('button', { name: 'Zustellpunkt jetzt auf TEST anlegen', exact: true }).click();
+    await page.getByRole('button', { name: 'Destination jetzt auf TEST anlegen', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
     assert.equal(await page.evaluate(() => window.__creationFixture.writes), 1);
     if (scenario === 'uncertain') {
       await page.getByRole('heading', { name: 'Anlageausgang ungeklärt', exact: true }).waitFor();
       assert.equal(
-        await page.getByRole('button', { name: 'Zustellpunkt vorbereiten', exact: true }).count(),
+        await page.getByRole('button', { name: 'Destination vorbereiten', exact: true }).count(),
         0,
       );
       await page
-        .getByRole('button', { name: 'Vorhandenen Zustellpunkt prüfen und zuordnen', exact: true })
+        .getByRole('button', { name: 'Vorhandene Destination prüfen und zuordnen', exact: true })
         .click();
       await page
         .getByRole('heading', {
           name:
             scenario === 'type-c'
-              ? 'Zustellpunktangaben geprüft'
-              : 'Zustellpunkt und Schlüsselzuordnung geprüft',
+              ? 'Destination-Angaben geprüft'
+              : 'Destination und Schlüsselzuordnung geprüft',
           exact: true,
         })
         .waitFor();
@@ -70,13 +75,13 @@ test('destination-setup with synthetic native fixtures', async ({ browser }) => 
         .getByRole('heading', {
           name:
             scenario === 'type-c'
-              ? 'Zustellpunktangaben geprüft'
-              : 'Zustellpunkt und Schlüsselzuordnung geprüft',
+              ? 'Destination-Angaben geprüft'
+              : 'Destination und Schlüsselzuordnung geprüft',
           exact: true,
         })
         .waitFor();
     await page
-      .getByRole('button', { name: 'Zustellpunkt ansehen und Aktivierung vorbereiten', exact: true })
+      .getByRole('button', { name: 'Destination ansehen und Aktivierung vorbereiten', exact: true })
       .click();
     assert.ok(await page.evaluate(() => window.__creationFixture.created));
     assert.equal(await page.evaluate(() => window.__creationFixture.writes), 1);

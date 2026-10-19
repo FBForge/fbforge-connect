@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { helpTopics } from '../../frontend/src/help/topics.js';
 test('bundled illustrated help covers every workflow without external documentation requests', async ({
   page,
+  context,
 }) => {
   const external = [],
     errors = [];
@@ -20,6 +21,7 @@ test('bundled illustrated help covers every workflow without external documentat
   });
   await page.goto('http://127.0.0.1:1420/');
   await page.getByRole('button', { name: 'Hilfe', exact: true }).click();
+  await expect(page.locator('.connection-notice')).toHaveCount(0);
   const navigation = page.getByRole('navigation', { name: 'Hilfethemen' });
   await expect(navigation.getByRole('button')).toHaveCount(helpTopics.length);
   for (const topic of helpTopics) {
@@ -48,6 +50,22 @@ test('bundled illustrated help covers every workflow without external documentat
   await page.getByLabel('Anleitung durchsuchen').fill('Keinpassenderhilfetext123');
   await expect(page.getByRole('status')).toContainText('Keine passenden Hilfethemen');
   await page.getByLabel('Anleitung durchsuchen').fill('');
+  await navigation.getByRole('button', { name: 'Antworten testen', exact: true }).click();
+  await expect(page.locator('.help-example')).toHaveCount(2);
+  const answerText = await page.getByLabel('JSON-Antwort', { exact: true }).textContent();
+  const schemaText = await page.getByLabel('JSON-Antwortschema', { exact: true }).textContent();
+  const example = JSON.parse(answerText),
+    schema = JSON.parse(schemaText);
+  expect(example).toEqual({ status: 'erhalten' });
+  expect(schema.$id).toBe('urn:de:test');
+  expect(schema.properties.status.enum).toContain(example.status);
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: 'JSON-Antwort kopieren', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('JSON-Antwort wurde kopiert.');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(answerText);
+  await page.setViewportSize({ width: 420, height: 850 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 1180, height: 900 });
   await navigation.getByRole('button', { name: 'Vorgänge und Aufbewahrung', exact: true }).click();
   await page.getByRole('button', { name: 'Zum Bereich Vorgänge', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Meine Vorgänge', exact: true })).toBeVisible();

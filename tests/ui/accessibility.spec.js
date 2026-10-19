@@ -23,7 +23,7 @@ test('main workspaces support keyboard navigation, reflow and automated accessib
     'Hilfe',
     'Senden',
     'Empfangen',
-    'Zustellpunkte',
+    'Destinations',
     'Prozesse',
     'Event Log',
     'Info',
@@ -51,4 +51,44 @@ test('main workspaces support keyboard navigation, reflow and automated accessib
   expect(
     dark.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target) })),
   ).toEqual([]);
+});
+
+test('connected sender keeps labels and keyboard focus in high contrast', async ({ page }) => {
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+  await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html');
+  await page.getByRole('button', { name: 'Verbindung herstellen', exact: true }).click();
+  await page.locator('#client-id').fill('synthetic-client');
+  await page.locator('#client-secret').fill('synthetic-secret-marker');
+  await expect(page.getByRole('button', { name: 'Sitzung prüfen', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Abmelden', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  const source = page.getByRole('textbox', { name: 'Absender-Destination', exact: true });
+  const target = page.getByRole('textbox', { name: 'Empfänger-Destination', exact: true });
+  await expect(source).toHaveAccessibleDescription(/Zugangsdaten/);
+  await source.focus();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Liste aktualisieren', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(target).toBeFocused();
+  expect(await target.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+  for (const [theme, forcedColors] of [
+    ['light', 'none'],
+    ['dark', 'none'],
+    ['light', 'active'],
+    ['dark', 'active'],
+  ]) {
+    await page.emulateMedia({ forcedColors, reducedMotion: 'reduce' });
+    await page.evaluate((value) => (document.documentElement.dataset.theme = value), theme);
+    const result = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    expect(
+      result.violations.map(({ id, nodes }) => ({
+        id,
+        nodes: nodes.map(({ target, failureSummary }) => ({ target, failureSummary })),
+      })),
+      `${theme} / ${forcedColors}`,
+    ).toEqual([]);
+  }
 });

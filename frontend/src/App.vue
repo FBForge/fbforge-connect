@@ -12,7 +12,12 @@ import {
 } from 'vue';
 import { isTauri } from '@tauri-apps/api/core';
 import { invoke, diagnosticLog } from './native.js';
-import { buildSupportReport, operationLabels } from './support-report.js';
+import {
+  buildSupportReport,
+  operationLabels,
+  diagnosticContext,
+  diagnosticResult,
+} from './support-report.js';
 import AppIcon from './AppIcon.vue';
 import appLogo from './assets/test-client.png';
 import { productName, productBrand, productEdition, productPurpose } from './product.js';
@@ -283,12 +288,12 @@ const navigation = [
   {
     name: 'Prozesse',
     icon: 'process',
-    description: 'BPMN-Nachrichten auswählen und passende TEST-Prozesszustellpunkte finden.',
+    description: 'BPMN-Nachrichten auswählen und passende TEST-Prozess-Destinations finden.',
   },
   {
-    name: 'Zustellpunkte',
+    name: 'Destinations',
     icon: 'destinations',
-    description: 'Eigene Zustellpunkte ansehen und über API v3 verwalten.',
+    description: 'Eigene Destinations ansehen und über API v3 verwalten.',
   },
   {
     name: 'Hilfe',
@@ -587,7 +592,7 @@ function clearHistory() {
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div class="workspace-content">
           <div
-            v-if="!activeSession && !['Diagnose', 'Info', 'Prozesse'].includes(section)"
+            v-if="!activeSession && !['Diagnose', 'Info', 'Prozesse', 'Hilfe'].includes(section)"
             class="connection-notice"
           >
             <AppIcon name="connection" />
@@ -603,6 +608,7 @@ function clearHistory() {
           </div>
           <p v-if="error" class="status-badge error" role="alert">{{ error }}</p>
           <SubmissionSender
+            :visible="section === 'Senden'"
             :default-source="defaultDestinations?.sourceDestination || ''"
             :process-draft="processDraft"
             v-show="section === 'Senden'"
@@ -630,7 +636,7 @@ function clearHistory() {
             @fatal="fatal"
           />
           <DestinationManager
-            v-show="section === 'Zustellpunkte'"
+            v-show="section === 'Destinations'"
             :session="activeSession"
             :busy="busy"
             @busy="resourceBusy"
@@ -725,8 +731,8 @@ function clearHistory() {
                 </div>
               </div>
               <p class="small-note" aria-live="polite" :aria-busy="pendingAction === 'probe'">
-                Die lokale Prüfung bestätigt das Laden der Komponenten. Anmeldung und
-                Zustellpunktberechtigungen werden separat geprüft.
+                Die lokale Prüfung bestätigt das Laden der Komponenten. Anmeldung und Berechtigungen für
+                Destinations werden separat geprüft.
               </p>
             </section>
             <section class="tool-section" aria-labelledby="report-title">
@@ -755,8 +761,8 @@ function clearHistory() {
                 <div>
                   <h2 id="trace-title">Technische Aufrufe</h2>
                   <p>
-                    Bis zu 100 Aufrufe dieser Programmsitzung. Eine Antwort bestätigt noch keinen fachlichen
-                    Abschluss.
+                    Die letzten 100 technischen Aufrufe dieser Sitzung. Fehlercodes können Sie direkt am
+                    Eintrag öffnen.
                   </p>
                 </div>
                 <button
@@ -777,7 +783,8 @@ function clearHistory() {
                   <thead>
                     <tr>
                       <th scope="col">Zeit</th>
-                      <th scope="col">Aktion / API</th>
+                      <th scope="col">Aktion</th>
+                      <th scope="col">Kontext</th>
                       <th scope="col">Ergebnis</th>
                       <th scope="col">Dauer</th>
                     </tr>
@@ -785,27 +792,20 @@ function clearHistory() {
                   <tbody>
                     <tr v-for="(entry, index) in trace" :key="index">
                       <td data-label="Zeit">{{ new Date(entry.time).toLocaleTimeString('de-DE') }}</td>
-                      <td data-label="Aktion / API">
-                        {{ operationLabels[entry.command] }} · {{ entry.apiVersion || '—' }}
-                      </td>
+                      <td data-label="Aktion">{{ operationLabels[entry.command] }}</td>
+                      <td data-label="Kontext">{{ diagnosticContext(entry) }}</td>
                       <td data-label="Ergebnis">
-                        <span
-                          class="status-badge"
-                          :class="
-                            entry.result === 'rejected' ||
-                            ['failed', 'uncertain', 'partial', 'conflict'].includes(entry.state)
-                              ? 'warn'
-                              : 'info'
-                          "
-                        >
-                          {{
-                            entry.code ||
-                            entry.state ||
-                            (entry.result === 'returned' ? 'Antwort erhalten' : 'Fehlgeschlagen')
-                          }}
+                        <span class="status-badge" :class="diagnosticResult(entry).tone">
+                          {{ diagnosticResult(entry).label }}
                         </span>
+                        <details v-if="entry.code" class="trace-details">
+                          <summary>Fehlercode anzeigen</summary>
+                          <code>{{ entry.code }}</code>
+                        </details>
                       </td>
-                      <td data-label="Dauer">{{ entry.durationMs }} ms</td>
+                      <td data-label="Dauer">
+                        {{ entry.durationMs === null ? 'Nicht erfasst' : `${entry.durationMs} ms` }}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -827,7 +827,7 @@ function clearHistory() {
               <div>
                 <p class="workspace-eyebrow">Desktop-Anwendung</p>
                 <h2 id="about-title">{{ productName }}</h2>
-                <p>Version {{ version }} · Alpha 1 RC1</p>
+                <p>Version {{ version }} · Alpha 1</p>
                 <p>{{ productPurpose }}.</p>
               </div>
             </section>
@@ -841,10 +841,10 @@ function clearHistory() {
                   Senden, Empfangen, lokale Entschlüsselung und technische Fachdatenprüfung über API v2 und v3
                 </dd>
                 <dt>Verwaltung</dt>
-                <dd>Vorhandene eigene Zustellpunkte ansehen; Änderungen und Bulk-Edit über API v3</dd>
+                <dd>Vorhandene eigene Destinations ansehen. Änderungen und Bulk-Edit über API v3</dd>
                 <dt>Entwicklungsstand</dt>
                 <dd>
-                  Alpha 1 RC1 für Integrationstests. Installation und Verhalten auf Ihren Zielgeräten vor dem
+                  Alpha 1 für Integrationstests. Installation und Verhalten auf Ihren Zielgeräten vor dem
                   Einsatz prüfen.
                 </dd>
               </dl>
@@ -968,6 +968,7 @@ function clearHistory() {
           {{ activeSession ? 'Mit anderen Zugangsdaten anmelden' : 'Bei TEST anmelden' }}
         </button>
         <button
+          v-if="activeSession"
           class="button secondary"
           type="button"
           :disabled="busy || !activeSession"
@@ -976,6 +977,7 @@ function clearHistory() {
           Sitzung prüfen
         </button>
         <button
+          v-if="activeSession"
           class="button secondary"
           type="button"
           :disabled="busy || !activeSession"

@@ -93,17 +93,17 @@ const statuses = {
 };
 const messages = {
   destination_conflict:
-    'Mindestens ein Zustellpunkt wurde seit der Vorschau geändert. Es wurde nichts gespeichert. Bitte neu laden und eine neue Vorschau erstellen.',
+    'Mindestens eine Destination wurde seit der Vorschau geändert. Es wurde nichts gespeichert. Bitte neu laden und eine neue Vorschau erstellen.',
   destination_update_locked:
-    'Diese Änderung kann nicht erneut ausgeführt werden. Bei ungewissem Ausgang bitte zuerst den Zustellpunkt neu laden und für weitere Änderungen eine neue Sitzung öffnen.',
+    'Diese Änderung kann nicht erneut ausgeführt werden. Bei ungewissem Ausgang bitte zuerst die Destination neu laden und für weitere Änderungen eine neue Sitzung öffnen.',
   resource_denied:
-    'Die Zugangsdaten dürfen diesen eigenen Zustellpunkt nicht verwalten. Bitte die Berechtigungen für die Destination API prüfen.',
-  resource_missing: 'Der Zustellpunkt ist nicht verfügbar.',
+    'Die Zugangsdaten dürfen diese eigene Destination nicht verwalten. Bitte die Berechtigungen für die Destination API prüfen.',
+  resource_missing: 'Die Destination ist nicht verfügbar.',
   invalid_input: 'Bitte Auswahl, Namen, Metadatenversionen und zulässige Statuswechsel prüfen.',
   confirmation_expired: 'Die Vorschau ist abgelaufen. Bitte neu vorbereiten.',
-  content_limit: 'Die Auswahl oder Vorschau ist zu groß. Bitte weniger Zustellpunkte bearbeiten.',
+  content_limit: 'Die Auswahl oder Vorschau ist zu groß. Bitte weniger Destinations bearbeiten.',
   resource_unavailable:
-    'Die Destination API ist nicht erreichbar. Bei einem Speicherversuch zuerst das Ergebnis abrufen; nicht erneut speichern.',
+    'Die Destination API ist nicht erreichbar. Bei einem Speicherversuch zuerst das Ergebnis abrufen. Nicht erneut speichern.',
 };
 let generation = 0;
 const context = computed(() => `${props.session?.apiVersion}/${props.session?.sessionId}`);
@@ -146,7 +146,7 @@ async function run(action, operation) {
     emit('busy', false);
     emit('activity', {
       api: active.apiVersion,
-      role: 'Zustellpunktverwaltung',
+      role: 'Destination-Verwaltung',
       action,
       status: resultStatus,
       started,
@@ -156,7 +156,7 @@ async function run(action, operation) {
 async function openCreated(id) {
   setupOpen.value = false;
   setupNotice.value =
-    'Zustellpunkt und öffentliche Schlüssel sind angelegt. Prüfen Sie die Konfiguration und bestätigen Sie die Aktivierung separat.';
+    'Destination und öffentliche Schlüssel sind angelegt. Prüfen Sie die Konfiguration und bestätigen Sie die Aktivierung separat.';
   await nextTick();
   await edit({ destinationId: id });
   if (detail.value?.destinationId === id && detail.value.possibleNextStatus.includes('active')) {
@@ -166,7 +166,7 @@ async function openCreated(id) {
   }
 }
 function search(offset = 0) {
-  return run('Eigene Zustellpunkte laden', async (active, current) => {
+  return run('Eigene Destinations laden', async (active, current) => {
     const result = await listDestinations(invoke, active, offset);
     if (current()) page.value = result;
   });
@@ -178,7 +178,7 @@ function toggle(row, checked) {
   if (!checked) selected.value = selected.value.filter((item) => item.destinationId !== row.destinationId);
 }
 function edit(row) {
-  return run('Eigenen Zustellpunkt öffnen', async (active, current) => {
+  return run('Eigene Destination öffnen', async (active, current) => {
     const result = await loadManagedDestination(invoke, active, row.destinationId);
     if (!current()) return;
     detail.value = result;
@@ -201,7 +201,7 @@ function edit(row) {
   });
 }
 function prepare() {
-  return run('Zustellpunktänderung vorbereiten', async (active, current) => {
+  return run('Destination-Änderung vorbereiten', async (active, current) => {
     const result = await prepareDestinationUpdate(
       invoke,
       active,
@@ -214,7 +214,7 @@ function prepare() {
 function execute() {
   const confirmed = preview.value;
   if (!confirmed || confirmed.status !== 'prepared') return;
-  return run('Zustellpunktänderung speichern', async (active, current) => {
+  return run('Destination-Änderung speichern', async (active, current) => {
     // Remove the execute capability from the UI before the IPC call. Recovery reads state only.
     preview.value = { ...confirmed, status: 'running' };
     try {
@@ -272,7 +272,7 @@ function difference(row) {
 
 <template>
   <div>
-    <div class="client-actions" aria-label="Zustellpunktaufgabe">
+    <div class="client-actions" aria-label="Destination-Aufgabe">
       <button
         type="button"
         class="button secondary"
@@ -280,7 +280,7 @@ function difference(row) {
         :disabled="disabled"
         @click="setupOpen = false"
       >
-        Bestehende Zustellpunkte
+        Bestehende Destinations
       </button>
       <button
         type="button"
@@ -289,7 +289,7 @@ function difference(row) {
         :disabled="disabled || !canEdit"
         @click="setupOpen = true"
       >
-        Neuen TEST-Zustellpunkt anlegen
+        Neue TEST-Destination anlegen
       </button>
     </div>
     <DestinationSetup
@@ -305,18 +305,18 @@ function difference(row) {
     />
     <section v-show="!setupOpen" class="tool-section" aria-labelledby="manager-title" :aria-busy="pending">
       <p v-if="setupNotice" role="status">{{ setupNotice }}</p>
-      <h2 id="manager-title">Eigene Zustellpunkte verwalten</h2>
+      <h2 id="manager-title">Eigene Destinations verwalten</h2>
       <p>
-        Zustellpunkte der angemeldeten TEST-Zugangsdaten laden und einzeln oder gemeinsam bearbeiten. Bis zu
-        zehn Zustellpunkte pro Änderung.
+        Destinations der angemeldeten TEST-Zugangsdaten laden und einzeln oder gemeinsam bearbeiten. Bis zu
+        zehn Destinations pro Änderung.
       </p>
       <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
       <p v-else-if="!canEdit">
-        Die Bearbeitung steht zunächst über API v3 bereit. Sie können eigene Zustellpunkte mit v2 ansehen oder
+        Die Bearbeitung steht zunächst über API v3 bereit. Sie können eigene Destinations mit v2 ansehen oder
         oben eine v3-Sitzung öffnen.
       </p>
       <div class="client-actions">
-        <button class="button" :disabled="disabled" @click="search()">Eigene Zustellpunkte laden</button>
+        <button class="button" :disabled="disabled" @click="search()">Eigene Destinations laden</button>
         <button
           v-if="preview && ['uncertain', 'running'].includes(preview.status)"
           class="button secondary"
@@ -329,13 +329,13 @@ function difference(row) {
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="pending" role="status">Aktion wird ausgeführt …</p>
       <template v-if="page">
-        <p>{{ page.totalCount }} eigene Zustellpunkte · {{ selected.length }} von höchstens 10 ausgewählt</p>
+        <p>{{ page.totalCount }} eigene Destinations · {{ selected.length }} von höchstens 10 ausgewählt</p>
         <div class="client-table support-table">
           <table class="submission-result-table destination-manager-table">
             <thead>
               <tr>
                 <th scope="col">Auswahl</th>
-                <th scope="col">Name / Zustellpunkt</th>
+                <th scope="col">Name / Destination</th>
                 <th scope="col">Status</th>
                 <th scope="col">Aktion</th>
               </tr>
@@ -356,7 +356,7 @@ function difference(row) {
                     @change="toggle(row, $event.target.checked)"
                   />
                 </td>
-                <td data-label="Name / Zustellpunkt">
+                <td data-label="Name / Destination">
                   {{ row.name || 'Ohne Namen' }}
                   <br />
                   <code>{{ row.destinationId }}</code>
@@ -406,7 +406,7 @@ function difference(row) {
         </dl>
       </details>
       <form v-if="selected.length && canEdit" @submit.prevent="prepare">
-        <h3>{{ selected.length === 1 ? 'Zustellpunkt bearbeiten' : 'Bulk-Edit' }}</h3>
+        <h3>{{ selected.length === 1 ? 'Destination bearbeiten' : 'Bulk-Edit' }}</h3>
         <p>
           Nur angehakte Felder werden geändert. Ein leeres angehaktes Kontaktfeld entfernt diesen Kontaktwert.
           Andere Einstellungen bleiben erhalten.
@@ -433,8 +433,7 @@ function difference(row) {
                 />
               </label>
               <small>
-                Für Bulk-Edit z. B. „{name} – Test“. {name} übernimmt den bisherigen Namen jedes
-                Zustellpunkts.
+                Für Bulk-Edit z. B. „{name} – Test“. {name} übernimmt den bisherigen Namen jeder Destination.
               </small>
             </div>
             <div>
@@ -515,8 +514,8 @@ function difference(row) {
               prefix="manager-offer"
             />
             <p v-if="offersEnabled">
-              Diese Listen ersetzen die Angebote dieses Zustellpunkts. Entfernte Angebote stehen danach für
-              neue Nachrichten nicht mehr zur Verfügung. Andere Einstellungen bleiben erhalten.
+              Diese Listen ersetzen die Angebote dieser Destination. Entfernte Angebote stehen danach für neue
+              Nachrichten nicht mehr zur Verfügung. Andere Einstellungen bleiben erhalten.
             </p>
           </template>
           <button class="button" type="submit" :disabled="!Object.keys(changes).length">
@@ -553,13 +552,13 @@ function difference(row) {
       <section v-if="preview" class="tool-section" aria-labelledby="update-preview-title">
         <h3 id="update-preview-title">{{ statuses[preview.status] || preview.status }}</h3>
         <p v-if="preview.status === 'prepared'">
-          Noch nichts gespeichert. Prüfen Sie die Werte für jeden Zustellpunkt. Die Vorschau gilt zwei
-          Minuten. Vor dem Speichern werden alle ausgewählten Zustellpunkte erneut auf zwischenzeitliche
-          Änderungen geprüft.
+          Noch nichts gespeichert. Prüfen Sie die Werte für jede Destination. Die Vorschau gilt zwei Minuten.
+          Vor dem Speichern werden alle ausgewählten Destinations erneut auf zwischenzeitliche Änderungen
+          geprüft.
         </p>
         <p v-if="preview.status === 'uncertain'">
           Der Ausgang mindestens einer Änderung ist ungewiss. Es wird nichts automatisch wiederholt. Rufen Sie
-          das Ergebnis ab und laden Sie die Zustellpunkte neu. Weitere Schreibversuche sind in dieser Sitzung
+          das Ergebnis ab und laden Sie die Destinations neu. Weitere Schreibversuche sind in dieser Sitzung
           gesperrt.
         </p>
         <p v-if="preview.status === 'conflict'">{{ messages.destination_conflict }}</p>
@@ -569,7 +568,7 @@ function difference(row) {
             <code>{{ row.destinationId }}</code>
           </p>
           <p v-if="row.error" role="status">
-            {{ messages[row.error] || 'Änderung nicht bestätigt. Bitte den Zustellpunkt neu laden.' }}
+            {{ messages[row.error] || 'Änderung nicht bestätigt. Bitte die Destination neu laden.' }}
           </p>
           <template v-if="row.after.publicServices || row.after.processMessages">
             <h5>Angebote nach der Änderung</h5>

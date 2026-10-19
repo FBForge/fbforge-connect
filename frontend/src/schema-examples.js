@@ -115,17 +115,24 @@ function jsonPreferredValue(schema, type) {
 function jsonMatchesType(value, type) {
   if (!type) return true;
   if (Array.isArray(type)) return type.some((item) => jsonMatchesType(value, item));
-  return (
-    {
-      object: (value) => value !== null && typeof value === 'object' && !Array.isArray(value),
-      array: Array.isArray,
-      integer: Number.isInteger,
-      number: (value) => typeof value === 'number' && Number.isFinite(value),
-      boolean: (value) => typeof value === 'boolean',
-      null: (value) => value === null,
-      string: (value) => typeof value === 'string',
-    }[type]?.(value) || false
-  );
+  switch (type) {
+    case 'object':
+      return value !== null && typeof value === 'object' && !Array.isArray(value);
+    case 'array':
+      return Array.isArray(value);
+    case 'integer':
+      return Number.isInteger(value);
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value);
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'null':
+      return value === null;
+    case 'string':
+      return typeof value === 'string';
+    default:
+      return false;
+  }
 }
 function jsonReference(root, reference) {
   if (reference === '#') return root;
