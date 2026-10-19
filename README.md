@@ -13,7 +13,7 @@ Nur **Windows x64 und FIT-Connect TEST**. Kein offizielles Produkt der FITKO.
 
 ## Einstieg
 
-**Alpha 1 RC2**, unsigniert. Noch keine öffentliche Alpha-Freigabe.
+**Alpha 1 RC1**, unsigniert. Noch keine öffentliche Alpha-Freigabe.
 
 Das [Windows-Paket aus dem erfolgreichen develop-Build](https://github.com/FBForge/fbforge-connect/actions/workflows/windows.yml?query=branch%3Adevelop) herunterladen, installieren und mit eigenen TEST-Zugängen verbinden. Der Download erfordert eine GitHub-Anmeldung. Verwenden Sie fiktive Daten.
 

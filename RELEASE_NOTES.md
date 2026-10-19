@@ -1,19 +1,12 @@
 # Versionshinweise
 
-## 0.1.0-alpha.1.rc.2
-
-- Einstieg ohne deaktivierte Versandfelder.
-- Einheitliche API-Begriffe und getrennte Screenreader-Beschreibungen.
-- Kontrastdarstellung und Eingabefelder vereinheitlicht.
-- Aktualisierte Hilfe mit eigenen Bildern für Antworten und Fehler.
-
 ## 0.1.0-alpha.1.rc.1
 
 Windows-Prüfkandidat, unsigniert. Noch keine öffentliche Alpha-Freigabe.
 
-- Einheitliche Sie-Anrede.
-- Hinweise beim Verbinden und Senden vereinfacht.
-- Bebilderte Hilfe in der Anwendung und im GitHub-Wiki.
+- Vereinfachter Einstieg, einheitliche API-Begriffe und Sie-Anrede.
+- Verbesserte Tastatur-, Screenreader- und Kontrastdarstellung.
+- Aktualisierte Hilfe mit eigenen Bildern für Antworten und Fehler.
 
 ## 0.1.0-dev.9
 

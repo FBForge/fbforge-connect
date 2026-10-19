@@ -827,7 +827,7 @@ function clearHistory() {
               <div>
                 <p class="workspace-eyebrow">Desktop-Anwendung</p>
                 <h2 id="about-title">{{ productName }}</h2>
-                <p>Version {{ version }} · Alpha 1 RC2</p>
+                <p>Version {{ version }} · Alpha 1 RC1</p>
                 <p>{{ productPurpose }}.</p>
               </div>
             </section>
@@ -844,7 +844,7 @@ function clearHistory() {
                 <dd>Vorhandene eigene Destinations ansehen. Änderungen und Bulk-Edit über API v3</dd>
                 <dt>Entwicklungsstand</dt>
                 <dd>
-                  Alpha 1 RC2 für Integrationstests. Installation und Verhalten auf Ihren Zielgeräten vor dem
+                  Alpha 1 RC1 für Integrationstests. Installation und Verhalten auf Ihren Zielgeräten vor dem
                   Einsatz prüfen.
                 </dd>
               </dl>
