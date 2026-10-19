@@ -62,7 +62,9 @@ test('bundled illustrated help covers every workflow without external documentat
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.getByRole('button', { name: 'JSON-Antwort kopieren', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('JSON-Antwort wurde kopiert.');
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(answerText);
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  // The Windows clipboard represents line endings as CRLF.
+  expect(copied.replace(/\r\n/g, '\n')).toBe(answerText.replace(/\r\n/g, '\n'));
   await page.setViewportSize({ width: 420, height: 850 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.setViewportSize({ width: 1180, height: 900 });
