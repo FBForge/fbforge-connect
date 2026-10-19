@@ -282,7 +282,7 @@ function send(row) {
     !row.schemas.some((item) => item.schemaUri === mapped.schemaUri && item.mimeType === mapped.mimeType)
   ) {
     error.value =
-      'Dieser Zustellpunkt bietet das zugeordnete Schema nicht an. Bitte Schema oder Empfänger prüfen.';
+      'Diese Destination bietet das zugeordnete Schema nicht an. Bitte Schema oder Empfänger prüfen.';
     return;
   }
   emit('send', {
@@ -370,7 +370,7 @@ function send(row) {
         </p>
         <p>
           BPMN-IDs und Anzeigenamen sind keine automatisch gültigen FIT-Connect-Kennungen. Die Demo verwendet
-          ausdrücklich hinterlegte Testkennungen; bei eigenen Modellen müssen Sie die vereinbarten Kennungen
+          ausdrücklich hinterlegte Testkennungen. Bei eigenen Modellen müssen Sie die vereinbarten Kennungen
           prüfen oder ergänzen.
         </p>
         <label class="checkbox-label">
@@ -451,7 +451,7 @@ function send(row) {
               <input id="bpmn-region" v-model="region" required pattern="DE[0-9]{0,12}" maxlength="14" />
               <small>DE für bundesweit oder eine vereinbarte Regionalkennung.</small>
             </label>
-            <button class="button" type="submit">Passende Prozess-Zustellpunkte suchen</button>
+            <button class="button" type="submit">Passende Prozess-Destinations suchen</button>
           </fieldset>
         </form>
         <p v-if="!connected">
@@ -460,10 +460,10 @@ function send(row) {
         </p>
       </section>
       <section v-if="page" class="tool-section" aria-labelledby="process-results-title">
-        <h3 id="process-results-title">Passende TEST-Zustellpunkte ({{ page.totalCount }})</h3>
+        <h3 id="process-results-title">Passende TEST-Destinations ({{ page.totalCount }})</h3>
         <p>
-          Der Suchdienst liefert öffentliche Zustellpunkt-IDs. Beim Übernehmen werden die Angebote erneut
-          geladen; die Versandprüfung bleibt ein eigener Schritt.
+          Der Suchdienst liefert öffentliche Destination IDs. Beim Übernehmen werden die Angebote erneut
+          geladen. Die Versandprüfung bleibt ein eigener Schritt.
         </p>
         <article v-for="row in page.destinations" :key="row.destinationId" class="tool-section">
           <h4>
@@ -479,8 +479,8 @@ function send(row) {
           </button>
         </article>
         <p v-if="!page.destinations.length">
-          Keine passenden öffentlichen Empfänger gefunden. Berechtigungen und Angebote des gewünschten
-          TEST-Zustellpunkts prüfen.
+          Keine passenden öffentlichen Empfänger gefunden. Berechtigungen und Angebote der gewünschten
+          TEST-Destination prüfen.
         </p>
         <div class="client-actions">
           <button

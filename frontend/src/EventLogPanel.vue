@@ -338,7 +338,7 @@ async function closePreview() {
           </select>
         </label>
         <label v-if="mode === 'submission'" for="event-destination">
-          Zustellpunkt-ID
+          Destination ID
           <input
             id="event-destination"
             v-model="destination"
@@ -349,11 +349,11 @@ async function closePreview() {
           />
         </label>
         <label for="event-case">
-          Vorgangs-ID
+          Case ID
           <input id="event-case" v-model="caseId" type="text" maxlength="36" required :disabled="disabled" />
         </label>
         <label v-if="mode === 'submission'" for="event-submission">
-          Einreichungs-ID
+          Submission ID
           <input
             id="event-submission"
             v-model="submission"
@@ -365,7 +365,7 @@ async function closePreview() {
           />
         </label>
         <label v-else-if="mode === 'reply'" for="event-reply">
-          Reply-ID
+          Reply ID
           <input
             id="event-reply"
             v-model="replyId"
@@ -378,9 +378,9 @@ async function closePreview() {
         </label>
       </div>
       <p class="small-note">
-        Die Vorgangs-ID (Case ID) finden Sie nach dem Versand oder bei einer empfangenen Nachricht. „Gesamter
-        Vorgang“ zeigt alle Ereignisse, die Ihre Zugangsdaten lesen dürfen. Die Kennungen werden beim Öffnen
-        aus einer Nachricht automatisch übernommen.
+        Die Case ID finden Sie nach dem Versand oder bei einer empfangenen Nachricht. „Gesamter Vorgang“ zeigt
+        alle Ereignisse, die Ihre Zugangsdaten lesen dürfen. Die Kennungen werden beim Öffnen aus einer
+        Nachricht automatisch übernommen.
       </p>
       <div class="client-actions">
         <button

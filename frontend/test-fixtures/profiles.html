@@ -39,6 +39,19 @@
         async invoke(command, args = {}) {
           fixture.calls.push({ command, args });
           if (command === 'list_profiles') return fixture.profiles;
+          if (command === 'list_destinations' && new URLSearchParams(location.search).has('destinations'))
+            return {
+              apiVersion: args.apiVersion,
+              sessionId: args.sessionId,
+              environment: 'TEST',
+              data: {
+                destinations: [
+                  { destinationId: id(1), name: 'Muster-Onlinedienst', type: 'C', status: 'active' },
+                ],
+                offset: 0,
+                totalCount: 1,
+              },
+            };
           if (command === 'get_profile_defaults')
             return fixture.binding
               ? fixture.defaults[fixture.binding] || { sourceDestination: null, receiverDestination: null }

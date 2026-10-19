@@ -23,8 +23,8 @@ export const operationLabels = Object.freeze({
   open_session: 'Bei TEST anmelden',
   check_session: 'Sitzung prüfen',
   close_session: 'Abmelden',
-  list_destinations: 'Eigene Zustellpunkte laden',
-  load_destination: 'Zustellpunkt prüfen',
+  list_destinations: 'Eigene Destinations laden',
+  load_destination: 'Destination prüfen',
   import_key: 'Testschlüssel laden',
   discard_keys: 'Testschlüssel verwerfen',
   load_managed_destination: 'Verwaltung: Details laden',
@@ -48,11 +48,11 @@ export const operationLabels = Object.freeze({
   receipt_state: 'Empfangsstatus abrufen',
   generate_test_keys: 'TEST-Schlüssel erzeugen',
   list_generated_keys: 'Erzeugte Schlüssel laden',
-  prepare_destination_creation: 'Zustellpunktanlage vorbereiten',
-  execute_destination_creation: 'Zustellpunkt anlegen',
-  cancel_destination_creation: 'Zustellpunktanlage verwerfen',
+  prepare_destination_creation: 'Destination-Anlage vorbereiten',
+  execute_destination_creation: 'Destination anlegen',
+  cancel_destination_creation: 'Destination-Anlage verwerfen',
   destination_creation_state: 'Anlageergebnis prüfen',
-  reconcile_destination_creation: 'Zustellpunkt zuordnen',
+  reconcile_destination_creation: 'Destination zuordnen',
   use_generated_keys: 'Erzeugte TEST-Schlüssel verwenden',
   list_profiles: 'Gespeicherte Profile laden',
   open_saved_profile: 'Mit gespeichertem Profil anmelden',
@@ -94,6 +94,64 @@ const states = new Set([
   'rejected',
 ]);
 const api = (value) => (['v2', 'v3'].includes(value) ? value : null);
+const stateLabels = new Map([
+  ['idle', 'Keine Aktion offen'],
+  ['prepared', 'Vorbereitet'],
+  ['executing', 'Wird ausgeführt'],
+  ['sent', 'Gesendet'],
+  ['failed', 'Fehlgeschlagen'],
+  ['uncertain', 'Ausgang ungewiss'],
+  ['cancelled', 'Verworfen'],
+  ['expired', 'Abgelaufen'],
+  ['completed', 'Abgeschlossen'],
+  ['partial', 'Teilweise erfolgreich'],
+  ['conflict', 'Konflikt'],
+  ['accepted', 'Angenommen'],
+  ['rejected', 'Abgelehnt'],
+]);
+const codeLabels = new Map([
+  ['schema_unavailable', 'Schema nicht verfügbar'],
+  ['schema_required', 'Schema fehlt'],
+  ['schema_consent_required', 'Schemafreigabe fehlt'],
+  ['data_schema_invalid', 'Fachdaten passen nicht zum Schema'],
+  ['data_format_invalid', 'Datenformat ungültig'],
+  ['schema_tls_error', 'Schema-Verbindung nicht sicher'],
+  ['schema_network_error', 'Schemaquelle nicht erreichbar'],
+  ['schema_http_error', 'Schemaquelle meldet einen Fehler'],
+  ['schema_archive_invalid', 'Schemaarchiv ungültig'],
+  ['key_missing', 'Schlüssel fehlt'],
+  ['key_rejected', 'Schlüssel nicht verwendbar'],
+  ['resource_denied', 'Berechtigung fehlt'],
+  ['resource_missing', 'Nicht gefunden'],
+  ['resource_unavailable', 'TEST-Dienst nicht verfügbar'],
+  ['authentication_failed', 'Anmeldung fehlgeschlagen'],
+  ['session_missing', 'Sitzung nicht verfügbar'],
+  ['engine_timeout', 'Zeitlimit überschritten'],
+  ['engine_busy', 'Eine Aktion läuft bereits'],
+  ['engine_disconnected', 'Verbindung zum Anwendungskern getrennt'],
+  ['engine_protocol_error', 'Ungültige Antwort des Anwendungskerns'],
+  ['invalid_input', 'Eingaben prüfen'],
+  ['invalid_submission', 'Einreichung prüfen'],
+  ['verification_failed', 'Inhaltsprüfung fehlgeschlagen'],
+  ['vault_unavailable', 'Geschützter Speicher nicht verfügbar'],
+  ['vault_pending', 'Sicherung ausstehend'],
+  ['case_storage_pending', 'Vorgang noch nicht gespeichert'],
+  ['case_limit', 'Vorgangsablage voll'],
+  ['reply_metadata_required', 'Metadatenversion für Replies fehlt'],
+  ['content_cleanup_failed', 'Lokale Bereinigung fehlgeschlagen'],
+]);
+export function diagnosticContext(entry) {
+  const version = api(entry.apiVersion);
+  return version ? `API ${version}` : 'Lokal';
+}
+export function diagnosticResult(entry) {
+  if (entry.code || entry.result === 'rejected')
+    return { label: codeLabels.get(entry.code) || 'Fehlgeschlagen', tone: 'warn' };
+  return {
+    label: stateLabels.get(entry.state) || 'Erfolgreich',
+    tone: ['failed', 'uncertain', 'partial', 'conflict', 'expired'].includes(entry.state) ? 'warn' : 'info',
+  };
+}
 function safeEntry(entry) {
   if (!entry || !Object.hasOwn(operationLabels, entry.command)) return null;
   return Object.freeze({
@@ -151,8 +209,9 @@ export function observeInvoke(operation, record, clock = () => performance.now()
       state = null;
     try {
       const response = await operation(command, args);
-      state = states.has(response?.data?.status) ? response.data.status : null;
-      if (response?.data?.error) code = diagnosticCode(response.data.error);
+      const data = response?.data ?? response;
+      state = states.has(data?.status) ? data.status : null;
+      if (data?.error) code = diagnosticCode(data.error);
       return response;
     } catch (cause) {
       result = 'rejected';

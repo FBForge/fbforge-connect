@@ -91,7 +91,7 @@ const context = computed(() =>
 );
 let revision = 0;
 const messages = {
-  invalid_input: 'Bitte gültige Zustellpunkt- und Einreichungs-IDs eingeben.',
+  invalid_input: 'Bitte gültige Destination ID und Submission ID eingeben.',
   resource_denied: 'Diese TEST-Zugangsdaten haben keine Leseberechtigung für die angefragte Einreichung.',
   resource_missing: 'Die Einreichung wurde nicht gefunden oder ist nicht mehr abrufbar.',
   invalid_resource: 'Die TEST-Antwort ist unvollständig oder passt nicht zur angefragten Einreichung.',
@@ -177,26 +177,28 @@ function open(id = submission.value.trim()) {
     <section class="tool-section" aria-labelledby="submission-search-title">
       <h2 id="submission-search-title">Einreichungen suchen</h2>
       <p>
-        Verfügbare Einreichungen eines Zustellpunkts auflisten oder eine bekannte Einreichungs-ID direkt
-        öffnen. Die aktuelle TEST-Sitzung wird wiederverwendet.
+        Verfügbare Einreichungen einer Destination auflisten oder eine bekannte Submission ID direkt öffnen.
+        Die aktuelle TEST-Sitzung wird wiederverwendet.
       </p>
       <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
       <form @submit.prevent="search()">
         <div class="client-fields">
           <label for="pickup-destination">
-            Zustellpunkt-ID
+            <span id="pickup-destination-label">Destination ID</span>
             <input
               id="pickup-destination"
+              aria-labelledby="pickup-destination-label"
+              aria-describedby="pickup-destination-help"
               v-model="destination"
               type="text"
               maxlength="36"
               required
               :disabled="disabled"
             />
-            <small>Wird auch aus der Zustellpunktauswahl übernommen.</small>
+            <small id="pickup-destination-help">Wird auch aus der Destination-Auswahl übernommen.</small>
           </label>
           <label for="pickup-submission">
-            Einreichungs-ID (optional)
+            Submission ID (optional)
             <input
               id="pickup-submission"
               v-model="submission"
@@ -223,7 +225,7 @@ function open(id = submission.value.trim()) {
       <p v-if="pending" role="status">Einreichungen werden aus TEST geladen …</p>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="page">
-        <p>{{ page.totalCount }} verfügbare Einreichungen an diesem Zustellpunkt.</p>
+        <p>{{ page.totalCount }} verfügbare Einreichungen an dieser Destination.</p>
         <p v-if="!page.submissions.length">Keine Einreichungen gefunden.</p>
         <div v-else class="client-table support-table">
           <table class="submission-result-table">
@@ -316,7 +318,7 @@ function open(id = submission.value.trim()) {
           <dd>
             <code>{{ detail.caseId }}</code>
           </dd>
-          <dt>Zustellpunkt</dt>
+          <dt>Destination</dt>
           <dd>
             <code>{{ detail.destinationId }}</code>
           </dd>
@@ -380,7 +382,7 @@ function open(id = submission.value.trim()) {
         Nachrichtenbezug im BPMN-Modell zeigen
       </button>
       <span class="small-note">
-        Zuordnung aus dem Nachrichtendetail; technische Inhaltsprüfung bleibt separat.
+        Zuordnung aus dem Nachrichtendetail. Technische Inhaltsprüfung bleibt separat.
       </span>
     </p>
     <ReceivePanel

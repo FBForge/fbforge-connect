@@ -1,0 +1,127 @@
+name: Sign Windows candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run:
+        description: Successful Windows validation run for this exact branch commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+
+concurrency:
+  group: windows-signing
+  cancel-in-progress: false
+
+jobs:
+  verify-source:
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require exact successful validation and owner approval policy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN: ${{ inputs.validation_run }}
+        run: python3 scripts/ci/check-signing-run.py
+
+  sign:
+    needs: verify-source
+    environment: windows-signing
+    runs-on: [self-hosted, Windows, X64, fbforge-signing]
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.20.0
+          package-manager-cache: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.99.0 --profile minimal
+      - name: Resolve locked frontend dependencies
+        run: npm ci --ignore-scripts
+      - name: Package the previously validated SDK adapters
+        working-directory: engine
+        run: .\mvnw.cmd --batch-mode -DskipTests package
+      - name: Stage and exercise the packaged runtime
+        run: |
+          npm run stage:engine
+          if ($LASTEXITCODE -ne 0) { throw 'signing_runtime_staging_failed' }
+          npm run test:engine
+          if ($LASTEXITCODE -ne 0) { throw 'signing_runtime_validation_failed' }
+      - name: Sign application, uninstaller and setup using the local certificate
+        env:
+          VALIDATION_RUN: ${{ inputs.validation_run }}
+          SIGNING_THUMBPRINT: ${{ vars.WINDOWS_SIGNING_THUMBPRINT }}
+          SIGNING_TIMESTAMP_URL: ${{ vars.WINDOWS_TIMESTAMP_URL }}
+        run: ./scripts/build-signed-windows.ps1 -Thumbprint $env:SIGNING_THUMBPRINT -TimestampUrl $env:SIGNING_TIMESTAMP_URL
+      - name: Retain candidate for independent installation checks
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-signed-candidate
+          path: ${{ env.SIGNED_OUTPUT }}/*
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-package:
+    needs: sign
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download signed candidate and exact unsigned upgrade baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN: ${{ inputs.validation_run }}
+        run: |
+          $candidate = Join-Path $env:RUNNER_TEMP 'signed-candidate'
+          $previous = Join-Path $env:RUNNER_TEMP 'unsigned-baseline'
+          gh run download $env:GITHUB_RUN_ID --repo $env:GITHUB_REPOSITORY --name windows-signed-candidate --dir $candidate
+          if ($LASTEXITCODE -ne 0) { throw 'signed_candidate_download_failed' }
+          gh run download $env:VALIDATION_RUN --repo $env:GITHUB_REPOSITORY --name windows-alpha-unsigned-setup --dir $previous
+          if ($LASTEXITCODE -ne 0) { throw 'signing_baseline_download_failed' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value ('SIGNED_CANDIDATE=' + $candidate)
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value ('UNSIGNED_BASELINE=' + $previous)
+      - name: Build isolated profile checkpoint bridge
+        run: |
+          rustup toolchain install 1.99.0 --profile minimal
+          if ($LASTEXITCODE -ne 0) { throw 'signing_verification_toolchain_failed' }
+          cargo +1.99.0 build --manifest-path desktop/native-contracts/Cargo.toml --locked --example profile-checkpoint
+          if ($LASTEXITCODE -ne 0) { throw 'signing_checkpoint_bridge_failed' }
+      - name: Check signed installation, runtime, profile preservation and upgrade
+        env:
+          SIGNING_THUMBPRINT: ${{ vars.WINDOWS_SIGNING_THUMBPRINT }}
+          VALIDATION_RUN: ${{ inputs.validation_run }}
+        run: ./scripts/ci/check-signed-package.ps1 -Directory $env:SIGNED_CANDIDATE -Baseline $env:UNSIGNED_BASELINE -Thumbprint $env:SIGNING_THUMBPRINT
+      - name: Retain independently checked signed setup
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-alpha-signed-setup
+          path: |
+            ${{ env.SIGNED_CANDIDATE }}/*-setup.exe
+            ${{ env.SIGNED_CANDIDATE }}/build-info.json
+            ${{ env.SIGNED_CANDIDATE }}/SHA256SUMS.txt
+            ${{ env.SIGNED_CANDIDATE }}/signature-info.json
+          if-no-files-found: error
+          retention-days: 30

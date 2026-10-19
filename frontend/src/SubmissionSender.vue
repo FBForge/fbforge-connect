@@ -10,13 +10,20 @@ const caseWorkspace = inject(caseWorkspaceKey, null);
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
 import DraftDataPreview from './DraftDataPreview.vue';
 import FileDropInput from './FileDropInput.vue';
+import SenderDestination from './SenderDestination.vue';
 import { prepareSend, executeSend, cancelSend, sendState } from './sending.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import { loadSendDestination, loadSendSchema } from './sender-options.js';
 import { generateExample } from './generate-example.js';
 
-const props = defineProps({ session: Object, busy: Boolean, processDraft: Object, defaultSource: String });
+const props = defineProps({
+  session: Object,
+  busy: Boolean,
+  processDraft: Object,
+  defaultSource: String,
+  visible: { type: Boolean, default: true },
+});
 const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log']);
 const target = ref(''),
   source = ref(''),
@@ -271,10 +278,10 @@ const messages = {
     'Bitte Adressierung, Fachdaten, Schema und Anlagen prüfen. Höchstens 32 MiB je Datei und 64 MiB insgesamt.',
   data_format_invalid:
     'Die Fachdaten passen nicht zum ausgewählten Format. Für ein XML-Schema wird wohlgeformtes XML benötigt, für ein JSON-Schema gültiges JSON. Nach einer fehlgeschlagenen Beispielerzeugung bleibt der bisherige Inhalt erhalten.',
-  invalid_input: 'Bitte die Zustellpunkt- und Vorgangskennungen sowie die übrigen Eingaben prüfen.',
+  invalid_input: 'Bitte die Destination ID und Case ID sowie die übrigen Eingaben prüfen.',
   test_certificate_required:
     'Der Empfängerschlüssel benötigt ein gültiges selbstsigniertes TEST-Zertifikat. Es wurde nichts angekündigt.',
-  resource_denied: 'Die TEST-Zugangsdaten erlauben diese Aktion oder diesen Absenderzustellpunkt nicht.',
+  resource_denied: 'Die TEST-Zugangsdaten erlauben diese Aktion oder diese Absender-Destination nicht.',
   resource_unavailable: 'Die TEST-Aktion konnte nicht vollständig abgeschlossen werden.',
   invalid_resource: 'Die TEST-Antwort ist unvollständig oder widersprüchlich.',
   send_locked: 'Dieser Versandversuch kann nicht erneut ausgeführt werden. Bitte seinen Status prüfen.',
@@ -302,7 +309,7 @@ const diagnosticLabels = {
   source_access: 'Absenderberechtigung',
   recipient_key: 'Empfängerschlüssel',
   limits: 'Übertragungsgrenzen',
-  destination: 'Zustellpunkt laden',
+  destination: 'Destination laden',
   credentials: 'Zugriff prüfen',
   announce: 'Einreichung ankündigen',
   attachment: 'Anlage übertragen',
@@ -460,7 +467,6 @@ async function refreshState() {
       Fachdaten und Anlagen werden lokal vorbereitet. Erst nach Ihrer Bestätigung wird die Einreichung
       verschlüsselt an den TEST-Empfänger übermittelt.
     </p>
-    <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
     <div
       v-if="processDraft && processDraft.sessionId === session?.sessionId && session?.apiVersion === 'v3'"
       class="tool-section"
@@ -473,7 +479,7 @@ async function refreshState() {
         Prozessauswahl übernehmen und Empfänger erneut prüfen
       </button>
     </div>
-    <form class="send-form" @submit.prevent="prepare" @invalid.capture="revealInvalid">
+    <form v-if="session" class="send-form" @submit.prevent="prepare" @invalid.capture="revealInvalid">
       <div class="send-sections" role="group" aria-label="Versandabschnitte">
         <button
           v-for="(title, index) in sendSections"
@@ -490,30 +496,25 @@ async function refreshState() {
       <fieldset v-show="sendStep === 0" data-send-step="0" :disabled="disabled">
         <legend>Adressierung</legend>
         <div class="client-fields">
-          <label v-if="session?.apiVersion === 'v3'" for="send-source">
-            Absenderzustellpunkt
-            <input
-              id="send-source"
-              type="text"
-              v-model="source"
-              required
-              maxlength="36"
-              placeholder="Zustellpunkt-ID Ihrer TEST-Zugangsdaten"
-            />
-            <small>
-              Der Absender muss zu Ihren Zugangsdaten gehören. Für Replies dort Metadatenversion 2.0.0 oder
-              3.0.0 freigeben; Prozessantworten benötigen 3.0.0.
-            </small>
-          </label>
+          <SenderDestination
+            v-if="session?.apiVersion === 'v3'"
+            v-model="source"
+            :session="session"
+            :busy="disabled"
+            :visible="visible && sendStep === 0"
+            @activity="emit('activity', $event)"
+            @fatal="emit('fatal', $event)"
+          />
           <label for="send-target">
-            Empfängerzustellpunkt
+            <span id="send-target-label">Empfänger-Destination</span>
             <input
               id="send-target"
+              aria-labelledby="send-target-label"
               type="text"
               v-model="target"
               required
               maxlength="36"
-              placeholder="Zustellpunkt-ID"
+              placeholder="Destination ID"
             />
             <button class="button secondary" type="button" :disabled="!target.trim()" @click="loadRecipient">
               Leistungen laden
@@ -527,7 +528,7 @@ async function refreshState() {
             </select>
           </label>
           <label for="send-case">
-            Vorgangs-ID (optional)
+            Case ID (optional)
             <input
               id="send-case"
               type="text"
@@ -560,7 +561,7 @@ async function refreshState() {
               maxlength="1024"
               placeholder="Leistungs-URN des Vorgangs"
             />
-            <small>Dieser Prozesszustellpunkt bietet keine eigenen Verwaltungsleistungen an.</small>
+            <small>Diese Prozess-Destination bietet keine eigenen Verwaltungsleistungen an.</small>
           </label>
           <label for="send-service-name">
             Bezeichnung der Leistung
@@ -656,7 +657,7 @@ async function refreshState() {
           <h4>Angebotene Prozessantworten (optional)</h4>
           <p>
             Nur ausdrücklich angebotene Nachrichten dürfen als Prozess-Reply zurückkommen. Im Prozessbereich
-            zuerst die gewünschte Antwort auswählen; für mehrere Nachrichten nacheinander übernehmen. Dafür
+            zuerst die gewünschte Antwort auswählen. Für mehrere Nachrichten nacheinander übernehmen. Dafür
             wird Metadatenversion 3 benötigt.
           </p>
           <button
@@ -734,8 +735,8 @@ async function refreshState() {
         </div>
         <p v-if="!attachments.length">Keine zusätzlichen Anlagen ausgewählt.</p>
         <p>
-          Höchstens 32 MiB je Datei, 64 MiB insgesamt und 39 zusätzliche Anlagen. Die Grenzen des
-          Zustellpunkts werden zusätzlich vom SDK geprüft.
+          Höchstens 32 MiB je Datei, 64 MiB insgesamt und 39 zusätzliche Anlagen. Die Grenzen der Destination
+          werden zusätzlich vom SDK geprüft.
         </p>
       </fieldset>
       <div class="client-actions send-step-actions">
@@ -803,10 +804,10 @@ async function refreshState() {
         </div>
       </details>
       <p v-if="outcome.submissionId">
-        Einreichungs-ID:
+        Submission ID:
         <code>{{ outcome.submissionId }}</code>
         <br />
-        Vorgangs-ID:
+        Case ID:
         <code>{{ outcome.caseId }}</code>
       </p>
       <button

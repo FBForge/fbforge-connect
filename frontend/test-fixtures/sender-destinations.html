@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Absender-Auswahl · fiktive Testdaten</title>
+  </head>
+  <body>
+    <main id="app" class="workspace-content"></main>
+    <script type="module">
+      import { createApp, h, reactive } from 'vue';
+      import SubmissionSender from '../src/SubmissionSender.vue';
+      import '../src/site.css';
+      import '../src/layout.css';
+      import '../src/desktop.css';
+      const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
+      const scenario = new URLSearchParams(location.search).get('scenario');
+      const fixture = (window.__senderFixture = reactive({
+        session: {
+          sessionId: id(100),
+          apiVersion: scenario === 'v2' ? 'v2' : 'v3',
+          role: 'online-service',
+          environment: 'TEST',
+          connected: true,
+        },
+        defaultSource: scenario === 'saved' ? id(99) : '',
+        rows: Array.from({ length: scenario === 'single' || scenario === 'saved' ? 1 : 25 }, (_, n) => ({
+          destinationId: id(n + 1),
+          name: `Test-Onlinedienst ${n + 1}`,
+          status: 'active',
+          type: 'C',
+        })),
+        requests: [],
+        denied: scenario === 'denied',
+        delayed: scenario === 'delayed',
+        resolve: null,
+      }));
+      window.isTauri = true;
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args = {}) {
+          if (command !== 'list_destinations') throw 'resource_denied';
+          fixture.requests.push({ ...args });
+          if (fixture.denied) throw 'resource_denied';
+          const response = {
+            sessionId: args.sessionId,
+            apiVersion: args.apiVersion,
+            environment: 'TEST',
+            data: {
+              destinations: structuredClone(
+                fixture.rows.slice(args.offset, args.offset + 20).map((r) => ({ ...r })),
+              ),
+              offset: args.offset,
+              totalCount: fixture.rows.length,
+            },
+          };
+          if (fixture.delayed) return new Promise((resolve) => (fixture.resolve = () => resolve(response)));
+          return response;
+        },
+      };
+      createApp({
+        render: () => h(SubmissionSender, { session: fixture.session, defaultSource: fixture.defaultSource }),
+      }).mount('#app');
+    </script>
+  </body>
+</html>

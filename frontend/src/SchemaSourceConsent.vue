@@ -18,7 +18,7 @@ const emit = defineEmits(['update:modelValue']);
     <p :id="`${id}-help`" class="small-note">
       Lokale Schemadateien und mitgelieferte Demos funktionieren ohne Freigabe. Mit Freigabe dürfen Schemata
       und Referenzen aus öffentlichen HTTPS-Quellen einschließlich XRepository geladen werden. Diese Quellen
-      sehen Ihre IP-Adresse; Zugangsdaten und Fachdaten werden nicht mitgesendet.
+      sehen Ihre IP-Adresse. Zugangsdaten und Fachdaten werden nicht mitgesendet.
     </p>
   </div>
 </template>

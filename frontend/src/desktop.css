@@ -350,6 +350,10 @@ summary {
   font-weight: 400;
   color: var(--muted);
 }
+.trace-details {
+  margin-top: 6px;
+  font-size: 12px;
+}
 .workspace-content fieldset {
   padding: 16px;
   margin: 16px 0;
@@ -360,6 +364,10 @@ summary {
   font-size: 12px;
   font-weight: 650;
 }
+.workspace-content input:not([type]),
+.workspace-content input[type='email'],
+.workspace-content input[type='tel'],
+.workspace-content input[type='number'],
 .workspace-content input[type='text'],
 .workspace-content input[type='search'],
 .workspace-content select,
@@ -1015,4 +1023,43 @@ summary {
 }
 .case-list .status-badge {
   margin-inline-end: 0.5rem;
+}
+
+@media (forced-colors: active) {
+  :root,
+  :root[data-theme='dark'] {
+    color-scheme: light dark;
+    --bg: Canvas;
+    --surface: Canvas;
+    --surface-soft: Canvas;
+    --field-bg: Canvas;
+    --input-bg: Canvas;
+    --result-bg: Canvas;
+    --code-bg: Canvas;
+    --ink: CanvasText;
+    --muted: CanvasText;
+    --line: ButtonText;
+    --accent: LinkText;
+    --brand: LinkText;
+    --brand-strong: LinkText;
+    --button-bg: ButtonFace;
+    --button-hover: ButtonFace;
+    --button-ink: ButtonText;
+    --status-ok-ink: CanvasText;
+    --status-info-ink: CanvasText;
+    --status-warn-ink: CanvasText;
+    --status-error-ink: CanvasText;
+  }
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+.help-example pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px;
 }

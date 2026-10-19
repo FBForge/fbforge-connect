@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSupportReport, createDiagnosticLog, observeInvoke } from '../frontend/src/support-report.js';
+import {
+  buildSupportReport,
+  createDiagnosticLog,
+  observeInvoke,
+  diagnosticContext,
+  diagnosticResult,
+} from '../frontend/src/support-report.js';
 
 const sample = {
   time: '2026-10-16T18:00:00.000Z',
@@ -12,6 +18,38 @@ const sample = {
   durationMs: 12,
 };
 const marker = 'SENSITIVE_TEST_MARKER';
+
+test('diagnostic presentation distinguishes local calls, states and schema failures', () => {
+  assert.equal(diagnosticContext({ apiVersion: null }), 'Lokal');
+  assert.equal(diagnosticContext({ apiVersion: marker }), 'Lokal');
+  assert.equal(diagnosticContext({ apiVersion: 'v3' }), 'API v3');
+  assert.deepEqual(diagnosticResult(sample), { label: 'Erfolgreich', tone: 'info' });
+  assert.deepEqual(diagnosticResult({ ...sample, state: 'idle' }), {
+    label: 'Keine Aktion offen',
+    tone: 'info',
+  });
+  assert.deepEqual(diagnosticResult({ ...sample, state: 'uncertain' }), {
+    label: 'Ausgang ungewiss',
+    tone: 'warn',
+  });
+  assert.deepEqual(diagnosticResult({ ...sample, code: 'schema_unavailable' }), {
+    label: 'Schema nicht verfügbar',
+    tone: 'warn',
+  });
+  assert.deepEqual(diagnosticResult({ ...sample, code: marker }), { label: 'Fehlgeschlagen', tone: 'warn' });
+});
+
+test('local storage failures are recorded without retaining profile data', async () => {
+  const log = createDiagnosticLog();
+  const invoke = observeInvoke(
+    async () => ({ profileId: marker, saved: false, error: 'vault_unavailable' }),
+    log.record,
+  );
+  await invoke('profile_status', { sessionId: marker });
+  assert.equal(log.snapshot()[0].code, 'vault_unavailable');
+  assert.equal(log.snapshot()[0].apiVersion, null);
+  assert.equal(JSON.stringify(log.snapshot()).includes(marker), false);
+});
 
 test('native diagnostics omit credentials, identifiers, files and response contents on success and failure', async () => {
   const log = createDiagnosticLog();

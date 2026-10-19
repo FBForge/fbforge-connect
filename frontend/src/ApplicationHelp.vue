@@ -8,7 +8,8 @@ const query = ref(''),
   selectedId = ref(props.topic),
   heading = ref(null),
   searchInput = ref(null),
-  illustration = ref(null);
+  illustration = ref(null),
+  copyNotice = ref('');
 const images = import.meta.glob('./help/screenshots/*.png', {
   eager: true,
   query: '?url',
@@ -17,7 +18,7 @@ const images = import.meta.glob('./help/screenshots/*.png', {
 const selected = computed(() => helpTopics.find((t) => t.id === selectedId.value) || helpTopics[0]);
 const filtered = computed(() =>
   helpTopics.filter((t) =>
-    [t.title, t.intro, ...t.steps, ...t.notes]
+    [t.title, t.intro, ...t.steps, ...t.notes, ...(t.examples || []).flatMap((e) => [e.title, e.content])]
       .join(' ')
       .toLocaleLowerCase('de')
       .includes(query.value.trim().toLocaleLowerCase('de')),
@@ -32,6 +33,7 @@ watch(
 );
 async function open(id) {
   selectedId.value = id;
+  copyNotice.value = '';
   await nextTick();
   heading.value?.focus({ preventScroll: true });
   heading.value?.scrollIntoView({ block: 'start' });
@@ -39,6 +41,14 @@ async function open(id) {
 function showTopics() {
   searchInput.value?.focus({ preventScroll: true });
   searchInput.value?.scrollIntoView({ block: 'center' });
+}
+async function copyExample(example) {
+  try {
+    await navigator.clipboard.writeText(example.content);
+    copyNotice.value = `${example.title} wurde kopiert.`;
+  } catch {
+    copyNotice.value = 'Kopieren ist hier nicht verfügbar. Markieren und kopieren Sie den Beispieltext.';
+  }
 }
 function enlarge() {
   illustration.value = {
@@ -98,6 +108,18 @@ function enlarge() {
       <ol>
         <li v-for="step in selected.steps" :key="step">{{ step }}</li>
       </ol>
+      <template v-if="selected.examples?.length">
+        <h3>Beispiele</h3>
+        <section v-for="example in selected.examples" :key="example.title" class="help-example">
+          <h4>{{ example.title }}</h4>
+          <p v-if="example.note">{{ example.note }}</p>
+          <pre tabindex="0" :aria-label="example.title"><code>{{ example.content }}</code></pre>
+          <button class="button secondary" type="button" @click="copyExample(example)">
+            {{ example.title }} kopieren
+          </button>
+        </section>
+        <p role="status">{{ copyNotice }}</p>
+      </template>
       <h3>Gut zu wissen</h3>
       <ul>
         <li v-for="note in selected.notes" :key="note">{{ note }}</li>

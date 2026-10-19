@@ -5,30 +5,12 @@ release, creates a tag, executes the installer, or changes an existing asset.
 """
 
 import hashlib
-import io
-import json
 import os
 from pathlib import Path
 import re
-import subprocess
 import tempfile
-import zipfile
 
-
-def require(condition, reason):
-    if not condition:
-        raise RuntimeError(reason)
-
-
-def gh(*arguments):
-    result = subprocess.run(["gh", *arguments], capture_output=True, check=False)
-    # Keep authentication details and temporary download URLs out of CI logs.
-    require(result.returncode == 0, "github_operation_failed")
-    return result.stdout
-
-
-def api(path):
-    return json.loads(gh("api", path))
+from candidate import api, download_candidate, gh, require
 
 
 def check_draft(release, commit, version):
@@ -57,72 +39,9 @@ def main():
         "invalid_version",
     )
     base = "repos/" + repo
-    run = api(f"{base}/actions/runs/{run_id}")
-    require(
-        run["head_sha"] == commit and run["conclusion"] == "success",
-        "unverified_source",
-    )
-    require(run["path"] == ".github/workflows/windows.yml", "wrong_workflow")
-    require(
-        run["event"] == "push" and run["head_branch"] in ("main", "develop"),
-        "untrusted_run",
-    )
     release = api(f"{base}/releases/{draft_id}")
     check_draft(release, commit, version)
-    artifacts = api(f"{base}/actions/runs/{run_id}/artifacts")["artifacts"]
-    candidates = [
-        item for item in artifacts if item["name"] == "windows-alpha-unsigned-setup"
-    ]
-    require(
-        len(candidates) == 1 and not candidates[0]["expired"],
-        "candidate_artifact_missing",
-    )
-    artifact = candidates[0]
-    require(artifact["size_in_bytes"] <= 160 * 1024 * 1024, "artifact_too_large")
-    archive_bytes = gh("api", f"{base}/actions/artifacts/{artifact['id']}/zip")
-    require(len(archive_bytes) == artifact["size_in_bytes"], "artifact_size_mismatch")
-    require(
-        "sha256:" + hashlib.sha256(archive_bytes).hexdigest() == artifact["digest"],
-        "artifact_digest_mismatch",
-    )
-    installer_name = f"FBForge Connect_{version}_x64-setup.exe"
-    names = {installer_name, "SHA256SUMS.txt", "build-info.json"}
-    with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
-        require(
-            set(archive.namelist()) == names and len(archive.namelist()) == 3,
-            "unexpected_archive_files",
-        )
-        require(
-            sum(item.file_size for item in archive.infolist()) <= 160 * 1024 * 1024,
-            "candidate_too_large",
-        )
-        files = {name: archive.read(name) for name in names}
-    manifest = json.loads(files["build-info.json"].decode("utf-8-sig"))
-    expected = {
-        "repository": repo,
-        "version": version,
-        "commit": commit,
-        "platform": "windows-x64",
-        "installer": installer_name,
-        "sha256": checksum,
-        "signing": "unsigned",
-    }
-    require(
-        all(manifest.get(key) == value for key, value in expected.items()),
-        "manifest_mismatch",
-    )
-    require(str(manifest["runId"]) == run_id, "manifest_run_mismatch")
-    require(len(files[installer_name]) == manifest["bytes"], "installer_size_mismatch")
-    require(files[installer_name][:2] == b"MZ", "installer_format_invalid")
-    require(
-        hashlib.sha256(files[installer_name]).hexdigest() == checksum,
-        "installer_digest_mismatch",
-    )
-    require(
-        files["SHA256SUMS.txt"].decode("utf-8-sig").strip()
-        == checksum + "  " + installer_name,
-        "checksum_file_mismatch",
-    )
+    archive_bytes, files, _ = download_candidate(run_id, commit, checksum, version)
     # GitHub replaces spaces in release asset names with dots. Keep the original
     # ZIP as well, so its manifest and checksum filenames still match after extraction.
     files = {name.replace(" ", "."): content for name, content in files.items()}
@@ -157,7 +76,7 @@ def main():
                 "uploaded_asset_mismatch",
             )
     print(
-        "Verified installer, checksum, manifest and original ZIP attached. "
+        "Verified signed installer, signatures, checksums and original ZIP attached. "
         "Release remains an unpublished draft."
     )
 

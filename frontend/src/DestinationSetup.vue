@@ -79,12 +79,12 @@ const explain = (cause) =>
     key_missing:
       'Das gewählte Schlüsselpaar ist nicht mehr verfügbar. Bitte die lokalen Schlüssel neu laden.',
     destination_update_locked:
-      'Dieser Anlageversuch ist bereits abgeschlossen oder ungeklärt. Bitte den vorhandenen Zustellpunkt prüfen und zuordnen.',
+      'Dieser Anlageversuch ist bereits abgeschlossen oder ungeklärt. Bitte die vorhandene Destination prüfen und zuordnen.',
     confirmation_expired: 'Die Vorschau ist abgelaufen. Bitte erneut vorbereiten.',
     verification_failed:
-      'Der zurückgelesene Zustellpunkt passt nicht vollständig zur Vorschau oder zu den erzeugten Schlüsseln. Bitte den vorhandenen Zustellpunkt prüfen.',
+      'Die zurückgelesene Destination passt nicht vollständig zur Vorschau oder zu den erzeugten Schlüsseln. Bitte die vorhandene Destination prüfen.',
     resource_denied:
-      'Diese TEST-Zugangsdaten dürfen den Zustellpunkt nicht anlegen oder verwalten. Die Berechtigung muss im TEST-Konto eingerichtet werden.',
+      'Diese TEST-Zugangsdaten dürfen die Destination nicht anlegen oder verwalten. Die Berechtigung muss im TEST-Konto eingerichtet werden.',
   })[typeof cause === 'string' ? cause : cause?.message] || errorMessage(cause);
 async function cancelKnown(value, active) {
   if (!value || !active) return;
@@ -203,7 +203,7 @@ async function run(action, operation) {
   } finally {
     working.value = false;
     emit('busy', false);
-    emit('activity', { api: active.apiVersion, role: 'Zustellpunktverwaltung', action, status, started });
+    emit('activity', { api: active.apiVersion, role: 'Destination-Verwaltung', action, status, started });
   }
 }
 async function refresh(active, current) {
@@ -261,7 +261,7 @@ async function prepare() {
   if (disabled.value || locked.value) return;
   const draft = configuration(),
     chosen = selectedBundle.value;
-  await run('TEST-Zustellpunkt vorbereiten', async (active, current) => {
+  await run('TEST-Destination vorbereiten', async (active, current) => {
     const previous = await destinationCreationState(invoke, active);
     if (!current()) return 'Abgebrochen';
     if (previous.status === 'uncertain') {
@@ -298,7 +298,7 @@ async function dismiss() {
   if (!prepared.value || working.value) return;
   const value = prepared.value,
     active = owner.value;
-  await run('Zustellpunktvorbereitung verwerfen', async (_, current) => {
+  await run('Destination-Vorbereitung verwerfen', async (_, current) => {
     try {
       await cancelDestinationCreation(invoke, active, value.attempt.attemptId);
     } finally {
@@ -314,7 +314,7 @@ async function confirm() {
   if (!prepared.value || props.busy || working.value) return;
   const value = prepared.value,
     active = owner.value;
-  await run('Eigenen TEST-Zustellpunkt anlegen', async (_, current) => {
+  await run('Eigene TEST-Destination anlegen', async (_, current) => {
     const result = await executeDestinationCreation(invoke, active, value.attempt);
     prepared.value = null;
     dialog.value?.close();
@@ -349,7 +349,7 @@ async function reconcile() {
     return;
   const bundleId = unresolvedBundle.value || null,
     destinationId = knownDestination.value.trim().toLowerCase();
-  await run('Vorhandenen TEST-Zustellpunkt zuordnen', async (active, current) => {
+  await run('Vorhandene TEST-Destination zuordnen', async (active, current) => {
     const result = await reconcileDestinationCreation(invoke, active, bundleId, destinationId);
     if (current()) {
       outcome.value = { ...result, sessionId: active.sessionId };
@@ -365,7 +365,7 @@ async function loadKeys() {
   await run('Erzeugte Schlüssel für Empfang laden', async (active, current) => {
     await useGeneratedKeys(invoke, active, target.bundleId, target.destinationId);
     if (current()) {
-      notice.value = 'Die privaten TEST-Schlüssel sind für diesen Zustellpunkt geladen.';
+      notice.value = 'Die privaten TEST-Schlüssel sind für diese Destination geladen.';
       ready = true;
     }
     emit('changed');
@@ -376,17 +376,17 @@ async function loadKeys() {
 
 <template>
   <section class="tool-section" aria-labelledby="destination-setup-title" :aria-busy="working">
-    <h2 id="destination-setup-title">Eigenen TEST-Zustellpunkt anlegen</h2>
+    <h2 id="destination-setup-title">Eigene TEST-Destination anlegen</h2>
     <p>
-      Ein Zustellpunkt ist die Adresse Ihrer Testanwendung bei FIT-Connect. Sie benötigen ein TEST-Konto mit
+      Eine Destination ist die Adresse Ihrer Testanwendung bei FIT-Connect. Sie benötigen ein TEST-Konto mit
       Berechtigung für die Destination API und ein gespeichertes Windows-Profil.
     </p>
     <p class="small-note">
       Die privaten Schlüssel werden lokal erzeugt und geschützt gesichert. Nur die öffentlichen Teile werden
-      registriert. Der neue Zustellpunkt bleibt zunächst in Vorbereitung und wird nicht im öffentlichen
-      Routing angeboten.
+      registriert. Die neue Destination bleibt zunächst in Vorbereitung und wird nicht im öffentlichen Routing
+      angeboten.
     </p>
-    <nav v-if="!locked && outcome?.status !== 'confirmed'" aria-label="Schritte der Zustellpunktanlage">
+    <nav v-if="!locked && outcome?.status !== 'confirmed'" aria-label="Schritte der Destination-Anlage">
       <div class="client-actions">
         <button
           v-for="step in steps"
@@ -413,7 +413,7 @@ async function loadKeys() {
         <legend>Testanwendung beschreiben</legend>
         <div class="client-fields">
           <label for="setup-name">
-            Name des Zustellpunkts
+            Name der Destination
             <input
               id="setup-name"
               v-model="name"
@@ -459,7 +459,7 @@ async function loadKeys() {
             />
           </label>
           <p id="setup-contact-help" class="muted">
-            Die Destination API benötigt Anschrift und Telefonnummer. Für einen rein fiktiven Testzustellpunkt
+            Die Destination API benötigt Anschrift und Telefonnummer. Für eine rein fiktive Test-Destination
             können Sie passende Beispieldaten verwenden.
           </p>
           <label for="setup-type">
@@ -475,7 +475,7 @@ async function loadKeys() {
         <legend>Empfangene Fachdaten festlegen</legend>
         <p>
           Das Schema beschreibt die Struktur Ihrer Testdaten. Verwenden Sie die Kennung aus Ihrer
-          Testkonfiguration. Ein Zustellpunkt kann später um weitere Angebote ergänzt werden.
+          Testkonfiguration. Eine Destination kann später um weitere Angebote ergänzt werden.
         </p>
         <div class="client-fields">
           <label for="setup-addressing">
@@ -566,8 +566,8 @@ async function loadKeys() {
         </div>
       </fieldset>
       <p v-if="wizardStep === 2 && kind === 'C'">
-        Onlinedienst-Zustellpunkte vom Typ C benötigen keine Zertifikate oder dauerhaften Schlüssel. Prüfen
-        Sie die Vorschau, bevor der Zustellpunkt angelegt wird.
+        Onlinedienst-Destinations vom Typ C benötigen keine Zertifikate oder dauerhaften Schlüssel. Prüfen Sie
+        die Vorschau, bevor die Destination angelegt wird.
       </p>
       <fieldset v-show="wizardStep === 2 && kind === 'A'" data-setup-step="2" :disabled="disabled">
         <legend>Schlüssel und Kompatibilität</legend>
@@ -577,7 +577,7 @@ async function loadKeys() {
           Jahr.
         </p>
         <p v-if="kind === 'C'" class="small-note">
-          Onlinedienst-Zustellpunkte benötigen keine Zertifikate und keine dauerhaften Zustellpunktschlüssel.
+          Onlinedienst-Destinations benötigen keine Zertifikate und keine dauerhaften Destination-Schlüssel.
           Die Verschlüsselung von Antworten wird später für jeden Antwortkanal automatisch eingerichtet.
         </p>
         <label for="setup-key-bundle">
@@ -608,7 +608,7 @@ async function loadKeys() {
           Zurück
         </button>
         <button ref="prepareButton" class="button" type="submit" :disabled="disabled">
-          {{ wizardStep === 2 ? 'Zustellpunkt vorbereiten' : 'Weiter' }}
+          {{ wizardStep === 2 ? 'Destination vorbereiten' : 'Weiter' }}
         </button>
       </div>
     </form>
@@ -622,15 +622,15 @@ async function loadKeys() {
         {{
           outcome.status === 'confirmed'
             ? outcome.bundleId
-              ? 'Zustellpunkt und Schlüsselzuordnung geprüft'
-              : 'Zustellpunktangaben geprüft'
+              ? 'Destination und Schlüsselzuordnung geprüft'
+              : 'Destination-Angaben geprüft'
             : outcome.status === 'uncertain'
               ? 'Anlageausgang ungeklärt'
-              : 'Zustellpunkt nicht vollständig angelegt'
+              : 'Destination nicht vollständig angelegt'
         }}
       </h3>
       <p v-if="outcome.destinationId">
-        Zustellpunkt-ID:
+        Destination ID:
         <code>{{ outcome.destinationId }}</code>
       </p>
       <p v-if="outcome.status === 'confirmed'">
@@ -642,13 +642,13 @@ async function loadKeys() {
       </p>
       <p v-else-if="outcome.status === 'uncertain'">
         Die Anlage kann bereits erfolgt sein. Bitte keinen neuen Anlageversuch starten. Laden Sie die eigenen
-        Zustellpunkte und prüfen Sie den vorhandenen Eintrag.
+        Destinations und prüfen Sie den vorhandenen Eintrag.
         <span v-if="outcome.bundleId">
-          Ordne ihn unten seinem gesicherten Schlüsselpaar zu. Die privaten Schlüssel bleiben gespeichert.
+          Ordnen Sie sie unten ihrem gesicherten Schlüsselpaar zu. Die privaten Schlüssel bleiben gespeichert.
         </span>
         <span v-else>
-          Eine bekannte Zustellpunkt-ID kann unten erneut gelesen werden. Ohne bekannte ID erst die eigene
-          Zustellpunktliste prüfen.
+          Eine bekannte Destination ID kann unten erneut gelesen werden. Ohne bekannte ID erst die eigene
+          Destination-Liste prüfen.
         </span>
       </p>
       <p v-else>
@@ -666,7 +666,7 @@ async function loadKeys() {
           :disabled="disabled"
           @click="emit('created', outcome.destinationId)"
         >
-          Zustellpunkt ansehen und Aktivierung vorbereiten
+          Destination ansehen und Aktivierung vorbereiten
         </button>
         <button
           v-if="outcome.bundleId"
@@ -678,7 +678,7 @@ async function loadKeys() {
           Schlüssel laden und zum Empfang wechseln
         </button>
         <button type="button" class="button secondary" :disabled="disabled" @click="outcome = null">
-          Weiteren TEST-Zustellpunkt vorbereiten
+          Weitere TEST-Destination vorbereiten
         </button>
       </div>
     </section>
@@ -691,8 +691,8 @@ async function loadKeys() {
     >
       <h3>Ungeklärte Anlage zuordnen</h3>
       <p>
-        Diese Prüfung liest nur den vorhandenen eigenen Zustellpunkt und seine Schlüssel. Sie legt keinen
-        weiteren Zustellpunkt an.
+        Diese Prüfung liest nur die vorhandene eigene Destination und ihre Schlüssel. Sie legt keine weitere
+        Destination an.
       </p>
       <div class="client-fields">
         <label v-if="unresolved.length && outcome?.bundleId !== null" for="setup-unresolved">
@@ -705,7 +705,7 @@ async function loadKeys() {
           </select>
         </label>
         <label for="setup-known-destination">
-          Vorhandene Zustellpunkt-ID
+          Vorhandene Destination ID
           <input
             id="setup-known-destination"
             v-model="knownDestination"
@@ -716,7 +716,7 @@ async function loadKeys() {
         </label>
       </div>
       <button type="submit" class="button secondary" :disabled="disabled">
-        Vorhandenen Zustellpunkt prüfen und zuordnen
+        Vorhandene Destination prüfen und zuordnen
       </button>
     </form>
     <dialog
@@ -726,7 +726,7 @@ async function loadKeys() {
       aria-labelledby="destination-create-confirm-title"
       @cancel.prevent="dismiss"
     >
-      <h2 id="destination-create-confirm-title">Diesen Zustellpunkt in TEST anlegen?</h2>
+      <h2 id="destination-create-confirm-title">Diese Destination in TEST anlegen?</h2>
       <dl class="receipt-dialog-context">
         <dt>Name</dt>
         <dd>{{ prepared.configuration.name }}</dd>
@@ -737,7 +737,7 @@ async function loadKeys() {
         <dt>Typ</dt>
         <dd>{{ prepared.configuration.type === 'A' ? 'Fachverfahren / Behörde' : 'Onlinedienst' }}</dd>
         <dt>Status</dt>
-        <dd>Vorbereitet; noch nicht aktiv</dd>
+        <dd>Vorbereitet. Noch nicht aktiv</dd>
         <template v-if="prepared.configuration.type === 'A'">
           <dt>Verschlüsselungsschlüssel</dt>
           <dd>
@@ -747,8 +747,8 @@ async function loadKeys() {
         <template v-else>
           <dt>Verschlüsselung</dt>
           <dd>
-            Onlinedienste verwenden eigene Antwortschlüssel je Antwortkanal; kein
-            Zustellpunkt-Verschlüsselungsschlüssel wird registriert.
+            Onlinedienste verwenden eigene Antwortschlüssel je Antwortkanal. Kein
+            Destination-Verschlüsselungsschlüssel wird registriert.
           </dd>
         </template>
         <template v-if="prepared.keys">
@@ -776,7 +776,7 @@ async function loadKeys() {
           Abbrechen
         </button>
         <button type="button" class="button" :disabled="working" @click="confirm">
-          Zustellpunkt jetzt auf TEST anlegen
+          Destination jetzt auf TEST anlegen
         </button>
       </div>
     </dialog>

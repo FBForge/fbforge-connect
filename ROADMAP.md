@@ -1,7 +1,7 @@
 # Roadmap
 
-**Alpha 1:** Windows-Abnahme und signiertes Paket.
+**Alpha 1:** FIT-Connect TEST unter Windows mit Versand, Empfang, Replies und Destination-Verwaltung.
 
-**Beta:** Bedienbarkeit und Barrierefreiheit verbessern, weitere Fachdaten-Schemata und Testszenarien ergänzen. macOS/Linux-Unterstützung prüfen.
+**Beta:** Rückmeldungen zur Bedienung und Barrierefreiheit umsetzen. Weitere Fachdaten-Schemata und Testszenarien ergänzen. macOS/Linux-Unterstützung prüfen.
 
 PROD-Unterstützung und ein BPMN-Prozessmotor sind nicht geplant.

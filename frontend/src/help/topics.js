@@ -11,7 +11,7 @@ export const helpTopics = [
     steps: [
       'Wählen Sie oben API v3 für neue Tests. API v2 bleibt für bestehende Integrationen verfügbar.',
       'Öffnen Sie „Verbinden“ und geben Sie die TEST-Client-ID sowie das Client-Secret Ihres Onlinediensts oder Fachverfahrens ein.',
-      'Ein Onlinedienst sendet Einreichungen und empfängt angebotene Antworten. Ein Fachverfahren ruft Einreichungen ab und kann darauf antworten. Die API und der Zugang müssen zu Ihrem Test passen.',
+      'Eine Destination ist ein Zustellpunkt bei FIT-Connect. Ein Onlinedienst sendet Einreichungen und empfängt angebotene Antworten. Ein Subscriber ist das empfangende Fachverfahren. Er ruft Einreichungen ab und kann darauf antworten. Die API und der Zugang müssen zu Ihrem Test passen.',
       'Wählen Sie „Senden“ für einen Testantrag oder „Empfangen“ für den Eingang. Unter „Vorgänge“ finden Sie lokale Kopien.',
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
     ],
@@ -52,13 +52,25 @@ export const helpTopics = [
     intro:
       'Sie bereiten zunächst Fachdaten und Anlagen vor. Erst die separate Bestätigung löst den Versand aus.',
     steps: [
-      'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie den Zielzustellpunkt ein. Laden Sie dessen Leistungen und wählen Sie die passende Leistung und das Fachdatenformat.',
-      'Bei API v3 wählen Sie außerdem den eigenen Absenderzustellpunkt. Dieser muss zu Ihrem Zugang gehören und passend eingerichtet sein.',
+      'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat.',
+      'Bei API v3 lädt die Anwendung Ihre eigenen Absender-Destinations zur Auswahl. Eine einzelne aktive Destination wird automatisch übernommen. Über „ID eingeben“ können Sie eine Destination auch manuell hinterlegen. Diese muss zu Ihrem Zugang gehören und passend eingerichtet sein.',
       'Geben Sie JSON oder XML ein, ziehen Sie eine Datei in das Dateifeld oder verwenden Sie „Datei auswählen“. Fiktive Beispieldaten sind eine Starthilfe und müssen zu Ihrem Test angepasst werden.',
-      'Die Formularansicht zeigt Werte lesbar an. Über JSON-Struktur oder Quelltext können Sie technische Details vergleichen. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist; ansonsten bleiben Originalnamen sichtbar.',
+      'Die Formularansicht zeigt Werte lesbar an. Über JSON-Struktur oder Quelltext können Sie technische Details vergleichen. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar.',
       'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten.',
       'Wenn Sie eine Antwort testen möchten, aktivieren Sie vor dem Versand das Antwortangebot und wählen Sie das erlaubte Antwortschema.',
-      'Wählen Sie „Versand vorbereiten“, prüfen Sie die unveränderliche Zusammenfassung und bestätigen Sie den Versand. Bewahren Sie Einreichungs- und Vorgangs-ID für die Nachverfolgung auf.',
+      'Wählen Sie „Versand vorbereiten“, prüfen Sie die unveränderliche Zusammenfassung und bestätigen Sie den Versand. Bewahren Sie Submission ID und Case ID für die Nachverfolgung auf.',
+    ],
+    examples: [
+      {
+        title: 'JSON-Testantrag',
+        language: 'json',
+        note: 'Fiktive Daten für einen eigenen Test. Passen Sie Felder und Werte an das Schema der gewählten Leistung an.',
+        content: JSON.stringify(
+          { antrag: { vorname: 'Erika', nachname: 'Muster', anliegen: 'Testantrag' } },
+          null,
+          2,
+        ),
+      },
     ],
     notes: [
       'Öffentliche Schemaquellen werden nur nach ausdrücklicher Freigabe geladen. Eigene lokale Schemata sind ebenfalls möglich.',
@@ -75,8 +87,8 @@ export const helpTopics = [
     intro:
       'Ein Fachverfahren lädt seinen Eingang, entschlüsselt den ausgewählten Antrag und prüft die technischen Inhalte. Die Empfangsbestätigung bleibt eine eigene bewusste Aktion.',
     steps: [
-      'Verbinden Sie den Fachverfahren-Zugang. Wählen Sie einen eigenen Zustellpunkt und laden Sie die passenden privaten Testschlüssel zum Entschlüsseln und Signieren.',
-      'Laden Sie verfügbare Einreichungen oder tragen Sie eine bekannte Einreichungs-ID ein. „Öffnen und prüfen“ lädt das Detail und versucht direkt die Entschlüsselung und Prüfung.',
+      'Verbinden Sie den Fachverfahren-Zugang. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Testschlüssel zum Entschlüsseln und Signieren.',
+      'Laden Sie verfügbare Einreichungen oder tragen Sie eine bekannte Submission ID ein. „Öffnen und prüfen“ lädt das Detail und versucht direkt die Entschlüsselung und Prüfung.',
       'Wenn Schlüssel oder Schemata fehlen, folgen Sie dem Hinweis im Empfang. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
       'Lesen Sie die Fachdaten direkt in der Formularansicht. Die Suche hilft bei umfangreichen Anträgen. Die Struktur- und Quelltextansicht bleiben verfügbar.',
       'Öffnen Sie unterstützte Anlagen über „Ansehen“ oder laden Sie die unveränderte Datei herunter.',
@@ -99,8 +111,8 @@ export const helpTopics = [
       'Die Vorgangsübersicht macht aus einzelnen Abrufen einen nachvollziehbaren Arbeitsverlauf. Sie ist ein lokaler Lesespeicher und keine zweite Server-Inbox.',
     steps: [
       'Öffnen Sie „Vorgänge“ und verbinden Sie das gewünschte Profil. Die Liste enthält die Nachrichten dieses Zugangs und dieser API.',
-      'Suchen Sie nach Titel, Vorgangs-ID, Einreichungs-ID, Antwort-ID oder Zustellpunkt. Filtern Sie bei Bedarf nach „Empfangen“ oder „Gesendet“.',
-      'Klicken Sie auf einen Titel. Fachdaten und Anlagen sind direkt im Detail lesbar. Mehrere Nachrichten mit derselben echten Vorgangs-ID lassen sich über die Suche zusammen betrachten.',
+      'Suchen Sie nach Titel, Case ID, Submission ID, Reply ID oder Destination. Filtern Sie bei Bedarf nach „Empfangen“ oder „Gesendet“.',
+      'Klicken Sie auf einen Titel. Fachdaten und Anlagen sind direkt im Detail lesbar. Mehrere Nachrichten mit derselben echten Case ID lassen sich über die Suche zusammen betrachten.',
       'Standardmäßig werden Kopien automatisch nur in der laufenden Anwendung gehalten. Ein Profilwechsel entfernt sie nicht. Verbinden Sie denselben Zugang erneut, um sie wieder zu sehen.',
       'Wenn Sie die Kopien nach einem Neustart weiterhin benötigen, aktivieren Sie „Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren“. Vorhandene und neue Kopien werden dann mit Ihrem Windows-Benutzerkonto verschlüsselt.',
       '„Löschen“ entfernt genau eine lokale Kopie. „Verlauf leeren“ fragt nach und löscht alle lokalen Kopien des aktuellen Profils und der aktuellen API. Auf dem TEST-Server wird dadurch nichts geändert.',
@@ -110,7 +122,7 @@ export const helpTopics = [
       'Unbekannte Versand-IDs werden nicht erfunden. Ein ungewisser Versuch hat eine eigene lokale Kennung und bleibt als ungewiss erkennbar.',
       'Gespeicherte Prüfergebnisse sind historisch. Frühere Freigaben oder Empfangsnachweise werden beim Neustart nicht als aktuelle Berechtigung wiederhergestellt.',
       'Wenn Sie dauerhaftes Speichern ausschalten, bleiben bereits gespeicherte Kopien bis zum Löschen erhalten. Neue Kopien bleiben nur in der Sitzung.',
-      'Grenzen: 100 Sitzungskopien und 128 MiB Gesamtinhalt je Anwendung; maximal 256 MiB geschützter Speicher je gespeichertem Profil und API. Es werden keine alten Vorgänge stillschweigend verdrängt. Bei vollem Speicher löschen Sie nicht benötigte Kopien.',
+      'Grenzen: 100 Sitzungskopien und 128 MiB Gesamtinhalt je Anwendung. Maximal 256 MiB geschützter Speicher je gespeichertem Profil und API. Es werden keine alten Vorgänge stillschweigend verdrängt. Bei vollem Speicher löschen Sie nicht benötigte Kopien.',
       'Lokales Löschen ist kein garantiertes physisches Überschreiben von SSDs oder Betriebssystem-Sicherungen. Exportierte Originaldateien verwalten Sie selbst.',
     ],
   },
@@ -132,14 +144,14 @@ export const helpTopics = [
       'PDFs und Bilder: höchstens 8 MiB für die Vorschau. PDFs: höchstens 50 Seiten und 20 Sekunden je Ladevorgang/Seite. Bilder: höchstens 16 Megapixel. Textvorschau: höchstens 2 MiB.',
       'PDF-Skripte, Formulare, externe Verweise und eingebettete Dateien werden nicht ausgeführt oder geöffnet. Es gibt keine automatische Browser- oder Systemvorschau.',
       'HTML, SVG, Office-Dateien und ausführbare Dateien werden ausschließlich als Download angeboten.',
-      'Importierte Dateien können höchstens 32 MiB groß sein; zusammen höchstens 64 MiB und 39 Anlagen. Drag-and-drop und Dateiauswahl sind gleichwertige Importwege.',
+      'Importierte Dateien können höchstens 32 MiB groß sein. Zusammen höchstens 64 MiB und 39 Anlagen. Drag-and-drop und Dateiauswahl sind gleichwertige Importwege.',
     ],
   },
   {
     id: 'replies',
     title: 'Antworten testen',
     section: 'Empfangen',
-    image: 'receive',
+    image: 'replies',
     caption: 'Ein geprüfter Antrag bildet die Grundlage für eine separate Antwort.',
     intro:
       'Eine Antwort benötigt ein beim ursprünglichen Versand angebotenes Antwortschema und den passenden nativen Schlüsselkontext.',
@@ -149,6 +161,32 @@ export const helpTopics = [
       'Erstellen Sie passende JSON- oder XML-Antwortdaten und ergänzen Sie bei Bedarf Anlagen. Bereiten Sie die Antwort vor, prüfen Sie die Zusammenfassung und bestätigen Sie den Versand separat.',
       'Verbinden Sie wieder den ursprünglichen Onlinedienst-Zugang. Laden Sie die Antworten und prüfen Sie die gewünschte Antwort mit dem zu diesem Angebot gehörenden Schlüssel.',
       'Nehmen Sie die Antwort nach Prüfung an oder lehnen Sie sie mit passendem Grund ab. Auch Antworten bleiben als lokale Kopien in der Vorgangsablage erhalten.',
+    ],
+    examples: [
+      {
+        title: 'JSON-Antwort',
+        language: 'json',
+        note: 'Für das unten gezeigte Testschema. Eine Antwort bestätigt noch nicht die Annahme der ursprünglichen Einreichung.',
+        content: JSON.stringify({ status: 'erhalten' }, null, 2),
+      },
+      {
+        title: 'JSON-Antwortschema',
+        language: 'json',
+        note: 'Speichern Sie dieses Schema als JSON-Datei. Bieten Sie beim ursprünglichen Versand urn:de:test mit application/json an. Eine URN ist eine Kennung und keine Downloadadresse. Laden Sie das Schema bei Bedarf lokal, bevor Sie die Antwortdaten prüfen.',
+        content: JSON.stringify(
+          {
+            $schema: 'https://json-schema.org/draft/2020-12/schema',
+            $id: 'urn:de:test',
+            title: 'Testantwort',
+            type: 'object',
+            properties: { status: { type: 'string', enum: ['erhalten', 'in_bearbeitung', 'abgeschlossen'] } },
+            required: ['status'],
+            additionalProperties: false,
+          },
+          null,
+          2,
+        ),
+      },
     ],
     notes: [
       'Beliebige andere Schlüssel oder eine andere Sitzung ohne wiederhergestellten Antwortschlüssel können eine angebotene Antwort nicht entschlüsseln.',
@@ -161,40 +199,54 @@ export const helpTopics = [
     title: 'BPMN und Prozessnachrichten',
     section: 'Prozesse',
     image: 'processes',
-    caption: 'BPMN-Modell mit auswählbaren Nachrichtenbezügen und Suche nach unterstützenden Zustellpunkten.',
+    caption: 'BPMN-Modell mit auswählbaren Nachrichtenbezügen und Suche nach unterstützenden Destinations.',
     intro:
       'BPMN-Dateien helfen Ihnen, Prozessmodell- und Nachrichten-IDs auszuwählen, ohne sie von Hand zu übertragen. Das Werkzeug führt keine Prozess-Engine aus.',
     steps: [
       'Öffnen Sie „Prozesse“ und laden Sie eine BPMN-Datei per Drag-and-drop oder Dateiauswahl. Das mitgelieferte Beispiel ist ausschließlich für fiktive Tests gedacht.',
       'Wählen Sie einen unterstützten Nachrichtenbezug direkt im Diagramm oder über die zugängliche Auswahlliste. Prüfen Sie die ermittelte Prozessmodell-ID und Nachrichten-ID.',
-      'Suchen Sie nach TEST-Zustellpunkten, die diesen Nachrichtenbezug unterstützen. Wählen Sie optional eine Region. Die Suche verwendet den aktuellen nativen Bearer-Zugang.',
-      'Übernehmen Sie einen passenden Zustellpunkt und den Nachrichtenbezug in den Versand. Prüfen Sie die Zuordnung erneut in der Versandzusammenfassung.',
+      'Suchen Sie nach TEST-Destinations, die diesen Nachrichtenbezug unterstützen. Wählen Sie optional eine Region. Die Suche verwendet den aktuellen nativen Bearer-Zugang.',
+      'Übernehmen Sie eine passende Destination und den Nachrichtenbezug in den Versand. Prüfen Sie die Zuordnung erneut in der Versandzusammenfassung.',
       'Bei eingegangenen Prozessnachrichten können Sie den Nachrichtenbezug im geladenen BPMN-Modell anzeigen lassen. Antwortnachrichten müssen zum angebotenen Prozessbezug passen.',
+    ],
+    examples: [
+      {
+        title: 'BPMN-Nachrichtenbezug',
+        language: 'xml',
+        note: 'Ausschnitt zur Zuordnung in einem eigenen BPMN-Modell. Die fachlichen Kennungen müssen mit der empfangenden Destination vereinbart sein. Die BPMN-Element-ID BpmnMessage_1 ist keine FIT-Connect-Nachrichten-ID. Ein vollständiges fiktives Modell öffnen Sie über „Fiktiven Demo-Prozess öffnen“.',
+        content: `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:fc="urn:fit-connect:test-client:bpmn:1"
+  targetNamespace="urn:mein-test" fc:processModelId="vereinbarte-modellkennung">
+  <bpmn:message id="BpmnMessage_1" name="Nachforderung"
+    fc:messageId="vereinbarte-nachrichtenkennung"
+    fc:schemaUri="urn:de:test" fc:mimeType="application/json" />
+</bpmn:definitions>`,
+      },
     ],
     notes: [
       'Die Prozessfunktionen und Suche nach unterstützten Prozessnachrichten benötigen API v3.',
       'Nicht jedes beliebige BPMN-Element besitzt eine Nachrichten-ID. Bei fehlenden oder mehrdeutigen Zuordnungen wird kein Wert geraten.',
-      'Ein Modell kann mehrere Referenzen enthalten. Vergleichen Sie vor dem Senden stets Modell, Nachricht und Zielzustellpunkt.',
+      'Ein Modell kann mehrere Referenzen enthalten. Vergleichen Sie vor dem Senden stets Modell, Nachricht und Ziel-Destination.',
     ],
   },
   {
     id: 'destinations',
-    title: 'Eigene Zustellpunkte verwalten',
-    section: 'Zustellpunkte',
+    title: 'Eigene Destinations verwalten',
+    section: 'Destinations',
     image: 'destinations',
-    caption: 'Verwaltung eigener TEST-Zustellpunkte mit getrennten Vorbereitungs- und Bestätigungsschritten.',
+    caption: 'Verwaltung eigener TEST-Destinations mit getrennten Vorbereitungs- und Bestätigungsschritten.',
     intro:
-      'Mit API v3 können Sie eigene TEST-Zustellpunkte anlegen und deren Konfiguration verwalten. Änderungen benötigen die passenden Rechte Ihres Fachverfahren-Zugangs.',
+      'Mit API v3 können Sie eigene TEST-Destinations anlegen und deren Konfiguration verwalten. Änderungen benötigen die passenden Rechte Ihres Fachverfahren-Zugangs.',
     steps: [
-      'Verbinden Sie ein gespeichertes Fachverfahren-Profil mit API v3 und öffnen Sie „Zustellpunkte“.',
-      'Laden Sie einen eigenen Zustellpunkt oder bereiten Sie die Anlage eines neuen Testzustellpunkts vor.',
+      'Verbinden Sie ein gespeichertes Fachverfahren-Profil mit API v3 und öffnen Sie „Destinations“.',
+      'Laden Sie eine eigene Destination oder bereiten Sie die Anlage einer neuen Test-Destination vor.',
       'Für verschlüsselte Nachrichten erzeugen Sie lokale Testschlüssel beziehungsweise wählen Sie ein erzeugtes Schlüsselpaket. Die Schlüssel müssen vor einer Registrierung sicher im Profil gespeichert sein.',
       'Prüfen Sie Typ, Bezeichnung, Leistungen und Schemainformationen. Bereiten Sie die Änderung vor und lesen Sie die Zusammenfassung, bevor Sie sie bestätigen.',
-      'Übernehmen Sie die eigenen Schlüssel anschließend für den Empfang und senden Sie einen kleinen fiktiven Testantrag an den neuen Zustellpunkt.',
+      'Übernehmen Sie die eigenen Schlüssel anschließend für den Empfang und senden Sie einen kleinen fiktiven Testantrag an die neue Destination.',
       'Bei einem Schlüsselwechsel nutzen Sie den vorgesehenen Rotationsablauf. Entfernen Sie alte Schlüssel erst, wenn keine entsprechenden Nachrichten mehr entschlüsselt werden müssen.',
     ],
     notes: [
-      'Ein Zustellpunkt kann existieren, obwohl der Bestätigungsschritt unterbrochen wurde. Bei ungewissem Ausgang zuerst abgleichen, statt einen weiteren Zustellpunkt anzulegen.',
+      'Eine Destination kann existieren, obwohl der Bestätigungsschritt unterbrochen wurde. Bei ungewissem Ausgang zuerst abgleichen, statt eine weitere Destination anzulegen.',
       'Vorbereitungen und Bestätigungen gelten nur kurz und für genau die gezeigte Konfiguration.',
       'Aufräumaktionen verändern TEST-Ressourcen. Prüfen Sie Auswahl und Folgen. Das Leeren der lokalen Vorgangsablage ist davon unabhängig.',
     ],
@@ -204,12 +256,12 @@ export const helpTopics = [
     title: 'Event Log und Nachverfolgung',
     section: 'Event Log',
     image: 'events',
-    caption: 'Suche anhand von Vorgangs-, Einreichungs- oder Antwort-ID.',
+    caption: 'Suche anhand von Case ID, Submission ID oder Reply ID.',
     intro:
       'Der Event Log hilft, den Transport einer Testnachricht nachzuvollziehen und ungewisse Ergebnisse abzugleichen.',
     steps: [
       'Öffnen Sie den Event Log direkt aus einem Versandversuch, einem Empfangsdetail oder einem lokalen Vorgang. Bekannte Kennungen werden übernommen.',
-      'Wählen Sie die gewünschte Suche: Vorgang über Case-ID, Einreichung über Submission-ID oder Antwort über Reply-ID.',
+      'Wählen Sie die gewünschte Suche: Vorgang über Case ID, Einreichung über Submission ID oder Antwort über Reply ID.',
       'Verbinden Sie den passenden TEST-Zugang. Tragen Sie fehlende Kennungen vollständig ein und starten Sie die Prüfung.',
       'Lesen Sie Ereignisse und Prüfhinweise. Bei längeren Verläufen laden Sie die weiteren Seiten.',
       'Vergleichen Sie nach einem ungewissen Schreibversuch zunächst die vorhandenen Ereignisse und den Serverzustand. Ein neuer Versand ist eine eigene bewusste Aktion.',
@@ -220,18 +272,38 @@ export const helpTopics = [
     ],
   },
   {
+    id: 'diagnostics',
+    title: 'Technische Aufrufe verstehen',
+    section: 'Diagnose',
+    image: 'diagnostics',
+    caption: 'Technische Aufrufe mit getrenntem Kontext, verständlichem Ergebnis und optionalem Fehlercode.',
+    intro:
+      'Die Diagnose zeigt die letzten 100 technischen Aufrufe dieser Programmsitzung. Sie hilft, Fehler einzugrenzen, ohne Antragsdaten oder Schlüssel offenzulegen.',
+    steps: [
+      'Öffnen Sie „Diagnose“ und lesen Sie unter „Technische Aufrufe“ die gewünschte Aktion.',
+      '„Lokal“ kennzeichnet lokale Vorgänge wie die Prüfung des Speicherstatus. „API v2“ und „API v3“ zeigen den verwendeten API-Kontext an.',
+      'Das Ergebnis beschreibt den technischen Aufruf. „Erfolgreich“ bestätigt weder die fachliche Annahme eines Antrags noch einen abgeschlossenen Prozess. „Keine Aktion offen“ bedeutet, dass keine vorbereitete Aktion aussteht.',
+      'Bei einem Fehler öffnen Sie „Fehlercode anzeigen“. Notieren Sie Aktion, API, Version und Fehlercode für eine Fehlermeldung.',
+      'Bei Bedarf sehen Sie den Diagnosebericht vor dem Speichern durch. „Verlauf leeren“ entfernt nur die lokale Liste der technischen Aufrufe.',
+    ],
+    notes: [
+      'Die Liste ist kein Event Log. Für den Transportstatus einer Einreichung oder Antwort verwenden Sie die Suche über Case ID, Submission ID oder Reply ID.',
+      'Fachdaten, Secrets, Schlüssel, Dateinamen und Nachrichtenkennungen gehören nicht in einen öffentlichen Diagnosebericht.',
+    ],
+  },
+  {
     id: 'problems',
     title: 'Probleme verstehen und beheben',
     section: 'Diagnose',
-    image: 'receive',
+    image: 'problems',
     caption: 'Der Empfang zeigt fehlende Schlüssel und Prüfhinweise direkt am Antrag.',
     intro:
       'Fehlermeldungen erklären den nächsten sinnvollen Schritt. Wiederholen Sie einen Schreibvorgang nicht unüberlegt.',
     steps: [
-      '„Key missing“: Laden Sie am ausgewählten Zustellpunkt einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
-      'Schlüssel abgewiesen: Vergleichen Sie Zustellpunkt, Verwendungszweck und aktuelle Schlüsselregistrierung. Alte Nachrichten können einen früheren privaten Schlüssel benötigen.',
+      '„Key missing“: Laden Sie an der ausgewählten Destination einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
+      'Schlüssel abgewiesen: Vergleichen Sie Destination, Verwendungszweck und aktuelle Schlüsselregistrierung. Alte Nachrichten können einen früheren privaten Schlüssel benötigen.',
       'Schema nicht verfügbar: Prüfen Sie die Schema-URI in den Metadaten. Erlauben Sie bei Bedarf öffentliche Quellen oder laden Sie ein lokales Schema mit passender absoluter $id.',
-      'Zugriff verweigert: Prüfen Sie Client-Rolle, API-Version und Zugehörigkeit des Zustellpunkts. Ein fremder Zustellpunkt wird durch seine ID nicht zu Ihrem eigenen.',
+      'Zugriff verweigert: Prüfen Sie Client-Rolle, API-Version und Zugehörigkeit der Destination. Eine fremde Destination wird durch ihre ID nicht zu Ihrer eigenen.',
       'Lokaler Speicher voll oder nicht verfügbar: Geben Sie Speicherplatz frei beziehungsweise löschen Sie nicht benötigte Vorgangskopien. Bei aktivierter Aufbewahrung wird ohne erfolgreiche Sicherung keine neue Empfangsbestätigung gesendet.',
       'Bei einem unerwarteten Fehler öffnen Sie „Diagnose“, prüfen Sie den lokalen Anwendungskern und sehen Sie den Diagnosebericht vor dem Speichern an.',
     ],
@@ -251,7 +323,7 @@ export const helpTopics = [
       'Die Oberfläche lässt sich mit Tastatur, vergrößerter Darstellung sowie den üblichen WebView-Hilfsmitteln bedienen. Nicht alle Dokumentinhalte sind automatisch barrierefrei.',
     steps: [
       'Wechseln Sie mit Tab und Umschalt+Tab zwischen Bedienelementen. Betätigen Sie Schaltflächen mit Eingabe oder Leertaste.',
-      'Nutzen Sie die Bereichsauswahl links. Der aktuelle Bereich ist gekennzeichnet; nach dem Wechsel steht die Überschrift im Fokus.',
+      'Nutzen Sie die Bereichsauswahl links. Der aktuelle Bereich ist gekennzeichnet. Nach dem Wechsel steht die Überschrift im Fokus.',
       'Schließen Sie Dialoge mit Escape oder „Schließen“. Vor einer Löschbestätigung ist „Abbrechen“ voreingestellt.',
       'Wählen Sie für Dateien die beschriftete Dateiauswahl, wenn Sie kein Drag-and-drop verwenden möchten. Im BPMN-Bereich steht eine textliche Auswahl neben dem Diagramm bereit.',
       'Nutzen Sie die Betriebssystem-Skalierung für größere Darstellung und den Hell-/Dunkel-Schalter für Ihr bevorzugtes Erscheinungsbild.',

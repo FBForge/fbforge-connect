@@ -16,8 +16,8 @@ Die SDK-Versionen laufen in getrennten Classloadern. Gemeinsame Verträge enthal
 
 - Der Renderer hat keine allgemeinen HTTP-, Shell- oder Dateisystemrechte. Private Archivbefehle (`export_session_item`, `restore_session_item`) sind nur aus Rust erreichbar.
 - Schreibaktionen sind an Inhalt, Sitzung, API und Ziel gebunden und benötigen eine Bestätigung. Nach einem ungewissen Übertragungsausgang erfolgt kein automatischer Neuversand.
-- Annahme und Ablehnung benötigen aktuelle native Inhaltsnachweise. Historische Kopien und Event-Logs ersetzen diese nicht. Case-Logs können mehrere Nachrichten enthalten; jedes Ereignis wird per SDK geprüft und zugeordnet.
-- Profile, private Schlüssel und Vorgangskopien werden getrennt und benutzergebunden mit Windows-DPAPI gespeichert. Vorgänge sind nach Profil und API isoliert. Tokens und alte Prüfnachweise werden nicht wiederhergestellt; andere Plattformen haben keinen Klartext-Fallback.
+- Annahme und Ablehnung benötigen aktuelle native Inhaltsnachweise. Historische Kopien und Event-Logs ersetzen diese nicht. Case-Logs können mehrere Nachrichten enthalten. Jedes Ereignis wird per SDK geprüft und zugeordnet.
+- Profile, private Schlüssel und Vorgangskopien werden getrennt und benutzergebunden mit Windows-DPAPI gespeichert. Vorgänge sind nach Profil und API isoliert. Tokens und alte Prüfnachweise werden nicht wiederhergestellt. Andere Plattformen haben keinen Klartext-Fallback.
 - Profilsicherungen werden nativ entschlüsselt. Drag-and-drop reicht nur größenbegrenzte, verschlüsselte `.fctest-profile`-Dateien weiter und gibt Profilmetadaten zurück. Eine Profil-Sicherung enthält keine Vorgänge.
 - Antwortschlüssel werden vor dem Versand gesichert. Bei aktivierter Vorgangsaufbewahrung muss die Sicherung vor der Empfangsbestätigung gelingen. Ein Speicherfehler nach erfolgtem Versand darf keinen erneuten Versand auslösen.
 
@@ -39,4 +39,6 @@ BPMN-Element-IDs werden nicht als FIT-Connect-Kennungen verwendet. Eigene Modell
 
 ## Tests
 
-SDK-Tests prüfen Verschlüsselung und Rundläufe; Frontend- und native Tests die Verträge und Kontextbindung. Browser-Fixtures werden nicht ausgeliefert. DPAPI, Installation und Upgrades werden unter Windows geprüft; reale Austausche auf FIT-Connect TEST. Befehle stehen in [CONTRIBUTING.md](CONTRIBUTING.md).
+SDK-Tests prüfen Verschlüsselung und Rundläufe. Frontend- und native Tests die Verträge und Kontextbindung. Browser-Fixtures werden nicht ausgeliefert. DPAPI, Installation und Upgrades werden unter Windows geprüft. Reale Austausche auf FIT-Connect TEST. Befehle stehen in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Änderungsprüfungen wählen betroffene Module aus. Die manuelle Windows-Release-Prüfung baut das vollständige Paket und prüft Installation, Profilerhalt und NVDA. Die Signierung erfordert einen erfolgreichen Lauf für denselben Commit. Ein separater Windows-Runner prüft anschließend das signierte Paket.

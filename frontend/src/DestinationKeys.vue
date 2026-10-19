@@ -30,11 +30,11 @@ watch(
 );
 const messages = {
   invalid_input:
-    'Bitte eine gültige Zustellpunkt-ID und höchstens 16 Schlüsseldateien mit jeweils maximal 32 KiB auswählen.',
+    'Bitte eine gültige Destination ID und höchstens 16 Schlüsseldateien mit jeweils maximal 32 KiB auswählen.',
   content_limit: 'Die zulässige Anzahl oder Gesamtgröße der Schlüssel ist erreicht.',
   resource_denied:
-    'Für diese Anfrage fehlen die Berechtigungen. Sie können einen Zustellpunkt auch direkt über seine ID laden.',
-  resource_missing: 'Der Zustellpunkt wurde in TEST nicht gefunden.',
+    'Für diese Anfrage fehlen die Berechtigungen. Sie können eine Destination auch direkt über ihre ID laden.',
+  resource_missing: 'Die Destination wurde in TEST nicht gefunden.',
   resource_unavailable: 'Die TEST-Daten konnten nicht geladen werden. Bitte erneut versuchen.',
   key_rejected:
     'Der private Schlüssel passt nicht eindeutig zu einem freigegebenen registrierten Testschlüssel oder hat den falschen Verwendungszweck.',
@@ -55,7 +55,7 @@ async function run(name, operation, apply) {
   action.value = name;
   error.value = '';
   emit('busy', true);
-  if (['Zustellpunkt prüfen', 'Testschlüssel laden', 'Testschlüssel verwerfen'].includes(name))
+  if (['Destination prüfen', 'Testschlüssel laden', 'Testschlüssel verwerfen'].includes(name))
     emit('invalidate');
   let status = 'Erfolgreich';
   try {
@@ -88,7 +88,7 @@ async function run(name, operation, apply) {
 }
 function list(offset = 0) {
   run(
-    'Zustellpunkte laden',
+    'Destinations laden',
     (session) => listDestinations(invoke, session, offset),
     (value) => {
       page.value = value;
@@ -99,7 +99,7 @@ function load(destination = id.value.trim()) {
   selected.value = null;
   id.value = destination;
   run(
-    'Zustellpunkt prüfen',
+    'Destination prüfen',
     (session) => loadDestination(invoke, session, destination),
     (value) => {
       selected.value = value;
@@ -131,7 +131,7 @@ function discard() {
   if (
     disabled.value ||
     !window.confirm(
-      'Alle importierten privaten Zustellpunktschlüssel dieser TEST-Sitzung entfernen? Temporäre Antwortschlüssel bleiben bis zum Abmelden verfügbar.',
+      'Alle importierten privaten Destination-Schlüssel dieser TEST-Sitzung entfernen? Temporäre Antwortschlüssel bleiben bis zum Abmelden verfügbar.',
     )
   )
     return;
@@ -176,13 +176,13 @@ watch(
 
 <template>
   <section class="tool-section" aria-labelledby="destination-keys-title" :aria-busy="pending">
-    <h2 id="destination-keys-title">Zustellpunkt und Testschlüssel</h2>
+    <h2 id="destination-keys-title">Destination und Testschlüssel</h2>
     <p class="small-note">
       Bei aktiviertem Profil wird der geladene Schlüsselbestand geschützt gespeichert. „Schlüssel verwerfen“
-      entfernt ihn auch aus dem aktiven Profil; Antwortkanäle werden separat verwaltet.
+      entfernt ihn auch aus dem aktiven Profil. Antwortkanäle werden separat verwaltet.
     </p>
     <p v-if="!session">
-      Melden Sie sich bei TEST an, um Zustellpunkte und ihre registrierten Testschlüssel zu prüfen.
+      Melden Sie sich bei TEST an, um Destinations und ihre registrierten Testschlüssel zu prüfen.
     </p>
     <template v-else>
       <p>
@@ -192,7 +192,7 @@ watch(
       <form @submit.prevent="load()">
         <div class="client-fields">
           <label for="destination-id">
-            Zustellpunkt-ID
+            Destination ID
             <input
               id="destination-id"
               v-model="id"
@@ -200,22 +200,22 @@ watch(
               maxlength="36"
               required
               :disabled="disabled"
-              placeholder="UUID des TEST-Zustellpunkts"
+              placeholder="UUID der TEST-Destination"
             />
           </label>
         </div>
         <div class="client-actions">
-          <button class="button" type="submit" :disabled="disabled || !id.trim()">Zustellpunkt laden</button>
+          <button class="button" type="submit" :disabled="disabled || !id.trim()">Destination laden</button>
           <button class="button secondary" type="button" :disabled="disabled" @click="list()">
-            Eigene Zustellpunkte auflisten
+            Eigene Destinations auflisten
           </button>
         </div>
       </form>
       <p v-if="pending" role="status">{{ action }} …</p>
       <p v-if="error" class="status-badge error" role="alert">{{ error }}</p>
       <template v-if="page">
-        <h3>Eigene Zustellpunkte · {{ page.totalCount }}</h3>
-        <p v-if="!page.destinations.length">Keine Zustellpunkte auf dieser Seite gefunden.</p>
+        <h3>Eigene Destinations · {{ page.totalCount }}</h3>
+        <p v-if="!page.destinations.length">Keine Destinations auf dieser Seite gefunden.</p>
         <div v-else class="client-table support-table">
           <table class="submission-result-table">
             <thead>
@@ -283,7 +283,7 @@ watch(
           Verwendung und passende Registrierung werden automatisch erkannt.
         </FileDropInput>
         <details>
-          <summary>Öffentliche Zustellpunktdaten</summary>
+          <summary>Öffentliche Destination-Daten</summary>
           <pre>{{ selected.detailsJson }}</pre>
         </details>
       </template>
@@ -294,7 +294,7 @@ watch(
       <p v-else>Noch kein privater Testschlüssel geladen.</p>
       <div class="client-actions">
         <button class="button secondary" type="button" :disabled="disabled || !keys.length" @click="discard">
-          Importierte Zustellpunktschlüssel verwerfen
+          Importierte Destination-Schlüssel verwerfen
         </button>
       </div>
     </template>

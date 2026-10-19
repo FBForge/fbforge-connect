@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       candidate_run:
-        description: Successful Windows validation run ID
+        description: Successful signed Windows run ID
         required: true
         type: string
       candidate_commit:

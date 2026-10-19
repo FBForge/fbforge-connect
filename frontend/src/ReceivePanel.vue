@@ -87,9 +87,9 @@ const messages = {
   key_missing: 'Bitte oben einen passenden privaten Testschlüssel zum Entschlüsseln laden.',
   key_rejected: props.reply
     ? 'Für diese Antwort ist in der Sitzung kein passender gebundener Antwortschlüssel verfügbar. Bitte dieselbe Sitzung verwenden, in der das Antwortangebot versendet wurde.'
-    : 'Der geladene Schlüssel passt nicht mehr zu einer aktuellen TEST-Registrierung. Bitte Zustellpunkt und Schlüssel erneut laden.',
+    : 'Der geladene Schlüssel passt nicht mehr zu einer aktuellen TEST-Registrierung. Bitte Destination und Schlüssel erneut laden.',
   test_certificate_required:
-    'Für diesen Zustellpunkt fehlt eine gültige Registrierung mit selbstsigniertem Testzertifikat.',
+    'Für diese Destination fehlt eine gültige Registrierung mit selbstsigniertem Testzertifikat.',
   verification_failed:
     'Die technische Prüfung der Einreichung ist fehlgeschlagen. Prüfen Sie Schlüssel, Event Log und Inhalte. Es liegt kein vollständiges Prüfergebnis vor.',
   schema_consent_required:

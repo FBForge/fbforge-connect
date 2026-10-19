@@ -39,7 +39,7 @@ await save('Home.md', [
   '',
   '## Einstieg',
   '',
-  `1. Laden Sie das Windows-Paket über die [Projektseite](${repository}#einstieg).`,
+  `1. Laden Sie das Windows-Paket über die [Projektseite](${repository}#installation).`,
   '2. Beginnen Sie mit dem [Schnellstart](Schnellstart) und [Verbinden und Profile](Verbinden-und-Profile).',
   '3. Testen Sie anschließend [Versand](Einreichung-senden), [Empfang](Antrag-empfangen-und-pruefen) und gegebenenfalls [Antworten](Antworten-testen).',
   '',
@@ -74,6 +74,21 @@ for (const [index, topic] of helpTopics.entries()) {
     '',
     ...topic.steps.map((step, stepIndex) => `${stepIndex + 1}. ${step}`),
     '',
+    ...(topic.examples?.length
+      ? [
+          '## Beispiele',
+          '',
+          ...topic.examples.flatMap((example) => [
+            `### ${example.title}`,
+            '',
+            ...(example.note ? [example.note, ''] : []),
+            '```' + example.language,
+            example.content,
+            '```',
+            '',
+          ]),
+        ]
+      : []),
     '## Gut zu wissen',
     '',
     ...topic.notes.map((note) => `- ${note}`),
@@ -92,3 +107,10 @@ for (const image of imageNames) {
   );
 }
 console.log(`${helpTopics.length} Hilfethemen und ${imageNames.size} Abbildungen exportiert: ${directory}`);
+
+// Preserve links to the former topic title.
+await save('Eigene-Zustellpunkte-verwalten.md', [
+  '# Eigene Destinations verwalten',
+  '',
+  'Die Anleitung finden Sie unter [Eigene Destinations verwalten](Eigene-Destinations-verwalten).',
+]);
