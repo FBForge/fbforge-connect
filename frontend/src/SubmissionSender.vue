@@ -20,6 +20,8 @@ import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import { loadSendDestination, loadSendSchema } from './sender-options.js';
 import { generateExample } from './generate-example.js';
+import { useExampleMessages } from './use-example-messages.js';
+import XmlMessageChoice from './XmlMessageChoice.vue';
 
 const props = defineProps({
   session: Object,
@@ -126,6 +128,8 @@ watch(
   },
 );
 const schemaDocument = shallowRef(null);
+const exampleMessages = useExampleMessages();
+const { roots: exampleRoots, selection: exampleRoot } = exampleMessages;
 const schemaContext = computed(() =>
   JSON.stringify([
     props.session?.sessionId,
@@ -143,6 +147,7 @@ watch(
   schemaContext,
   () => {
     schemaDocument.value = null;
+    exampleMessages.reset();
   },
   { flush: 'sync' },
 );
@@ -282,11 +287,14 @@ async function loadLabels() {
 }
 async function createExample() {
   if (disabled.value || !schema.value) return;
+  exampleNotice.value = '';
+  schemaDocument.value = null;
   const active = { ...props.session },
     destination = target.value.trim().toLowerCase(),
     uri = schema.value,
     format = mime.value,
     key = schemaContext.value;
+  let chooseMessage = false;
   await act('Fiktive Fachdaten erzeugen', async () => {
     const document = await loadSendSchema(invoke, active, destination, {
       serviceIdentifier: service.value,
@@ -294,16 +302,29 @@ async function createExample() {
       processModelId: addressing.value === 'process' ? modelId.value : '',
       messageId: addressing.value === 'process' ? messageId.value : '',
       allowExternalSchemas: allowExternalSchemas.value,
+    }).catch((cause) => {
+      if (schemaContext.value === key) exampleMessages.reset();
+      throw cause;
     });
     if (schemaContext.value !== key) return;
-    schemaDocument.value = document;
-    const example = await generateExample(document, format, uri);
+    if (!exampleMessages.choose(document, format, uri)) {
+      exampleNotice.value =
+        'Bitte wählen Sie zuerst die XML-Nachricht für Ihren Test. Ihre bisherigen Fachdaten bleiben erhalten.';
+      chooseMessage = true;
+      return;
+    }
+    const example = await generateExample(document, format, uri, exampleMessages.requestedRoot.value);
     if (schemaContext.value !== key) return;
+    schemaDocument.value = document;
     dataFile.value = null;
     dataText.value = example;
     exampleNotice.value =
-      'Fiktive Beispieldaten wurden aus dem gewählten Schema erzeugt. Bitte fachlich prüfen. Der Entwurf ist noch kein Nachweis einer erfolgreichen Schemaprüfung.';
+      'Fiktive Beispieldaten wurden aus dem gewählten Schema erzeugt. Bitte fachliche Angaben, Codelisten und Anlagenverweise prüfen. Der Entwurf ist noch kein Nachweis einer erfolgreichen Schemaprüfung.';
   });
+  if (chooseMessage && schemaContext.value === key) {
+    await nextTick();
+    window.document.getElementById('send-example-message')?.focus();
+  }
 }
 
 const locked = computed(
@@ -329,11 +350,12 @@ const messages = {
   schema_consent_required:
     'Bitte die Freigabe öffentlicher Schemaquellen aktivieren oder ein mitgeliefertes Demo-Schema verwenden.',
   schema_unavailable:
-    'Das angebotene Schema konnte nicht von einer öffentlichen HTTPS-Adresse geladen werden. Die bisherigen Fachdaten bleiben erhalten.',
+    'Das Schema ist nicht verfügbar oder die Quelle hat eine Fehlerantwort statt eines Schemas geliefert. Ihre bisherigen Fachdaten bleiben erhalten.',
   schema_tls_error: 'Die TLS-Verbindung zur Schemaquelle ist fehlgeschlagen. Das Schema wurde nicht geladen.',
   schema_network_error:
     'Die Schemaquelle konnte nicht erreicht oder vollständig gelesen werden (DNS, Verbindung oder Zeitlimit).',
-  schema_http_error: 'Die Schemaquelle hat den Abruf mit einem HTTP-Fehler abgewiesen.',
+  schema_http_error:
+    'Das Schema ist nicht verfügbar. Die Quelle hat den Abruf mit einem HTTP-Fehler abgewiesen. Ihre bisherigen Fachdaten bleiben erhalten.',
   schema_archive_invalid:
     'Das SDK konnte das XRepository-Archiv nicht als verwendbares Schema-Paket auflösen.',
   example_unavailable:
@@ -726,6 +748,12 @@ async function refreshState() {
           </FileDropInput>
         </div>
         <SchemaSourceConsent id="send-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
+        <XmlMessageChoice
+          id="send-example-message"
+          v-model="exampleRoot"
+          :roots="exampleRoots"
+          :disabled="disabled"
+        />
         <div class="client-actions">
           <button class="button secondary" type="button" :disabled="!schema" @click="createExample">
             Fiktive Beispieldaten erzeugen

@@ -51,10 +51,18 @@ export const helpTopics = [
     caption: 'Eine fiktive Einreichung vorbereiten und vor dem Versand prüfen.',
     intro:
       'Sie bereiten zunächst Fachdaten und Anlagen vor. Erst die separate Bestätigung löst den Versand aus.',
+    illustrations: [
+      {
+        image: 'xml-message-choice',
+        caption:
+          'XML-Beispielerzeugung mit ausdrücklich gewählter Fachnachricht. Das Bild verwendet einen fiktiven Teststandard.',
+      },
+    ],
     steps: [
       'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat. Wenn der Empfänger eine Leistungsbezeichnung liefert, wird sie neben der LeiKa-Kennung angezeigt. Weitere Adressierungsoptionen enthalten die Bezeichnung, Region und eine optionale Case ID. „Weiter“ prüft die Pflichtfelder des Abschnitts und führt Sie zur nächsten Eingabe.',
       'Bei API v3 lädt die Anwendung Ihre eigenen Absender-Destinations zur Auswahl. Eine einzelne aktive Destination wird automatisch übernommen. Über „ID eingeben“ können Sie eine Destination auch manuell hinterlegen. Diese muss zu Ihrem Zugang gehören und passend eingerichtet sein.',
       'Geben Sie JSON oder XML ein, ziehen Sie eine Datei in das Dateifeld oder verwenden Sie „Datei auswählen“. Fiktive Beispieldaten sind eine Starthilfe und müssen zu Ihrem Test angepasst werden.',
+      'Bei XML kann ein Schema-Paket mehrere Nachrichten enthalten. Wählen Sie vor der Beispielerzeugung die Nachricht für Ihre Leistung. Für eine XBau-Genehmigungsfreistellung ist das beispielsweise genehmigungsfreistellung.anzeige.0600. Eine Transportnachricht wird nicht automatisch ausgewählt. Die LeiKa allein bestimmt die XML-Nachricht nicht eindeutig.',
       'Die Formularansicht zeigt Werte lesbar an. Über JSON-Struktur oder Quelltext können Sie technische Details vergleichen. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar.',
       'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten.',
       'Wenn Sie eine Antwort testen möchten, aktivieren Sie vor dem Versand das Antwortangebot und wählen Sie das erlaubte Antwortschema.',
@@ -74,6 +82,7 @@ export const helpTopics = [
     ],
     notes: [
       'Öffentliche Schemaquellen werden nur nach ausdrücklicher Freigabe geladen. Eigene lokale Schemata sind ebenfalls möglich.',
+      'Ist ein Schema nicht verfügbar oder liefert die Quelle eine Fehlerantwort, erzeugt die Anwendung daraus keine Beispieldaten. Ihre bisherigen Fachdaten bleiben erhalten. Prüfen Sie die angebotene Schema-Version oder verwenden Sie eigene Testdaten. Passen Sie bei erzeugten Entwürfen auch Codelistenwerte und Anlagenverweise an Ihren Test an.',
       'Bei „Ausgang ungewiss“ nicht einfach erneut senden. Nutzen Sie die bekannten IDs zur Event-Log-Prüfung, um doppelte Testnachrichten zu vermeiden.',
       'Die Vorgangsablage übernimmt den tatsächlich vorbereiteten Versandinhalt. Spätere Änderungen im Eingabefeld verändern diese Kopie nicht.',
     ],
@@ -159,6 +168,7 @@ export const helpTopics = [
       'Senden Sie als Onlinedienst eine Einreichung mit aktiviertem Antwortangebot. Verwenden Sie für einen Test über Neustarts ein gespeichertes Profil und sichern Sie dessen Schlüsselzustand.',
       'Öffnen und prüfen Sie den Antrag im Fachverfahren. Laden Sie im Antwortbereich das angebotene Antwortschema.',
       'Erstellen Sie passende JSON- oder XML-Antwortdaten und ergänzen Sie bei Bedarf Anlagen. Bereiten Sie die Antwort vor, prüfen Sie die Zusammenfassung und bestätigen Sie den Versand separat.',
+      'Bei XML-Antworten mit mehreren möglichen Nachrichten wählen Sie zunächst die passende Antwortnachricht und erzeugen danach den Entwurf. Bei einem fehlenden Schema oder einer nicht unterstützten Pflichtstruktur bleibt Ihr bisheriger Antwortinhalt erhalten.',
       'Verbinden Sie wieder den ursprünglichen Onlinedienst-Zugang. Laden Sie die Antworten und prüfen Sie die gewünschte Antwort mit dem zu diesem Angebot gehörenden Schlüssel.',
       'Nehmen Sie die Antwort nach Prüfung an oder lehnen Sie sie mit passendem Grund ab. Auch Antworten bleiben als lokale Kopien in der Vorgangsablage erhalten.',
     ],

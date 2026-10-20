@@ -20,6 +20,8 @@ import {
   replyState,
 } from './reply-sending.js';
 import { generateExample } from './generate-example.js';
+import { useExampleMessages } from './use-example-messages.js';
+import XmlMessageChoice from './XmlMessageChoice.vue';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 
@@ -51,6 +53,8 @@ const cleanupOwner = ref('');
 const schemaPackage = shallowRef(null),
   schemaFile = shallowRef(null),
   schemaNotice = ref('');
+const exampleMessages = useExampleMessages();
+const { roots: exampleRoots, selection: exampleRoot } = exampleMessages;
 const owner = shallowRef(null),
   dialog = ref(null),
   prepareButton = ref(null),
@@ -104,6 +108,7 @@ watch(
     schemaPackage.value = null;
     schemaFile.value = null;
     schemaNotice.value = '';
+    exampleMessages.reset();
   },
   { flush: 'sync' },
 );
@@ -120,12 +125,16 @@ const disabled = computed(
 let revision = 0,
   alive = true;
 const messages = {
+  example_unavailable:
+    'Für dieses Schema konnte kein vollständiger fiktiver Antwortentwurf erzeugt werden. Bitte geben Sie die Antwort manuell ein. Ihr bisheriger Antwortinhalt bleibt erhalten.',
+  schema_http_error:
+    'Das Antwortschema ist nicht verfügbar. Die Quelle hat den Abruf mit einem HTTP-Fehler abgewiesen. Ihr bisheriger Antwortinhalt bleibt erhalten.',
   schema_required:
     'Bitte das aktuelle Antwortschema laden. Die Vorbereitung benötigt eine native Schemaprüfung.',
   data_schema_invalid:
     'Der Antwortinhalt entspricht nicht dem ausgewählten Schema. Bitte Fachdaten und Pflichtfelder prüfen. Es wurde nichts versendet.',
   schema_unavailable:
-    'Das Antwortschema oder eine benötigte Referenz ist nicht verfügbar. Alternativ eine lokale JSON-Schemadatei mit passender $id verwenden.',
+    'Das Antwortschema ist nicht verfügbar oder die Quelle hat eine Fehlerantwort statt eines Schemas geliefert. Ihr bisheriger Antwortinhalt bleibt erhalten. Alternativ können Sie eine lokale JSON-Schemadatei mit passender $id verwenden.',
   schema_consent_required:
     'Bitte die Freigabe öffentlicher Schemaquellen aktivieren oder ein lokales beziehungsweise mitgeliefertes Schema verwenden.',
   data_format_invalid: 'Der Antwortinhalt passt nicht zum gewählten JSON-/XML-Format.',
@@ -154,6 +163,7 @@ async function cancelKnown(value, active) {
   }
 }
 function reset() {
+  exampleMessages.reset();
   schemaPackage.value = null;
   schemaFile.value = null;
   schemaNotice.value = '';
@@ -251,13 +261,37 @@ async function loadSchema(example = false) {
     mimeType: format.value,
     allowExternalSchemas: external && allowExternalSchemas.value,
   };
+  let chooseMessage = false;
   await run('Antwortschema laden', async (active, current) => {
-    const loaded = await loadReplySchema(invoke, active, proof, selection, local);
+    const loaded = await loadReplySchema(invoke, active, proof, selection, local).catch((cause) => {
+      if (current() && schemaContext.value === key) exampleMessages.reset();
+      throw cause;
+    });
     if (!current() || schemaContext.value !== key) return 'Abgebrochen';
     schemaPackage.value = loaded;
     schemaNotice.value = 'Schema geladen. Der Antwortinhalt wird beim Vorbereiten im nativen Kern geprüft.';
     if (example) {
-      const draft = await generateExample(loaded.document, selection.mimeType, selection.schemaUri);
+      let draft;
+      try {
+        if (!exampleMessages.choose(loaded.document, selection.mimeType, selection.schemaUri)) {
+          schemaNotice.value =
+            'Bitte wählen Sie zuerst die XML-Nachricht für Ihre Antwort. Ihr bisheriger Antwortinhalt bleibt erhalten.';
+          chooseMessage = true;
+          return;
+        }
+        draft = await generateExample(
+          loaded.document,
+          selection.mimeType,
+          selection.schemaUri,
+          exampleMessages.requestedRoot.value,
+        );
+      } catch (cause) {
+        if (current() && schemaContext.value === key && cause?.message === 'schema_unavailable') {
+          schemaPackage.value = null;
+          schemaNotice.value = '';
+        }
+        throw cause;
+      }
       if (!current() || schemaContext.value !== key) return 'Abgebrochen';
       file.value = null;
       text.value = draft;
@@ -265,9 +299,14 @@ async function loadSchema(example = false) {
         'Fiktiver Antwortentwurf erzeugt. Vor dem Versand werden die exakten Daten gegen das Antwortschema geprüft.';
     }
   });
+  if (chooseMessage && schemaContext.value === key) {
+    await nextTick();
+    window.document.getElementById('reply-example-message')?.focus();
+  }
 }
 function chooseSchemaFile(files) {
   if (disabled.value) return;
+  exampleMessages.reset();
   schemaPackage.value = null;
   schemaNotice.value = '';
   schemaFile.value = files[0] || null;
@@ -444,6 +483,12 @@ async function send() {
           </p>
         </div>
         <SchemaSourceConsent id="reply-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
+        <XmlMessageChoice
+          id="reply-example-message"
+          v-model="exampleRoot"
+          :roots="exampleRoots"
+          :disabled="disabled"
+        />
         <div class="client-actions">
           <button class="button secondary" type="button" @click="loadSchema(false)">
             Antwortschema laden

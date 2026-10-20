@@ -1,6 +1,7 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { xmlPacket } from '../frontend/test-fixtures/xml-message-schema.js';
 
 const output = process.argv[2];
 if (!output || process.argv.length !== 3)
@@ -43,6 +44,56 @@ try {
     '11111111-1111-4111-8111-000000000001',
   );
   await capture('send');
+  await page.evaluate((packet) => {
+    const original = window.__TAURI_INTERNALS__.invoke;
+    const schemaUri = 'urn:test:building';
+    const document = new TextEncoder().encode(JSON.stringify({ ...packet, schemaUri }));
+    window.__TAURI_INTERNALS__.invoke = (command, args) => {
+      const envelope = (data) => ({
+        apiVersion: args.apiVersion,
+        sessionId: args.sessionId,
+        environment: 'TEST',
+        data,
+      });
+      if (command === 'load_send_destination')
+        return envelope({
+          destinationId: args.destinationId,
+          detailsJson: JSON.stringify({
+            destinationId: args.destinationId,
+            publicServices: [
+              {
+                identifier: 'urn:test:service',
+                name: 'Fiktive Bauleistung',
+                submissionSchemas: [{ schemaUri, mimeType: 'application/xml' }],
+              },
+            ],
+          }),
+        });
+      if (command === 'load_send_schema' || command === 'read_send_schema')
+        return envelope({
+          schemaId: '55555555-5555-4555-8555-555555555555',
+          schemaUri,
+          byteOffset: args.byteOffset || 0,
+          totalBytes: document.length,
+          chunk: btoa(
+            String.fromCharCode(...document.slice(args.byteOffset || 0, (args.byteOffset || 0) + 12 * 1024)),
+          ),
+        });
+      return original(command, args);
+    };
+  }, xmlPacket);
+  await page.locator('#send-target').fill('22222222-2222-4222-8222-222222222222');
+  await button('Leistungen laden').click();
+  await button('Weiter: Fachdaten').click();
+  await page.locator('#send-schema-sources').check();
+  await button('Fiktive Beispieldaten erzeugen').click();
+  await expect(page.locator('#send-example-message')).toBeFocused();
+  await page
+    .locator('#send-example-message')
+    .selectOption({ label: 'Anzeige des Bauvorhabens · genehmigungsfreistellung.anzeige.0600' });
+  await button('Fiktive Beispieldaten erzeugen').click();
+  await expect(page.locator('#send-data')).toHaveValue(/>0600<\/nachrichtentyp>/);
+  await capture('xml-message-choice', page.locator('[data-send-step="1"] legend'));
   await button('Prozesse').click();
   await button('Fiktiven Demo-Prozess öffnen').click();
   await expect(page.locator('.bpmn-diagram .djs-container > svg')).toBeVisible();
@@ -114,7 +165,7 @@ try {
     page.getByRole('heading', { name: 'Eigene TEST-Destination anlegen', exact: true }),
   ).toBeVisible();
   await capture('destinations');
-  console.log(`12 Abbildungen mit fiktiven Testdaten: ${directory}`);
+  console.log(`13 Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {
   await browser.close();
 }

@@ -185,3 +185,38 @@ test('JSON generation delegates untrusted constraints to a worker and always ter
   assert.equal(input, source);
   assert.equal(terminated, 1);
 });
+
+test('API error bodies are unavailable schemas, including selected roots and external references', async () => {
+  const unavailable = { result: 'error', error: { msg: 'Not Found', code: 404 } };
+  for (const body of [
+    unavailable,
+    { error: { message: 'Not Found', code: 404 } },
+    { type: 'about:blank', title: 'Not Found', status: 404 },
+  ]) {
+    assert.throws(() => jsonExample(body), /schema_unavailable/);
+    await assert.rejects(
+      generateExample(JSON.stringify(body), 'application/json', uri),
+      /schema_unavailable/,
+    );
+    await assert.rejects(generateExample(JSON.stringify(body), 'application/xml', uri), /schema_unavailable/);
+    assert.throws(
+      () => jsonExample({ schemaPackage: 1, schemaUri: uri, documents: { [uri]: body } }),
+      /schema_unavailable/,
+    );
+    assert.throws(
+      () =>
+        jsonExample({
+          schemaPackage: 1,
+          schemaUri: uri,
+          documents: { [uri]: { $ref: 'error.json', minLength: 1 }, [new URL('error.json', uri).href]: body },
+        }),
+      /schema_unavailable/,
+    );
+  }
+  assert.doesNotThrow(() => jsonExample(true));
+  assert.doesNotThrow(() => jsonExample({}));
+  assert.doesNotThrow(() =>
+    jsonExample({ type: 'object', properties: { error: { type: 'string' }, result: { type: 'string' } } }),
+  );
+  assert.equal(JSON.parse(jsonExample({ const: unavailable })).result, 'error');
+});
