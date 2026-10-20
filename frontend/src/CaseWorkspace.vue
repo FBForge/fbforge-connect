@@ -1,4 +1,7 @@
 <script setup>
+import CopyValue from './CopyValue.vue';
+import DocumentationLink from './DocumentationLink.vue';
+import { serviceLabel } from './service-label.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import { listCases, caseParts, readCaseFile, caseRequest, caseStatus, caseErrorMessage } from './cases.js';
@@ -9,7 +12,7 @@ import { structuredFormat, STRUCTURED_BYTES } from './structured-data.js';
 import StructuredData from './StructuredData.vue';
 import ContentPreview from './ContentPreview.vue';
 const props = defineProps({ session: Object, busy: Boolean, visible: Boolean });
-const emit = defineEmits(['busy', 'receive', 'event-log', 'help']);
+const emit = defineEmits(['busy', 'receive', 'event-log']);
 const records = shallowRef([]),
   selected = shallowRef(null),
   parts = shallowRef([]),
@@ -265,9 +268,7 @@ onBeforeUnmount(() => {
             Gesendete und empfangene Nachrichten als lokale Kopien – auch nach dem Annehmen oder Ablehnen.
           </p>
         </div>
-        <button class="button secondary" type="button" @click="emit('help', 'cases')">
-          Hilfe zu Vorgängen
-        </button>
+        <DocumentationLink topic="cases">Hilfe zu Vorgängen</DocumentationLink>
       </div>
       <p v-if="!session">
         Verbinden Sie zuerst das gewünschte TEST-Profil. Die Übersicht zeigt ausschließlich dessen API und
@@ -345,7 +346,11 @@ onBeforeUnmount(() => {
                 :disabled="disabled || record.available === false"
                 @click="open(record, $event)"
               >
-                {{ record.title }}
+                {{
+                  /^urn:de:fim:leika:leistung:/i.test(record.title)
+                    ? serviceLabel(record.title).title
+                    : record.title
+                }}
               </button>
             </h3>
             <div class="case-metadata">
@@ -378,7 +383,13 @@ onBeforeUnmount(() => {
     <section v-if="selected" class="tool-section case-detail" aria-labelledby="case-detail-title">
       <div class="tool-section-heading">
         <div>
-          <h2 id="case-detail-title" ref="detailHeading" tabindex="-1">{{ selected.title }}</h2>
+          <h2 id="case-detail-title" ref="detailHeading" tabindex="-1">
+            {{
+              /^urn:de:fim:leika:leistung:/i.test(selected.title)
+                ? serviceLabel(selected.title).title
+                : selected.title
+            }}
+          </h2>
           <p>{{ caseStatus(selected.status) }} · {{ when(selected.createdAt) }}</p>
         </div>
         <button class="button secondary" type="button" :disabled="disabled" @click="closeCase">
@@ -477,13 +488,13 @@ onBeforeUnmount(() => {
         <summary>Technische Inhalte und Kennungen</summary>
         <dl>
           <dt>Vorgang</dt>
-          <dd>{{ selected.caseId || 'Noch nicht bekannt' }}</dd>
+          <dd><CopyValue :value="selected.caseId" label="Case ID" /></dd>
           <dt>Einreichung</dt>
-          <dd>{{ selected.submissionId || '–' }}</dd>
+          <dd><CopyValue :value="selected.submissionId" label="Submission ID" /></dd>
           <dt>Antwort</dt>
-          <dd>{{ selected.replyId || '–' }}</dd>
+          <dd><CopyValue :value="selected.replyId" label="Reply ID" /></dd>
           <dt>Destination</dt>
-          <dd>{{ selected.destinationId || '–' }}</dd>
+          <dd><CopyValue :value="selected.destinationId" label="Destination ID" /></dd>
         </dl>
         <ul>
           <li v-for="part in parts" :key="part.contentId">

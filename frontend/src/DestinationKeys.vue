@@ -1,10 +1,12 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { invoke } from './native.js';
 import { listDestinations, loadDestination, importKey, loadedKeys, discardKeys } from './resources.js';
 import { resetsSessions } from './sessions.js';
 import { importKeyFiles } from './key-files.js';
 import FileDropInput from './FileDropInput.vue';
+import CopyValue from './CopyValue.vue';
+import DocumentationLink from './DocumentationLink.vue';
 
 const props = defineProps({ session: Object, busy: Boolean, defaultDestination: String });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'destination', 'invalidate']);
@@ -28,6 +30,30 @@ watch(
   },
   { immediate: true },
 );
+const expanded = ref(true),
+  setupHeading = ref(null);
+const ready = computed(() =>
+  Boolean(
+    selected.value &&
+    selected.value.destinationId === id.value.trim().toLowerCase() &&
+    keys.value.some((key) => key.destinationId === selected.value.destinationId && key.purpose === 'decrypt'),
+  ),
+);
+const destinationName = computed(() => {
+  if (!selected.value) return '';
+  const name = JSON.parse(selected.value.detailsJson).name;
+  return typeof name === 'string' ? name : '';
+});
+watch(ready, (value) => {
+  expanded.value = !value;
+});
+async function showSetup() {
+  expanded.value = true;
+  await nextTick();
+  setupHeading.value?.focus();
+  setupHeading.value?.scrollIntoView({ block: 'start' });
+}
+defineExpose({ showSetup });
 const messages = {
   invalid_input:
     'Bitte eine gültige Destination ID und höchstens 16 Schlüsseldateien mit jeweils maximal 32 KiB auswählen.',
@@ -153,6 +179,7 @@ watch(
     keys.value = [];
     error.value = '';
     hydrated.value = false;
+    expanded.value = true;
   },
   { flush: 'sync' },
 );
@@ -176,127 +203,157 @@ watch(
 
 <template>
   <section class="tool-section" aria-labelledby="destination-keys-title" :aria-busy="pending">
-    <h2 id="destination-keys-title">Destination und Testschlüssel</h2>
-    <p class="small-note">
-      Bei aktiviertem Profil wird der geladene Schlüsselbestand geschützt gespeichert. „Schlüssel verwerfen“
-      entfernt ihn auch aus dem aktiven Profil. Antwortkanäle werden separat verwaltet.
-    </p>
-    <p v-if="!session">
-      Melden Sie sich bei TEST an, um Destinations und ihre registrierten Testschlüssel zu prüfen.
-    </p>
-    <template v-else>
-      <p>
-        Schlüssel bleiben während dieser Sitzung im lokalen Java-Kern erhalten. Ein Wechsel der Ansicht löscht
-        sie nicht.
-      </p>
-      <form @submit.prevent="load()">
-        <div class="client-fields">
-          <label for="destination-id">
-            Destination ID
-            <input
-              id="destination-id"
-              v-model="id"
-              type="text"
-              maxlength="36"
-              required
-              :disabled="disabled"
-              placeholder="UUID der TEST-Destination"
-            />
-          </label>
-        </div>
-        <div class="client-actions">
-          <button class="button" type="submit" :disabled="disabled || !id.trim()">Destination laden</button>
-          <button class="button secondary" type="button" :disabled="disabled" @click="list()">
-            Eigene Destinations auflisten
-          </button>
-        </div>
-      </form>
-      <p v-if="pending" role="status">{{ action }} …</p>
-      <p v-if="error" class="status-badge error" role="alert">{{ error }}</p>
-      <template v-if="page">
-        <h3>Eigene Destinations · {{ page.totalCount }}</h3>
-        <p v-if="!page.destinations.length">Keine Destinations auf dieser Seite gefunden.</p>
-        <div v-else class="client-table support-table">
-          <table class="submission-result-table">
-            <thead>
-              <tr>
-                <th scope="col">Name / ID</th>
-                <th scope="col">Status / Typ</th>
-                <th scope="col">Aktion</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in page.destinations" :key="item.destinationId">
-                <td data-label="Name / ID">
-                  {{ item.name || 'Ohne Namen' }}
-                  <br />
-                  <code :title="item.destinationId">{{ shortId(item.destinationId) }}</code>
-                </td>
-                <td data-label="Status / Typ">
-                  {{ item.status || 'Unbekannt' }} · {{ item.type || 'Unbekannt' }}
-                </td>
-                <td data-label="Aktion">
-                  <button
-                    class="button secondary"
-                    type="button"
-                    :disabled="disabled"
-                    @click="load(item.destinationId)"
-                  >
-                    Auswählen
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="client-actions">
-          <button
-            class="button secondary"
-            type="button"
-            :disabled="disabled || page.offset === 0"
-            @click="list(page.offset - 20)"
-          >
-            Vorherige Seite
-          </button>
-          <span>Seite {{ page.offset / 20 + 1 }}</span>
-          <button
-            class="button secondary"
-            type="button"
-            :disabled="disabled || page.offset >= 10000 || page.offset + 20 >= page.totalCount"
-            @click="list(page.offset + 20)"
-          >
-            Nächste Seite
-          </button>
-        </div>
-      </template>
-      <template v-if="selected">
-        <p>{{ selected.keys.filter((key) => key.eligible).length }} registrierte Testschlüssel verfügbar.</p>
-        <FileDropInput
-          id="private-test-key"
-          label="Private Testschlüssel laden"
-          multiple
-          accept=".json,.jwk,.jwks,.pem,.key"
-          :disabled="disabled || !selected.keys.some((key) => key.eligible)"
-          @files="chooseFile"
-        >
-          Bis zu 16 Dateien als JWK, JWKS oder unverschlüsseltes PKCS#8-PEM, jeweils maximal 32 KiB.
-          Verwendung und passende Registrierung werden automatisch erkannt.
-        </FileDropInput>
-        <details>
-          <summary>Öffentliche Destination-Daten</summary>
-          <pre>{{ selected.detailsJson }}</pre>
-        </details>
-      </template>
-      <p v-if="keys.length" class="status-badge ok">
-        {{ keys.length === 1 ? 'Testschlüssel geladen' : `${keys.length} Testschlüssel geladen` }} · für
-        passende Einreichungen verfügbar
-      </p>
-      <p v-else>Noch kein privater Testschlüssel geladen.</p>
-      <div class="client-actions">
-        <button class="button secondary" type="button" :disabled="disabled || !keys.length" @click="discard">
-          Importierte Destination-Schlüssel verwerfen
-        </button>
+    <div class="tool-section-heading">
+      <div>
+        <h2 id="destination-keys-title" ref="setupHeading" tabindex="-1">Empfang einrichten</h2>
+        <p v-if="!ready">
+          Wählen Sie einmal Ihre Destination und laden Sie den passenden privaten Schlüssel.
+        </p>
       </div>
-    </template>
+      <button
+        v-if="ready"
+        class="button secondary"
+        type="button"
+        :aria-expanded="expanded"
+        aria-controls="receiver-setup"
+        @click="expanded = !expanded"
+      >
+        {{ expanded ? 'Einrichtung ausblenden' : 'Einrichtung ändern' }}
+      </button>
+    </div>
+    <div v-if="ready" class="receiver-summary">
+      <strong>{{ destinationName || 'Ihre Empfangs-Destination' }}</strong>
+      <CopyValue :value="selected.destinationId" label="Destination ID" />
+      <span class="status-badge ok">Passender Entschlüsselungsschlüssel geladen</span>
+      <small>Der Inhalt jeder Einreichung wird beim Öffnen separat geprüft.</small>
+    </div>
+    <div id="receiver-setup" v-show="expanded">
+      <p class="small-note">
+        Bei aktiviertem Profil wird der geladene Schlüsselbestand geschützt gespeichert. „Schlüssel verwerfen“
+        entfernt ihn auch aus dem aktiven Profil. Antwortkanäle werden separat verwaltet.
+      </p>
+      <p v-if="!session">
+        Melden Sie sich bei TEST an, um Destinations und ihre registrierten Testschlüssel zu prüfen.
+      </p>
+      <template v-else>
+        <p>Einmal geladene Schlüssel bleiben für weitere passende Einreichungen verfügbar.</p>
+        <form @submit.prevent="load()">
+          <div class="client-fields">
+            <label for="destination-id">
+              Destination ID
+              <input
+                id="destination-id"
+                v-model="id"
+                type="text"
+                maxlength="36"
+                required
+                :disabled="disabled"
+                placeholder="UUID der TEST-Destination"
+              />
+            </label>
+          </div>
+          <div class="client-actions">
+            <button class="button" type="submit" :disabled="disabled || !id.trim()">Destination laden</button>
+            <button class="button secondary" type="button" :disabled="disabled" @click="list()">
+              Eigene Destinations auflisten
+            </button>
+          </div>
+        </form>
+        <p v-if="pending" role="status">{{ action }} …</p>
+        <p v-if="error" class="status-badge error" role="alert">{{ error }}</p>
+        <template v-if="page">
+          <h3>Eigene Destinations · {{ page.totalCount }}</h3>
+          <p v-if="!page.destinations.length">Keine Destinations auf dieser Seite gefunden.</p>
+          <div v-else class="client-table support-table">
+            <table class="submission-result-table">
+              <thead>
+                <tr>
+                  <th scope="col">Name / ID</th>
+                  <th scope="col">Status / Typ</th>
+                  <th scope="col">Aktion</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in page.destinations" :key="item.destinationId">
+                  <td data-label="Name / ID">
+                    {{ item.name || 'Ohne Namen' }}
+                    <br />
+                    <code :title="item.destinationId">{{ shortId(item.destinationId) }}</code>
+                  </td>
+                  <td data-label="Status / Typ">
+                    {{ item.status || 'Unbekannt' }} · {{ item.type || 'Unbekannt' }}
+                  </td>
+                  <td data-label="Aktion">
+                    <button
+                      class="button secondary"
+                      type="button"
+                      :disabled="disabled"
+                      @click="load(item.destinationId)"
+                    >
+                      Auswählen
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="client-actions">
+            <button
+              class="button secondary"
+              type="button"
+              :disabled="disabled || page.offset === 0"
+              @click="list(page.offset - 20)"
+            >
+              Vorherige Seite
+            </button>
+            <span>Seite {{ page.offset / 20 + 1 }}</span>
+            <button
+              class="button secondary"
+              type="button"
+              :disabled="disabled || page.offset >= 10000 || page.offset + 20 >= page.totalCount"
+              @click="list(page.offset + 20)"
+            >
+              Nächste Seite
+            </button>
+          </div>
+        </template>
+        <template v-if="selected">
+          <p>
+            {{ selected.keys.filter((key) => key.eligible).length }} registrierte Testschlüssel verfügbar.
+          </p>
+          <FileDropInput
+            id="private-test-key"
+            label="Private Testschlüssel laden"
+            multiple
+            accept=".json,.jwk,.jwks,.pem,.key"
+            :disabled="disabled || !selected.keys.some((key) => key.eligible)"
+            @files="chooseFile"
+          >
+            Bis zu 16 Dateien als JWK, JWKS oder unverschlüsseltes PKCS#8-PEM, jeweils maximal 32 KiB.
+            Verwendung und passende Registrierung werden automatisch erkannt.
+          </FileDropInput>
+          <details>
+            <summary>Öffentliche Destination-Daten</summary>
+            <pre>{{ selected.detailsJson }}</pre>
+          </details>
+        </template>
+        <p v-if="keys.length" class="status-badge ok">
+          {{ keys.length === 1 ? 'Testschlüssel geladen' : `${keys.length} Testschlüssel geladen` }} · für
+          passende Einreichungen verfügbar
+        </p>
+        <p v-else>Noch kein privater Testschlüssel geladen.</p>
+        <div class="client-actions">
+          <button
+            class="button secondary"
+            type="button"
+            :disabled="disabled || !keys.length"
+            @click="discard"
+          >
+            Importierte Destination-Schlüssel verwerfen
+          </button>
+        </div>
+      </template>
+      <DocumentationLink topic="receive">Hilfe zur Empfangseinrichtung</DocumentationLink>
+    </div>
   </section>
 </template>

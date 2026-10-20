@@ -4,6 +4,7 @@ import { parseStructuredData, filterStructuredData } from './structured-data.js'
 import { mount } from './json-viewer.js';
 import ApplicationField from './ApplicationField.vue';
 import { annotateSchema } from './schema-annotations.js';
+const showTechnical = ref(false);
 const props = defineProps({
   text: String,
   format: String,
@@ -92,9 +93,13 @@ onBeforeUnmount(() => {
             : annotations.message
         }}
       </p>
-      <p class="application-path">Schema: {{ schemaUri }}</p>
+      <p v-if="showTechnical" class="application-path">Schema: {{ schemaUri }}</p>
     </div>
     <template v-if="mode === 'form' && model.status === 'ready'">
+      <label class="checkbox-label application-technical-toggle">
+        <input v-model="showTechnical" type="checkbox" />
+        Technische Feldangaben anzeigen
+      </label>
       <label class="application-search" :for="inputId">
         Felder durchsuchen
         <input
@@ -118,7 +123,7 @@ onBeforeUnmount(() => {
         <p v-if="filtered.schema?.description" class="application-description">
           {{ filtered.schema.description }}
         </p>
-        <details v-if="filtered.schema" class="application-origin">
+        <details v-if="showTechnical && filtered.schema" class="application-origin">
           <summary>Schemaherkunft des Dokuments</summary>
           <p v-for="(entry, index) in filtered.schema.sources" :key="index" class="application-path">
             {{ entry.uri }} · {{ entry.location || '/' }}
@@ -129,11 +134,17 @@ onBeforeUnmount(() => {
             v-for="node in documentFields"
             :key="node.id"
             :node="node"
+            :show-technical="showTechnical"
             :query="query.trim()"
           />
         </div>
       </template>
-      <ApplicationField v-else-if="filtered" :node="filtered" :query="query.trim()" />
+      <ApplicationField
+        v-else-if="filtered"
+        :node="filtered"
+        :show-technical="showTechnical"
+        :query="query.trim()"
+      />
     </template>
     <div v-else-if="mode === 'tree'" ref="treeHost"></div>
     <template v-else>

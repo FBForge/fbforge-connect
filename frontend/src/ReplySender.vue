@@ -1,4 +1,5 @@
 <script setup>
+import CopyValue from './CopyValue.vue';
 import { inject, ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import { caseStorageNotice } from './cases.js';
@@ -547,11 +548,11 @@ async function send() {
       </h3>
       <p v-if="outcome.replyId">
         Reply ID:
-        <code>{{ outcome.replyId }}</code>
+        <CopyValue :value="outcome.replyId" label="Reply ID" />
       </p>
       <p>
         Vorgang:
-        <code>{{ outcome.caseId }}</code>
+        <CopyValue :value="outcome.caseId" label="Case ID" />
       </p>
       <button
         v-if="outcome.replyId"

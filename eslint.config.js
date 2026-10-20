@@ -16,7 +16,7 @@ export default [
   js.configs.recommended,
   ...vue.configs['flat/essential'],
   {
-    files: ['frontend/src/**/*.{js,vue}'],
+    files: ['frontend/src/**/*.{js,vue}', 'docs/guide/*.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
   },
   {

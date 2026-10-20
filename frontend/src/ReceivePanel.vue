@@ -16,6 +16,8 @@ import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
 import FileDropInput from './FileDropInput.vue';
+import DocumentationLink from './DocumentationLink.vue';
+import CopyValue from './CopyValue.vue';
 import ContentPreview from './ContentPreview.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
 import ReplyReceiptPanel from './ReplyReceiptPanel.vue';
@@ -34,7 +36,16 @@ const props = defineProps({
   reply: Boolean,
   autoOpen: Number,
 });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'verified', 'outcome', 'receive-start', 'event-log']);
+const emit = defineEmits([
+  'busy',
+  'activity',
+  'fatal',
+  'verified',
+  'outcome',
+  'receive-start',
+  'event-log',
+  'setup',
+]);
 const allowExternalSchemas = ref(false);
 watch(
   () => props.session?.sessionId,
@@ -43,6 +54,7 @@ watch(
   },
 );
 const diagnostic = ref('');
+const schemaSettings = ref(null);
 const applicationSchema = ref(null);
 const application = ref(null),
   applicationNotice = ref(''),
@@ -84,7 +96,8 @@ let generation = 0,
   downloadUrl,
   downloadTimer;
 const messages = {
-  key_missing: 'Bitte oben einen passenden privaten Testschlüssel zum Entschlüsseln laden.',
+  key_missing:
+    'Zum Öffnen fehlt der passende private Testschlüssel. Öffnen Sie die Empfangseinrichtung und laden Sie ihn dort.',
   key_rejected: props.reply
     ? 'Für diese Antwort ist in der Sitzung kein passender gebundener Antwortschlüssel verfügbar. Bitte dieselbe Sitzung verwenden, in der das Antwortangebot versendet wurde.'
     : 'Der geladene Schlüssel passt nicht mehr zu einer aktuellen TEST-Registrierung. Bitte Destination und Schlüssel erneut laden.',
@@ -468,7 +481,7 @@ function inspect(part, download = false) {
           </p>
         </div>
       </div>
-      <details>
+      <details ref="schemaSettings">
         <summary>Lokale Fachdaten-Schemata ({{ schemas.length }})</summary>
         <p>
           Zuerst entschlüsselt das SDK die Metadaten und liest daraus die Schema-URI. Öffentlich erreichbare
@@ -526,11 +539,35 @@ function inspect(part, download = false) {
       </div>
       <p v-if="pending" role="status">{{ action }} …</p>
       <p v-if="error" role="alert">{{ error }}</p>
-      <p v-if="error && diagnostic" class="small-note">
-        Diagnose: {{ session?.apiVersion }} ·
-        <code>{{ diagnostic }}</code>
-        . Diesen Code können Sie im Fehlerbericht angeben.
-      </p>
+      <div v-if="error" class="recovery-actions client-actions">
+        <button
+          v-if="!reply && ['key_missing', 'key_rejected', 'test_certificate_required'].includes(diagnostic)"
+          type="button"
+          class="button secondary"
+          :disabled="disabled"
+          @click="emit('setup')"
+        >
+          Schlüssel einrichten
+        </button>
+        <button
+          v-if="diagnostic.startsWith('schema_')"
+          type="button"
+          class="button secondary"
+          :disabled="disabled"
+          @click="
+            schemaSettings.open = true;
+            nextTick(() => schemaSettings.querySelector('summary')?.focus());
+          "
+        >
+          Schemaeinstellungen öffnen
+        </button>
+        <DocumentationLink :topic="reply ? 'replies' : 'problems'">Hilfe zu diesem Problem</DocumentationLink>
+      </div>
+      <details v-if="error && diagnostic">
+        <summary>Technische Fehlerangaben</summary>
+        <p>API {{ session?.apiVersion }}</p>
+        <CopyValue :value="diagnostic" label="Fehlercode" />
+      </details>
       <template v-if="proof">
         <div class="verification-stages" aria-label="Prüfstatus">
           <p><span class="status-badge ok">Entschlüsselung und Integrität geprüft</span></p>

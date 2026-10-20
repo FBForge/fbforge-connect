@@ -6,6 +6,8 @@ const processWorkspace = inject(processWorkspaceKey, null);
 import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
 import ReceivePanel from './ReceivePanel.vue';
+import CopyValue from './CopyValue.vue';
+import ServiceLabel from './ServiceLabel.vue';
 import { listSubmissions, loadSubmission } from './submissions.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
@@ -18,7 +20,9 @@ const props = defineProps({
   receiveRevision: Number,
   target: Object,
 });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'receive-start']);
+const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'receive-start', 'setup']);
+const information = ref(null);
+
 const destination = ref(props.destinationId || ''),
   submission = ref(''),
   page = ref(null),
@@ -88,6 +92,15 @@ function openEventLog(item) {
 const disabled = computed(() => props.busy || pending.value || !props.session);
 const context = computed(() =>
   props.session ? `${props.session.apiVersion}/${props.session.sessionId}` : '',
+);
+watch(
+  () => verified.value,
+  async (value) => {
+    if (value) {
+      await nextTick();
+      if (information.value) information.value.open = false;
+    }
+  },
 );
 let revision = 0;
 const messages = {
@@ -163,6 +176,7 @@ function open(id = submission.value.trim()) {
       detail.value = result;
       submission.value = result.submissionId;
       await nextTick();
+      heading.value?.closest('details')?.setAttribute('open', '');
       heading.value?.focus();
     },
   ).then(async () => {
@@ -178,7 +192,7 @@ function open(id = submission.value.trim()) {
       <h2 id="submission-search-title">Einreichungen suchen</h2>
       <p>
         Verfügbare Einreichungen einer Destination auflisten oder eine bekannte Submission ID direkt öffnen.
-        Die aktuelle TEST-Sitzung wird wiederverwendet.
+        Öffnen und prüfen bestätigt noch keinen Empfang.
       </p>
       <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
       <form @submit.prevent="submission.trim() ? open() : search()">
@@ -222,7 +236,13 @@ function open(id = submission.value.trim()) {
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="page">
         <p>{{ page.totalCount }} verfügbare Einreichungen an dieser Destination.</p>
-        <p v-if="!page.submissions.length">Keine Einreichungen gefunden.</p>
+        <div v-if="!page.submissions.length">
+          <p v-if="page.totalCount === 0">
+            Noch keine Einreichung eingegangen. Senden Sie einen Testantrag aus Ihrem Onlinedienst an diese
+            Destination und laden Sie die Liste anschließend erneut.
+          </p>
+          <p v-else>Auf dieser Seite sind keine Einreichungen vorhanden.</p>
+        </div>
         <div v-else class="client-table support-table">
           <table class="submission-result-table">
             <thead>
@@ -290,7 +310,8 @@ function open(id = submission.value.trim()) {
           </button>
         </div>
       </template>
-      <article v-if="detail">
+      <details v-if="detail" ref="information" class="submission-information">
+        <summary>Einreichungsinformationen und Kennungen</summary>
         <h3 ref="heading" tabindex="-1">Einreichungsinformationen</h3>
         <p>
           <span class="status-badge" :class="verified || confirmedDetail ? 'ok' : 'info'">
@@ -308,27 +329,25 @@ function open(id = submission.value.trim()) {
         <dl class="receipt-dialog-context">
           <dt>Submission ID</dt>
           <dd>
-            <code>{{ detail.submissionId }}</code>
+            <CopyValue :value="detail.submissionId" label="Submission ID" />
           </dd>
           <dt>Case ID</dt>
           <dd>
-            <code>{{ detail.caseId }}</code>
+            <CopyValue :value="detail.caseId" label="Case ID" />
           </dd>
           <dt>Destination ID</dt>
           <dd>
-            <code>{{ detail.destinationId }}</code>
+            <CopyValue :value="detail.destinationId" label="Destination ID" />
           </dd>
           <template v-if="detail.fromDestinationId">
             <dt>Absender</dt>
             <dd>
-              <code>{{ detail.fromDestinationId }}</code>
+              <CopyValue :value="detail.fromDestinationId" label="Absender-Destination ID" />
             </dd>
           </template>
           <dt>Leistung</dt>
           <dd>
-            {{ detail.serviceName || 'Nicht angegeben' }}
-            <br />
-            <span v-if="detail.serviceIdentifier">{{ detail.serviceIdentifier }}</span>
+            <ServiceLabel :identifier="detail.serviceIdentifier" :name="detail.serviceName" />
           </dd>
           <dt>Region / ARS</dt>
           <dd>{{ detail.region || 'Nicht angegeben' }}</dd>
@@ -360,7 +379,7 @@ function open(id = submission.value.trim()) {
           Das Laden dieser Informationen entschlüsselt keine Inhalte und bestätigt keinen Empfang. Schlüssel
           dieser Sitzung bleiben erhalten.
         </p>
-      </article>
+      </details>
     </section>
     <p v-if="detail?.processModelId">
       <button
@@ -382,6 +401,7 @@ function open(id = submission.value.trim()) {
       </span>
     </p>
     <ReceivePanel
+      @setup="emit('setup')"
       :auto-open="autoOpen"
       :session="session"
       :detail="detail"

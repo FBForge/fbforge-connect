@@ -1,5 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod documentation;
+mod documentation_links;
+use documentation::open_documentation;
 mod case_store;
 mod cases;
 mod profile_backup;
@@ -1934,6 +1937,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .manage(EngineState::default())
         .invoke_handler(tauri::generate_handler![
+            open_documentation,
             case_workspace,
             update_profile,
             export_profile_backup,

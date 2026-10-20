@@ -1,21 +1,22 @@
 <script setup>
 import AppIcon from './AppIcon.vue';
+import DocumentationLink from './DocumentationLink.vue';
 
 defineProps({ session: Object, busy: Boolean, apiVersion: String });
-const emit = defineEmits(['connect', 'navigate', 'help']);
+const emit = defineEmits(['connect', 'navigate', 'task']);
 const tasks = [
   {
     id: 'send',
-    title: 'Einreichung senden',
-    purpose: 'Ihr Fachverfahren empfängt den Testantrag.',
+    title: 'Fachverfahren testen',
+    purpose: 'FBForge Connect sendet. Ihr Fachverfahren empfängt.',
     description: 'Fachdaten und Anlagen vorbereiten und nach Ihrer Bestätigung an TEST senden.',
     destination: 'Senden',
     icon: 'send',
   },
   {
     id: 'receive',
-    title: 'Einreichung empfangen',
-    purpose: 'Ihr Onlinedienst sendet den Testantrag.',
+    title: 'Onlinedienst testen',
+    purpose: 'Ihr Onlinedienst sendet. FBForge Connect empfängt.',
     description: 'Einreichungen abrufen, Inhalte prüfen, Anlagen ansehen und bei Bedarf antworten.',
     destination: 'Empfangen',
     icon: 'receive',
@@ -27,7 +28,7 @@ const tasks = [
   <div class="start-workspace">
     <section class="start-connection tool-section" aria-labelledby="start-connection-title">
       <div>
-        <p class="start-eyebrow">1 · VERBINDUNG</p>
+        <p class="start-eyebrow">IHR TEST-ZUGANG</p>
         <h2 id="start-connection-title">
           {{ session ? 'Bereit für Ihren Integrationstest' : 'Verbinden Sie zuerst Ihren TEST-Zugang' }}
         </h2>
@@ -47,7 +48,7 @@ const tasks = [
     </section>
 
     <section class="start-task-section" aria-labelledby="start-tasks-title">
-      <p class="start-eyebrow">2 · TESTAUFGABE</p>
+      <p class="start-eyebrow">IHRE AUFGABE</p>
       <h2 id="start-tasks-title">Was möchten Sie testen?</h2>
       <p class="start-description">FBForge Connect übernimmt die passende Gegenstelle für Ihren Test.</p>
       <div class="start-tasks">
@@ -58,20 +59,20 @@ const tasks = [
           class="start-task"
           :aria-labelledby="`start-${task.id}-title`"
           :aria-describedby="`start-${task.id}-purpose start-${task.id}-description`"
-          @click="emit('navigate', task.destination)"
+          @click="emit('task', task.destination)"
         >
           <AppIcon :name="task.icon" />
           <strong :id="`start-${task.id}-title`">{{ task.title }}</strong>
           <span :id="`start-${task.id}-purpose`" class="start-task-purpose">{{ task.purpose }}</span>
           <span :id="`start-${task.id}-description`">{{ task.description }}</span>
-          <span class="start-task-action" aria-hidden="true">Vorbereiten →</span>
+          <span class="start-task-action" aria-hidden="true">Test beginnen →</span>
         </button>
       </div>
     </section>
 
     <section class="tool-section start-followup" aria-labelledby="start-followup-title">
       <div>
-        <p class="start-eyebrow">3 · NACHVOLLZIEHEN</p>
+        <p class="start-eyebrow">ERGEBNISSE</p>
         <h2 id="start-followup-title">Ergebnisse wiederfinden</h2>
         <p>Lokale Kopien stehen unter Vorgänge. Im Event Log prüfen Sie den Übertragungsverlauf.</p>
       </div>
@@ -88,9 +89,7 @@ const tasks = [
     <section class="start-resources" aria-labelledby="start-resources-title">
       <h2 id="start-resources-title">Hilfe und weitere Werkzeuge</h2>
       <div class="client-actions">
-        <button type="button" class="button secondary" @click="emit('help', 'start')">
-          Schritt-für-Schritt-Anleitung
-        </button>
+        <DocumentationLink topic="start">Schritt-für-Schritt-Anleitung</DocumentationLink>
         <button type="button" class="button secondary" @click="emit('navigate', 'Prozesse')">
           BPMN-Modell öffnen
         </button>

@@ -1,4 +1,5 @@
 <script setup>
+import CopyValue from './CopyValue.vue';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import {
@@ -309,7 +310,10 @@ async function closePreview() {
         <li v-for="item in recent.slice(0, 10)" :key="`${item.subjectType}/${item.subjectId}`">
           <span>
             {{ item.subjectType === 'reply' ? 'Antwort' : 'Einreichung' }}:
-            <code>{{ item.subjectId }}</code>
+            <CopyValue
+              :value="item.subjectId"
+              :label="item.subjectType === 'reply' ? 'Reply ID' : 'Submission ID'"
+            />
           </span>
           <div class="client-actions">
             <button type="button" class="button secondary" :disabled="disabled" @click="useTarget(item)">

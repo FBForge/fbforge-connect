@@ -9,7 +9,7 @@
 - Vorgänge und Formularansichten übersichtlicher darstellen.
 - Einheitliche Begriffe, Hilfetexte und aktuelle Abbildungen.
 
-Keine neuen Funktionen in 0.2.0.
+Kopierbare Kennungen, geführte Testaufgaben und eine zentral gepflegte Web-Anleitung ergänzen die vorhandenen Abläufe.
 
 Freigabe nach v2/v3-Regression, Tastatur-/NVDA- und Skalierungsprüfungen sowie unabhängig geprüftem signiertem Windows-Upgrade. macOS/Linux-Unterstützung separat prüfen.
 

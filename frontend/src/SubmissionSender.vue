@@ -11,6 +11,10 @@ import SchemaSourceConsent from './SchemaSourceConsent.vue';
 import DraftDataPreview from './DraftDataPreview.vue';
 import FileDropInput from './FileDropInput.vue';
 import SenderDestination from './SenderDestination.vue';
+import CopyValue from './CopyValue.vue';
+import ServiceLabel from './ServiceLabel.vue';
+import { serviceLabel } from './service-label.js';
+import DocumentationLink from './DocumentationLink.vue';
 import { prepareSend, executeSend, cancelSend, sendState } from './sending.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
@@ -24,7 +28,7 @@ const props = defineProps({
   defaultSource: String,
   visible: { type: Boolean, default: true },
 });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log']);
+const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'cases']);
 const target = ref(''),
   source = ref(''),
   service = ref(''),
@@ -55,6 +59,10 @@ const dataFile = shallowRef(null),
   outcome = ref(null),
   working = ref(false),
   error = ref('');
+const nextDialog = ref(null),
+  keepData = ref(true),
+  keepAttachments = ref(false),
+  draftRevision = ref(0);
 const dialog = ref(null),
   progress = ref(''),
   history = ref([]);
@@ -68,6 +76,7 @@ function revealInvalid(event) {
   event.preventDefault();
   if (invalidTarget) return;
   invalidTarget = event.target;
+  event.target.closest('details')?.setAttribute('open', '');
   sendStep.value = Number(event.target.closest('fieldset')?.dataset.sendStep || 0);
   const label = event.target.labels?.[0]?.innerText.split('\n')[0].trim();
   stepNotice.value = label
@@ -354,6 +363,7 @@ watch(
     if (next === previous) return;
     prepared.value = null;
     dialog.value?.close();
+    nextDialog.value?.close();
     source.value = '';
     if (props.session?.apiVersion !== 'v3') addressing.value = 'service';
     if (next) {
@@ -484,6 +494,42 @@ async function send() {
     }
   });
 }
+function nextTest() {
+  if (
+    disabled.value ||
+    outcome.value?.status !== 'sent' ||
+    confirmedSession?.sessionId !== props.session?.sessionId
+  )
+    return;
+  if (!keepData.value) {
+    dataText.value = '';
+    dataFile.value = null;
+  }
+  if (!keepAttachments.value) attachments.value = [];
+  draftRevision.value++;
+  caseId.value = '';
+  prepared.value = null;
+  outcome.value = null;
+  confirmedSession = null;
+  recipient.value = null;
+  service.value = '';
+  schema.value = '';
+  schemaDocument.value = null;
+  allowExternalSchemas.value = false;
+  offerReplies.value = false;
+  offeredProcessMessages.value = [];
+  modelId.value = '';
+  messageId.value = '';
+  addressing.value = 'service';
+  storageWarning.value = '';
+  error.value = '';
+  progress.value = '';
+  sendStep.value = 0;
+  stepNotice.value =
+    'Neuer Test vorbereitet. Laden Sie die aktuellen Empfängerleistungen. Es wurde nichts versendet.';
+  nextDialog.value.close();
+  nextTick(() => recipientButton.value?.focus());
+}
 async function refreshState() {
   await act('Versandstatus lokal prüfen', async () => {
     outcome.value = await sendState(invoke, confirmedSession);
@@ -512,6 +558,7 @@ async function refreshState() {
     </div>
     <form
       v-if="session"
+      :key="draftRevision"
       ref="sendForm"
       class="send-form"
       @submit.prevent="prepare"
@@ -572,16 +619,6 @@ async function refreshState() {
               <option value="process">Prozessnachricht</option>
             </select>
           </label>
-          <label for="send-case">
-            Case ID (optional)
-            <input
-              id="send-case"
-              type="text"
-              v-model="caseId"
-              maxlength="36"
-              placeholder="Leer lassen für einen neuen Vorgang"
-            />
-          </label>
           <label v-if="recipient?.services.length || addressing !== 'process'" for="send-service">
             Verwaltungsleistung
             <select id="send-service" v-model="service" required :disabled="!recipient?.services.length">
@@ -591,30 +628,29 @@ async function refreshState() {
                 :key="item.identifier"
                 :value="item.identifier"
               >
-                {{ item.name }}
+                {{ serviceLabel(item.identifier, item.name).option }}
               </option>
             </select>
-            <small v-if="service">{{ service }}</small>
+            <small v-if="service">
+              {{
+                serviceLabel(service, selectedService?.name).hasName
+                  ? `LeiKa / Leistungskennung: ${serviceLabel(service).code}`
+                  : 'Keine Leistungsbezeichnung vom Empfänger hinterlegt. Sie können sie unter „Weitere Adressierungsoptionen“ ergänzen.'
+              }}
+            </small>
           </label>
           <label v-else for="send-service">
             Leistung des Vorgangs
             <input
               id="send-service"
               v-model="service"
+              :disabled="!recipient"
               type="text"
               required
               maxlength="1024"
               placeholder="Leistungs-URN des Vorgangs"
             />
             <small>Diese Prozess-Destination bietet keine eigenen Verwaltungsleistungen an.</small>
-          </label>
-          <label for="send-service-name">
-            Bezeichnung der Leistung
-            <input id="send-service-name" type="text" v-model="serviceName" required maxlength="256" />
-          </label>
-          <label for="send-region">
-            Region / ARS
-            <input id="send-region" type="text" v-model="region" maxlength="128" />
           </label>
           <label v-if="session?.apiVersion === 'v3' && addressing === 'process'" for="send-process">
             Prozessnachricht
@@ -625,6 +661,36 @@ async function refreshState() {
             </select>
           </label>
         </div>
+        <details class="address-options">
+          <summary>Weitere Adressierungsoptionen</summary>
+          <div class="client-fields">
+            <label for="send-case">
+              Case ID (optional)
+              <input
+                id="send-case"
+                type="text"
+                v-model="caseId"
+                maxlength="36"
+                placeholder="Leer lassen für einen neuen Vorgang"
+              />
+            </label>
+            <label for="send-service-name">
+              Bezeichnung der Leistung
+              <input
+                id="send-service-name"
+                :disabled="!recipient"
+                type="text"
+                v-model="serviceName"
+                required
+                maxlength="256"
+              />
+            </label>
+            <label for="send-region">
+              Region / ARS
+              <input id="send-region" type="text" v-model="region" maxlength="128" />
+            </label>
+          </div>
+        </details>
         <p v-if="session?.apiVersion === 'v2'">
           API v2 bestimmt den Absender über die Zugangsdaten. Prozessadressierung steht mit API v3 zur
           Verfügung.
@@ -810,6 +876,7 @@ async function refreshState() {
     <p v-if="progress" role="status">{{ progress }}</p>
     <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
     <p v-if="error" role="alert">{{ error }}</p>
+    <DocumentationLink v-if="error" topic="problems">Hilfe zum Versandproblem</DocumentationLink>
     <div v-if="outcome" role="status">
       <p>
         <span class="status-badge" :class="outcome.status === 'sent' ? 'ok' : 'error'">
@@ -862,10 +929,10 @@ async function refreshState() {
       </details>
       <p v-if="outcome.submissionId">
         Submission ID:
-        <code>{{ outcome.submissionId }}</code>
+        <CopyValue :value="outcome.submissionId" label="Submission ID" />
         <br />
         Case ID:
-        <code>{{ outcome.caseId }}</code>
+        <CopyValue :value="outcome.caseId" label="Case ID" />
       </p>
       <button
         v-if="session && confirmedSession?.sessionId === session.sessionId"
@@ -877,7 +944,24 @@ async function refreshState() {
         Lokalen Versandstatus laden
       </button>
     </div>
-    <details v-if="history.length" open>
+    <div v-if="outcome?.status === 'sent'" class="client-actions next-actions">
+      <button
+        type="button"
+        class="button"
+        :disabled="disabled"
+        @click="
+          keepData = true;
+          keepAttachments = false;
+          nextDialog.showModal();
+        "
+      >
+        Nächsten Test vorbereiten
+      </button>
+      <button type="button" class="button secondary" :disabled="busy || working" @click="emit('cases')">
+        Vorgänge öffnen
+      </button>
+    </div>
+    <details v-if="history.length">
       <summary>Letzte Versandversuche ({{ history.length }})</summary>
       <ul class="send-history-list">
         <li v-for="item in history" :key="item.attemptId">
@@ -911,6 +995,38 @@ async function refreshState() {
         </li>
       </ul>
     </details>
+    <dialog ref="nextDialog" class="tool-dialog" aria-labelledby="next-test-title">
+      <h2 id="next-test-title">Nächsten Test vorbereiten?</h2>
+      <p>
+        Der bisherige Versand bleibt unter „Vorgänge“ verfügbar. Wählen Sie, welche Inhalte Sie für einen
+        neuen Entwurf übernehmen möchten.
+      </p>
+      <label class="checkbox-label">
+        <input v-model="keepData" type="checkbox" />
+        Fachdaten übernehmen
+      </label>
+      <label class="checkbox-label">
+        <input v-model="keepAttachments" type="checkbox" />
+        Anlagen übernehmen ({{ attachments.length }})
+      </label>
+      <p>
+        Die Case ID wird geleert. Empfängerleistungen und Schema müssen erneut geladen werden. Es wird erst
+        nach Ihrer erneuten Bestätigung gesendet.
+      </p>
+      <div class="client-actions">
+        <button type="button" class="button secondary" autofocus @click="nextDialog.close()">
+          Abbrechen
+        </button>
+        <button
+          type="button"
+          class="button"
+          :disabled="disabled || outcome?.status !== 'sent'"
+          @click="nextTest"
+        >
+          Neuen Entwurf beginnen
+        </button>
+      </div>
+    </dialog>
     <dialog
       ref="dialog"
       class="tool-dialog receipt-dialog"
@@ -934,9 +1050,10 @@ async function refreshState() {
           </template>
           <dt>Leistung</dt>
           <dd>
-            {{ prepared.summary.serviceName }}
-            <br />
-            {{ prepared.summary.serviceIdentifier }}
+            <ServiceLabel
+              :name="prepared.summary.serviceName"
+              :identifier="prepared.summary.serviceIdentifier"
+            />
           </dd>
           <dt>Vorgang</dt>
           <dd>{{ prepared.summary.caseId || 'Neuer Vorgang' }}</dd>

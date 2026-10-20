@@ -994,44 +994,6 @@ summary {
   }
 }
 
-.help-topics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-.help-topics [aria-current] {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.help-article {
-  max-width: 76rem;
-}
-.help-article figure {
-  margin: 1.5rem 0;
-}
-.help-article img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 360px;
-  object-fit: contain;
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-}
-.help-article figcaption {
-  margin-top: 0.6rem;
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-.help-article li {
-  margin: 0.7rem 0;
-  line-height: 1.6;
-}
-.help-article h2 {
-  scroll-margin-top: 1rem;
-}
-
 .case-open {
   min-height: 32px;
 }
@@ -1069,11 +1031,131 @@ summary {
   }
 }
 
-.help-example pre {
-  white-space: pre-wrap;
+/* Task guidance and reusable information controls. */
+.copy-value {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.copy-value code {
+  min-width: 0;
   overflow-wrap: anywhere;
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 14px;
+  user-select: text;
+}
+.copy-button {
+  min-height: 32px;
+  padding: 4px 9px;
+  font-size: 0.8125rem;
+}
+.copy-notice:empty {
+  display: none;
+}
+.service-label,
+.receiver-summary {
+  display: grid;
+  gap: 8px;
+}
+.service-label > small,
+.receiver-summary > small {
+  color: var(--muted);
+}
+.receiver-summary {
+  margin: 12px 0;
+  justify-items: start;
+}
+.documentation-link {
+  position: relative;
+  font-size: 0.875rem;
+}
+.documentation-link a {
+  text-underline-offset: 3px;
+}
+.documentation-failure {
+  display: block;
+  margin-top: 8px;
+}
+.documentation-topics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 28px;
+  padding-left: 20px;
+  margin-top: 24px;
+}
+.documentation-topics a {
+  display: inline-block;
+  padding: 5px 0;
+}
+.workspace-heading .documentation-link {
+  position: relative;
+  display: inline-block;
+  margin-top: 6px;
+}
+.address-options {
+  margin: 16px 0 0;
+}
+.address-options > .client-fields {
+  margin-top: 16px;
+}
+.submission-information {
+  margin-top: 20px;
+}
+.submission-information > summary {
+  font-weight: 600;
+}
+.next-actions {
+  padding: 16px 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .button,
+  .start-task,
+  .sidebar-link {
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .start-task:hover {
+    box-shadow: var(--soft-shadow);
+  }
+  .received-application,
+  .case-detail,
+  .receiver-summary,
+  .documentation-failure {
+    animation: content-appear 160ms ease-out;
+  }
+  .copy-notice:not(:empty) {
+    animation: content-appear 120ms ease-out;
+  }
+  @keyframes content-appear {
+    from {
+      opacity: 0.35;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (max-width: 650px) {
+  .documentation-topics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.documentation-link .app-icon {
+  width: 13px;
+  height: 13px;
+  margin-inline-start: 4px;
+  vertical-align: -0.1em;
 }

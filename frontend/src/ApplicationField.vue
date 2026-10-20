@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-const props = defineProps({ node: Object, query: String });
+const props = defineProps({ node: Object, query: String, showTechnical: Boolean });
 const expanded = ref(props.node.depth < 2);
 const fields = computed(() => props.node.children.filter((child) => child.type !== 'whitespace'));
 const whitespace = computed(() => props.node.children.filter((child) => child.type === 'whitespace'));
@@ -33,23 +33,35 @@ const emptyLabel = (type) =>
     <div v-if="query || expanded" class="application-group-body">
       <p v-if="node.schema?.description" class="application-description">{{ node.schema.description }}</p>
       <p v-if="node.schema?.ambiguous" class="application-duplicate">Schema-Beschriftung nicht eindeutig.</p>
-      <details v-if="node.schema" class="application-origin">
+      <details v-if="showTechnical && node.schema" class="application-origin">
         <summary>Schemaherkunft der Gruppe</summary>
         <p v-for="(entry, index) in node.schema.sources" :key="index" class="application-path">
           {{ entry.uri }} · {{ entry.location || '/' }}
         </p>
       </details>
-      <p class="application-path">
+      <p v-if="showTechnical" class="application-path">
         {{ node.path || '/' }}
         <span v-if="node.namespace">· Namensraum: {{ node.namespace }}</span>
       </p>
       <div class="application-fields">
-        <ApplicationField v-for="child in fields" :key="child.id" :node="child" :query="query" />
+        <ApplicationField
+          v-for="child in fields"
+          :key="child.id"
+          :node="child"
+          :show-technical="showTechnical"
+          :query="query"
+        />
       </div>
       <details v-if="whitespace.length" class="application-xml-spacing" :open="Boolean(query)">
         <summary>XML-Leerraum ({{ whitespace.length }})</summary>
         <div class="application-fields">
-          <ApplicationField v-for="child in whitespace" :key="child.id" :node="child" :query="query" />
+          <ApplicationField
+            v-for="child in whitespace"
+            :key="child.id"
+            :node="child"
+            :show-technical="showTechnical"
+            :query="query"
+          />
         </div>
       </details>
     </div>
@@ -77,7 +89,7 @@ const emptyLabel = (type) =>
       {{ node.schema.valueLabel }} · Bezeichnung aus Schema
     </p>
     <p v-if="node.schema?.ambiguous" class="application-duplicate">Schema-Beschriftung nicht eindeutig.</p>
-    <details class="application-origin">
+    <details v-if="showTechnical" class="application-origin">
       <summary>Feldherkunft</summary>
       <dl>
         <dt>Originalfeld</dt>

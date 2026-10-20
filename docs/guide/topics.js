@@ -1,23 +1,23 @@
-/** Bundled offline guide. All screenshots use fictional examples and contain no credentials. */
+/** Canonical web guide. Screenshots use fictional examples and contain no credentials. */
 export const helpTopics = [
   {
     id: 'start',
     title: 'Schnellstart',
     section: 'Start',
     image: 'overview',
-    caption: 'Arbeitsbereiche von FBForge Connect. Die Hilfe steht auch ohne Verbindung zur Verfügung.',
+    caption: 'Die Startansicht führt zur passenden Testaufgabe.',
     intro:
       'FBForge Connect ist ein unabhängiges Testwerkzeug für FIT-Connect. Alle Verbindungen führen ausschließlich in die TEST-Umgebung. Verwenden Sie fiktive Personen- und Antragsdaten.',
     steps: [
       'Wählen Sie oben API v3 für neue Tests. API v2 bleibt für bestehende Integrationen verfügbar.',
       'Öffnen Sie „Verbinden“ und geben Sie die TEST-Client-ID sowie das Client-Secret Ihres Onlinediensts oder Fachverfahrens ein.',
       'Eine Destination ist ein Zustellpunkt bei FIT-Connect. Ein Onlinedienst sendet Einreichungen und empfängt angebotene Antworten. Ein Subscriber ist das empfangende Fachverfahren. Er ruft Einreichungen ab und kann darauf antworten. Die API und der Zugang müssen zu Ihrem Test passen.',
-      'Wählen Sie auf „Start“ Ihre Testaufgabe: „Einreichung senden“ für einen Testantrag oder „Einreichung empfangen“ für den Eingang. Die Bereiche sind auch direkt über die Navigation erreichbar. Unter „Vorgänge“ finden Sie lokale Kopien.',
+      'Wählen Sie auf „Start“ Ihre Testaufgabe: „Fachverfahren testen“ sendet einen Testantrag. „Onlinedienst testen“ führt zum Empfang. Bei Bedarf öffnet sich zuerst die Anmeldung. Die Bereiche sind auch direkt über die Navigation erreichbar. Unter „Vorgänge“ finden Sie lokale Kopien.',
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
     ],
     notes: [
       'Das Werkzeug ersetzt kein produktives Fachverfahren und ist keine offizielle Anwendung der FITKO.',
-      'Die Alpha wird weiterhin entwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
+      'Die Vorabversion wird weiterhin entwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
     ],
   },
   {
@@ -52,13 +52,13 @@ export const helpTopics = [
     intro:
       'Sie bereiten zunächst Fachdaten und Anlagen vor. Erst die separate Bestätigung löst den Versand aus.',
     steps: [
-      'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat. „Weiter“ prüft die Pflichtfelder des Abschnitts und führt Sie zur nächsten Eingabe.',
+      'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat. Wenn der Empfänger eine Leistungsbezeichnung liefert, wird sie neben der LeiKa-Kennung angezeigt. Weitere Adressierungsoptionen enthalten die Bezeichnung, Region und eine optionale Case ID. „Weiter“ prüft die Pflichtfelder des Abschnitts und führt Sie zur nächsten Eingabe.',
       'Bei API v3 lädt die Anwendung Ihre eigenen Absender-Destinations zur Auswahl. Eine einzelne aktive Destination wird automatisch übernommen. Über „ID eingeben“ können Sie eine Destination auch manuell hinterlegen. Diese muss zu Ihrem Zugang gehören und passend eingerichtet sein.',
       'Geben Sie JSON oder XML ein, ziehen Sie eine Datei in das Dateifeld oder verwenden Sie „Datei auswählen“. Fiktive Beispieldaten sind eine Starthilfe und müssen zu Ihrem Test angepasst werden.',
       'Die Formularansicht zeigt Werte lesbar an. Über JSON-Struktur oder Quelltext können Sie technische Details vergleichen. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar.',
       'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten.',
       'Wenn Sie eine Antwort testen möchten, aktivieren Sie vor dem Versand das Antwortangebot und wählen Sie das erlaubte Antwortschema.',
-      'Wählen Sie „Versand vorbereiten“, prüfen Sie die unveränderliche Zusammenfassung und bestätigen Sie den Versand. Bewahren Sie Submission ID und Case ID für die Nachverfolgung auf.',
+      'Wählen Sie „Versand vorbereiten“, prüfen Sie die unveränderliche Zusammenfassung und bestätigen Sie den Versand. Kopieren Sie Submission ID und Case ID bei Bedarf mit den Kopierschaltflächen. Nach erfolgreichem Versand können Sie unter „Nächsten Test vorbereiten“ Fachdaten und Anlagen ausdrücklich für einen neuen Entwurf auswählen. Die Case ID wird geleert, Empfängerleistungen und Schema werden erneut geprüft.',
     ],
     examples: [
       {
@@ -89,8 +89,8 @@ export const helpTopics = [
     steps: [
       'Verbinden Sie den Fachverfahren-Zugang. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Testschlüssel zum Entschlüsseln und Signieren.',
       'Ohne Submission ID laden Sie die verfügbaren Einreichungen. Mit einer Submission ID öffnet die Schaltfläche oder die Eingabetaste direkt die Nachricht und startet die Entschlüsselung und Prüfung.',
-      'Wenn Schlüssel oder Schemata fehlen, folgen Sie dem Hinweis im Empfang. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
-      'Lesen Sie die Fachdaten direkt in der Formularansicht. Die Suche hilft bei umfangreichen Anträgen. Die Struktur- und Quelltextansicht bleiben verfügbar.',
+      'Nach erfolgreicher Einrichtung wird die Empfangseinrichtung kompakt angezeigt. Über „Einrichtung ändern“ öffnen Sie Destination und Schlüssel erneut. Wenn Schlüssel oder Schemata fehlen, führt die passende Schaltfläche zur Einrichtung oder zu den Schemaeinstellungen. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
+      'Lesen Sie die Fachdaten direkt in der Formularansicht. Die Suche hilft bei umfangreichen Anträgen. Die Struktur- und Quelltextansicht bleiben verfügbar. „Technische Feldangaben anzeigen“ blendet bei Bedarf Originalpfade und Schemaherkunft ein.',
       'Öffnen Sie unterstützte Anlagen über „Ansehen“ oder laden Sie die unveränderte Datei herunter.',
       'Prüfen Sie fachlich, ob der Antrag zum Testfall passt. Bereiten Sie dann „Annehmen“ oder „Ablehnen“ vor und kontrollieren Sie die Bestätigung. Beim Ablehnen wird ein passender technischer Grund benötigt.',
       'Eine lokale Kopie bleibt unter „Vorgänge“ lesbar. Wenn die dauerhafte Aufbewahrung eingeschaltet ist, wird vor der Bestätigung die Sicherung geprüft.',
@@ -154,7 +154,7 @@ export const helpTopics = [
     image: 'replies',
     caption: 'Ein geprüfter Antrag bildet die Grundlage für eine separate Antwort.',
     intro:
-      'Eine Antwort benötigt ein beim ursprünglichen Versand angebotenes Antwortschema und den passenden nativen Schlüsselkontext.',
+      'Eine Antwort verwendet das beim Versand angebotene Antwortschema. Zum späteren Lesen benötigt der ursprüngliche Sender seinen privaten Antwortschlüssel.',
     steps: [
       'Senden Sie als Onlinedienst eine Einreichung mit aktiviertem Antwortangebot. Verwenden Sie für einen Test über Neustarts ein gespeichertes Profil und sichern Sie dessen Schlüsselzustand.',
       'Öffnen und prüfen Sie den Antrag im Fachverfahren. Laden Sie im Antwortbereich das angebotene Antwortschema.',
@@ -331,7 +331,7 @@ export const helpTopics = [
     ],
     notes: [
       'Schema-Labels werden aus verfügbaren Schemaquellen übernommen. Ohne solche Informationen zeigt die Anwendung die tatsächlichen technischen Feldnamen.',
-      'Diese Hilfe und alle Bilder werden mit der Anwendung ausgeliefert und funktionieren ohne Internetverbindung. Die Verbindung mit der TEST-API selbst benötigt Internet.',
+      'Die ausführliche Anleitung und ihre Abbildungen stehen auf der Website. Die Links in der Anwendung öffnen das passende Kapitel im Browser. Kurze Hinweise bleiben direkt bei den Eingaben verfügbar.',
     ],
   },
 ];

@@ -11,7 +11,11 @@ const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined,
   args: process.env.PLAYWRIGHT_EXECUTABLE_PATH ? ['--no-sandbox'] : [],
 });
-const page = await browser.newPage({ viewport: { width: 1180, height: 900 }, locale: 'de-DE' });
+const page = await browser.newPage({
+  viewport: { width: 1180, height: 900 },
+  locale: 'de-DE',
+  reducedMotion: 'reduce',
+});
 page.setDefaultTimeout(10000);
 const button = (name) => page.getByRole('button', { name, exact: true });
 const open = (file = '') => page.goto(`http://127.0.0.1:1420/${file}`);

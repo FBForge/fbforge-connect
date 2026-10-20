@@ -30,7 +30,8 @@ __pycache__/
 *:Zone.Identifier
 
 # Local project documentation and development guidance
-/docs/
+/docs/*
+!/docs/guide/
 /.codex/
 /.agents/
 /AGENTS.md

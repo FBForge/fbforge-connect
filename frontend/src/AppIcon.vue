@@ -1,6 +1,7 @@
 <script setup>
 defineProps({ name: String });
 const paths = {
+  external: 'M14 3h7v7m0-7L10 14M10 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-4',
   home: 'm3 10 9-7 9 7v11h-6v-7H9v7H3V10Z',
   send: 'm21 3-7 18-4-7-7-4 18-7ZM21 3 10 14',
   receive: 'M12 3v12m-5-5 5 5 5-5M5 14H3v7h18v-7h-2',

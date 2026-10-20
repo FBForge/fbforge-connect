@@ -41,13 +41,15 @@ Nach Updates der Frontend-Abhängigkeiten `npm run licenses:update` ausführen. 
 - Keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten einchecken oder in Logs und Screenshots übernehmen.
 - README, PRs, Releases und Commit-Meldungen kurz und sachlich halten: Änderung, Grund, relevante Tests. Keine Arbeitsprotokolle, Wiederholungen oder Werbetexte. Commit-Beispiel: `fix: authenticate process search`.
 
-## Hilfe und Wiki
+## Anleitung
 
-Texte: `frontend/src/help/topics.js`. Screenshots mit fiktiven Daten: `frontend/src/help/screenshots/`.
+Quelle: `docs/guide/topics.js`, Abbildungen: `docs/guide/images/`. Die Anwendung enthält nur kurze Hinweise und Links.
 
-`npm run dev` starten. `node scripts/capture-help.mjs <neues-Verzeichnis>` erstellt Abbildungen mit fiktiven Daten. Bilder vor der Übernahme nach `frontend/src/help/screenshots/` prüfen.
+`node scripts/capture-help.mjs <neues-Verzeichnis>` erstellt Abbildungen mit fiktiven Daten bei laufendem Entwicklungsserver. Bilder vor der Übernahme prüfen.
 
-`node scripts/export-wiki.mjs <neues-Verzeichnis>` exportiert die Hilfe. Seiten und `images/` in einen separaten Checkout von `https://github.com/FBForge/fbforge-connect.wiki.git` übernehmen, Diff prüfen und pushen. Manuell gepflegte Seiten erhalten. Generierte Inhalte nur an der Quelle bearbeiten.
+`node scripts/export-guide.mjs <neues-Verzeichnis>` erzeugt die Web-Anleitung. Den Export im Website-Repository unter `nginx/connect/hilfe/0.2/` übernehmen. Generierte Seiten nicht von Hand bearbeiten.
+
+`node scripts/export-wiki.mjs <neues-Verzeichnis>` erzeugt die Wiki-Einstiegsseiten. Die vorhandenen Kapitel für 0.1 bleiben erhalten.
 
 ## Live-Tests
 

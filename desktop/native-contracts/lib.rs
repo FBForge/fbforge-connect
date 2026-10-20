@@ -6,3 +6,6 @@ pub mod vault;
 
 #[path = "../src/case_store.rs"]
 pub mod case_store;
+
+#[path = "../src/documentation_links.rs"]
+pub mod documentation_links;

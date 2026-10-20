@@ -1,4 +1,5 @@
 <script setup>
+import CopyValue from './CopyValue.vue';
 import { inject, ref, computed, watch, nextTick } from 'vue';
 import ReceivePanel from './ReceivePanel.vue';
 import { invoke } from './native.js';
@@ -316,13 +317,13 @@ async function loadChannels() {
         <div>
           <dt>Reply ID</dt>
           <dd>
-            <code>{{ detail.replyId }}</code>
+            <CopyValue :value="detail.replyId" label="Reply ID" />
           </dd>
         </div>
         <div>
           <dt>Case ID</dt>
           <dd>
-            <code>{{ detail.caseId }}</code>
+            <CopyValue :value="detail.caseId" label="Case ID" />
           </dd>
         </div>
       </dl>

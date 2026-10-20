@@ -19,6 +19,7 @@ import {
   diagnosticResult,
 } from './support-report.js';
 import AppIcon from './AppIcon.vue';
+import DocumentationLink from './DocumentationLink.vue';
 import StartWorkspace from './StartWorkspace.vue';
 import appLogo from './assets/test-client.png';
 import { productName, productBrand, productEdition, productPurpose } from './product.js';
@@ -42,12 +43,7 @@ import SubmissionBrowser from './SubmissionBrowser.vue';
 import EventLogPanel from './EventLogPanel.vue';
 import CaseWorkspace from './CaseWorkspace.vue';
 const ApplicationHelp = defineAsyncComponent(() => import('./ApplicationHelp.vue'));
-const helpTopic = ref('start'),
-  receiveTarget = shallowRef(null);
-function showHelp(topic = 'start') {
-  helpTopic.value = topic;
-  void navigate('Hilfe');
-}
+const receiveTarget = shallowRef(null);
 function reopenCase(record) {
   selectedDestination.value = record.destinationId;
   receiveTarget.value = { ...record, requestId: crypto.randomUUID() };
@@ -116,6 +112,7 @@ const rememberProfile = ref(false),
   forgetDialog = ref(null);
 const sessions = ref({});
 const selectedDestination = ref('');
+const destinationSetup = ref(null);
 const defaultDestinations = shallowRef(null);
 const keyRevision = ref(0);
 const submissionRevision = ref(0),
@@ -305,7 +302,7 @@ const navigation = [
     name: 'Hilfe',
     utility: true,
     icon: 'info',
-    description: 'Schritt für Schritt: verbinden, testen und Ergebnisse nachvollziehen.',
+    description: 'Anleitungen und Beispiele auf der FBForge-Website.',
   },
   {
     name: 'Diagnose',
@@ -348,9 +345,23 @@ async function navigate(name) {
   if (workspace.value) workspace.value.scrollTop = scrollPositions.get(name) || 0;
   viewHeading.value?.focus({ preventScroll: true });
 }
+function beginTask(name) {
+  void navigate(name);
+  if (!activeSession.value) showConnection();
+}
+let connectionOpener;
 function showConnection() {
+  connectionOpener = document.activeElement;
   void refreshProfiles();
   if (!connectionDialog.value?.open) connectionDialog.value?.showModal();
+}
+function connectionClosed() {
+  clientId.value = '';
+  clientSecret.value = '';
+  nextTick(() => {
+    if (connectionOpener?.isConnected && connectionOpener.checkVisibility()) connectionOpener.focus();
+    else viewHeading.value?.focus({ preventScroll: true });
+  });
 }
 function closeConnection() {
   if (!['open', 'check', 'close'].includes(pendingAction.value)) connectionDialog.value?.close();
@@ -613,6 +624,18 @@ function clearHistory() {
           </p>
           <h1 ref="viewHeading" tabindex="-1">{{ section }}</h1>
           <p>{{ currentView.description }}</p>
+          <DocumentationLink
+            v-if="['Senden', 'Empfangen', 'Event Log', 'Destinations', 'Prozesse'].includes(section)"
+            :topic="
+              {
+                Senden: 'send',
+                Empfangen: 'receive',
+                'Event Log': 'events',
+                Destinations: 'destinations',
+                Prozesse: 'processes',
+              }[section]
+            "
+          />
         </div>
       </div>
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
@@ -640,9 +663,10 @@ function clearHistory() {
             :busy="busy"
             @connect="showConnection"
             @navigate="navigate"
-            @help="showHelp"
+            @task="beginTask"
           />
           <SubmissionSender
+            @cases="navigate('Vorgänge')"
             :visible="section === 'Senden'"
             :default-source="defaultDestinations?.sourceDestination || ''"
             :process-draft="processDraft"
@@ -687,6 +711,7 @@ function clearHistory() {
             "
           />
           <DestinationKeys
+            ref="destinationSetup"
             :default-destination="defaultDestinations?.receiverDestination || ''"
             v-show="section === 'Empfangen'"
             :session="activeSession"
@@ -698,6 +723,7 @@ function clearHistory() {
             @invalidate="keyRevision++"
           />
           <SubmissionBrowser
+            @setup="destinationSetup?.showSetup()"
             :target="receiveTarget"
             v-show="section === 'Empfangen'"
             :session="activeSession"
@@ -719,9 +745,8 @@ function clearHistory() {
             @busy="resourceBusy"
             @event-log="openEventLog"
             @receive="reopenCase"
-            @help="showHelp"
           />
-          <ApplicationHelp v-if="section === 'Hilfe'" :topic="helpTopic" @navigate="navigate" />
+          <ApplicationHelp v-if="section === 'Hilfe'" />
           <EventLogPanel
             :known-targets="caseRecords"
             v-show="section === 'Event Log'"
@@ -916,10 +941,7 @@ function clearHistory() {
     class="tool-dialog connection-dialog"
     aria-labelledby="session-title"
     @cancel.prevent="closeConnection"
-    @close="
-      clientId = '';
-      clientSecret = '';
-    "
+    @close="connectionClosed"
   >
     <div class="tool-section-heading">
       <div>
