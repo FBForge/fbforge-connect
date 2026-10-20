@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Beispielauswahl · synthetischer Kontextwechsel</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module">
+      import { createApp, h, ref } from 'vue';
+      import ExampleDraftDialog from '../src/ExampleDraftDialog.vue';
+      import '../src/site.css';
+      const context = ref('first'),
+        component = ref(null);
+      const fixture = (window.__exampleDialogFixture = {
+        done: false,
+        result: 'pending',
+        changeContext: () => (context.value = 'second'),
+      });
+      createApp({
+        setup: () => () => [
+          h('h1', 'Fiktive Beispielauswahl'),
+          h(
+            'button',
+            {
+              type: 'button',
+              onClick: async () => {
+                fixture.result = await component.value.choose({
+                  source: '{"type":"object"}',
+                  mimeType: 'application/json',
+                  uri: 'urn:test:example',
+                  replacing: true,
+                });
+                fixture.done = true;
+              },
+            },
+            'Beispielauswahl öffnen',
+          ),
+          h(ExampleDraftDialog, { ref: component, contextKey: context.value }),
+        ],
+      }).mount('#app');
+    </script>
+  </body>
+</html>

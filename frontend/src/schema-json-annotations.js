@@ -300,6 +300,7 @@ export function annotateJsonSchema(root, packet) {
       description: cleanText(schema.description, 4000),
       type: cleanText(Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type, 128),
       format: cleanText(schema.format, 128),
+      valueType: ['date', 'date-time'].includes(schema.format) ? schema.format : null,
       valueLabel: row.valueChoice ? cleanText(schema.title) : null,
       source: source(row.ctx),
     };

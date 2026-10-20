@@ -25,7 +25,14 @@ const selected = computed(() => props.roots?.find((root) => xmlMessageKey(root) 
 
 <style scoped>
 .xml-message-choice {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
   margin-block: 1rem;
+}
+select {
+  min-width: 0;
+  width: 100%;
 }
 span {
   display: block;

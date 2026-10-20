@@ -83,6 +83,37 @@ for (const reply of [false, true]) {
     expect(calls).not.toContain(reply ? 'execute_reply' : 'execute_send');
   });
 
+  test(`${reply ? 'reply' : 'submission'} cancels example replacement without losing text or a selected file`, async ({
+    page,
+  }) => {
+    await setup(page, reply, { mime: 'application/xml', packet: xmlPacket });
+    const original = '<vorhanden>Unverändert</vorhanden>';
+    await page.locator(content).fill(original);
+    await page
+      .locator(reply ? '#reply-data-file' : '#send-data-file')
+      .setInputFiles({ name: 'bestehend.xml', mimeType: 'application/xml', buffer: Buffer.from(original) });
+    const trigger = page.getByRole('button', { name: buttonName, exact: true });
+    await trigger.click();
+    const chooser = page.getByRole('dialog', { name: 'Fiktive Beispieldaten', exact: true });
+    await expect(chooser).toContainText('bisheriger Inhalt');
+    await expect(
+      chooser.getByRole('button', { name: 'Beispieldaten übernehmen', exact: true }),
+    ).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(chooser).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await expect(page.getByText('bestehend.xml', { exact: false }).last()).toBeVisible();
+    await page.getByRole('button', { name: 'Eingabefeld verwenden', exact: true }).click();
+    await expect(page.locator(content)).toHaveValue(original);
+    expect(
+      await page.evaluate(() =>
+        window.__exampleFixture.calls.some((command) =>
+          ['prepare_send', 'prepare_reply', 'execute_send', 'execute_reply'].includes(command),
+        ),
+      ),
+    ).toBe(false);
+  });
+
   test(`${reply ? 'reply' : 'submission'} requires a specific XML message before replacing existing data`, async ({
     page,
   }, testInfo) => {
@@ -90,13 +121,15 @@ for (const reply of [false, true]) {
     const original = '<vorhanden>Unverändert</vorhanden>';
     await page.locator(content).fill(original);
     await page.getByRole('button', { name: buttonName, exact: true }).click();
-    const picker = page.locator(reply ? '#reply-example-message' : '#send-example-message');
+    const chooser = page.getByRole('dialog', { name: 'Fiktive Beispieldaten', exact: true });
+    const picker = chooser.getByRole('combobox');
     await expect(picker).toBeFocused();
     await expect(picker).toHaveValue('');
     await expect(page.locator(content)).toHaveValue(original);
     await expect(picker.locator('option')).toHaveCount(3);
     await picker.selectOption({ label: 'Anzeige des Bauvorhabens · genehmigungsfreistellung.anzeige.0600' });
-    await page.getByRole('button', { name: buttonName, exact: true }).click();
+    expect((await new AxeBuilder({ page }).include('dialog[open]').analyze()).violations).toEqual([]);
+    await chooser.getByRole('button', { name: 'Beispieldaten übernehmen', exact: true }).click();
     await expect(page.locator(content)).toHaveValue(/<genehmigungsfreistellung\.anzeige\.0600/);
     const data = await page.locator(content).inputValue();
     expect(data).toContain('<genehmigungsfreistellung.anzeige.0600');
@@ -111,7 +144,6 @@ for (const reply of [false, true]) {
     expect(data).toContain('>0600</nachrichtentyp>');
     expect(data).toContain('>12345</telefon>');
     expect(data).not.toContain('>0100<');
-    expect((await new AxeBuilder({ page }).include('.xml-message-choice').analyze()).violations).toEqual([]);
     if (!reply) {
       await page.screenshot({ path: testInfo.outputPath('xml-message-choice.png'), fullPage: true });
       await page.evaluate(() => {
@@ -124,6 +156,8 @@ for (const reply of [false, true]) {
       await page.getByRole('button', { name: buttonName, exact: true }).click();
       await expect(picker).toHaveValue('');
       await expect(picker).toBeFocused();
+      await expect(page.locator(content)).toHaveValue(data);
+      await chooser.getByRole('button', { name: 'Abbrechen', exact: true }).click();
       await expect(page.locator(content)).toHaveValue(data);
       await page.getByRole('button', { name: 'Zurück', exact: true }).click();
       await page.locator('#send-target').fill('33333333-3333-4333-8333-333333333333');
@@ -219,4 +253,16 @@ test('XML roots, fragments and unsupported structures cannot silently fall back 
   expect(result.roots).toEqual(['genehmigungsfreistellung.anzeige.0600', 'vorgang.transportieren']);
   expect(result.boundRoots).toEqual(['genehmigungsfreistellung.anzeige.0600']);
   expect(result.wrongFragment).toBe('example_unavailable');
+});
+
+test('a context change dismisses the shared example dialog without returning stale data', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/example-dialog.html');
+  await page.getByRole('button', { name: 'Beispielauswahl öffnen', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Fiktive Beispieldaten', exact: true })).toBeVisible();
+  await page.evaluate(() => window.__exampleDialogFixture.changeContext());
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.__exampleDialogFixture.done)).toBe(true);
+  expect(await page.evaluate(() => window.__exampleDialogFixture.result)).toBeNull();
 });

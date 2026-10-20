@@ -19,9 +19,7 @@ import { prepareSend, executeSend, cancelSend, sendState } from './sending.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import { loadSendDestination, loadSendSchema } from './sender-options.js';
-import { generateExample } from './generate-example.js';
-import { useExampleMessages } from './use-example-messages.js';
-import XmlMessageChoice from './XmlMessageChoice.vue';
+import ExampleDraftDialog from './ExampleDraftDialog.vue';
 
 const props = defineProps({
   session: Object,
@@ -128,8 +126,8 @@ watch(
   },
 );
 const schemaDocument = shallowRef(null);
-const exampleMessages = useExampleMessages();
-const { roots: exampleRoots, selection: exampleRoot } = exampleMessages;
+const exampleDialog = ref(null),
+  exampleButton = ref(null);
 const schemaContext = computed(() =>
   JSON.stringify([
     props.session?.sessionId,
@@ -147,7 +145,6 @@ watch(
   schemaContext,
   () => {
     schemaDocument.value = null;
-    exampleMessages.reset();
   },
   { flush: 'sync' },
 );
@@ -294,7 +291,6 @@ async function createExample() {
     uri = schema.value,
     format = mime.value,
     key = schemaContext.value;
-  let chooseMessage = false;
   await act('Fiktive Fachdaten erzeugen', async () => {
     const document = await loadSendSchema(invoke, active, destination, {
       serviceIdentifier: service.value,
@@ -302,29 +298,23 @@ async function createExample() {
       processModelId: addressing.value === 'process' ? modelId.value : '',
       messageId: addressing.value === 'process' ? messageId.value : '',
       allowExternalSchemas: allowExternalSchemas.value,
-    }).catch((cause) => {
-      if (schemaContext.value === key) exampleMessages.reset();
-      throw cause;
     });
     if (schemaContext.value !== key) return;
-    if (!exampleMessages.choose(document, format, uri)) {
-      exampleNotice.value =
-        'Bitte wählen Sie zuerst die XML-Nachricht für Ihren Test. Ihre bisherigen Fachdaten bleiben erhalten.';
-      chooseMessage = true;
-      return;
-    }
-    const example = await generateExample(document, format, uri, exampleMessages.requestedRoot.value);
-    if (schemaContext.value !== key) return;
+    const example = await exampleDialog.value.choose({
+      source: document,
+      mimeType: format,
+      uri,
+      replacing: Boolean(dataFile.value || dataText.value.trim()),
+    });
+    if (example === null || schemaContext.value !== key) return;
     schemaDocument.value = document;
     dataFile.value = null;
     dataText.value = example;
     exampleNotice.value =
       'Fiktive Beispieldaten wurden aus dem gewählten Schema erzeugt. Bitte fachliche Angaben, Codelisten und Anlagenverweise prüfen. Der Entwurf ist noch kein Nachweis einer erfolgreichen Schemaprüfung.';
   });
-  if (chooseMessage && schemaContext.value === key) {
-    await nextTick();
-    window.document.getElementById('send-example-message')?.focus();
-  }
+  await nextTick();
+  if (schemaContext.value === key) exampleButton.value?.focus();
 }
 
 const locked = computed(
@@ -561,11 +551,9 @@ async function refreshState() {
 
 <template>
   <section class="tool-section" aria-labelledby="send-title">
-    <h2 id="send-title">Einreichung senden</h2>
-    <p>
-      Fachdaten und Anlagen werden lokal vorbereitet. Erst nach Ihrer Bestätigung wird die Einreichung
-      verschlüsselt an den TEST-Empfänger übermittelt.
-    </p>
+    <ExampleDraftDialog ref="exampleDialog" :context-key="schemaContext" />
+    <h2 id="send-title">Neue Einreichung</h2>
+    <p>In drei Schritten zum Testversand. Sie prüfen die Angaben vor dem Senden.</p>
     <div
       v-if="processDraft && processDraft.sessionId === session?.sessionId && session?.apiVersion === 'v3'"
       class="tool-section"
@@ -748,14 +736,15 @@ async function refreshState() {
           </FileDropInput>
         </div>
         <SchemaSourceConsent id="send-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
-        <XmlMessageChoice
-          id="send-example-message"
-          v-model="exampleRoot"
-          :roots="exampleRoots"
-          :disabled="disabled"
-        />
+
         <div class="client-actions">
-          <button class="button secondary" type="button" :disabled="!schema" @click="createExample">
+          <button
+            ref="exampleButton"
+            class="button secondary"
+            type="button"
+            :disabled="!schema"
+            @click="createExample"
+          >
             Fiktive Beispieldaten erzeugen
           </button>
           <button class="button secondary" type="button" :disabled="disabled || !schema" @click="loadLabels">
@@ -763,16 +752,6 @@ async function refreshState() {
           </button>
         </div>
         <p v-if="exampleNotice" class="small-note" role="status">{{ exampleNotice }}</p>
-        <label v-if="!dataFile" for="send-data">
-          Inhalt
-          <textarea id="send-data" v-model="dataText" rows="8" required spellcheck="false"></textarea>
-        </label>
-        <p v-else>
-          {{ dataFile.name }} · {{ (dataFile.size / 1024).toFixed(1) }} KiB
-          <button class="button secondary" type="button" @click="dataFile = null">
-            Eingabefeld verwenden
-          </button>
-        </p>
         <DraftDataPreview
           :schema-document="schemaDocument"
           :schema-uri="schema"
@@ -781,7 +760,18 @@ async function refreshState() {
           :mime-type="mime"
           :context-key="session?.sessionId"
           :disabled="disabled"
-        />
+        >
+          <label v-if="!dataFile" for="send-data">
+            Inhalt
+            <textarea id="send-data" v-model="dataText" rows="8" required spellcheck="false"></textarea>
+          </label>
+          <p v-else>
+            {{ dataFile.name }} · {{ (dataFile.size / 1024).toFixed(1) }} KiB
+            <button class="button secondary" type="button" @click="dataFile = null">
+              Eingabefeld verwenden
+            </button>
+          </p>
+        </DraftDataPreview>
       </fieldset>
       <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
         <legend tabindex="-1">Antwortkanal</legend>

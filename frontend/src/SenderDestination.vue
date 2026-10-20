@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import CopyValue from './CopyValue.vue';
 import { invoke } from './native.js';
 import { listDestinations } from './resources.js';
 import { resetsSessions } from './sessions.js';
@@ -20,6 +21,15 @@ const disabled = computed(() => props.busy || !props.session);
 const unlistedValue = computed(
   () => props.modelValue && !rows.value.some((row) => row.destinationId === props.modelValue),
 );
+const duplicateNames = computed(() => {
+  const names = new Set(),
+    duplicates = new Set();
+  for (const row of rows.value) {
+    if (names.has(row.name)) duplicates.add(row.name);
+    names.add(row.name);
+  }
+  return duplicates;
+});
 const more = computed(() => nextOffset.value < total.value && nextOffset.value <= 10000);
 let revision = 0;
 watch(
@@ -113,7 +123,8 @@ function edit(value) {
         <option value="" disabled>Bitte Absender auswählen</option>
         <option v-if="unlistedValue" :value="modelValue">Destination ID — {{ modelValue }}</option>
         <option v-for="row in rows" :key="row.destinationId" :value="row.destinationId">
-          {{ row.name || 'Ohne Bezeichnung' }} — {{ row.destinationId }}
+          {{ row.name || row.destinationId
+          }}{{ row.name && duplicateNames.has(row.name) ? ` — ${row.destinationId}` : '' }}
         </option>
       </select>
       <input
@@ -130,6 +141,11 @@ function edit(value) {
         @input="edit($event.target.value)"
       />
     </label>
+    <CopyValue
+      v-if="modelValue && rows.length && !manual"
+      :value="modelValue"
+      label="Absender-Destination ID"
+    />
     <div class="sender-destination-actions">
       <button
         v-if="rows.length"
@@ -153,10 +169,14 @@ function edit(value) {
         {{ pending ? 'Destinations werden geladen …' : 'Liste aktualisieren' }}
       </button>
     </div>
-    <small id="send-source-help">
-      Der Absender muss zu Ihren Zugangsdaten gehören. Für Replies dort Metadatenversion 2.0.0 oder 3.0.0
-      freigeben. Prozessantworten benötigen 3.0.0.
-    </small>
+    <small id="send-source-help">Wählen Sie eine Destination, die zu Ihren Zugangsdaten gehört.</small>
+    <details>
+      <summary>Voraussetzungen für Antworten</summary>
+      <p class="small-note">
+        Für Replies muss die Absender-Destination Metadatenversion 2.0.0 oder 3.0.0 unterstützen.
+        Prozessantworten benötigen 3.0.0.
+      </p>
+    </details>
     <small v-if="pending || notice" role="status">
       {{ pending ? 'Eigene Absender-Destinations werden geladen …' : notice }}
     </small>

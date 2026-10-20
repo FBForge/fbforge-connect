@@ -72,6 +72,8 @@ test('connected sender keeps labels and keyboard focus in high contrast', async 
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Liste aktualisieren', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
+  await expect(page.getByText('Voraussetzungen für Antworten', { exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(target).toBeFocused();
   expect(await target.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
   for (const [theme, forcedColors] of [

@@ -15,9 +15,14 @@ function exampleSource(source) {
 
 export function exampleMessages(source, mimeType, uri) {
   const bundle = exampleSource(source);
-  return mimeType === 'application/xml'
-    ? xmlMessages(bundle?.schemas || [{ name: 'schema.xsd', text: source }], uri)
-    : { roots: [], selected: null };
+  if (mimeType === 'application/xml')
+    return xmlMessages(bundle?.schemas || [{ name: 'schema.xsd', text: source }], uri);
+  if (bundle) {
+    const root = bundle.documents?.[bundle.schemaUri?.split('#')[0]];
+    if (root === undefined) throw new Error('schema_unavailable');
+    assertSchemaAvailable(root);
+  }
+  return { roots: [], selected: null };
 }
 
 export async function generateExample(source, mimeType, uri, requestedRoot) {

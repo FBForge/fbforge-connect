@@ -381,6 +381,37 @@ export function annotateXmlSchema(root, packet, Parser) {
     labelCount = 0,
     ambiguousCount = 0,
     unmatched = 0;
+  function valueType(declared, seen = new Set()) {
+    if (declared.builtin) {
+      switch (declared.builtin) {
+        case 'boolean':
+          return 'boolean';
+        case 'date':
+          return 'date';
+        case 'dateTime':
+          return 'date-time';
+        default:
+          return null;
+      }
+    }
+    const ctx = declared.context;
+    if (!ctx || seen.has(ctx.node)) return null;
+    tick();
+    seen = new Set(seen).add(ctx.node);
+    const content = children(ctx.node).find((node) => node.localName === 'simpleContent');
+    const derivation = children(content || ctx.node).find((node) =>
+      ['restriction', 'extension'].includes(node.localName),
+    );
+    if (!derivation) return null;
+    const name = schemaName(context(derivation, ctx.file, ctx.namespace), derivation.getAttribute('base'));
+    if (!name) return null;
+    return valueType(
+      name.namespace === XSD
+        ? { builtin: name.local }
+        : { context: lookup('simpleType', name) || lookup('complexType', name) },
+      seen,
+    );
+  }
   function visit(data, offered, inheritedBindings = new Map(), textHint = null) {
     tick();
     const bindings = new Map(inheritedBindings);
@@ -424,6 +455,7 @@ export function annotateXmlSchema(root, packet, Parser) {
         );
       const labels = declared.context && validType ? enumLabels(declared.context, data.value) : [];
       if (labels.length === 1) rows[0] = { ...rows[0], valueLabel: labels[0] };
+      if (validType) rows[0] = { ...rows[0], valueType: valueType(declared) };
       alternatives.push(rows);
       contentModels.push(
         validType && declared.context

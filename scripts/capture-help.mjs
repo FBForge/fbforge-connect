@@ -13,7 +13,7 @@ const browser = await chromium.launch({
   args: process.env.PLAYWRIGHT_EXECUTABLE_PATH ? ['--no-sandbox'] : [],
 });
 const page = await browser.newPage({
-  viewport: { width: 1180, height: 900 },
+  viewport: { width: 1440, height: 1000 },
   locale: 'de-DE',
   reducedMotion: 'reduce',
 });
@@ -47,7 +47,16 @@ try {
   await page.evaluate((packet) => {
     const original = window.__TAURI_INTERNALS__.invoke;
     const schemaUri = 'urn:test:building';
-    const document = new TextEncoder().encode(JSON.stringify({ ...packet, schemaUri }));
+    const document = new TextEncoder().encode(
+      JSON.stringify({
+        ...packet,
+        schemaUri,
+        schemas: packet.schemas.map((item) => ({
+          ...item,
+          name: new URL(item.name, 'https://schemas.example.test/building/').href,
+        })),
+      }),
+    );
     window.__TAURI_INTERNALS__.invoke = (command, args) => {
       const envelope = (data) => ({
         apiVersion: args.apiVersion,
@@ -87,13 +96,18 @@ try {
   await button('Weiter: Fachdaten').click();
   await page.locator('#send-schema-sources').check();
   await button('Fiktive Beispieldaten erzeugen').click();
-  await expect(page.locator('#send-example-message')).toBeFocused();
-  await page
-    .locator('#send-example-message')
-    .selectOption({ label: 'Anzeige des Bauvorhabens · genehmigungsfreistellung.anzeige.0600' });
-  await button('Fiktive Beispieldaten erzeugen').click();
+  const messagePicker = page
+    .getByRole('dialog', { name: 'Fiktive Beispieldaten', exact: true })
+    .getByRole('combobox');
+  await expect(messagePicker).toBeFocused();
+  await messagePicker.selectOption({
+    label: 'Anzeige des Bauvorhabens · genehmigungsfreistellung.anzeige.0600',
+  });
+  await capture('xml-message-choice');
+  await button('Beispieldaten übernehmen').click();
   await expect(page.locator('#send-data')).toHaveValue(/>0600<\/nachrichtentyp>/);
-  await capture('xml-message-choice', page.locator('[data-send-step="1"] legend'));
+  await button('Fachdaten visuell ansehen').click();
+  await capture('send-data', page.locator('[data-send-step="1"] legend'));
   await button('Prozesse').click();
   await button('Fiktiven Demo-Prozess öffnen').click();
   await expect(page.locator('.bpmn-diagram .djs-container > svg')).toBeVisible();
@@ -127,6 +141,7 @@ try {
   await page.locator('#reply-schema-sources').check();
   await button('Antwortschema laden').click();
   await button('Fiktiven Antwortentwurf erzeugen').click();
+  await button('Beispieldaten übernehmen').click();
   await expect(page.locator('#reply-data')).toHaveValue(/erhalten/);
   await capture('replies', page.getByRole('heading', { name: 'Auf die Einreichung antworten', exact: true }));
   await button('Antwort prüfen und vorbereiten').click();
@@ -151,6 +166,7 @@ try {
   await capture('problems', page.getByRole('alert').first());
 
   await open('test-fixtures/case-workspace.html');
+  await capture('case-list');
   await button('Fiktiver Antrag auf Testleistung').click();
   await capture('cases', page.locator('.case-detail'));
   await page.locator('.case-detail').getByRole('button', { name: 'Ansehen', exact: true }).click();
@@ -165,7 +181,7 @@ try {
     page.getByRole('heading', { name: 'Eigene TEST-Destination anlegen', exact: true }),
   ).toBeVisible();
   await capture('destinations');
-  console.log(`13 Abbildungen mit fiktiven Testdaten: ${directory}`);
+  console.log(`15 Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {
   await browser.close();
 }

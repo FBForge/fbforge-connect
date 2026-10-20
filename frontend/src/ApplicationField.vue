@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { fieldDisplay } from './field-display.js';
 const props = defineProps({ node: Object, query: String, showTechnical: Boolean });
 const expanded = ref(props.node.depth < 2);
+const displayValue = computed(() => fieldDisplay(props.node));
 const fields = computed(() => props.node.children.filter((child) => child.type !== 'whitespace'));
 const whitespace = computed(() => props.node.children.filter((child) => child.type === 'whitespace'));
 const emptyLabel = (type) =>
@@ -31,7 +33,10 @@ const emptyLabel = (type) =>
       <span v-if="node.duplicate" class="application-duplicate">Mehrfaches JSON-Feld</span>
     </summary>
     <div v-if="query || expanded" class="application-group-body">
-      <p v-if="node.schema?.description" class="application-description">{{ node.schema.description }}</p>
+      <details v-if="node.schema?.description" class="application-field-help">
+        <summary :aria-label="`Beschreibung: ${node.label}`">Beschreibung der Gruppe</summary>
+        <p class="application-description">{{ node.schema.description }}</p>
+      </details>
       <p v-if="node.schema?.ambiguous" class="application-duplicate">Schema-Beschriftung nicht eindeutig.</p>
       <details v-if="showTechnical && node.schema" class="application-origin">
         <summary>Schemaherkunft der Gruppe</summary>
@@ -72,7 +77,10 @@ const emptyLabel = (type) =>
       <span v-if="node.schema?.required === true" class="schema-required">Pflichtfeld laut Schema</span>
       <span v-if="node.duplicate" class="application-duplicate">Mehrfaches JSON-Feld</span>
     </div>
-    <p v-if="node.schema?.description" class="application-description">{{ node.schema.description }}</p>
+    <details v-if="node.schema?.description" class="application-field-help">
+      <summary :aria-label="`Feldhinweis: ${node.label}`">Feldhinweis</summary>
+      <p class="application-description">{{ node.schema.description }}</p>
+    </details>
     <div
       class="application-field-value"
       :class="{ 'application-empty': node.value === '' || node.type === 'null' }"
@@ -82,7 +90,7 @@ const emptyLabel = (type) =>
           ? JSON.stringify(node.value)
           : node.value === ''
             ? emptyLabel(node.type)
-            : node.value
+            : displayValue
       }}
     </div>
     <p v-if="node.schema?.valueLabel" class="application-value-label">
@@ -98,6 +106,8 @@ const emptyLabel = (type) =>
         <dd>{{ node.path || '/' }}</dd>
         <dt>Typ</dt>
         <dd>{{ node.type }}</dd>
+        <dt>Originalwert</dt>
+        <dd>{{ node.value }}</dd>
         <template v-if="node.namespace">
           <dt>Namensraum</dt>
           <dd>{{ node.namespace }}</dd>

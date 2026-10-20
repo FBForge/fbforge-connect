@@ -1,11 +1,14 @@
 <script setup>
+import { caseGroups, filterCaseGroups, defaultCaseMessage } from './case-groups.js';
+import DocumentLayout from './DocumentLayout.vue';
+import AttachmentList from './AttachmentList.vue';
 import CopyValue from './CopyValue.vue';
 import DocumentationLink from './DocumentationLink.vue';
 import { serviceLabel } from './service-label.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import { listCases, caseParts, readCaseFile, caseRequest, caseStatus, caseErrorMessage } from './cases.js';
-import { createPreview, disposePreview, canPreview } from './submission-preview.js';
+import { createPreview, disposePreview } from './submission-preview.js';
 import { errorMessage } from './diagnostics.js';
 import { SCHEMA_VIEW_BYTES } from './schema-annotations.js';
 import { structuredFormat, STRUCTURED_BYTES } from './structured-data.js';
@@ -28,18 +31,10 @@ const search = ref(''),
   clearDialog = ref(null),
   detailHeading = ref(null),
   searchBox = ref(null);
-const filtered = computed(() =>
-  records.value
-    .filter(
-      (r) =>
-        (direction.value === 'all' || r.direction === direction.value) &&
-        [r.title, r.caseId, r.submissionId, r.replyId, r.destinationId]
-          .filter(Boolean)
-          .join(' ')
-          .toLocaleLowerCase('de')
-          .includes(search.value.trim().toLocaleLowerCase('de')),
-    )
-    .toSorted((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')),
+const groups = computed(() => caseGroups(records.value));
+const filtered = computed(() => filterCaseGroups(groups.value, search.value, direction.value));
+const selectedGroup = computed(() =>
+  groups.value.find((group) => group.messages.some((record) => record.recordId === selected.value?.recordId)),
 );
 const disabled = computed(() => pending.value || props.busy || !props.session);
 const attachments = computed(() => parts.value.filter((p) => p.kind === 'attachment'));
@@ -48,7 +43,8 @@ let generation = 0,
   downloadUrl,
   downloadTimer;
 const bytesLabel = (size) => `${(size / 1024).toLocaleString('de-DE', { maximumFractionDigits: 1 })} KiB`;
-const when = (value) => new Date(value).toLocaleString('de-DE');
+const when = (value) =>
+  Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('de-DE') : 'Zeitpunkt nicht lesbar';
 function closePreview() {
   disposePreview(preview.value);
   preview.value = null;
@@ -106,7 +102,7 @@ function load() {
   });
 }
 watch(
-  [() => props.session?.sessionId, () => props.visible],
+  [() => props.session?.sessionId, () => props.session?.apiVersion, () => props.visible],
   () => {
     reset();
     loadedContext = '';
@@ -137,11 +133,20 @@ async function closeCase() {
   error.value = '';
   notice.value = '';
   await nextTick();
-  opener?.focus();
+  if (opener?.isConnected) opener.focus();
+  else searchBox.value?.focus();
+}
+function openGroup(group, event) {
+  const record = defaultCaseMessage(group, search.value);
+  if (record) open(record, event);
 }
 function open(record, event) {
-  opener = event?.currentTarget || document.activeElement;
-  reset();
+  if (disabled.value || record.available === false) return;
+  if (event) opener = event.currentTarget;
+  else if (!selected.value) opener = document.activeElement;
+  generation++;
+  controller?.abort();
+  closePreview();
   void run(async (session, current) => {
     const rows = await caseParts(invoke, session, record.recordId);
     const data = rows.find((p) => p.kind === 'data');
@@ -208,16 +213,32 @@ function inspect(part, download = false) {
     }
   });
 }
-function remove(record) {
-  void run(async (session) => {
+async function remove(record) {
+  const activeContext = sessionContext();
+  const replacing = selected.value?.recordId === record.recordId;
+  let nextId;
+  await run(async (session, current) => {
     await caseRequest(invoke, session, 'delete', { recordId: record.recordId });
-    if (selected.value?.recordId === record.recordId) reset();
+    if (!current()) return;
     await refresh(session);
+    if (!current()) return;
+    if (replacing) {
+      const group = groups.value.find((item) => record.caseId && item.caseId === record.caseId);
+      nextId = group && defaultCaseMessage(group)?.recordId;
+      reset();
+    }
     notice.value = 'Lokale Kopie gelöscht. Der Serverbestand bleibt unverändert.';
-    await nextTick();
-    searchBox.value?.focus();
   });
+  if (activeContext !== sessionContext()) return;
+  await nextTick();
+  if (nextId) open(records.value.find((item) => item.recordId === nextId));
+  else if (replacing) {
+    await nextTick();
+    if (opener?.isConnected) opener.focus();
+    else searchBox.value?.focus();
+  }
 }
+
 function clear() {
   clearDialog.value.close();
   void run(async (session) => {
@@ -274,22 +295,32 @@ onBeforeUnmount(() => {
         Verbinden Sie zuerst das gewünschte TEST-Profil. Die Übersicht zeigt ausschließlich dessen API und
         Zugang.
       </p>
-      <p class="small-note">
-        {{
-          persistent
-            ? 'Geschützt auf diesem Windows-Benutzerkonto gespeichert.'
-            : 'Standard: nur für die laufende Anwendungssitzung. Beim Beenden gehen ungespeicherte Kopien verloren.'
-        }}
-        Ein Profilwechsel löscht keine Sitzungskopien. Nach erneutem Verbinden mit demselben Zugang sind sie
-        wieder sichtbar.
-      </p>
-      <label class="checkbox-label">
-        <input type="checkbox" :checked="persistent" :disabled="disabled || !canPersist" @change="storage" />
-        Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren
-      </label>
-      <p v-if="!canPersist" class="small-note">
-        Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Windows-Speicher.
-      </p>
+      <details class="case-storage">
+        <summary>
+          {{ persistent ? 'Geschützte Aufbewahrung aktiv' : 'Aufbewahrung: aktuelle Sitzung' }}
+        </summary>
+        <p class="small-note">
+          {{
+            persistent
+              ? 'Geschützt auf diesem Windows-Benutzerkonto gespeichert.'
+              : 'Standard: nur für die laufende Anwendungssitzung. Beim Beenden gehen ungespeicherte Kopien verloren.'
+          }}
+          Ein Profilwechsel löscht keine Sitzungskopien. Nach erneutem Verbinden mit demselben Zugang sind sie
+          wieder sichtbar.
+        </p>
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            :checked="persistent"
+            :disabled="disabled || !canPersist"
+            @change="storage"
+          />
+          Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren
+        </label>
+        <p v-if="!canPersist" class="small-note">
+          Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Windows-Speicher.
+        </p>
+      </details>
       <div class="case-filters client-fields">
         <label>
           Vorgänge durchsuchen
@@ -300,9 +331,9 @@ onBeforeUnmount(() => {
             placeholder="Titel, Case ID, Submission ID oder Reply ID"
           />
         </label>
-        <label>
+        <label for="case-direction">
           Nachrichten
-          <select v-model="direction">
+          <select id="case-direction" v-model="direction">
             <option value="all">Alle Nachrichten</option>
             <option value="received">Empfangen</option>
             <option value="sent">Gesendet</option>
@@ -330,53 +361,63 @@ onBeforeUnmount(() => {
         }}
       </p>
       <ul v-else class="case-list" aria-label="Lokale Vorgänge">
-        <li
-          v-for="record in filtered"
-          :key="record.recordId"
-          :class="{ 'case-selected': selected?.recordId === record.recordId }"
-        >
+        <li v-for="group in filtered" :key="group.key">
           <div>
-            <span class="small-note">
-              {{ record.createdAt ? when(record.createdAt) : 'Zeitpunkt nicht lesbar' }}
-            </span>
+            <span class="small-note">Letzte Aktivität: {{ when(group.latest.createdAt) }}</span>
             <h3>
               <button
                 class="case-open"
                 type="button"
-                :disabled="disabled || record.available === false"
-                @click="open(record, $event)"
+                :disabled="disabled || !defaultCaseMessage(group)"
+                @click="openGroup(group, $event)"
               >
                 {{
-                  /^urn:de:fim:leika:leistung:/i.test(record.title)
-                    ? serviceLabel(record.title).title
-                    : record.title
+                  /^urn:de:fim:leika:leistung:/i.test(group.title)
+                    ? serviceLabel(group.title).title
+                    : group.title
                 }}
               </button>
             </h3>
             <div class="case-metadata">
-              <span class="status-badge info">{{ caseStatus(record.status) }}</span>
               <span>
-                {{ record.direction === 'received' ? 'Empfangen' : 'Gesendet' }}:
-                {{ record.kind === 'reply' ? 'Antwort' : 'Einreichung' }}
+                {{ group.messages.length }} {{ group.messages.length === 1 ? 'Nachricht' : 'Nachrichten' }}
               </span>
               <span>
-                {{ record.attachmentCount }} {{ record.attachmentCount === 1 ? 'Anlage' : 'Anlagen' }}
+                {{ group.messages.filter((record) => record.direction === 'received').length }} empfangen
               </span>
-              <span>{{ bytesLabel(record.totalBytes) }}</span>
-              <span v-if="record.archived">Gespeicherte Kopie</span>
+              <span>
+                {{ group.messages.filter((record) => record.direction === 'sent').length }} gesendet
+              </span>
             </div>
-            <p v-if="record.caseId" class="small-note case-identifier">Case ID: {{ record.caseId }}</p>
+            <p v-if="group.attention.length" class="case-attention" role="status">
+              {{ group.attention.length }}
+              {{ group.attention.length === 1 ? 'Nachricht erfordert' : 'Nachrichten erfordern' }} Ihre
+              Aufmerksamkeit. Einzelheiten im Verlauf.
+            </p>
+            <p v-if="group.caseId" class="small-note case-identifier">Case ID: {{ group.caseId }}</p>
             <p v-else class="small-note">Lokaler Versuch – noch keine bestätigte Case ID.</p>
+            <details class="case-message-copies">
+              <summary>Einzelne lokale Kopien verwalten</summary>
+              <ul>
+                <li v-for="record in group.messages" :key="record.recordId">
+                  <span>
+                    {{ record.direction === 'received' ? 'Empfangen' : 'Gesendet' }}:
+                    {{ record.kind === 'reply' ? 'Antwort' : 'Einreichung' }} ·
+                    {{ caseStatus(record.status) }} · {{ when(record.createdAt) }}
+                  </span>
+                  <button
+                    class="button secondary"
+                    type="button"
+                    :aria-label="`Lokale Kopie löschen: ${record.title}`"
+                    :disabled="disabled"
+                    @click="remove(record)"
+                  >
+                    Löschen
+                  </button>
+                </li>
+              </ul>
+            </details>
           </div>
-          <button
-            class="button secondary"
-            type="button"
-            :aria-label="`Lokale Kopie löschen: ${record.title}`"
-            :disabled="disabled"
-            @click="remove(record)"
-          >
-            Löschen
-          </button>
         </li>
       </ul>
     </section>
@@ -385,9 +426,9 @@ onBeforeUnmount(() => {
         <div>
           <h2 id="case-detail-title" ref="detailHeading" tabindex="-1">
             {{
-              /^urn:de:fim:leika:leistung:/i.test(selected.title)
-                ? serviceLabel(selected.title).title
-                : selected.title
+              /^urn:de:fim:leika:leistung:/i.test(selectedGroup?.title || selected.title)
+                ? serviceLabel(selectedGroup?.title || selected.title).title
+                : selectedGroup?.title || selected.title
             }}
           </h2>
           <p>{{ caseStatus(selected.status) }} · {{ when(selected.createdAt) }}</p>
@@ -396,6 +437,29 @@ onBeforeUnmount(() => {
           Zur Vorgangsübersicht
         </button>
       </div>
+      <nav v-if="selectedGroup" class="case-timeline" aria-label="Nachrichten im Vorgang">
+        <ol>
+          <li v-for="record in selectedGroup.messages" :key="record.recordId">
+            <button
+              class="button secondary"
+              type="button"
+              :aria-current="record.recordId === selected.recordId ? 'true' : undefined"
+              :disabled="disabled || record.available === false"
+              @click="open(record)"
+            >
+              <strong>
+                {{ record.direction === 'received' ? 'Empfangen' : 'Gesendet' }}:
+                {{ record.kind === 'reply' ? 'Antwort' : 'Einreichung' }}
+              </strong>
+              <span>{{ when(record.createdAt) }}</span>
+              <span>
+                {{ caseStatus(record.status)
+                }}{{ record.available === false ? ' · Inhalt nicht verfügbar' : '' }}
+              </span>
+            </button>
+          </li>
+        </ol>
+      </nav>
       <p class="small-note">
         Lokale Kopie. Prüfergebnisse stammen vom damaligen Abruf. Serverzustand und Berechtigungen werden
         dadurch nicht erneut bestätigt.
@@ -413,47 +477,34 @@ onBeforeUnmount(() => {
               : warning
         }}
       </p>
-      <StructuredData
-        v-if="application"
-        :text="application.text"
-        :format="application.format"
-        :schema-document="application.schemaDocument"
-        :schema-uri="application.schemaUri"
-      />
-      <p v-else-if="!parts.some((part) => part.kind === 'data')">
-        Für diese Kopie wurden noch keine entschlüsselten Fachdaten gespeichert. Die Transportinformationen
-        stehen unter „Technische Inhalte und Kennungen“. Prüfen Sie die Nachricht im Empfang, wenn sie noch
-        auf dem Server verfügbar ist.
-      </p>
-      <p v-else>
-        Für diese Fachdaten ist keine Formularansicht verfügbar oder die Grenze von 256 KiB wurde
-        überschritten. Das Original ist unter „Technische Inhalte“ verfügbar.
-      </p>
-      <h3>Anlagen</h3>
-      <p v-if="!attachments.length">Keine Anlagen vorhanden.</p>
-      <ul class="case-attachments">
-        <li v-for="part in attachments" :key="part.contentId">
-          <div>
-            <strong>{{ part.fileName || 'Anlage' }}</strong>
-            <p v-if="part.description">{{ part.description }}</p>
-            <span class="small-note">{{ part.mimeType }} · {{ bytesLabel(part.totalBytes) }}</span>
-          </div>
-          <div class="client-actions">
-            <button
-              v-if="canPreview(part)"
-              type="button"
-              class="button secondary"
-              :disabled="disabled"
-              @click="inspect(part)"
-            >
-              Ansehen
-            </button>
-            <button type="button" class="button secondary" :disabled="disabled" @click="inspect(part, true)">
-              Original herunterladen
-            </button>
-          </div>
-        </li>
-      </ul>
+      <DocumentLayout>
+        <template #data>
+          <StructuredData
+            v-if="application"
+            :text="application.text"
+            :format="application.format"
+            :schema-document="application.schemaDocument"
+            :schema-uri="application.schemaUri"
+          />
+          <p v-else-if="!parts.some((part) => part.kind === 'data')">
+            Für diese Kopie wurden noch keine entschlüsselten Fachdaten gespeichert. Die
+            Transportinformationen stehen unter „Technische Inhalte und Kennungen“. Prüfen Sie die Nachricht
+            im Empfang, wenn sie noch auf dem Server verfügbar ist.
+          </p>
+          <p v-else>
+            Für diese Fachdaten ist keine Formularansicht verfügbar oder die Grenze von 256 KiB wurde
+            überschritten. Das Original ist unter „Technische Inhalte“ verfügbar.
+          </p>
+        </template>
+        <template #aside>
+          <AttachmentList
+            :parts="attachments"
+            :disabled="disabled"
+            @inspect="inspect"
+            @download="inspect($event, true)"
+          />
+        </template>
+      </DocumentLayout>
       <div class="client-actions">
         <button
           v-if="selected.caseId"
@@ -484,6 +535,11 @@ onBeforeUnmount(() => {
         Annehmen, Ablehnen und Antworten erfordern einen aktuellen Abruf mit gültigen Schlüsseln. Bereits
         bestätigte Nachrichten sind serverseitig möglicherweise nicht mehr abrufbar.
       </p>
+      <div class="client-actions">
+        <button class="button secondary" type="button" :disabled="disabled" @click="remove(selected)">
+          Diese lokale Kopie löschen
+        </button>
+      </div>
       <details>
         <summary>Technische Inhalte und Kennungen</summary>
         <dl>

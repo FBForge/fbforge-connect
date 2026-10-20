@@ -70,7 +70,7 @@ test('enter opens a known submission directly instead of listing the inbox', asy
 test('case details keep the reading area clear and return to the same filtered result', async ({ page }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
   await page.getByLabel('Vorgänge durchsuchen').fill('00000005');
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(1);
   const opener = page.getByRole('button', { name: 'Fiktiver Antrag auf Testleistung', exact: true });
   await opener.click();
   await expect(page.getByRole('heading', { name: 'Meine Vorgänge', exact: true })).toBeHidden();
@@ -80,7 +80,7 @@ test('case details keep the reading area clear and return to the same filtered r
     'Dokument',
   );
   await page.evaluate(() => (window.__caseFixture.failedRead = true));
-  await page.locator('.case-attachments').getByRole('button', { name: 'Ansehen', exact: true }).click();
+  await page.locator('.document-attachments').getByRole('button', { name: 'Ansehen', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await page.evaluate(() => (window.__caseFixture.failedRead = false));
   await page.setViewportSize({ width: 640, height: 540 });
@@ -91,5 +91,5 @@ test('case details keep the reading area clear and return to the same filtered r
   await expect(opener).toBeFocused();
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByLabel('Vorgänge durchsuchen')).toHaveValue('00000005');
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(1);
 });

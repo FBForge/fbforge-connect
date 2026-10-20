@@ -31,6 +31,7 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     await prepare.waitFor();
     await page.waitForFunction(() => window.__applicationFixture.calls.includes('load_reply_schema'));
     await page.getByRole('button', { name: 'Fiktiven Antwortentwurf erzeugen', exact: true }).click();
+    await page.getByRole('button', { name: 'Beispieldaten übernehmen', exact: true }).click();
     await page.getByText(/Fiktiver Antwortentwurf erzeugt/).waitFor();
     assert.equal(JSON.parse(await page.locator('#reply-data').inputValue()).status, 'erhalten');
     await page.locator('#reply-data').fill('{"status":"falsch"}');
@@ -41,13 +42,13 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     const valid = '{\n "status":"erhalten"\n}';
     await page.locator('#reply-data').fill(valid);
     await page.getByRole('button', { name: 'Fachdaten visuell ansehen', exact: true }).click();
-    await page.getByRole('dialog').getByText('erhalten', { exact: true }).waitFor();
+    await page.locator('.draft-inline-preview').getByText('erhalten', { exact: true }).waitFor();
     await page
-      .getByRole('dialog')
+      .locator('.draft-inline-preview')
       .locator('.application-field-label')
       .filter({ hasText: 'Bearbeitungsstatus' })
       .waitFor();
-    await page.getByRole('button', { name: 'Vorschau schließen' }).click();
+    await page.getByRole('button', { name: 'Inhalt bearbeiten', exact: true }).click();
     assert.equal(await page.locator('#reply-data').inputValue(), valid);
     await prepare.click();
     await page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true }).waitFor();

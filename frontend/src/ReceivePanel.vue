@@ -22,10 +22,15 @@ import ContentPreview from './ContentPreview.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
 import ReplyReceiptPanel from './ReplyReceiptPanel.vue';
 import ReplySender from './ReplySender.vue';
+import DocumentLayout from './DocumentLayout.vue';
+import AttachmentList from './AttachmentList.vue';
 import StructuredData from './StructuredData.vue';
 import { readReceivedSchema } from './received-schema.js';
 import { STRUCTURED_BYTES, structuredFormat } from './structured-data.js';
 
+const preparation = ref(null),
+  replySection = ref(null),
+  receiptSection = ref(null);
 const props = defineProps({
   session: Object,
   detail: Object,
@@ -470,73 +475,84 @@ function inspect(part, download = false) {
       <div class="tool-section-heading">
         <div>
           <h2 :id="`${panelId}-title`">{{ reply ? 'Antwortinhalte prüfen' : 'Inhalte prüfen' }}</h2>
-          <p v-if="reply">
+          <p v-if="reply && !proof">
             Mit dem beim Versand erzeugten Antwortschlüssel lokal entschlüsseln. Er wird automatisch über
             Vorgang und Schlüssel-ID zugeordnet. Ein gespeichertes Profil kann den Schlüssel nach einem
             Neustart wiederherstellen.
           </p>
-          <p v-else>
+          <p v-else-if="!proof">
             Mit dem geladenen privaten Testschlüssel lokal entschlüsseln. Schlüssel bleiben für weitere
             passende Einreichungen in dieser Sitzung verfügbar.
           </p>
         </div>
       </div>
-      <details ref="schemaSettings">
-        <summary>Lokale Fachdaten-Schemata ({{ schemas.length }})</summary>
-        <p>
-          Zuerst entschlüsselt das SDK die Metadaten und liest daraus die Schema-URI. Öffentlich erreichbare
-          HTTPS-Schemata werden nur mit aktivierter Freigabe ohne Zugangsdaten geladen. Optional können Sie
-          eine lokale JSON-Schemadatei mit passender
-          <code>$id</code>
-          hinzufügen. Mit aktivierter Freigabe werden auch externe Referenzen und XRepository-XSDs
-          kontrolliert geladen.
-        </p>
-        <div class="client-fields">
-          <FileDropInput
-            :id="`${panelId}-schema-file`"
-            label="JSON-Schemadatei hinzufügen"
-            accept=".json,application/json,application/schema+json"
+      <details ref="preparation" class="receive-preparation" :open="!proof">
+        <summary>
+          {{ proof ? 'Entschlüsselung und Schemaeinstellungen' : 'Entschlüsselung vorbereiten' }}
+        </summary>
+        <details ref="schemaSettings">
+          <summary>Lokale Fachdaten-Schemata ({{ schemas.length }})</summary>
+          <p>
+            Zuerst entschlüsselt das SDK die Metadaten und liest daraus die Schema-URI. Öffentlich erreichbare
+            HTTPS-Schemata werden nur mit aktivierter Freigabe ohne Zugangsdaten geladen. Optional können Sie
+            eine lokale JSON-Schemadatei mit passender
+            <code>$id</code>
+            hinzufügen. Mit aktivierter Freigabe werden auch externe Referenzen und XRepository-XSDs
+            kontrolliert geladen.
+          </p>
+          <div class="client-fields">
+            <FileDropInput
+              :id="`${panelId}-schema-file`"
+              label="JSON-Schemadatei hinzufügen"
+              accept=".json,application/json,application/schema+json"
+              :disabled="disabled"
+              @files="chooseSchema"
+            >
+              Maximal 2 MiB pro Datei, insgesamt 16 MiB. Öffentliche HTTPS-Schemata benötigen die Freigabe
+              unten. Private Netzadressen werden nicht aufgerufen.
+            </FileDropInput>
+          </div>
+          <ul v-if="schemas.length" class="receive-schema-list">
+            <li v-for="file in schemas" :key="file.contentId">
+              <div>
+                <strong>{{ file.filename }}</strong>
+                <br />
+                <span>{{ file.uri }}</span>
+              </div>
+              <button class="button secondary" type="button" :disabled="disabled" @click="removeSchema(file)">
+                Entfernen
+              </button>
+            </li>
+          </ul>
+        </details>
+        <SchemaSourceConsent
+          :id="`${panelId}-schema-sources`"
+          v-model="allowExternalSchemas"
+          :disabled="disabled"
+        />
+        <div class="client-actions">
+          <button class="button" type="button" :disabled="disabled" @click="verify">
+            {{ proof ? 'Erneut entschlüsseln und prüfen' : 'Inhalte entschlüsseln und prüfen' }}
+          </button>
+          <button
+            v-if="proof"
+            class="button secondary"
+            type="button"
             :disabled="disabled"
-            @files="chooseSchema"
+            @click="resetProof"
           >
-            Maximal 2 MiB pro Datei, insgesamt 16 MiB. Öffentliche HTTPS-Schemata benötigen die Freigabe
-            unten. Private Netzadressen werden nicht aufgerufen.
-          </FileDropInput>
+            Prüfergebnis verwerfen
+          </button>
+          <button
+            v-if="pending && controller"
+            class="button secondary"
+            type="button"
+            @click="controller.abort()"
+          >
+            Übertragung abbrechen
+          </button>
         </div>
-        <ul v-if="schemas.length" class="receive-schema-list">
-          <li v-for="file in schemas" :key="file.contentId">
-            <div>
-              <strong>{{ file.filename }}</strong>
-              <br />
-              <span>{{ file.uri }}</span>
-            </div>
-            <button class="button secondary" type="button" :disabled="disabled" @click="removeSchema(file)">
-              Entfernen
-            </button>
-          </li>
-        </ul>
       </details>
-      <SchemaSourceConsent
-        :id="`${panelId}-schema-sources`"
-        v-model="allowExternalSchemas"
-        :disabled="disabled"
-      />
-      <div class="client-actions">
-        <button class="button" type="button" :disabled="disabled" @click="verify">
-          {{ proof ? 'Erneut entschlüsseln und prüfen' : 'Inhalte entschlüsseln und prüfen' }}
-        </button>
-        <button v-if="proof" class="button secondary" type="button" :disabled="disabled" @click="resetProof">
-          Prüfergebnis verwerfen
-        </button>
-        <button
-          v-if="pending && controller"
-          class="button secondary"
-          type="button"
-          @click="controller.abort()"
-        >
-          Übertragung abbrechen
-        </button>
-      </div>
       <p v-if="pending" role="status">{{ action }} …</p>
       <p v-if="error" role="alert">{{ error }}</p>
       <div v-if="error" class="recovery-actions client-actions">
@@ -581,10 +597,13 @@ function inspect(part, download = false) {
         <ul v-if="proof.warnings.length">
           <li v-for="stage in proof.warnings" :key="stage">{{ warning(stage) }}</li>
         </ul>
-        <p class="small-note">
-          Das SDK hat Ereignisse, Signaturen, Verschlüsselung und Inhalts-Hashes geprüft. Hinweise oben
-          benennen verbleibende Prüfungen. Dies bestätigt noch keinen Empfang bei FIT-Connect.
-        </p>
+        <details class="verification-explanation">
+          <summary>Was wurde geprüft?</summary>
+          <p class="small-note">
+            Das SDK hat Ereignisse, Signaturen, Verschlüsselung und Inhalts-Hashes geprüft. Hinweise oben
+            benennen verbleibende Prüfungen. Dies bestätigt noch keinen Empfang bei FIT-Connect.
+          </p>
+        </details>
         <p v-if="proof.processMessage">
           <strong>
             Prozessnachricht: {{ proof.processMessage.processModelId }} · {{ proof.processMessage.messageId }}
@@ -605,56 +624,68 @@ function inspect(part, download = false) {
             Geprüften Nachrichtenbezug im BPMN-Modell zeigen
           </button>
         </p>
-        <section class="received-application" :aria-labelledby="`${panelId}-application-title`">
-          <div class="tool-section-heading">
-            <div>
-              <h3 :id="`${panelId}-application-title`" ref="applicationHeading" tabindex="-1">
-                {{ reply ? 'Antwort lesen' : 'Antrag lesen' }}
-              </h3>
-              <p>Fachdaten aus dem lokal entschlüsselten Inhalt</p>
-            </div>
-          </div>
-          <StructuredData
-            v-if="application"
-            :text="application.text"
-            :format="application.format"
-            :schema-document="applicationSchema?.document"
-            :schema-uri="applicationSchema?.schemaUri"
-            :schema-status="applicationSchema?.status"
-          />
-          <p v-else class="small-note" role="status">{{ applicationNotice }}</p>
-        </section>
-        <section class="application-attachments" :aria-labelledby="`${panelId}-attachments-title`">
-          <h3 :id="`${panelId}-attachments-title`">Anlagen ({{ attachments.length }})</h3>
-          <p v-if="!attachments.length" class="small-note">Keine zusätzlichen Anlagen.</p>
-          <ul v-else class="application-attachment-list">
-            <li v-for="part in attachments" :key="part.contentId">
-              <div>
-                <strong>{{ label(part) }}</strong>
-                <p>{{ part.description || part.mimeType || 'Anlage' }} · {{ bytesLabel(part.totalBytes) }}</p>
+        <DocumentLayout>
+          <template #data>
+            <section class="received-application" :aria-labelledby="`${panelId}-application-title`">
+              <div class="tool-section-heading">
+                <div>
+                  <h3 :id="`${panelId}-application-title`" ref="applicationHeading" tabindex="-1">
+                    {{ reply ? 'Antwort lesen' : 'Antrag lesen' }}
+                  </h3>
+                  <p>Fachdaten aus dem lokal entschlüsselten Inhalt</p>
+                </div>
               </div>
+              <StructuredData
+                v-if="application"
+                :text="application.text"
+                :format="application.format"
+                :schema-document="applicationSchema?.document"
+                :schema-uri="applicationSchema?.schemaUri"
+                :schema-status="applicationSchema?.status"
+              />
+              <p v-else class="small-note" role="status">{{ applicationNotice }}</p>
+            </section>
+          </template>
+          <template #aside>
+            <AttachmentList
+              :parts="attachments"
+              :disabled="disabled"
+              @inspect="inspect"
+              @download="inspect($event, true)"
+            />
+            <div class="document-next-actions">
+              <h3>Nächster Schritt</h3>
+              <p class="small-note">
+                Prüfen Sie die Fachdaten und Anlagen. Eine Antwort schließt den Empfang noch nicht ab.
+              </p>
               <div class="client-actions">
                 <button
-                  v-if="canPreview(part)"
+                  v-if="!reply"
                   class="button secondary"
                   type="button"
                   :disabled="disabled"
-                  @click="inspect(part)"
+                  @click="
+                    replySection?.scrollIntoView({ block: 'start' });
+                    replySection?.querySelector('button, select')?.focus();
+                  "
                 >
-                  Ansehen
+                  Antwort vorbereiten
                 </button>
                 <button
-                  class="button secondary"
+                  class="button"
                   type="button"
                   :disabled="disabled"
-                  @click="inspect(part, true)"
+                  @click="
+                    receiptSection?.scrollIntoView({ block: 'start' });
+                    receiptSection?.querySelector('select, button')?.focus();
+                  "
                 >
-                  Herunterladen
+                  {{ reply ? 'Antwort quittieren' : 'Annehmen oder ablehnen' }}
                 </button>
               </div>
-            </li>
-          </ul>
-        </section>
+            </div>
+          </template>
+        </DocumentLayout>
         <details class="application-technical">
           <summary>Technische Inhalte und Originaldownloads ({{ parts.length }})</summary>
           <div class="client-table support-table">
@@ -722,48 +753,52 @@ function inspect(part, download = false) {
         @close="closePreview"
       />
     </section>
-    <ReplySender
-      v-if="!reply && !completed"
-      :session="session"
-      :proof="proof"
-      :busy="busy || pending"
-      @busy="(value) => emit('busy', value)"
-      @activity="(value) => emit('activity', value)"
-      @fatal="(value) => emit('fatal', value)"
-      @invalidate="resetProof"
-      @event-log="(value) => emit('event-log', value)"
-    />
-    <ReplyReceiptPanel
-      v-if="reply"
-      :session="session"
-      :detail="detail"
-      :proof="proof"
-      :parts="parts"
-      :busy="busy || pending"
-      @busy="(value) => emit('busy', value)"
-      @activity="(value) => emit('activity', value)"
-      @fatal="(value) => emit('fatal', value)"
-      @outcome="(value) => emit('outcome', value)"
-      @invalidate="resetProof"
-      @event-log="(value) => emit('event-log', value)"
-    />
-    <ReceiptPanel
-      v-if="!reply"
-      :session="session"
-      :detail="detail"
-      :proof="proof"
-      :busy="busy || pending"
-      :key-revision="keyRevision"
-      @busy="(value) => emit('busy', value)"
-      @activity="(value) => emit('activity', value)"
-      @fatal="(value) => emit('fatal', value)"
-      @outcome="
-        (value) => {
-          receiptOutcome = value;
-          emit('outcome', value);
-        }
-      "
-      @invalidate="resetProof"
-    />
+    <div v-show="!reply && !completed" ref="replySection" class="receive-action-section">
+      <ReplySender
+        v-if="!reply && !completed"
+        :session="session"
+        :proof="proof"
+        :busy="busy || pending"
+        @busy="(value) => emit('busy', value)"
+        @activity="(value) => emit('activity', value)"
+        @fatal="(value) => emit('fatal', value)"
+        @invalidate="resetProof"
+        @event-log="(value) => emit('event-log', value)"
+      />
+    </div>
+    <div ref="receiptSection" class="receive-action-section">
+      <ReplyReceiptPanel
+        v-if="reply"
+        :session="session"
+        :detail="detail"
+        :proof="proof"
+        :parts="parts"
+        :busy="busy || pending"
+        @busy="(value) => emit('busy', value)"
+        @activity="(value) => emit('activity', value)"
+        @fatal="(value) => emit('fatal', value)"
+        @outcome="(value) => emit('outcome', value)"
+        @invalidate="resetProof"
+        @event-log="(value) => emit('event-log', value)"
+      />
+      <ReceiptPanel
+        v-if="!reply"
+        :session="session"
+        :detail="detail"
+        :proof="proof"
+        :busy="busy || pending"
+        :key-revision="keyRevision"
+        @busy="(value) => emit('busy', value)"
+        @activity="(value) => emit('activity', value)"
+        @fatal="(value) => emit('fatal', value)"
+        @outcome="
+          (value) => {
+            receiptOutcome = value;
+            emit('outcome', value);
+          }
+        "
+        @invalidate="resetProof"
+      />
+    </div>
   </div>
 </template>

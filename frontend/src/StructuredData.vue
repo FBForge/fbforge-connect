@@ -78,13 +78,15 @@ onBeforeUnmount(() => {
       <span class="status-badge info">{{ format?.toUpperCase() }}</span>
     </div>
     <p class="small-note">
-      Nur lesende Darstellung der Originalfelder. Feldnamen werden zur Lesbarkeit getrennt. Werte bleiben
-      erhalten. Die Formularansicht ersetzt keine fachliche Prüfung.
+      Lesende Ansicht. Die Originaldaten bleiben unverändert. Eine fachliche Prüfung erfolgt durch Sie.
     </p>
-    <p v-if="format === 'xml'" class="small-note">
-      Elemente, Attribute und Text werden dargestellt. XML-Leerraum ist separat aufklappbar. Kommentare und
-      Verarbeitungsanweisungen stehen im Quelltext.
-    </p>
+    <details v-if="format === 'xml'" class="application-field-help">
+      <summary>Hinweise zur XML-Ansicht</summary>
+      <p class="small-note">
+        Elemente, Attribute und Text werden dargestellt. XML-Leerraum ist separat aufklappbar. Kommentare und
+        Verarbeitungsanweisungen stehen im Quelltext.
+      </p>
+    </details>
     <div v-if="schemaUri || schemaDocument" class="application-schema-status">
       <p class="small-note" role="status">
         {{

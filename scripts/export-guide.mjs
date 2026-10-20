@@ -40,7 +40,7 @@ for (const topic of helpTopics) {
   const figures = pictures
     .map(
       ({ image, caption }) =>
-        `<figure><a href="${base}/images/${image}.png"><img src="${base}/images/${image}.png" alt="${escape(caption)}" width="1180" height="900" loading="lazy"></a><figcaption>${escape(caption)} Bild zum Vergrößern öffnen.</figcaption></figure>`,
+        `<figure><a href="${base}/images/${image}.png"><img src="${base}/images/${image}.png" alt="${escape(caption)}" width="1440" height="1000" loading="lazy"></a><figcaption>${escape(caption)} Bild zum Vergrößern öffnen.</figcaption></figure>`,
     )
     .join('');
   const html = `<!doctype html>
