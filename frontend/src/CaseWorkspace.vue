@@ -129,12 +129,15 @@ async function textFile(session, record, part) {
   }
 }
 let opener;
-function closeCase() {
+async function closeCase() {
   reset();
+  error.value = '';
+  notice.value = '';
+  await nextTick();
   opener?.focus();
 }
-function open(record) {
-  opener = document.activeElement;
+function open(record, event) {
+  opener = event?.currentTarget || document.activeElement;
   reset();
   void run(async (session, current) => {
     const rows = await caseParts(invoke, session, record.recordId);
@@ -251,7 +254,10 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div class="case-workspace">
-    <section class="tool-section" aria-labelledby="case-list-title">
+    <p v-if="error" role="alert">{{ error }}</p>
+    <p v-if="notice" role="status">{{ notice }}</p>
+    <p v-if="pending" role="status">Vorgangsablage wird bearbeitet …</p>
+    <section v-show="!selected" class="tool-section" aria-labelledby="case-list-title">
       <div class="tool-section-heading">
         <div>
           <h2 id="case-list-title">Meine Vorgänge</h2>
@@ -290,7 +296,7 @@ onBeforeUnmount(() => {
             ref="searchBox"
             v-model="search"
             type="search"
-            placeholder="Titel, Vorgangs- oder Nachrichten-ID"
+            placeholder="Titel, Case ID, Submission ID oder Reply ID"
           />
         </label>
         <label>
@@ -315,9 +321,6 @@ onBeforeUnmount(() => {
           Verlauf leeren
         </button>
       </div>
-      <p v-if="error" role="alert">{{ error }}</p>
-      <p v-if="notice" role="status">{{ notice }}</p>
-      <p v-if="pending" role="status">Vorgangsablage wird bearbeitet …</p>
       <p v-if="!filtered.length && !pending">
         {{
           records.length
@@ -333,8 +336,6 @@ onBeforeUnmount(() => {
         >
           <div>
             <span class="small-note">
-              {{ record.direction === 'received' ? 'Empfangen' : 'Gesendet' }} ·
-              {{ record.kind === 'reply' ? 'Antwort' : 'Einreichung' }} ·
               {{ record.createdAt ? when(record.createdAt) : 'Zeitpunkt nicht lesbar' }}
             </span>
             <h3>
@@ -342,17 +343,24 @@ onBeforeUnmount(() => {
                 class="case-open"
                 type="button"
                 :disabled="disabled || record.available === false"
-                @click="open(record)"
+                @click="open(record, $event)"
               >
                 {{ record.title }}
               </button>
             </h3>
-            <span class="status-badge info">{{ caseStatus(record.status) }}</span>
-            <span class="small-note">
-              {{ record.attachmentCount }} Anlagen · {{ bytesLabel(record.totalBytes)
-              }}{{ record.archived ? ' · Gespeicherte Kopie' : '' }}
-            </span>
-            <p v-if="record.caseId" class="small-note case-identifier">Vorgang: {{ record.caseId }}</p>
+            <div class="case-metadata">
+              <span class="status-badge info">{{ caseStatus(record.status) }}</span>
+              <span>
+                {{ record.direction === 'received' ? 'Empfangen' : 'Gesendet' }}:
+                {{ record.kind === 'reply' ? 'Antwort' : 'Einreichung' }}
+              </span>
+              <span>
+                {{ record.attachmentCount }} {{ record.attachmentCount === 1 ? 'Anlage' : 'Anlagen' }}
+              </span>
+              <span>{{ bytesLabel(record.totalBytes) }}</span>
+              <span v-if="record.archived">Gespeicherte Kopie</span>
+            </div>
+            <p v-if="record.caseId" class="small-note case-identifier">Case ID: {{ record.caseId }}</p>
             <p v-else class="small-note">Lokaler Versuch – noch keine bestätigte Case ID.</p>
           </div>
           <button
@@ -374,7 +382,7 @@ onBeforeUnmount(() => {
           <p>{{ caseStatus(selected.status) }} · {{ when(selected.createdAt) }}</p>
         </div>
         <button class="button secondary" type="button" :disabled="disabled" @click="closeCase">
-          Antrag schließen
+          Zur Vorgangsübersicht
         </button>
       </div>
       <p class="small-note">

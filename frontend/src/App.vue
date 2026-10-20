@@ -609,7 +609,7 @@ function clearHistory() {
       <div class="workspace-heading">
         <div>
           <p class="workspace-eyebrow">
-            {{ section === 'Info' || section === 'Diagnose' ? 'Anwendung' : 'Arbeitsbereich' }}
+            {{ currentView.utility ? 'Anwendung' : 'Arbeitsbereich' }}
           </p>
           <h1 ref="viewHeading" tabindex="-1">{{ section }}</h1>
           <p>{{ currentView.description }}</p>

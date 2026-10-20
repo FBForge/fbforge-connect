@@ -20,6 +20,14 @@ let viewer,
 const model = computed(() => parseStructuredData(props.text, props.format));
 const annotations = computed(() => annotateSchema(model.value, props.schemaDocument, props.schemaUri));
 const filtered = computed(() => filterStructuredData(annotations.value.root, query.value));
+const documentFields = computed(() =>
+  props.format === 'json' &&
+  filtered.value?.type === 'object' &&
+  filtered.value.label === 'Dokument' &&
+  !filtered.value.schema?.ambiguous
+    ? filtered.value.children
+    : null,
+);
 watch([() => props.text, () => props.format], () => {
   query.value = '';
   mode.value = 'form';
@@ -106,7 +114,26 @@ onBeforeUnmount(() => {
             : `${model.fieldCount} Felder · verschachtelte Gruppen aufklappbar`
         }}
       </p>
-      <ApplicationField v-if="filtered" :node="filtered" :query="query.trim()" />
+      <template v-if="documentFields?.length">
+        <p v-if="filtered.schema?.description" class="application-description">
+          {{ filtered.schema.description }}
+        </p>
+        <details v-if="filtered.schema" class="application-origin">
+          <summary>Schemaherkunft des Dokuments</summary>
+          <p v-for="(entry, index) in filtered.schema.sources" :key="index" class="application-path">
+            {{ entry.uri }} · {{ entry.location || '/' }}
+          </p>
+        </details>
+        <div class="application-fields">
+          <ApplicationField
+            v-for="node in documentFields"
+            :key="node.id"
+            :node="node"
+            :query="query.trim()"
+          />
+        </div>
+      </template>
+      <ApplicationField v-else-if="filtered" :node="filtered" :query="query.trim()" />
     </template>
     <div v-else-if="mode === 'tree'" ref="treeHost"></div>
     <template v-else>

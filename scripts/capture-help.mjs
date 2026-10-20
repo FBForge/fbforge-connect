@@ -34,6 +34,7 @@ try {
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await button('Bei TEST anmelden').click();
   await expect(page.getByRole('dialog')).toBeHidden();
+  await button('Senden').click();
   await expect(page.getByRole('combobox', { name: 'Absender-Destination', exact: true })).toHaveValue(
     '11111111-1111-4111-8111-000000000001',
   );

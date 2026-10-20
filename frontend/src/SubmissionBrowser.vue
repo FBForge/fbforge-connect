@@ -181,7 +181,7 @@ function open(id = submission.value.trim()) {
         Die aktuelle TEST-Sitzung wird wiederverwendet.
       </p>
       <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
-      <form @submit.prevent="search()">
+      <form @submit.prevent="submission.trim() ? open() : search()">
         <div class="client-fields">
           <label for="pickup-destination">
             <span id="pickup-destination-label">Destination ID</span>
@@ -198,27 +198,23 @@ function open(id = submission.value.trim()) {
             <small id="pickup-destination-help">Wird auch aus der Destination-Auswahl übernommen.</small>
           </label>
           <label for="pickup-submission">
-            Submission ID (optional)
+            <span>Submission ID (optional)</span>
             <input
               id="pickup-submission"
               v-model="submission"
               type="text"
               maxlength="36"
               :disabled="disabled"
+              aria-describedby="pickup-submission-help"
             />
+            <small id="pickup-submission-help">
+              Mit einer Submission ID öffnen Sie die Einreichung direkt.
+            </small>
           </label>
         </div>
         <div class="client-actions">
           <button class="button" type="submit" :disabled="disabled || !destination.trim()">
-            Einreichungen laden
-          </button>
-          <button
-            class="button secondary"
-            type="button"
-            :disabled="disabled || !destination.trim() || !submission.trim()"
-            @click="open()"
-          >
-            Einreichung öffnen und prüfen
+            {{ submission.trim() ? 'Einreichung öffnen und prüfen' : 'Einreichungen laden' }}
           </button>
         </div>
       </form>
@@ -232,7 +228,7 @@ function open(id = submission.value.trim()) {
             <thead>
               <tr>
                 <th scope="col">Einreichung</th>
-                <th scope="col">Vorgang</th>
+                <th scope="col">Case ID</th>
                 <th scope="col">Aktion</th>
               </tr>
             </thead>
@@ -241,7 +237,7 @@ function open(id = submission.value.trim()) {
                 <td data-label="Einreichung">
                   <code>{{ item.submissionId }}</code>
                 </td>
-                <td data-label="Vorgang">
+                <td data-label="Case ID">
                   <code v-if="item.caseId">{{ item.caseId }}</code>
                   <span v-else>Beim Detailabruf verfügbar</span>
                 </td>
@@ -310,15 +306,15 @@ function open(id = submission.value.trim()) {
           </span>
         </p>
         <dl class="receipt-dialog-context">
-          <dt>Einreichung</dt>
+          <dt>Submission ID</dt>
           <dd>
             <code>{{ detail.submissionId }}</code>
           </dd>
-          <dt>Vorgang</dt>
+          <dt>Case ID</dt>
           <dd>
             <code>{{ detail.caseId }}</code>
           </dd>
-          <dt>Destination</dt>
+          <dt>Destination ID</dt>
           <dd>
             <code>{{ detail.destinationId }}</code>
           </dd>

@@ -52,7 +52,7 @@ export const helpTopics = [
     intro:
       'Sie bereiten zunächst Fachdaten und Anlagen vor. Erst die separate Bestätigung löst den Versand aus.',
     steps: [
-      'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat.',
+      'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat. „Weiter“ prüft die Pflichtfelder des Abschnitts und führt Sie zur nächsten Eingabe.',
       'Bei API v3 lädt die Anwendung Ihre eigenen Absender-Destinations zur Auswahl. Eine einzelne aktive Destination wird automatisch übernommen. Über „ID eingeben“ können Sie eine Destination auch manuell hinterlegen. Diese muss zu Ihrem Zugang gehören und passend eingerichtet sein.',
       'Geben Sie JSON oder XML ein, ziehen Sie eine Datei in das Dateifeld oder verwenden Sie „Datei auswählen“. Fiktive Beispieldaten sind eine Starthilfe und müssen zu Ihrem Test angepasst werden.',
       'Die Formularansicht zeigt Werte lesbar an. Über JSON-Struktur oder Quelltext können Sie technische Details vergleichen. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar.',
@@ -88,7 +88,7 @@ export const helpTopics = [
       'Ein Fachverfahren lädt seinen Eingang, entschlüsselt den ausgewählten Antrag und prüft die technischen Inhalte. Die Empfangsbestätigung bleibt eine eigene bewusste Aktion.',
     steps: [
       'Verbinden Sie den Fachverfahren-Zugang. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Testschlüssel zum Entschlüsseln und Signieren.',
-      'Laden Sie verfügbare Einreichungen oder tragen Sie eine bekannte Submission ID ein. „Öffnen und prüfen“ lädt das Detail und versucht direkt die Entschlüsselung und Prüfung.',
+      'Ohne Submission ID laden Sie die verfügbaren Einreichungen. Mit einer Submission ID öffnet die Schaltfläche oder die Eingabetaste direkt die Nachricht und startet die Entschlüsselung und Prüfung.',
       'Wenn Schlüssel oder Schemata fehlen, folgen Sie dem Hinweis im Empfang. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
       'Lesen Sie die Fachdaten direkt in der Formularansicht. Die Suche hilft bei umfangreichen Anträgen. Die Struktur- und Quelltextansicht bleiben verfügbar.',
       'Öffnen Sie unterstützte Anlagen über „Ansehen“ oder laden Sie die unveränderte Datei herunter.',
@@ -111,7 +111,7 @@ export const helpTopics = [
       'Die Vorgangsübersicht macht aus einzelnen Abrufen einen nachvollziehbaren Arbeitsverlauf. Sie ist ein lokaler Lesespeicher und keine zweite Server-Inbox.',
     steps: [
       'Öffnen Sie „Vorgänge“ und verbinden Sie das gewünschte Profil. Die Liste enthält die Nachrichten dieses Zugangs und dieser API.',
-      'Suchen Sie nach Titel, Case ID, Submission ID, Reply ID oder Destination. Filtern Sie bei Bedarf nach „Empfangen“ oder „Gesendet“.',
+      'Suchen Sie nach Titel, Case ID, Submission ID, Reply ID oder Destination. Filtern Sie bei Bedarf nach „Empfangen“ oder „Gesendet“. Nach dem Öffnen gelangen Sie mit „Zur Vorgangsübersicht“ zur bisherigen Suche zurück.',
       'Klicken Sie auf einen Titel. Fachdaten und Anlagen sind direkt im Detail lesbar. Mehrere Nachrichten mit derselben echten Case ID lassen sich über die Suche zusammen betrachten.',
       'Standardmäßig werden Kopien automatisch nur in der laufenden Anwendung gehalten. Ein Profilwechsel entfernt sie nicht. Verbinden Sie denselben Zugang erneut, um sie wieder zu sehen.',
       'Wenn Sie die Kopien nach einem Neustart weiterhin benötigen, aktivieren Sie „Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren“. Vorhandene und neue Kopien werden dann mit Ihrem Windows-Benutzerkonto verschlüsselt.',

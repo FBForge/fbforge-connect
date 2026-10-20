@@ -40,6 +40,10 @@ test('local cases reopen exact content after receipt, preview inert PDFs, isolat
   const actual = await fs.readFile(await download.path());
   const original = await fs.readFile('frontend/test-fixtures/assets/fictional-attachment.pdf');
   expect(actual.equals(original)).toBe(true);
+  await page.getByRole('button', { name: 'Zur Vorgangsübersicht', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Fiktiver Antrag auf Testleistung', exact: true }),
+  ).toBeFocused();
   await page.getByLabel('Vorgänge durchsuchen').fill('00000005');
   await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(2);
   await page.getByLabel('Vorgänge durchsuchen').fill('');

@@ -59,7 +59,9 @@ const dialog = ref(null),
   progress = ref(''),
   history = ref([]);
 const sendStep = ref(0),
-  stepNotice = ref('');
+  stepNotice = ref(''),
+  sendForm = ref(null),
+  recipientButton = ref(null);
 const sendSections = ['Adressierung', 'Fachdaten', 'Anlagen & Antwortkanal'];
 let invalidTarget;
 function revealInvalid(event) {
@@ -67,15 +69,44 @@ function revealInvalid(event) {
   if (invalidTarget) return;
   invalidTarget = event.target;
   sendStep.value = Number(event.target.closest('fieldset')?.dataset.sendStep || 0);
-  stepNotice.value = 'Bitte vervollständigen Sie die markierten Pflichtfelder in diesem Abschnitt.';
+  const label = event.target.labels?.[0]?.innerText.split('\n')[0].trim();
+  stepNotice.value = label
+    ? event.target.validity.valueMissing
+      ? `Bitte füllen Sie das Feld „${label}“ aus.`
+      : `Bitte prüfen Sie das Feld „${label}“.`
+    : 'Bitte vervollständigen Sie die markierten Pflichtfelder in diesem Abschnitt.';
   nextTick(() => {
     invalidTarget?.focus();
     invalidTarget = null;
   });
 }
-function selectStep(index) {
+async function selectStep(index) {
+  if (disabled.value) return;
+  if (index > sendStep.value) {
+    for (let step = 0; step < index; step++) {
+      const controls = sendForm.value?.querySelectorAll(
+        `[data-send-step="${step}"] input, [data-send-step="${step}"] select, [data-send-step="${step}"] textarea`,
+      );
+      const invalid = [...(controls || [])].find(
+        (control) => control.willValidate && !control.validity.valid,
+      );
+      if (invalid) {
+        invalid.reportValidity();
+        return;
+      }
+      if (step === 0 && !recipient.value) {
+        sendStep.value = 0;
+        stepNotice.value = 'Laden Sie zuerst die Leistungen der Empfänger-Destination.';
+        await nextTick();
+        recipientButton.value?.focus();
+        return;
+      }
+    }
+  }
   sendStep.value = index;
   stepNotice.value = '';
+  await nextTick();
+  sendForm.value?.querySelector(`[data-send-step="${index}"] legend`)?.focus();
 }
 
 const allowExternalSchemas = ref(false);
@@ -479,13 +510,21 @@ async function refreshState() {
         Prozessauswahl übernehmen und Empfänger erneut prüfen
       </button>
     </div>
-    <form v-if="session" class="send-form" @submit.prevent="prepare" @invalid.capture="revealInvalid">
+    <form
+      v-if="session"
+      ref="sendForm"
+      class="send-form"
+      @submit.prevent="prepare"
+      @invalid.capture="revealInvalid"
+    >
       <div class="send-sections" role="group" aria-label="Versandabschnitte">
         <button
           v-for="(title, index) in sendSections"
           :key="title"
           type="button"
           :aria-pressed="sendStep === index"
+          :aria-current="sendStep === index ? 'step' : undefined"
+          :disabled="disabled"
           @click="selectStep(index)"
         >
           <span aria-hidden="true">{{ index + 1 }}</span>
@@ -494,7 +533,7 @@ async function refreshState() {
       </div>
       <p v-if="stepNotice" role="alert" class="step-notice">{{ stepNotice }}</p>
       <fieldset v-show="sendStep === 0" data-send-step="0" :disabled="disabled">
-        <legend>Adressierung</legend>
+        <legend tabindex="-1">Adressierung</legend>
         <div class="client-fields">
           <SenderDestination
             v-if="session?.apiVersion === 'v3'"
@@ -516,7 +555,13 @@ async function refreshState() {
               maxlength="36"
               placeholder="Destination ID"
             />
-            <button class="button secondary" type="button" :disabled="!target.trim()" @click="loadRecipient">
+            <button
+              ref="recipientButton"
+              class="button secondary"
+              type="button"
+              :disabled="!target.trim()"
+              @click="loadRecipient"
+            >
               Leistungen laden
             </button>
           </label>
@@ -586,7 +631,7 @@ async function refreshState() {
         </p>
       </fieldset>
       <fieldset v-show="sendStep === 1" data-send-step="1" :disabled="disabled">
-        <legend>Fachdaten</legend>
+        <legend tabindex="-1">Fachdaten</legend>
         <div class="client-fields">
           <label for="send-schema">
             Fachdaten-Schema
@@ -645,7 +690,7 @@ async function refreshState() {
         />
       </fieldset>
       <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
-        <legend>Antwortkanal</legend>
+        <legend tabindex="-1">Antwortkanal</legend>
         <label class="checkbox-label">
           <input v-model="offerReplies" type="checkbox" :disabled="!replyOptions.length" />
           Antworten über FIT-Connect anbieten
@@ -740,11 +785,23 @@ async function refreshState() {
         </p>
       </fieldset>
       <div class="client-actions send-step-actions">
-        <button v-if="sendStep > 0" class="button secondary" type="button" @click="selectStep(sendStep - 1)">
+        <button
+          v-if="sendStep > 0"
+          class="button secondary"
+          type="button"
+          :disabled="disabled"
+          @click="selectStep(sendStep - 1)"
+        >
           Zurück
         </button>
         <span>Abschnitt {{ sendStep + 1 }} von {{ sendSections.length }}</span>
-        <button v-if="sendStep < 2" class="button" type="button" @click="selectStep(sendStep + 1)">
+        <button
+          v-if="sendStep < 2"
+          class="button"
+          type="button"
+          :disabled="disabled"
+          @click="selectStep(sendStep + 1)"
+        >
           Weiter: {{ sendSections[sendStep + 1] }}
         </button>
         <button v-else class="button" type="submit" :disabled="disabled">Versand vorbereiten</button>

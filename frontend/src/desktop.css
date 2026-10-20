@@ -940,6 +940,20 @@ summary {
 .case-list h3 {
   margin: 0.35rem 0 0.65rem;
 }
+.case-list > li > div {
+  min-width: 0;
+}
+.case-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.case-list .case-identifier {
+  margin: 0.5rem 0 0;
+}
 .case-open {
   font: inherit;
   color: var(--ink);
