@@ -173,6 +173,13 @@ const messages = {
   content_cleanup_failed:
     'Lokale Dateien konnten nicht vollständig entfernt werden. Bitte die Sitzung schließen.',
 };
+function showError(cause) {
+  diagnostic.value = diagnosticCode(cause);
+  const message = Object.hasOwn(messages, diagnostic.value)
+    ? messages[diagnostic.value]
+    : errorMessage(cause);
+  error.value = message.replaceAll('Einreichung', subject.value);
+}
 const warning = (stage) =>
   ({
     MALWARE_SCAN_NOT_CONFIGURED: 'Kein Malwarescanner eingerichtet.',
@@ -281,8 +288,7 @@ async function run(name, operation) {
     const code = typeof cause === 'string' ? cause : cause?.message;
     status = code === 'content_cancelled' ? 'Abgebrochen' : 'Fehlgeschlagen';
     if (current() && code !== 'content_cancelled') {
-      error.value = (messages[code] || errorMessage(cause)).replaceAll('Einreichung', subject.value);
-      diagnostic.value = diagnosticCode(cause);
+      showError(cause);
     }
     if (resetsSessions(cause)) emit('fatal', cause);
   } finally {
@@ -497,8 +503,7 @@ function inspect(part, download = false) {
       } catch (cause) {
         const code = typeof cause === 'string' ? cause : cause?.message;
         if (current() && code !== 'content_cancelled') {
-          error.value = (messages[code] || errorMessage(cause)).replaceAll('Einreichung', subject.value);
-          diagnostic.value = diagnosticCode(cause);
+          showError(cause);
           void resetProof();
         }
         throw cause;

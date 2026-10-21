@@ -50,6 +50,20 @@ for (const api of ['v2', 'v3']) {
       .analyze();
     expect(result.violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    if (api === 'v3') {
+      await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+      expect(
+        (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze())
+          .violations,
+      ).toEqual([]);
+      await page.emulateMedia({ forcedColors: 'active' });
+      await expect(notice.getByRole('button', { name: 'Zur Freigabe', exact: true })).toBeVisible();
+      expect(
+        (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze())
+          .violations,
+      ).toEqual([]);
+      await page.emulateMedia({ forcedColors: 'none' });
+    }
     await consent.check();
     await page.evaluate(() => (window.__schemaRecovery.code = ''));
     await page.getByRole('button', { name: 'Inhalte entschlüsseln und prüfen', exact: true }).click();
@@ -77,10 +91,12 @@ test('missing keys show a targeted action while unknown native text remains priv
       .getByRole('alert', { name: 'Testschlüssel fehlt', exact: true })
       .getByRole('button', { name: 'Schlüssel einrichten', exact: true }),
   ).toBeVisible();
-  await page.evaluate(() => (window.__schemaRecovery.code = 'private-server-text-secret-marker'));
-  await verify.click();
-  await expect(
-    page.getByRole('alert', { name: 'Inhalte konnten nicht geprüft werden', exact: true }),
-  ).toContainText('Die lokale Aktion ist fehlgeschlagen.');
-  await expect(page.locator('body')).not.toContainText('private-server-text-secret-marker');
+  for (const code of ['__proto__', 'constructor', 'toString', 'private-server-text-secret-marker']) {
+    await page.evaluate((value) => (window.__schemaRecovery.code = value), code);
+    await verify.click();
+    await expect(
+      page.getByRole('alert', { name: 'Inhalte konnten nicht geprüft werden', exact: true }),
+    ).toContainText('Die lokale Aktion ist fehlgeschlagen.');
+    await expect(page.locator('body')).not.toContainText('private-server-text-secret-marker');
+  }
 });
