@@ -715,15 +715,6 @@ async function refreshState() {
       </fieldset>
       <fieldset v-show="sendStep === 1" data-send-step="1" :disabled="disabled">
         <legend tabindex="-1">Fachdaten</legend>
-        <FileDropInput
-          id="send-data-file"
-          label="Fachdaten aus Datei (optional)"
-          accept=".json,.xml,application/json,application/xml,text/xml"
-          :disabled="disabled"
-          @files="(files) => (dataFile = files[0] || null)"
-        >
-          Ohne Datei wird der Inhalt aus dem Eingabefeld verwendet.
-        </FileDropInput>
         <SchemaSourceConsent id="send-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
 
         <div class="client-actions">
@@ -759,6 +750,15 @@ async function refreshState() {
             </button>
           </p>
         </DraftDataPreview>
+        <FileDropInput
+          id="send-data-file"
+          label="Fachdaten aus Datei (optional)"
+          accept=".json,.xml,application/json,application/xml,text/xml"
+          :disabled="disabled"
+          @files="(files) => (dataFile = files[0] || null)"
+        >
+          Ohne Datei wird der Inhalt aus dem Eingabefeld verwendet.
+        </FileDropInput>
         <details class="data-schema-options">
           <summary>Schema und technische Optionen</summary>
           <div class="client-fields">

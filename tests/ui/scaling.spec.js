@@ -1,6 +1,45 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+test('reading and reply drafting tolerate increased text spacing at narrow widths', async ({ page }) => {
+  await page.setViewportSize({ width: 640, height: 700 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1');
+  await page.locator('#pickup-submission').fill('00000003-1111-4111-8111-111111111111');
+  await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Antrag lesen', exact: true })).toBeVisible();
+  await page.addStyleTag({
+    content:
+      '* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; } p { margin-bottom: 2em !important; }',
+  });
+  const noOverflow = () =>
+    page.evaluate(() => {
+      const workspace = document.querySelector('.workspace-scroll');
+      return workspace.scrollWidth <= workspace.clientWidth + 1;
+    });
+  expect(await noOverflow()).toBe(true);
+  const accept = page.getByRole('button', { name: 'Annehmen', exact: true });
+  await accept.scrollIntoViewIfNeeded();
+  await expect(accept).toBeInViewport();
+  await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
+  await expect(page.locator('#reply-data')).toBeFocused();
+  await page.locator('#reply-data').fill('{"status":"erhalten"}');
+  expect(await noOverflow()).toBe(true);
+  await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+  await page.locator('#reply-data-file').focus();
+  await expect(page.locator('#reply-data-file')).toBeFocused();
+  expect(
+    await page
+      .locator('.file-drop-picker')
+      .filter({ has: page.locator('#reply-data-file') })
+      .evaluate((el) => getComputedStyle(el).outlineStyle),
+  ).toBe('solid');
+  const result = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(result.violations.map(({ id }) => id)).toEqual([]);
+});
+
 // Representative Full-HD client area at Windows-like device scales. This checks
 // CSS reflow and accessibility, not the real monitor DPI or a spoken screen reader.
 for (const scale of [1.25, 1.5, 2]) {

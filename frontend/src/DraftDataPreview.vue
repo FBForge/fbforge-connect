@@ -91,7 +91,6 @@ async function open() {
     <div v-show="!preview" class="draft-data-editor"><slot /></div>
     <p v-if="notice" class="small-note" role="status">{{ notice }}</p>
     <div v-if="preview" class="draft-inline-preview" aria-label="Lokale Fachdatenansicht">
-      <p class="small-note">Lesende Ansicht. Zum Ändern wählen Sie „Bearbeiten“.</p>
       <StructuredData
         v-if="preview.kind === 'text' && preview.format"
         :text="preview.rawText"

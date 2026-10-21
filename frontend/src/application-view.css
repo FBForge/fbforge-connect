@@ -327,6 +327,19 @@
   color: var(--muted);
   padding: 6px 0;
 }
+.verification-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 16px;
+}
+.verification-stages > p {
+  margin: 0;
+  min-width: 0;
+}
+.verification-stages .status-badge {
+  white-space: normal;
+}
 .draft-data-editor,
 .draft-inline-preview {
   margin-top: 16px;

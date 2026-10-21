@@ -313,14 +313,14 @@ summary {
 }
 .workspace-content .tool-section h2 {
   margin-bottom: 10px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 650;
 }
 .workspace-content .tool-section h3 {
-  font-size: 14px;
+  font-size: 15px;
 }
 .workspace-content .tool-section > p {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .workspace-content .tool-section-heading {
@@ -331,7 +331,7 @@ summary {
   margin-bottom: 5px;
 }
 .workspace-content .tool-section-heading p {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
 }
 .workspace-content .client-fields,
@@ -341,12 +341,12 @@ summary {
 }
 .workspace-content .client-fields label {
   gap: 5px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 550;
 }
 .workspace-content small,
 .small-note {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--muted);
 }
@@ -361,7 +361,7 @@ summary {
   border-radius: 6px;
 }
 .workspace-content legend {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
 }
 .workspace-content input:not([type]),
@@ -375,19 +375,19 @@ summary {
   min-width: 0;
   max-width: 100%;
   border-radius: 5px;
-  min-height: 36px;
-  font-size: 12px;
+  min-height: 44px;
+  font-size: 14px;
 }
 .workspace-content textarea {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 14px;
 }
 .workspace-content .button,
 .connection-dialog .button {
   min-height: 34px;
   padding: 7px 11px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 .workspace-content .client-actions {
@@ -423,7 +423,7 @@ summary {
 }
 .workspace-content details > summary {
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   padding: 8px 0;
 }
@@ -806,7 +806,7 @@ summary {
 .workspace-content .send-form > fieldset > label:not(.checkbox-label) {
   display: grid;
   gap: 5px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 550;
 }
 .workspace-content .send-form > fieldset {
@@ -1154,6 +1154,7 @@ summary {
 }
 
 .documentation-link .app-icon {
+  display: inline-block;
   width: 13px;
   height: 13px;
   margin-inline-start: 4px;

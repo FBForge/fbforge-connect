@@ -183,9 +183,36 @@
   display: block;
   font-weight: 600;
 }
-.file-drop-zone > input {
-  width: 100%;
+.file-drop-picker {
+  position: relative;
+  display: inline-grid;
   max-width: 100%;
+  border-radius: 5px;
+}
+.file-drop-picker > input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.file-drop-picker > .button {
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+.file-drop-picker:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.file-drop-picker:has(input:disabled) {
+  opacity: 0.65;
+}
+.file-drop-picker > input:disabled {
+  cursor: default;
 }
 .connection-panel > details > summary {
   cursor: pointer;
