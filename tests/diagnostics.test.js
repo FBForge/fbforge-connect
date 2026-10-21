@@ -60,6 +60,7 @@ test('unexpected native errors are never displayed verbatim', () => {
 test('reportable diagnostics expose stable codes and never raw errors or inherited properties', () => {
   for (const code of [
     'verification_failed',
+    'reply_channel_missing',
     'resource_denied',
     'resource_missing',
     'schema_tls_error',

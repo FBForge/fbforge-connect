@@ -1,5 +1,7 @@
 <script setup>
 import CopyValue from './CopyValue.vue';
+import ActionNotice from './ActionNotice.vue';
+import DocumentationLink from './DocumentationLink.vue';
 import { inject, ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import { caseStorageNotice } from './cases.js';
@@ -20,7 +22,7 @@ import {
   replyState,
 } from './reply-sending.js';
 import ExampleDraftDialog from './ExampleDraftDialog.vue';
-import { errorMessage } from './diagnostics.js';
+import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 
 const props = defineProps({ session: Object, proof: Object, busy: Boolean, guided: Boolean });
@@ -48,6 +50,8 @@ const prepared = ref(null),
   outcomeOwner = ref(''),
   working = ref(false),
   error = ref('');
+const diagnostic = ref(''),
+  errorNotice = ref(null);
 const cleanupOwner = ref('');
 const schemaPackage = shallowRef(null),
   schemaFile = shallowRef(null),
@@ -69,6 +73,7 @@ watch([processChoice, () => target.value?.processMessages], () => {
   if (!selected) process.value = false;
 });
 function useBpmnSelection() {
+  diagnostic.value = '';
   const selection = processWorkspace?.selection.value;
   const index =
     target.value?.processMessages?.findIndex(
@@ -137,7 +142,8 @@ const messages = {
   schema_consent_required:
     'Bitte die Freigabe öffentlicher Schemaquellen aktivieren oder ein lokales beziehungsweise mitgeliefertes Schema verwenden.',
   data_format_invalid: 'Der Antwortinhalt passt nicht zum gewählten JSON-/XML-Format.',
-  reply_channel_missing: 'Die geprüfte Einreichung bietet keinen unterstützten FIT-Connect-Antwortkanal an.',
+  reply_channel_missing:
+    'In den geprüften Metadaten ist kein unterstützter FIT-Connect-Antwortkanal enthalten. Der Absender muss eine neue Einreichung mit Antwortschlüssel und Antwortschema senden. In FBForge Connect aktivieren Sie dafür unter „Anlagen & Antwortkanal“ die Option „Antworten über FIT-Connect anbieten“. Bei anderen Onlinediensten prüfen Sie deren Versandkonfiguration. Die vorhandene Einreichung können Sie weiterhin annehmen oder ablehnen.',
   verification_failed:
     'Der geprüfte Antwortkanal ist nicht mehr verfügbar oder enthält widersprüchliche Angaben. Bitte die Einreichung erneut prüfen.',
   invalid_resource: 'Das Ergebnis passt nicht mehr zur aktuellen Einreichung. Bitte erneut prüfen.',
@@ -151,8 +157,10 @@ const messages = {
   content_cleanup_failed:
     'Lokale Dateien konnten nicht vollständig entfernt werden. Bitte die Sitzung abmelden.',
 };
-const explain = (cause) =>
-  messages[typeof cause === 'string' ? cause : cause?.message] || errorMessage(cause);
+function explain(cause) {
+  const code = typeof cause === 'string' ? cause : cause?.message;
+  return typeof code === 'string' && Object.hasOwn(messages, code) ? messages[code] : errorMessage(cause);
+}
 async function cancelKnown(value, active) {
   if (!value || !active) return;
   try {
@@ -174,6 +182,7 @@ function reset() {
   target.value = null;
   choice.value = 0;
   error.value = '';
+  diagnostic.value = '';
   file.value = null;
   attachments.value = [];
   text.value = '{\n  "status": "erhalten"\n}';
@@ -201,6 +210,7 @@ async function run(action, operation) {
   working.value = true;
   emit('busy', true);
   error.value = '';
+  diagnostic.value = '';
   let status = 'Erfolgreich';
   try {
     status = (await operation(active, current)) || status;
@@ -209,6 +219,7 @@ async function run(action, operation) {
     status = 'Fehlgeschlagen';
     if (current()) {
       error.value = explain(cause);
+      diagnostic.value = diagnosticCode(cause);
       if ((typeof cause === 'string' ? cause : cause?.message) === 'content_cleanup_failed') {
         cleanupOwner.value = active.sessionId;
         emit('invalidate');
@@ -246,6 +257,10 @@ async function load() {
       choice.value = 0;
     }
   });
+  if (error.value) {
+    await nextTick();
+    errorNotice.value?.focus();
+  }
 }
 async function loadSchema(example = false) {
   if (disabled.value || !selected.value) return;
@@ -441,7 +456,13 @@ async function send() {
       noch nicht ab.
     </p>
     <p v-if="!proof">Zuerst die Inhalte der Einreichung entschlüsseln und prüfen.</p>
-    <button v-if="!target" class="button secondary" type="button" :disabled="disabled" @click="load">
+    <button
+      v-if="!target && diagnostic !== 'reply_channel_missing'"
+      class="button secondary"
+      type="button"
+      :disabled="disabled"
+      @click="load"
+    >
       Antwortmöglichkeiten laden
     </button>
     <form v-if="target" class="send-form" @submit.prevent="prepare">
@@ -607,7 +628,21 @@ async function send() {
     </form>
     <p v-if="working" role="status">Antwortaktion läuft …</p>
     <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
-    <p v-if="error" role="alert">{{ error }}</p>
+    <ActionNotice
+      v-if="error"
+      ref="errorNotice"
+      :title="
+        diagnostic === 'reply_channel_missing'
+          ? 'Kein Antwortkanal angeboten'
+          : 'Antwortaktion fehlgeschlagen'
+      "
+      :message="error"
+      :tone="diagnostic === 'reply_channel_missing' ? 'warning' : 'error'"
+      :code="diagnostic"
+      :api-version="session?.apiVersion"
+    >
+      <DocumentationLink topic="replies">Anleitung zu Antworten</DocumentationLink>
+    </ActionNotice>
     <p v-if="cleanupOwner === session?.sessionId" role="alert">{{ messages.content_cleanup_failed }}</p>
     <div v-if="outcome && outcomeOwner === session?.sessionId" role="status">
       <h3 ref="resultHeading" tabindex="-1">

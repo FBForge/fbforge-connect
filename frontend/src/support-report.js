@@ -138,6 +138,7 @@ const codeLabels = new Map([
   ['case_storage_pending', 'Vorgang noch nicht gespeichert'],
   ['case_limit', 'Vorgangsablage voll'],
   ['reply_metadata_required', 'Metadatenversion für Replies fehlt'],
+  ['reply_channel_missing', 'Kein Antwortkanal angeboten'],
   ['content_cleanup_failed', 'Lokale Bereinigung fehlgeschlagen'],
 ]);
 export function diagnosticContext(entry) {

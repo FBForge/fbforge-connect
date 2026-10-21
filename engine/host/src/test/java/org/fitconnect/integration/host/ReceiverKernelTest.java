@@ -17,6 +17,8 @@ import javax.crypto.spec.*;
 import org.fitconnect.integration.contract.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class ReceiverKernelTest {
     private static final String DEST = "11111111-1111-4111-8111-111111111111";
@@ -137,6 +139,58 @@ class ReceiverKernelTest {
                                                             DEST, SUB, noNetwork, workspace,
                                                             Map.of())));
                 }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ApiVersion.class)
+    void digitalConsentWithoutReplyChannelDoesNotReportAnAuthenticationFailure(ApiVersion api)
+            throws Exception {
+        try (var adapters = registry();
+                var session = open(adapters, api)) {
+            String applicationMetadata = "{\"application\":{\"noEReply\":false}}";
+            String applicationHash = hash(applicationMetadata.getBytes(StandardCharsets.UTF_8));
+            var fixture =
+                    new Fixture(
+                            api,
+                            false,
+                            false,
+                            text -> {
+                                var metadata = JsonParser.parseString(text).getAsJsonObject();
+                                metadata.addProperty(
+                                        "$schema",
+                                        "https://schema.fitko.de/fit-connect/metadata/2.1.0/metadata.schema.json");
+                                var reference = new JsonObject();
+                                reference.addProperty("zustimmungZumDigitalenBescheid", true);
+                                metadata.add("additionalReferenceInfo", reference);
+                                var dataSet = new JsonObject();
+                                dataSet.addProperty(
+                                        "dataSetId", "55555555-5555-4555-8555-555555555555");
+                                var schema = new JsonObject();
+                                schema.addProperty("schemaUri", "urn:test:application-metadata");
+                                schema.addProperty("mimeType", "application/json");
+                                dataSet.add("schema", schema);
+                                var digest = new JsonObject();
+                                digest.addProperty("type", "sha512");
+                                digest.addProperty("content", applicationHash);
+                                dataSet.add("hash", digest);
+                                dataSet.addProperty("content", applicationMetadata);
+                                var dataSets = new JsonArray();
+                                dataSets.add(dataSet);
+                                metadata.add("dataSets", dataSets);
+                                return metadata.toString();
+                            });
+            session.importKey(DEST, "decrypt", pem, List.of(registration));
+            try (var scope = new ReceiveAccess(api, DEST, SUB, fixture)) {
+                var content = session.receive(DEST, SUB, scope, workspace, fixture.schemas());
+                assertArrayEquals(fixture.data, content.data());
+            }
+            var evidence = session.receiptEvidence(DEST, SUB);
+            var error =
+                    assertThrows(SessionException.class, () -> session.replyRecipient(DEST, SUB));
+            assertEquals("reply_channel_missing", error.code());
+            assertEquals(evidence, session.receiptEvidence(DEST, SUB));
+            session.check();
         }
     }
 

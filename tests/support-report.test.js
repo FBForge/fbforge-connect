@@ -20,6 +20,10 @@ const sample = {
 const marker = 'SENSITIVE_TEST_MARKER';
 
 test('diagnostic presentation distinguishes local calls, states and schema failures', () => {
+  assert.deepEqual(diagnosticResult({ ...sample, code: 'reply_channel_missing' }), {
+    label: 'Kein Antwortkanal angeboten',
+    tone: 'warn',
+  });
   assert.equal(diagnosticContext({ apiVersion: null }), 'Lokal');
   assert.equal(diagnosticContext({ apiVersion: marker }), 'Lokal');
   assert.equal(diagnosticContext({ apiVersion: 'v3' }), 'API v3');
