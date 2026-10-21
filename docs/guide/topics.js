@@ -27,6 +27,13 @@ export const helpTopics = [
     image: 'profiles',
     caption:
       'Verbindungsdialog für den TEST-Zugang und die optionale Profilspeicherung. Zugangsdaten werden in der Anleitung nicht gezeigt.',
+    illustrations: [
+      {
+        image: 'connection-identity',
+        caption:
+          'Die aktive Verbindung zeigt API und Client-ID. Das Bild enthält ausschließlich fiktive Kennungen.',
+      },
+    ],
     intro:
       'Ein Profil bündelt einen TEST-Zugang und seine API-Version. Gespeicherte Profile ersparen die erneute Eingabe nach einem Neustart.',
     steps: [
@@ -34,6 +41,7 @@ export const helpTopics = [
       'Für wiederkehrende Tests aktivieren Sie das Speichern und vergeben Sie einen verständlichen Namen, zum Beispiel „Musterfachverfahren v3“.',
       'Prüfen Sie vor dem Verbinden, ob Zugang und API-Version zu Ihrem Test passen. Die Berechtigungen Ihres Zugangs bestimmen die verfügbaren Funktionen.',
       'Unter den gespeicherten Profilen können Sie einen Zugang wieder öffnen, umbenennen, aktualisieren oder entfernen.',
+      'Unter „Verbunden“ sehen Sie die aktive Client-ID und können sie kopieren. Auch gespeicherte Profile zeigen ihre Client-ID, API-Version und Schlüsselanzahl. Das Client-Secret wird nicht angezeigt.',
       'Speichern Sie Schlüsseländerungen im Profil und beachten Sie Hinweise auf ausstehende Sicherungen. Bewahren Sie zusätzlich eine eigene sichere Schlüsselsicherung auf.',
     ],
     notes: [
@@ -162,7 +170,7 @@ export const helpTopics = [
       'Die Vorschau zeigt unterstützte Formate lokal. Die Originaldatei bleibt unverändert als Download verfügbar.',
     steps: [
       'Wählen Sie bei einer PDF, PNG-, JPEG-, JSON-, XML- oder Textanlage „Ansehen“.',
-      'Bei PDFs wechseln Sie mit „Vorherige Seite“ und „Nächste Seite“. Unter „Seitentext lesen“ ist auslesbarer PDF-Text zugänglich. Für gescannte Seiten gibt es keine Texterkennung.',
+      'Bei PDFs bleibt die Seitensteuerung unten erreichbar. „Vorherige Seite“ und „Nächste Seite“ beginnen jeweils am Anfang der gewählten Seite. Unter „Seitentext lesen“ ist auslesbarer PDF-Text zugänglich. Für gescannte Seiten gibt es keine Texterkennung.',
       'Schließen Sie die Vorschau per Schaltfläche oder Escape. Der Fokus kehrt zur auslösenden Schaltfläche zurück.',
       'Wenn eine Datei nicht dargestellt werden kann, laden Sie das Original herunter. Öffnen Sie externe Programme nur bewusst und entsprechend Ihrer lokalen Sicherheitsregeln.',
     ],
@@ -275,12 +283,15 @@ export const helpTopics = [
     steps: [
       'Verbinden Sie ein gespeichertes Fachverfahren-Profil mit API v3 und öffnen Sie „Destinations“.',
       'Laden Sie eine eigene Destination oder bereiten Sie die Anlage einer neuen Test-Destination vor.',
+      '„Ansehen“ öffnet die Destination-Details. „Bearbeiten“ führt direkt in die Bearbeitung. Zurück gelangen Sie über „Zur Destination-Übersicht“.',
+      'Für gemeinsame Änderungen wählen Sie bis zu zehn Destinations und anschließend „Destinations gemeinsam bearbeiten“. Die Auswahl bleibt beim Ansehen einzelner Details erhalten.',
       'Für verschlüsselte Nachrichten erzeugen Sie lokale Testschlüssel beziehungsweise wählen Sie ein erzeugtes Schlüsselpaket. Die Schlüssel müssen vor einer Registrierung sicher im Profil gespeichert sein.',
       'Prüfen Sie Typ, Bezeichnung, Leistungen und Schemainformationen. Bereiten Sie die Änderung vor und lesen Sie die Zusammenfassung, bevor Sie sie bestätigen.',
       'Übernehmen Sie die eigenen Schlüssel anschließend für den Empfang und senden Sie einen kleinen fiktiven Testantrag an die neue Destination.',
       'Bei einem Schlüsselwechsel nutzen Sie den vorgesehenen Rotationsablauf. Entfernen Sie alte Schlüssel erst, wenn keine entsprechenden Nachrichten mehr entschlüsselt werden müssen.',
     ],
     notes: [
+      'Bei erkannten Leserechten werden keine Auswahl- oder Bearbeitungsaktionen angeboten. Änderungen erfordern die Berechtigung manage-destinations. Unbekannte Rechte werden erst beim Aufruf geprüft. Der Server entscheidet über jede Änderung.',
       'Eine Destination kann existieren, obwohl der Bestätigungsschritt unterbrochen wurde. Bei ungewissem Ausgang zuerst abgleichen, statt eine weitere Destination anzulegen.',
       'Vorbereitungen und Bestätigungen gelten nur kurz und für genau die gezeigte Konfiguration.',
       'Aufräumaktionen verändern TEST-Ressourcen. Prüfen Sie Auswahl und Folgen. Das Leeren der lokalen Vorgangsablage ist davon unabhängig.',
@@ -331,11 +342,13 @@ export const helpTopics = [
     title: 'Probleme verstehen und beheben',
     section: 'Diagnose',
     image: 'problems',
-    caption: 'Der Empfang zeigt fehlende Schlüssel und Prüfhinweise direkt am Antrag.',
+    caption: 'Fehlende Schemafreigabe mit direkten Aktionen und aufklappbaren technischen Fehlerangaben.',
     intro:
       'Fehlermeldungen erklären den nächsten sinnvollen Schritt. Wiederholen Sie einen Schreibvorgang nicht unüberlegt.',
     steps: [
-      '„Key missing“: Laden Sie an der ausgewählten Destination einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
+      '„Testschlüssel fehlt“: Wählen Sie „Schlüssel einrichten“ und laden Sie einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
+      '„Freigabe für Schemaquellen erforderlich“: „Zur Freigabe“ führt zur Checkbox. Aktivieren Sie diese bewusst und prüfen Sie erneut. Alternativ öffnet „Lokales Schema hinzufügen“ die lokale Dateiauswahl. Die Anwendung erteilt keine Freigabe automatisch.',
+      'Unter „Technische Fehlerangaben“ finden Sie API-Version und kopierbaren Fehlercode.',
       'Schlüssel abgewiesen: Vergleichen Sie Destination, Verwendungszweck und aktuelle Schlüsselregistrierung. Alte Nachrichten können einen früheren privaten Schlüssel benötigen.',
       'Schema nicht verfügbar: Prüfen Sie die Schema-URI in den Metadaten. Erlauben Sie bei Bedarf öffentliche Quellen oder laden Sie ein lokales Schema mit passender absoluter $id.',
       'Zugriff verweigert: Prüfen Sie Client-Rolle, API-Version und Zugehörigkeit der Destination. Eine fremde Destination wird durch ihre ID nicht zu Ihrer eigenen.',

@@ -2,7 +2,7 @@
 
 <img src="frontend/src/assets/test-client.png" alt="" width="80" height="80">
 
-Desktop-Testclient für FIT-Connect. Für Entwickler, Integratoren und Mitarbeitende der öffentlichen Verwaltung.
+Desktop-Testclient für FIT-Connect. Für Entwickler, Integratoren und Mitarbeiter der öffentlichen Verwaltung.
 
 - Einreichungen und Antworten über API v2/v3 senden, empfangen und prüfen.
 - JSON/XML lesen, Anlagen ansehen und Vorgänge lokal aufbewahren.

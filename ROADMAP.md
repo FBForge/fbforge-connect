@@ -1,6 +1,6 @@
 # Roadmap
 
-**0.1.x:** Fehlerbehebungen für die veröffentlichte Windows-Alpha auf `develop`.
+**0.1.1:** Fehlerbehebungen an Destination-Verwaltung und PDF-Vorschau auf `release/0.1.1`.
 
 **0.2.0:** Bestehende Abläufe vereinfachen auf `release/0.2.0`.
 

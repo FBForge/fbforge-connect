@@ -20,10 +20,12 @@ const page = await browser.newPage({
 page.setDefaultTimeout(10000);
 const button = (name) => page.getByRole('button', { name, exact: true });
 const open = (file = '') => page.goto(`http://127.0.0.1:1420/${file}`);
+const captures = new Set();
 const capture = async (name, anchor) => {
   if (anchor) await anchor.evaluate((el) => el.scrollIntoView({ block: 'start' }));
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: `${directory}/${name}.png` });
+  captures.add(name);
 };
 try {
   // Only the native boundary is synthetic. The application and components are unchanged.
@@ -51,6 +53,10 @@ try {
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await button('Bei TEST anmelden').click();
   await expect(page.getByRole('dialog')).toBeHidden();
+  await button('Verbunden').click();
+  await expect(page.locator('.connection-identity')).toContainText('synthetic-client');
+  await capture('connection-identity');
+  await page.keyboard.press('Escape');
   await button('Empfangen').click();
   await capture('receive-inbox');
   await button('Senden').click();
@@ -171,7 +177,7 @@ try {
   await page.evaluate(() => {
     const invoke = window.__TAURI_INTERNALS__.invoke;
     window.__TAURI_INTERNALS__.invoke = (command, args) => {
-      if (command === 'verify_submission') return Promise.reject('key_missing');
+      if (command === 'verify_submission') return Promise.reject('schema_consent_required');
       return invoke(command, args);
     };
   });
@@ -196,7 +202,7 @@ try {
     page.getByRole('heading', { name: 'Eigene TEST-Destination anlegen', exact: true }),
   ).toBeVisible();
   await capture('destinations');
-  console.log(`18 Abbildungen mit fiktiven Testdaten: ${directory}`);
+  console.log(`${captures.size} Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {
   await browser.close();
 }
