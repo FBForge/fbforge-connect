@@ -49,7 +49,7 @@ Quelle: `docs/guide/topics.js`, Abbildungen: `docs/guide/images/`. Die Anwendung
 
 `node scripts/export-guide.mjs <neues-Verzeichnis>` erzeugt die Web-Anleitung. Den Export im Website-Repository unter `nginx/connect/hilfe/0.2/` übernehmen. Generierte Seiten nicht von Hand bearbeiten.
 
-`node scripts/export-wiki.mjs <neues-Verzeichnis>` erzeugt die Wiki-Einstiegsseiten. Die vorhandenen Kapitel für 0.1 bleiben erhalten.
+`node scripts/export-wiki.mjs <neues-Verzeichnis>` erzeugt die versionierten Wiki-Kapitel samt Bildern aus derselben Quelle. Die vorhandenen Kapitel für 0.1 bleiben erhalten.
 
 ## Live-Tests
 

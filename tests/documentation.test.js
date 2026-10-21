@@ -46,6 +46,35 @@ test('web guide exports complete chapters with escaped executable examples', asy
   }
 });
 
+test('wiki guide exports the same steps, examples and images into versioned chapters', async () => {
+  const temp = await mkdtemp(join(tmpdir(), 'connect-wiki-'));
+  try {
+    const destination = join(temp, 'wiki');
+    await promisify(execFile)(process.execPath, ['scripts/export-wiki.mjs', destination]);
+    const index = await readFile(join(destination, 'Version-0.2.md'), 'utf8');
+    const sidebar = await readFile(join(destination, '_Sidebar.md'), 'utf8');
+    for (const topic of helpTopics) {
+      assert.ok(index.includes(`](0.2-${topic.id})`));
+      assert.ok(sidebar.includes(`](0.2-${topic.id})`));
+      const markdown = await readFile(join(destination, `0.2-${topic.id}.md`), 'utf8');
+      assert.ok(markdown.includes('Vorschau für Version 0.2.0'));
+      for (const text of [topic.intro, ...topic.steps, ...topic.notes]) assert.ok(markdown.includes(text));
+      for (const example of topic.examples || []) assert.ok(markdown.includes(example.content));
+      for (const picture of [topic, ...(topic.illustrations || [])]) {
+        assert.ok(markdown.includes(`/images/0.2/${picture.image}.png`));
+        assert.deepEqual(
+          await readFile(join(destination, 'images', '0.2', `${picture.image}.png`)),
+          await readFile(new URL(`../docs/guide/images/${picture.image}.png`, import.meta.url)),
+        );
+      }
+    }
+    await assert.rejects(readFile(join(destination, 'Schnellstart.md')), { code: 'ENOENT' });
+    await assert.rejects(readFile(join(destination, 'Antworten-testen.md')), { code: 'ENOENT' });
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+  }
+});
+
 test('LeiKa labels preserve supplied names and never invent an administrative service title', () => {
   const id = 'urn:de:fim:leika:leistung:99003002022000';
   assert.equal(serviceLabel(id, 'Fiktive Leistung').option, 'Fiktive Leistung · 99003002022000');

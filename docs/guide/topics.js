@@ -1,4 +1,4 @@
-/** Canonical web guide. Screenshots use fictional examples and contain no credentials. */
+/** Shared guide for website and wiki. Screenshots contain only fictional examples. */
 export const helpTopics = [
   {
     id: 'start',
@@ -191,6 +191,15 @@ export const helpTopics = [
       {
         image: 'reply-confirmation',
         caption: 'Unveränderliche Zusammenfassung vor dem bewussten Antwortversand.',
+      },
+      {
+        image: 'reply-missing-channel',
+        caption: 'Ein fehlendes Antwortangebot wird ohne irreführenden Anmeldehinweis erklärt.',
+      },
+      {
+        image: 'reply-schema-mismatch',
+        caption:
+          'Eine falsche Schema-Kennung lässt sich mit der erwarteten Kennung vergleichen. Der Antwortentwurf bleibt erhalten.',
       },
     ],
     intro:

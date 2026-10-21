@@ -173,6 +173,39 @@ try {
   await page.locator('.workspace-scroll').evaluate((el) => (el.scrollTop = 0));
   await capture('events');
 
+  for (const failure of ['reply_channel_missing', 'schema_id_mismatch']) {
+    await open('test-fixtures/application-view.html?browser=1');
+    await page.evaluate((failure) => {
+      const invoke = window.__TAURI_INTERNALS__.invoke;
+      window.__TAURI_INTERNALS__.invoke = async (command, args) => {
+        if (command === 'reply_target' && failure === 'reply_channel_missing') throw failure;
+        if (command === 'load_reply_schema' && failure === 'schema_id_mismatch') throw failure;
+        const result = await invoke(command, args);
+        if (command === 'reply_target') result.data.schemas[0].schemaUri = 'urn:test:reply-schema';
+        return result;
+      };
+    }, failure);
+    await page.locator('#pickup-submission').fill('00000003-1111-4111-8111-111111111111');
+    await button('Einreichung öffnen und prüfen').click();
+    await button('Antwort verfassen').click();
+    const missing = failure === 'reply_channel_missing';
+    if (!missing) {
+      await page.getByText('Antwortschema und technische Optionen', { exact: true }).click();
+      await page.locator('#reply-schema-file').setInputFiles({
+        name: 'synthetisches-antwortschema.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(JSON.stringify({ $id: 'urn:test:anderes-schema', type: 'object' })),
+      });
+      await button('Antwortschema laden').click();
+    }
+    const notice = page.getByRole('alert', {
+      name: missing ? 'Kein Antwortkanal angeboten' : 'Antwortschema passt nicht zum Angebot',
+      exact: true,
+    });
+    await expect(notice).toBeVisible();
+    await capture(missing ? 'reply-missing-channel' : 'reply-schema-mismatch', notice);
+  }
+
   await open('test-fixtures/application-view.html?browser=1');
   await page.evaluate(() => {
     const invoke = window.__TAURI_INTERNALS__.invoke;
