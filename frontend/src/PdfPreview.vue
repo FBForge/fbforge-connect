@@ -18,6 +18,7 @@ class LocalFonts {
 }
 const props = defineProps({ bytes: Uint8Array });
 const canvas = ref(null),
+  pageScroller = ref(null),
   pageNumber = ref(1),
   pages = ref(0),
   pending = ref(true),
@@ -85,6 +86,7 @@ async function render() {
   }
 }
 watch(pageNumber, () => {
+  if (pageScroller.value) pageScroller.value.scrollTop = 0;
   timer = setTimeout(() => {
     error.value = 'Die PDF-Vorschau hat zu lange benötigt. Der Originaldownload bleibt verfügbar.';
     cleanup();
@@ -152,7 +154,25 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div class="pdf-preview" :aria-busy="pending">
-    <div v-if="pages" class="client-actions" role="group" aria-label="PDF-Seiten">
+    <div ref="pageScroller" class="pdf-page-scroll" role="region" aria-label="PDF-Seiteninhalt" tabindex="0">
+      <p v-if="pending" role="status">PDF wird lokal dargestellt …</p>
+      <p v-if="error" role="status">{{ error }}</p>
+      <canvas
+        v-show="!error"
+        ref="canvas"
+        role="img"
+        :aria-label="`PDF-Seite ${pageNumber}. Zugänglicher Text folgt unter der Vorschau`"
+      />
+      <details v-if="text">
+        <summary>Seitentext lesen</summary>
+        <p class="pdf-page-text">{{ text }}</p>
+      </details>
+      <p v-else-if="!pending && !error" class="small-note">
+        Diese Seite enthält keinen auslesbaren Text. Für gescannte Dokumente steht keine Texterkennung zur
+        Verfügung.
+      </p>
+    </div>
+    <div v-if="pages" class="client-actions pdf-pagination" role="group" aria-label="PDF-Seiten">
       <button
         class="button secondary"
         type="button"
@@ -171,21 +191,5 @@ onBeforeUnmount(() => {
         Nächste Seite
       </button>
     </div>
-    <p v-if="pending" role="status">PDF wird lokal dargestellt …</p>
-    <p v-if="error" role="status">{{ error }}</p>
-    <canvas
-      v-show="!error"
-      ref="canvas"
-      role="img"
-      :aria-label="`PDF-Seite ${pageNumber}. Zugänglicher Text folgt unter der Vorschau`"
-    />
-    <details v-if="text">
-      <summary>Seitentext lesen</summary>
-      <p class="pdf-page-text">{{ text }}</p>
-    </details>
-    <p v-else-if="!pending && !error" class="small-note">
-      Diese Seite enthält keinen auslesbaren Text. Für gescannte Dokumente steht keine Texterkennung zur
-      Verfügung.
-    </p>
   </div>
 </template>

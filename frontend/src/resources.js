@@ -62,7 +62,13 @@ export async function listDestinations(invoke, session, offset = 0) {
     throw new Error('invalid_input');
   const data = await requestResource(invoke, session, 'list_destinations', { offset });
   if (
-    !exact(data, ['destinations', 'offset', 'totalCount']) ||
+    !(
+      exact(data, ['destinations', 'offset', 'totalCount']) ||
+      exact(data, ['destinations', 'offset', 'totalCount', 'canManageDestinations'])
+    ) ||
+    (Object.hasOwn(data, 'canManageDestinations') &&
+      data.canManageDestinations !== null &&
+      typeof data.canManageDestinations !== 'boolean') ||
     data.offset !== offset ||
     !Number.isSafeInteger(data.totalCount) ||
     data.totalCount < 0 ||
@@ -86,7 +92,14 @@ export async function listDestinations(invoke, session, offset = 0) {
     seen.add(item.destinationId.toLowerCase());
     return { destinationId: item.destinationId, name: item.name, status: item.status, type: item.type };
   });
-  return { destinations, offset, totalCount: data.totalCount };
+  return {
+    destinations,
+    offset,
+    totalCount: data.totalCount,
+    ...(Object.hasOwn(data, 'canManageDestinations')
+      ? { canManageDestinations: data.canManageDestinations }
+      : {}),
+  };
 }
 
 export function publicDocument(source, expectedId) {

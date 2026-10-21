@@ -46,6 +46,10 @@ public final class V2Adapter implements SdkAdapter {
     }
 
     private static final class TokenSession implements AuthenticatedSession {
+        public Boolean canManageDestinations() {
+            return false;
+        }
+
         private DefaultOAuthApiService current;
         private DestinationApiService destinations;
         private SubmissionApiService submissions;

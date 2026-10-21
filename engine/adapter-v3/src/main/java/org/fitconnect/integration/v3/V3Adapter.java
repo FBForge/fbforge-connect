@@ -54,6 +54,10 @@ public final class V3Adapter implements SdkAdapter {
     }
 
     private static final class TokenSession implements AuthenticatedSession {
+        public Boolean canManageDestinations() {
+            return http.managementAllowed();
+        }
+
         private OAuthProvider current;
         private OAuthTransport http;
         private final PrivateKeys keys = new PrivateKeys();

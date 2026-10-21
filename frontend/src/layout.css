@@ -233,3 +233,74 @@
   width: auto;
   flex: 0 0 auto;
 }
+
+/* Keep document controls reachable while only the preview content scrolls. */
+.submission-preview-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 90dvh;
+}
+.submission-preview-dialog > .tool-section-heading,
+.submission-preview-dialog > p {
+  flex-shrink: 0;
+}
+.submission-preview-dialog .tool-section-heading {
+  gap: 12px;
+}
+.submission-preview-dialog .tool-section-heading p {
+  overflow-wrap: anywhere;
+}
+.content-preview-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.submission-preview-dialog.is-pdf {
+  height: min(90dvh, 1100px);
+}
+.submission-preview-dialog.is-pdf .content-preview-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.pdf-preview {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+}
+.pdf-page-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.pdf-preview canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem auto;
+  background: white;
+}
+.pdf-pagination {
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+@media (max-height: 600px) {
+  .submission-preview-dialog {
+    padding: 12px;
+  }
+  .submission-preview-dialog .tool-section-heading {
+    margin-bottom: 0;
+  }
+  .submission-preview-dialog > p {
+    margin: 8px 0;
+    font-size: 0.85rem;
+  }
+}

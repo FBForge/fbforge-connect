@@ -10,7 +10,11 @@ import org.fitconnect.integration.contract.*;
 final class DestinationAccess {
     record Summary(String destinationId, String name, String status, String type) {}
 
-    record Page(List<Summary> destinations, int offset, int totalCount) {}
+    record Page(
+            List<Summary> destinations,
+            int offset,
+            int totalCount,
+            Boolean canManageDestinations) {}
 
     record Eligibility(
             String kid,
@@ -49,7 +53,7 @@ final class DestinationAccess {
                             text(value, "status", 64, true),
                             text(value, "type", 64, true)));
         }
-        return new Page(List.copyOf(result), offset, total);
+        return new Page(List.copyOf(result), offset, total, session.canManageDestinations());
     }
 
     Context load(AuthenticatedSession session, String destinationId) {

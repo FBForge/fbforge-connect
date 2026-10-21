@@ -77,6 +77,25 @@ test('PROD, different sessions, different APIs and extra private fields fail clo
   }
 });
 
+test('destination permission hints accept only booleans or unknown', async () => {
+  for (const value of [true, false, null]) {
+    const result = await listDestinations(
+      async () => envelope({ destinations: [], offset: 0, totalCount: 0, canManageDestinations: value }),
+      session,
+    );
+    assert.equal(result.canManageDestinations, value);
+  }
+  for (const value of ['true', 1, {}, []]) {
+    await assert.rejects(
+      listDestinations(
+        async () => envelope({ destinations: [], offset: 0, totalCount: 0, canManageDestinations: value }),
+        session,
+      ),
+      /engine_protocol_error/,
+    );
+  }
+});
+
 test('invalid API, session, UUID, purpose, page and oversized UTF-8 input never reach native code', async () => {
   let called = 0;
   const invoke = async () => {

@@ -25,6 +25,12 @@ const page = ref(null),
   preview = ref(null),
   pending = ref(false),
   error = ref('');
+const view = ref('list'),
+  detailHeading = ref(null),
+  editHeading = ref(null),
+  previewHeading = ref(null),
+  listHeading = ref(null);
+let returnTarget;
 const offersEnabled = ref(false),
   offers = ref({ publicServices: [], processMessages: [] });
 const nameEnabled = ref(false),
@@ -39,7 +45,10 @@ const contacts = ref(
   ),
 );
 const disabled = computed(() => props.busy || pending.value || !props.session);
-const canEdit = computed(() => props.session?.apiVersion === 'v3');
+const denied = ref(false);
+const canEdit = computed(
+  () => props.session?.apiVersion === 'v3' && page.value?.canManageDestinations !== false && !denied.value,
+);
 const locked = computed(() => preview.value?.status === 'uncertain');
 const changes = computed(() => ({
   ...(offersEnabled.value && selected.value.length === 1 ? offers.value : {}),
@@ -114,6 +123,8 @@ watch(context, () => {
   detail.value = null;
   preview.value = null;
   error.value = '';
+  view.value = 'list';
+  denied.value = false;
 });
 watch(
   () => JSON.stringify([selected.value.map((row) => row.destinationId), changes.value]),
@@ -141,6 +152,11 @@ async function run(action, operation) {
     if (stamp === generation)
       error.value = `${messages[diagnosticCode(cause)] || errorMessage(cause)} (${diagnosticCode(cause)})`;
     if (resetsSessions(cause)) emit('fatal', cause);
+    if (diagnosticCode(cause) === 'resource_denied' && action === 'Destination-Änderung vorbereiten') {
+      denied.value = true;
+      selected.value = [];
+      view.value = detail.value ? 'detail' : 'list';
+    }
   } finally {
     pending.value = false;
     emit('busy', false);
@@ -168,17 +184,58 @@ async function openCreated(id) {
 function search(offset = 0) {
   return run('Eigene Destinations laden', async (active, current) => {
     const result = await listDestinations(invoke, active, offset);
-    if (current()) page.value = result;
+    if (current()) {
+      page.value = result;
+      if (!canEdit.value) selected.value = [];
+    }
   });
 }
 function toggle(row, checked) {
-  if (disabled.value || locked.value) return;
+  if (disabled.value || locked.value || !canEdit.value) return;
   offersEnabled.value = false;
   if (checked && selected.value.length < 10) selected.value = [...selected.value, row];
   if (!checked) selected.value = selected.value.filter((item) => item.destinationId !== row.destinationId);
 }
-function edit(row) {
-  return run('Eigene Destination öffnen', async (active, current) => {
+function resetFields() {
+  offersEnabled.value = false;
+  nameEnabled.value = false;
+  name.value = '{name}';
+  statusEnabled.value = false;
+  versionsEnabled.value = false;
+  for (const field of Object.values(contacts.value)) {
+    field.enabled = false;
+    field.value = '';
+  }
+}
+async function show(target) {
+  await nextTick();
+  target.value?.focus();
+  target.value?.scrollIntoView({ block: 'start' });
+}
+async function back() {
+  view.value = 'list';
+  await nextTick();
+  const target = returnTarget
+    ? document.querySelector(returnTarget)
+    : document.querySelector('.destination-selection-actions button');
+  if (target?.getClientRects().length) target.focus();
+  else listHeading.value?.focus();
+}
+async function inspect(row) {
+  returnTarget = `[data-open-destination="${row.destinationId}"]`;
+  await run('Eigene Destination öffnen', async (active, current) => {
+    const result = await loadManagedDestination(invoke, active, row.destinationId);
+    if (!current()) return;
+    detail.value = result;
+    view.value = 'detail';
+  });
+  if (view.value === 'detail') await show(detailHeading);
+}
+async function edit(row) {
+  if (!canEdit.value || locked.value) return;
+  if (selected.value.length > 1) return editSelection();
+  if (view.value === 'list') returnTarget = `[data-edit-destination="${row.destinationId}"]`;
+  await run('Eigene Destination öffnen', async (active, current) => {
     const result = await loadManagedDestination(invoke, active, row.destinationId);
     if (!current()) return;
     detail.value = result;
@@ -198,10 +255,22 @@ function edit(row) {
       field.enabled = false;
       field.value = result.contact[key] || '';
     }
+    view.value = 'edit';
   });
+  if (view.value === 'edit') await show(editHeading);
 }
-function prepare() {
-  return run('Destination-Änderung vorbereiten', async (active, current) => {
+async function editSelection() {
+  if (disabled.value || locked.value || !canEdit.value || !selected.value.length) return;
+  if (selected.value.length === 1) return edit(selected.value[0]);
+  if (view.value === 'list') returnTarget = null;
+  resetFields();
+  detail.value = null;
+  view.value = 'edit';
+  await show(editHeading);
+}
+async function prepare() {
+  if (!canEdit.value) return;
+  await run('Destination-Änderung vorbereiten', async (active, current) => {
     const result = await prepareDestinationUpdate(
       invoke,
       active,
@@ -210,6 +279,7 @@ function prepare() {
     );
     if (current()) preview.value = result;
   });
+  if (preview.value) await show(previewHeading);
 }
 function execute() {
   const confirmed = preview.value;
@@ -286,7 +356,8 @@ function difference(row) {
         type="button"
         class="button secondary"
         :aria-pressed="setupOpen"
-        :disabled="disabled || !canEdit"
+        v-if="canEdit"
+        :disabled="disabled"
         @click="setupOpen = true"
       >
         Neue TEST-Destination anlegen
@@ -305,17 +376,21 @@ function difference(row) {
     />
     <section v-show="!setupOpen" class="tool-section" aria-labelledby="manager-title" :aria-busy="pending">
       <p v-if="setupNotice" role="status">{{ setupNotice }}</p>
-      <h2 id="manager-title">Eigene Destinations verwalten</h2>
-      <p>
+      <h2 id="manager-title" ref="listHeading" tabindex="-1">Eigene Destinations verwalten</h2>
+      <p v-if="view === 'list'">
         Destinations der angemeldeten TEST-Zugangsdaten laden und einzeln oder gemeinsam bearbeiten. Bis zu
         zehn Destinations pro Änderung.
       </p>
       <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
-      <p v-else-if="!canEdit">
+      <p v-else-if="session.apiVersion === 'v2'">
         Die Bearbeitung steht zunächst über API v3 bereit. Sie können eigene Destinations mit v2 ansehen oder
         oben eine v3-Sitzung öffnen.
       </p>
-      <div class="client-actions">
+      <p v-if="session?.apiVersion === 'v3' && !canEdit" role="status">
+        Diese Verbindung erlaubt nur das Ansehen der Destinations. Für Änderungen wird die Berechtigung
+        manage-destinations benötigt.
+      </p>
+      <div v-show="view === 'list'" class="client-actions">
         <button class="button" :disabled="disabled" @click="search()">Eigene Destinations laden</button>
         <button
           v-if="preview && ['uncertain', 'running'].includes(preview.status)"
@@ -328,13 +403,29 @@ function difference(row) {
       </div>
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="pending" role="status">Aktion wird ausgeführt …</p>
-      <template v-if="page">
-        <p>{{ page.totalCount }} eigene Destinations · {{ selected.length }} von höchstens 10 ausgewählt</p>
+      <template v-if="page && view === 'list'">
+        <p role="status">
+          {{ page.totalCount }} eigene Destinations
+          <span v-if="canEdit">· {{ selected.length }} von höchstens 10 ausgewählt</span>
+        </p>
+        <div
+          v-if="canEdit && selected.length"
+          class="client-actions destination-selection-actions"
+          aria-label="Ausgewählte Destinations"
+        >
+          <button class="button" :disabled="disabled || locked" @click="editSelection">
+            {{ selected.length }}
+            {{ selected.length === 1 ? 'Destination bearbeiten' : 'Destinations gemeinsam bearbeiten' }}
+          </button>
+          <button class="button secondary" :disabled="disabled || locked" @click="selected = []">
+            Auswahl aufheben
+          </button>
+        </div>
         <div class="client-table support-table">
           <table class="submission-result-table destination-manager-table">
             <thead>
               <tr>
-                <th scope="col">Auswahl</th>
+                <th v-if="canEdit" scope="col">Auswahl</th>
                 <th scope="col">Name / Destination</th>
                 <th scope="col">Status</th>
                 <th scope="col">Aktion</th>
@@ -342,7 +433,7 @@ function difference(row) {
             </thead>
             <tbody>
               <tr v-for="row in page.destinations" :key="row.destinationId">
-                <td data-label="Auswahl">
+                <td v-if="canEdit" data-label="Auswahl">
                   <input
                     type="checkbox"
                     :aria-label="`${row.name || row.destinationId} auswählen`"
@@ -363,9 +454,25 @@ function difference(row) {
                 </td>
                 <td data-label="Status">{{ row.status || 'Unbekannt' }}</td>
                 <td data-label="Aktion">
-                  <button class="button secondary" :disabled="disabled" @click="edit(row)">
-                    {{ canEdit && !locked ? 'Bearbeiten' : 'Ansehen' }}
-                  </button>
+                  <div class="client-actions">
+                    <button
+                      class="button secondary"
+                      :data-open-destination="row.destinationId"
+                      :disabled="disabled"
+                      @click="inspect(row)"
+                    >
+                      Ansehen
+                    </button>
+                    <button
+                      v-if="canEdit && !locked && selected.length < 2"
+                      class="button secondary"
+                      :data-edit-destination="row.destinationId"
+                      :disabled="disabled"
+                      @click="edit(row)"
+                    >
+                      Bearbeiten
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -390,8 +497,18 @@ function difference(row) {
           </button>
         </div>
       </template>
-      <details v-if="detail">
-        <summary>Geladene Konfiguration: {{ detail.name || detail.destinationId }}</summary>
+      <div v-if="view !== 'list'" class="client-actions">
+        <button class="button secondary" type="button" :disabled="disabled" @click="back">
+          Zur Destination-Übersicht
+        </button>
+      </div>
+      <section v-if="detail && view === 'detail'" aria-labelledby="manager-detail-title">
+        <h3 id="manager-detail-title" ref="detailHeading" tabindex="-1">
+          {{ detail.name || 'Destination ansehen' }}
+        </h3>
+        <p>
+          <code>{{ detail.destinationId }}</code>
+        </p>
         <dl>
           <dt>Status</dt>
           <dd>{{ detail.status }}</dd>
@@ -404,9 +521,24 @@ function difference(row) {
             </dd>
           </template>
         </dl>
-      </details>
-      <form v-if="selected.length && canEdit" @submit.prevent="prepare">
-        <h3>{{ selected.length === 1 ? 'Destination bearbeiten' : 'Bulk-Edit' }}</h3>
+        <button
+          v-if="canEdit && !locked"
+          class="button"
+          type="button"
+          :disabled="disabled"
+          @click="edit(detail)"
+        >
+          {{ selected.length > 1 ? 'Auswahl gemeinsam bearbeiten' : 'Destination bearbeiten' }}
+        </button>
+      </section>
+      <form v-if="view === 'edit' && selected.length && canEdit" @submit.prevent="prepare">
+        <h3 ref="editHeading" tabindex="-1">
+          {{
+            selected.length === 1
+              ? 'Destination bearbeiten'
+              : `${selected.length} Destinations gemeinsam bearbeiten`
+          }}
+        </h3>
         <p>
           Nur angehakte Felder werden geändert. Ein leeres angehaktes Kontaktfeld entfernt diesen Kontaktwert.
           Andere Einstellungen bleiben erhalten.
@@ -525,6 +657,7 @@ function difference(row) {
       </form>
       <DestinationCleanup
         v-if="
+          view === 'edit' &&
           canEdit &&
           selected.length === 1 &&
           detail?.destinationId === selected[0].destinationId &&
@@ -539,7 +672,7 @@ function difference(row) {
         @changed="emit('changed')"
       />
       <DestinationKeyRotation
-        v-if="canEdit && selected.length"
+        v-if="view === 'edit' && canEdit && selected.length"
         :session="session"
         :selected="selected"
         :busy="busy || pending || locked || preview?.status === 'prepared'"
@@ -550,7 +683,9 @@ function difference(row) {
         @receive="(id) => emit('receive', id)"
       />
       <section v-if="preview" class="tool-section" aria-labelledby="update-preview-title">
-        <h3 id="update-preview-title">{{ statuses[preview.status] || preview.status }}</h3>
+        <h3 id="update-preview-title" ref="previewHeading" tabindex="-1">
+          {{ statuses[preview.status] || preview.status }}
+        </h3>
         <p v-if="preview.status === 'prepared'">
           Noch nichts gespeichert. Prüfen Sie die Werte für jede Destination. Die Vorschau gilt zwei Minuten.
           Vor dem Speichern werden alle ausgewählten Destinations erneut auf zwischenzeitliche Änderungen

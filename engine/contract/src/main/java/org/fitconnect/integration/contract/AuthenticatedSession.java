@@ -23,6 +23,11 @@ public interface AuthenticatedSession extends AutoCloseable {
 
     String destinations(int offset, int limit);
 
+    /** UI hint only. Every write still requires the server's authorization. */
+    default Boolean canManageDestinations() {
+        return null;
+    }
+
     String destination(String destinationId);
 
     default String processDestinations(

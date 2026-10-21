@@ -12,6 +12,12 @@ import tools.jackson.databind.node.ObjectNode;
 final class OAuthTransport implements HttpService {
     private final TokenExchange exchange;
     private final ResourceExchange resources;
+    private Boolean managementAllowed;
+
+    Boolean managementAllowed() {
+        return managementAllowed;
+    }
+
     private final JsonMapper mapper =
             JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
 
@@ -51,9 +57,30 @@ final class OAuthTransport implements HttpService {
         if (!(payload instanceof String body)) throw new SessionException("authentication_failed");
         String response = exchange.post(url, body);
         try {
-            return new HttpResponse<>(200, mapper.readValue(response, type));
+            R value = mapper.readValue(response, type);
+            managementAllowed = managementScope(response);
+            return new HttpResponse<>(200, value);
         } catch (Exception e) {
             throw new SessionException("authentication_failed");
+        }
+    }
+
+    private Boolean managementScope(String response) {
+        try {
+            JsonNode token = mapper.readTree(response);
+            JsonNode scope = token.get("scope");
+            if (scope == null && token.has("access_token")) {
+                String[] pieces = token.get("access_token").asText().split("\\.");
+                if (pieces.length != 3 || pieces[1].length() > 16000) return null;
+                scope =
+                        mapper.readTree(java.util.Base64.getUrlDecoder().decode(pieces[1]))
+                                .get("scope");
+            }
+            if (scope == null || !scope.isTextual() || scope.asText().length() > 8192) return null;
+            return java.util.Arrays.asList(scope.asText().split("\\s+"))
+                    .contains("manage-destinations");
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
