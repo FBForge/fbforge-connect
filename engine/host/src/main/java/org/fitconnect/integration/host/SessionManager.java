@@ -1019,14 +1019,19 @@ final class SessionManager implements AutoCloseable {
                             .decode(java.nio.ByteBuffer.wrap(bytes))
                             .toString();
             var schema = StrictJson.object(source, 2 * 1024 * 1024);
-            if (!schema.has("$id")
-                    || !schema.get("$id").isJsonPrimitive()
-                    || !schema.get("$id").getAsJsonPrimitive().isString()
-                    || !SchemaSources.documentUri(schema.get("$id").getAsString())
-                            .equals(
-                                    SchemaSources.documentUri(
-                                            request.get("schemaUri").getAsString())))
-                throw new SessionException("invalid_input");
+            String localUri;
+            try {
+                var schemaId = schema.get("$id");
+                if (schemaId == null
+                        || !schemaId.isJsonPrimitive()
+                        || !schemaId.getAsJsonPrimitive().isString())
+                    throw new IllegalArgumentException();
+                localUri = SchemaSources.documentUri(schemaId.getAsString());
+            } catch (Exception invalidId) {
+                throw new SessionException("schema_id_mismatch");
+            }
+            if (!localUri.equals(SchemaSources.documentUri(request.get("schemaUri").getAsString())))
+                throw new SessionException("schema_id_mismatch");
             return Map.of(schema.get("$id").getAsString(), source);
         } catch (SessionException failure) {
             throw failure;

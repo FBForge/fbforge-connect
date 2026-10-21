@@ -773,6 +773,36 @@ class ReceiverKernelTest {
                                                 false,
                                                 "schemaContentId",
                                                 localSchema));
+                for (String invalidSchema :
+                        List.of(
+                                new String(answerSchema, StandardCharsets.UTF_8)
+                                        .replace("urn:test:answer", "urn:test:other"),
+                                "{\"type\":\"object\"}",
+                                "{\"$id\":false}",
+                                "{\"$id\":\"relative.json\"}")) {
+                    byte[] invalidSchemaBytes = invalidSchema.getBytes(StandardCharsets.UTF_8);
+                    String invalidSchemaHandle =
+                            content.begin(owner, invalidSchemaBytes.length).contentId();
+                    content.append(owner, invalidSchemaHandle, 0, b64Standard(invalidSchemaBytes));
+                    var invalidSelection =
+                            JsonParser.parseString(schemaSelection).getAsJsonObject();
+                    invalidSelection.addProperty("schemaContentId", invalidSchemaHandle);
+                    assertEquals(
+                            "schema_id_mismatch",
+                            failure(
+                                    engine.handle(
+                                            command(
+                                                            api,
+                                                            owner,
+                                                            "load_reply_schema",
+                                                            "proofId",
+                                                            proof,
+                                                            "schemaDocument",
+                                                            invalidSelection.toString())
+                                                    .toString())));
+                    assertEquals(0, capture.posts);
+                    content.discard(owner, invalidSchemaHandle);
+                }
                 var loadedSchema =
                         success(
                                 engine.handle(

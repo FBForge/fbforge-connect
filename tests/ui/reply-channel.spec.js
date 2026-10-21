@@ -1,36 +1,110 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-async function open(page, api, failure = 'reply_channel_missing') {
+async function open(page, api, failure = 'reply_channel_missing', schemaUri = null) {
   await page.goto(`http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1&api=${api}`);
-  await page.evaluate((code) => {
-    const original = window.__TAURI_INTERNALS__.invoke;
-    const state = (window.__replyChannelFixture = { failure: code, calls: [] });
-    window.__TAURI_INTERNALS__.invoke = (command, args) => {
-      state.calls.push(command);
-      if (command === 'reply_target' && state.failure) throw state.failure;
-      if (command === 'loaded_keys')
-        return {
-          apiVersion: args.apiVersion,
-          sessionId: args.sessionId,
-          environment: 'TEST',
-          data: {
-            keys: [
-              {
-                destinationId: '00000002-1111-4111-8111-111111111111',
-                kid: 'synthetic-sign',
-                purpose: 'sign',
-              },
-            ],
-          },
-        };
-      return original(command, args);
-    };
-  }, failure);
+  await page.evaluate(
+    ({ failure, schemaUri }) => {
+      const original = window.__TAURI_INTERNALS__.invoke;
+      const state = (window.__replyChannelFixture = { failure, schemaUri, calls: [] });
+      window.__TAURI_INTERNALS__.invoke = async (command, args) => {
+        state.calls.push(command);
+        if (command === 'reply_target' && state.failure) throw state.failure;
+        if (command === 'load_reply_schema' && state.schemaUri) {
+          const selection = JSON.parse(args.schemaDocument);
+          if (selection.schemaContentId) {
+            const schema = JSON.parse(
+              new TextDecoder().decode(
+                window.__applicationFixture.uploaded.get(selection.schemaContentId).bytes,
+              ),
+            );
+            if (schema.$id !== selection.schemaUri) throw 'schema_id_mismatch';
+          }
+        }
+        if (command === 'loaded_keys')
+          return {
+            apiVersion: args.apiVersion,
+            sessionId: args.sessionId,
+            environment: 'TEST',
+            data: {
+              keys: [
+                {
+                  destinationId: '00000002-1111-4111-8111-111111111111',
+                  kid: 'synthetic-sign',
+                  purpose: 'sign',
+                },
+              ],
+            },
+          };
+        const result = await original(command, args);
+        if (command === 'reply_target' && state.schemaUri) result.data.schemas[0].schemaUri = state.schemaUri;
+        return result;
+      };
+    },
+    { failure, schemaUri },
+  );
   await page.locator('#pickup-submission').fill('00000003-1111-4111-8111-111111111111');
   await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Antrag lesen', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
+}
+
+for (const api of ['v2', 'v3']) {
+  test(`a mismatched local reply schema shows the expected ID and preserves the draft (${api})`, async ({
+    page,
+    context,
+  }) => {
+    const uri = 'urn:efast-digital:fjd:standard:process_1.0';
+    await open(page, api, '', uri);
+    const text = '{"status":"erhalten","nachricht":"Mein Antwortentwurf"}';
+    await page.locator('#reply-data').fill(text);
+    await page.getByText('Antwortschema und technische Optionen', { exact: true }).click();
+    const schemaFile = ($id) => ({
+      name: 'synthetisches-antwortschema.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        JSON.stringify({
+          $id,
+          type: 'object',
+          properties: { status: { const: 'erhalten' } },
+          required: ['status'],
+        }),
+      ),
+    });
+    await page
+      .locator('#reply-schema-file')
+      .setInputFiles(schemaFile('urn:efast:digital:fjd:standard:process_1.0'));
+    await page.getByRole('button', { name: 'Antwortschema laden', exact: true }).click();
+    const notice = page.getByRole('alert', { name: 'Antwortschema passt nicht zum Angebot', exact: true });
+    await expect(notice.getByRole('heading')).toBeFocused();
+    await expect(notice).toContainText('Kennung $id');
+    await expect(notice).toContainText(uri);
+    await expect(page.locator('#reply-data')).toHaveValue(text);
+    await notice.getByText('Technische Fehlerangaben', { exact: true }).click();
+    await expect(notice.getByText('schema_id_mismatch', { exact: true })).toBeVisible();
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await notice.getByRole('button', { name: 'Erwartete Schema-Kennung kopieren', exact: true }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(uri);
+    expect(await page.evaluate(() => window.__applicationFixture.uploaded.size)).toBe(0);
+    await page.setViewportSize({ width: 640, height: 540 });
+    expect(
+      (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze())
+        .violations,
+    ).toEqual([]);
+    const chooserPromise = page.waitForEvent('filechooser');
+    await notice.getByRole('button', { name: 'Passendes Schema auswählen', exact: true }).click();
+    await (await chooserPromise).setFiles(schemaFile(uri));
+    await expect(notice).toHaveCount(0);
+    await page.getByRole('button', { name: 'Antwortschema laden', exact: true }).click();
+    await expect(page.getByText('Schema geladen.', { exact: false })).toBeVisible();
+    await expect(page.locator('#reply-data')).toHaveValue(text);
+    await page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true })).toBeVisible();
+    const calls = await page.evaluate(() => window.__replyChannelFixture.calls);
+    expect(calls.filter((call) => call === 'load_reply_schema')).toHaveLength(2);
+    expect(calls.filter((call) => call === 'prepare_reply')).toHaveLength(1);
+    expect(calls.some((call) => ['execute_reply', 'execute_receipt'].includes(call))).toBe(false);
+  });
 }
 
 for (const api of ['v2', 'v3']) {

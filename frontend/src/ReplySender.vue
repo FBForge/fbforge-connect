@@ -135,6 +135,8 @@ const messages = {
     'Das Antwortschema ist nicht verfügbar. Die Quelle hat den Abruf mit einem HTTP-Fehler abgewiesen. Ihr bisheriger Antwortinhalt bleibt erhalten.',
   schema_required:
     'Bitte das aktuelle Antwortschema laden. Die Vorbereitung benötigt eine native Schemaprüfung.',
+  schema_id_mismatch:
+    'Die Kennung $id Ihrer lokalen Schemadatei fehlt oder stimmt nicht mit dem angebotenen Antwortschema überein. Wählen Sie das passende Schema des Onlinedienstes. Ihr Antwortentwurf bleibt erhalten.',
   data_schema_invalid:
     'Der Antwortinhalt entspricht nicht dem ausgewählten Schema. Bitte Fachdaten und Pflichtfelder prüfen. Es wurde nichts versendet.',
   schema_unavailable:
@@ -305,6 +307,9 @@ async function loadSchema(example = false) {
   if (example) {
     await nextTick();
     if (schemaContext.value === key) exampleButton.value?.focus();
+  } else if (error.value) {
+    await nextTick();
+    if (schemaContext.value === key) errorNotice.value?.focus();
   }
 }
 function chooseSchemaFile(files) {
@@ -312,6 +317,17 @@ function chooseSchemaFile(files) {
   schemaPackage.value = null;
   schemaNotice.value = '';
   schemaFile.value = files[0] || null;
+  if (diagnostic.value === 'schema_id_mismatch') {
+    diagnostic.value = '';
+    error.value = '';
+  }
+}
+function changeSchemaFile() {
+  if (disabled.value) return;
+  schemaOptions.value?.setAttribute('open', '');
+  const picker = document.getElementById('reply-schema-file');
+  picker?.focus();
+  picker?.click();
 }
 function addFiles(files) {
   if (disabled.value) return;
@@ -386,7 +402,8 @@ async function prepare() {
   if (alive && prepared.value) dialog.value?.showModal();
   else if (error.value && !schemaPackage.value) {
     schemaOptions.value?.setAttribute('open', '');
-    document.getElementById('reply-schema-sources')?.focus();
+    if (diagnostic.value === 'schema_id_mismatch') errorNotice.value?.focus();
+    else document.getElementById('reply-schema-sources')?.focus();
   }
 }
 async function dismiss() {
@@ -634,13 +651,21 @@ async function send() {
       :title="
         diagnostic === 'reply_channel_missing'
           ? 'Kein Antwortkanal angeboten'
-          : 'Antwortaktion fehlgeschlagen'
+          : diagnostic === 'schema_id_mismatch'
+            ? 'Antwortschema passt nicht zum Angebot'
+            : 'Antwortaktion fehlgeschlagen'
       "
       :message="error"
       :tone="diagnostic === 'reply_channel_missing' ? 'warning' : 'error'"
       :code="diagnostic"
       :api-version="session?.apiVersion"
     >
+      <template v-if="diagnostic === 'schema_id_mismatch' && selected">
+        <CopyValue :value="selected.schemaUri" label="Erwartete Schema-Kennung" />
+        <button class="button secondary" type="button" :disabled="disabled" @click="changeSchemaFile">
+          Passendes Schema auswählen
+        </button>
+      </template>
       <DocumentationLink topic="replies">Anleitung zu Antworten</DocumentationLink>
     </ActionNotice>
     <p v-if="cleanupOwner === session?.sessionId" role="alert">{{ messages.content_cleanup_failed }}</p>

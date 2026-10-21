@@ -27,6 +27,7 @@ public final class SessionException extends RuntimeException {
                     "reply_channel_missing",
                     "verification_failed",
                     "schema_required",
+                    "schema_id_mismatch",
                     "data_schema_invalid",
                     "schema_unavailable",
                     "schema_consent_required",

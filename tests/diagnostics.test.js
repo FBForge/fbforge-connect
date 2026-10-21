@@ -61,6 +61,7 @@ test('reportable diagnostics expose stable codes and never raw errors or inherit
   for (const code of [
     'verification_failed',
     'reply_channel_missing',
+    'schema_id_mismatch',
     'resource_denied',
     'resource_missing',
     'schema_tls_error',

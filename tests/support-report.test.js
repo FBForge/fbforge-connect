@@ -24,6 +24,10 @@ test('diagnostic presentation distinguishes local calls, states and schema failu
     label: 'Kein Antwortkanal angeboten',
     tone: 'warn',
   });
+  assert.deepEqual(diagnosticResult({ ...sample, code: 'schema_id_mismatch' }), {
+    label: 'Schema-Kennung passt nicht',
+    tone: 'warn',
+  });
   assert.equal(diagnosticContext({ apiVersion: null }), 'Lokal');
   assert.equal(diagnosticContext({ apiVersion: marker }), 'Lokal');
   assert.equal(diagnosticContext({ apiVersion: 'v3' }), 'API v3');

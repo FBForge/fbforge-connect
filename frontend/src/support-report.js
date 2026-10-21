@@ -139,6 +139,7 @@ const codeLabels = new Map([
   ['case_limit', 'Vorgangsablage voll'],
   ['reply_metadata_required', 'Metadatenversion für Replies fehlt'],
   ['reply_channel_missing', 'Kein Antwortkanal angeboten'],
+  ['schema_id_mismatch', 'Schema-Kennung passt nicht'],
   ['content_cleanup_failed', 'Lokale Bereinigung fehlgeschlagen'],
 ]);
 export function diagnosticContext(entry) {

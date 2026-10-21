@@ -54,6 +54,8 @@ export function errorMessage(code) {
       'An der Absender-Destination fehlt eine passende Metadatenversion für Replies. Der Betreiber muss in der Destination-Verwaltung 2.0.0 oder 3.0.0 freigeben. Prozessantworten benötigen 3.0.0. Es wurde nichts versendet.',
     reply_channel_missing:
       'Diese Einreichung bietet keinen unterstützten FIT-Connect-Antwortkanal an. Für einen Antworttest muss der Absender beim Versand ein Antwortangebot mitgeben.',
+    schema_id_mismatch:
+      'Die Kennung $id der lokalen Schemadatei fehlt oder passt nicht zum angebotenen Schema. Bitte wählen Sie die passende Schemadatei.',
     destination_no_keys:
       'Onlinedienst-Destinations vom Typ C benötigen keine Zertifikate oder dauerhaften Destination-Schlüssel. Antwortschlüssel werden je Antwortkanal erzeugt.',
     authentication_failed: 'Die TEST-Anmeldung ist fehlgeschlagen. Bitte Client-ID und Client-Secret prüfen.',
@@ -109,6 +111,7 @@ const reportableCodes = new Set([
   'content_limit',
   'verification_failed',
   'schema_required',
+  'schema_id_mismatch',
   'data_schema_invalid',
   'schema_unavailable',
   'schema_consent_required',
