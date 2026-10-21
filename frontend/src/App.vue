@@ -320,7 +320,7 @@ const navigation = [
   {
     name: 'Hilfe',
     group: 'Hilfe und Anwendung',
-    icon: 'info',
+    icon: 'help',
     description: 'Anleitungen und Beispiele auf der FBForge-Website.',
   },
   {

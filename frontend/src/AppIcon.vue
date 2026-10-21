@@ -10,6 +10,7 @@ const paths = {
   destinations: 'M4 3h16v18H4V3ZM8 7h2m4 0h2M8 11h2m4 0h2M10 21v-6h4v6',
   diagnostics: 'M3 12h4l3-8 4 16 3-8h4',
   tools: 'M4 3h6v6H4V3Zm10 0h6v6h-6V3ZM4 15h6v6H4v-6Zm10 3h6m-3-3v6',
+  help: 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3m.08 4h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
   info: 'M12 11v6m0-10h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
   connection: 'M8 3v4m8-4v4M6 7h12v3a6 6 0 0 1-12 0V7Zm6 9v5',
   sun: 'M12 3V1m0 22v-2M3 12H1m22 0h-2M5 5 3 3m18 18-2-2M5 19l-2 2M21 3l-2 2M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
