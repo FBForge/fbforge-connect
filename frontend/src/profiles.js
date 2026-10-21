@@ -17,7 +17,7 @@ export async function listProfiles(invoke) {
   return Object.freeze(
     value.map((item) => {
       if (
-        !exact(item, ['profileId', 'name', 'apiVersion', 'role', 'keyCount', 'available']) ||
+        !exact(item, ['profileId', 'name', 'clientId', 'apiVersion', 'role', 'keyCount', 'available']) ||
         !uuid(item.profileId) ||
         seen.has(item.profileId) ||
         typeof item.name !== 'string' ||
@@ -28,6 +28,11 @@ export async function listProfiles(invoke) {
         item.keyCount < 0 ||
         item.keyCount > 176 ||
         typeof item.available !== 'boolean' ||
+        (item.available
+          ? typeof item.clientId !== 'string' ||
+            !item.clientId.trim() ||
+            new TextEncoder().encode(item.clientId).length > 512
+          : item.clientId !== null) ||
         (item.available
           ? !['v2', 'v3'].includes(item.apiVersion) ||
             !['online-service', 'administrative-system'].includes(item.role)
@@ -52,7 +57,7 @@ export async function openSavedProfile(invoke, profile, restoreKeys = true) {
     value.connected !== true
   )
     fail();
-  return Object.freeze({ ...value });
+  return Object.freeze({ ...value, clientId: profile.clientId });
 }
 export async function forgetProfile(invoke, profileId) {
   if (!uuid(profileId)) throw new Error('invalid_input');

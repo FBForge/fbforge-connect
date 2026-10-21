@@ -1225,3 +1225,20 @@ summary {
     padding-top: 0;
   }
 }
+
+.connection-identity {
+  margin-block: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+.connection-identity h3,
+.connection-identity p {
+  margin-block: 0 8px;
+}
+.connection-identity p:last-child {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 0;
+}

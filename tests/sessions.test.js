@@ -28,6 +28,9 @@ test('opening a session returns public state and keeps API and role explicit', a
   assert.equal(calls[0][1].apiVersion, 'v2');
   assert.equal(calls[0][1].role, 'online-service');
   assert.equal(result.clientSecret, undefined);
+  assert.equal(result.clientId, 'synthetic-client');
+  const checked = await updateSession(async () => snapshot, result, true);
+  assert.equal(checked.clientId, 'synthetic-client');
 });
 
 test('unsupported role or API and empty credentials never reach native code', async () => {

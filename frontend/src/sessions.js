@@ -39,7 +39,7 @@ export async function openSession(invoke, apiVersion, role, clientId, clientSecr
       /[\x00-\x1f\x7f]/.test(profile.name))
   )
     throw new Error('invalid_input');
-  return validate(
+  const result = validate(
     await invoke('open_session', {
       apiVersion,
       role,
@@ -51,6 +51,7 @@ export async function openSession(invoke, apiVersion, role, clientId, clientSecr
     role,
     true,
   );
+  return { ...result, clientId };
 }
 
 export async function updateSession(invoke, session, connected) {
@@ -61,7 +62,7 @@ export async function updateSession(invoke, session, connected) {
     !sessionIdPattern.test(session.sessionId)
   )
     throw new Error('session_missing');
-  return validate(
+  const result = validate(
     await invoke(connected ? 'check_session' : 'close_session', {
       apiVersion: session.apiVersion,
       sessionId: session.sessionId,
@@ -71,6 +72,9 @@ export async function updateSession(invoke, session, connected) {
     connected,
     session.sessionId,
   );
+  return connected && typeof session.clientId === 'string'
+    ? { ...result, clientId: session.clientId }
+    : result;
 }
 
 export function resetsSessions(cause) {

@@ -72,6 +72,7 @@ fn wipe(value: &mut serde_json::Value) {
 pub struct ProfileSummary {
     pub profile_id: String,
     pub name: String,
+    pub client_id: Option<String>,
     pub api_version: Option<ApiVersion>,
     pub role: Option<SessionRole>,
     pub key_count: usize,
@@ -102,6 +103,7 @@ impl Profile {
         ProfileSummary {
             profile_id: self.profile_id.clone(),
             name: self.name.clone(),
+            client_id: Some(self.client_id.clone()),
             api_version: Some(self.api_version),
             role: Some(self.role),
             key_count: self.keys.len(),
@@ -236,6 +238,7 @@ impl Vault {
                 Err(_) => ProfileSummary {
                     profile_id: id.to_string(),
                     name: "Nicht lesbares Profil".into(),
+                    client_id: None,
                     api_version: None,
                     role: None,
                     key_count: 0,
@@ -498,7 +501,7 @@ mod tests {
         profile.name = "bad\nname".into();
         assert!(profile.validate().is_err());
         let summary = serde_json::to_string(&sample().summary()).unwrap();
-        assert!(!summary.contains("synthetic-client"));
+        assert!(summary.contains("synthetic-client"));
         assert!(!summary.contains("synthetic-secret-marker"));
     }
     #[test]

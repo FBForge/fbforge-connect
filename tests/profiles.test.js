@@ -14,6 +14,7 @@ const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
 const profile = {
   profileId: id(1),
   name: 'Bauamt TEST',
+  clientId: 'synthetic-profile-client',
   apiVersion: 'v3',
   role: 'online-service',
   keyCount: 2,
@@ -33,7 +34,14 @@ test('profile list accepts public metadata only and rejects unexpected secrets a
       listProfiles(async () => bad),
       /engine_protocol_error/,
     );
-  const unavailable = { ...profile, apiVersion: null, role: null, keyCount: 0, available: false };
+  const unavailable = {
+    ...profile,
+    clientId: null,
+    apiVersion: null,
+    role: null,
+    keyCount: 0,
+    available: false,
+  };
   assert.equal((await listProfiles(async () => [unavailable]))[0].available, false);
 });
 

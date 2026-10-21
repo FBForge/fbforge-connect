@@ -27,9 +27,9 @@
         backups: 0,
         failSecret: false,
       });
-      const session = () => ({
+      const session = (apiVersion = 'v3') => ({
         sessionId: id(++fixture.sequence),
-        apiVersion: 'v3',
+        apiVersion,
         role: 'online-service',
         environment: 'TEST',
         connected: true,
@@ -64,13 +64,14 @@
           }
 
           if (command === 'open_session') {
-            fixture.active = session();
+            fixture.active = session(args.apiVersion);
             fixture.binding = args.profileId || null;
             if (args.profileId)
               fixture.profiles.push({
                 profileId: args.profileId,
                 name: args.profileName,
-                apiVersion: 'v3',
+                clientId: args.clientId,
+                apiVersion: args.apiVersion,
                 role: 'online-service',
                 keyCount: 2,
                 available: true,
@@ -85,6 +86,7 @@
             const profile = {
               profileId: id(3),
               name: 'Wiederhergestellt TEST',
+              clientId: 'synthetic-restored-client',
               apiVersion: 'v3',
               role: 'online-service',
               keyCount: 2,
@@ -114,7 +116,7 @@
           }
           if (command === 'open_saved_profile') {
             if (fixture.failRestore && args.restoreKeys) throw 'vault_restore_failed';
-            fixture.active = session();
+            fixture.active = session(fixture.profiles.find((p) => p.profileId === args.profileId).apiVersion);
             fixture.binding = args.restoreKeys ? args.profileId : null;
             return fixture.active;
           }

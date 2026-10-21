@@ -19,6 +19,7 @@ import {
   diagnosticResult,
 } from './support-report.js';
 import AppIcon from './AppIcon.vue';
+import CopyValue from './CopyValue.vue';
 import DocumentationLink from './DocumentationLink.vue';
 import StartWorkspace from './StartWorkspace.vue';
 import appLogo from './assets/test-client.png';
@@ -1063,6 +1064,22 @@ function clearHistory() {
       </span>
     </p>
     <p v-if="error" role="alert" class="status-badge error">{{ error }}</p>
+    <section v-if="activeSession" class="connection-identity" aria-labelledby="connection-identity-title">
+      <h3 id="connection-identity-title">
+        {{
+          profiles.find((profile) => profile.profileId === storageStatus?.profileId)?.name ||
+          'Aktuelle TEST-Verbindung'
+        }}
+      </h3>
+      <p>
+        API {{ activeSession.apiVersion }} ·
+        {{ storageStatus?.saved ? 'Geschütztes Profil' : 'Nur in dieser Sitzung' }}
+      </p>
+      <p v-if="activeSession.clientId">
+        <strong>Client-ID</strong>
+        <CopyValue :value="activeSession.clientId" label="Client-ID" />
+      </p>
+    </section>
     <form @submit.prevent="sessionAction('open')" autocomplete="off">
       <div class="client-fields">
         <label for="client-id">
@@ -1140,6 +1157,10 @@ function clearHistory() {
         <li v-for="profile in profiles" :key="profile.profileId">
           <div>
             <strong>{{ profile.name }}</strong>
+            <p v-if="profile.available">
+              <strong>Client-ID</strong>
+              <CopyValue :value="profile.clientId" label="Client-ID" />
+            </p>
             <p>
               {{
                 profile.available
