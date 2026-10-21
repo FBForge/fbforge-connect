@@ -17,7 +17,7 @@ import { resetsSessions } from './sessions.js';
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
 import FileDropInput from './FileDropInput.vue';
 import DocumentationLink from './DocumentationLink.vue';
-import CopyValue from './CopyValue.vue';
+import ActionNotice from './ActionNotice.vue';
 import ContentPreview from './ContentPreview.vue';
 import DiscardReplyDialog from './DiscardReplyDialog.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
@@ -63,6 +63,7 @@ watch(
   },
 );
 const diagnostic = ref('');
+const errorNotice = ref(null);
 const schemaSettings = ref(null);
 const applicationSchema = ref(null);
 const application = ref(null),
@@ -105,6 +106,31 @@ const context = computed(
 );
 const panelId = computed(() => (props.reply ? 'reply-receive' : 'receive'));
 const subject = computed(() => (props.reply ? 'Antwort' : 'Einreichung'));
+const errorTitle = computed(
+  () =>
+    ({
+      schema_consent_required: 'Freigabe für Schemaquellen erforderlich',
+      schema_unavailable: 'Schema nicht verfügbar',
+      key_missing: 'Testschlüssel fehlt',
+      key_rejected: 'Testschlüssel passt nicht',
+      test_certificate_required: 'Testzertifikat fehlt',
+      resource_denied: 'Zugriffsberechtigung fehlt',
+      data_schema_invalid: 'Fachdaten passen nicht zum Schema',
+    })[diagnostic.value] || 'Inhalte konnten nicht geprüft werden',
+);
+watch(error, async (message) => {
+  if (!message) return;
+  await nextTick();
+  errorNotice.value?.focus();
+});
+async function showSchemaSettings(local) {
+  preparation.value.open = true;
+  if (local) schemaSettings.value.open = true;
+  await nextTick();
+  const target = document.getElementById(`${panelId.value}-${local ? 'schema-file' : 'schema-sources'}`);
+  target?.focus();
+  target?.scrollIntoView({ block: 'nearest' });
+}
 let generation = 0,
   proofSession,
   alive = true,
@@ -124,6 +150,16 @@ const messages = {
     'Das Schema benötigt eine öffentliche Quelle. Bitte die Freigabe öffentlicher Schemaquellen aktivieren oder eine passende lokale Schemadatei hinzufügen und erneut prüfen.',
   schema_unavailable:
     'Die Schema-URI wurde aus den Metadaten gelesen. Das Schema oder eine seiner Referenzen konnte jedoch nicht vollständig geladen oder aufgelöst werden. Es liegt noch keine vollständige Inhaltsprüfung vor. Bei nicht öffentlich erreichbaren Schemata können Sie eine lokale Datei mit passender $id hinzufügen.',
+  schema_tls_error:
+    'Die Schemaquelle konnte nicht sicher erreicht werden. Prüfen Sie die Quelle oder fügen Sie eine passende lokale Schemadatei hinzu.',
+  schema_network_error:
+    'Die Schemaquelle ist nicht erreichbar. Prüfen Sie die Netzwerkverbindung oder fügen Sie eine passende lokale Schemadatei hinzu.',
+  schema_http_error:
+    'Die Schemaquelle hat kein verwendbares Schema geliefert. Prüfen Sie die Schema-URI oder fügen Sie eine passende lokale Schemadatei hinzu.',
+  schema_archive_invalid:
+    'Das geladene Schemapaket ist beschädigt oder überschreitet die zulässigen Grenzen. Prüfen Sie die Schemaquelle.',
+  data_schema_invalid:
+    'Die Fachdaten passen nicht zum angegebenen Schema. Prüfen Sie Daten und Schema, bevor Sie die Einreichung annehmen.',
   invalid_input:
     'Bitte eine UTF-8-JSON-Schemadatei mit eindeutiger absoluter $id und höchstens 2 MiB auswählen.',
   content_limit:
@@ -584,36 +620,44 @@ defineExpose({ confirmLeave });
         </div>
       </details>
       <p v-if="pending" role="status">{{ action }} …</p>
-      <p v-if="error" role="alert">{{ error }}</p>
-      <div v-if="error" class="recovery-actions client-actions">
+      <ActionNotice
+        v-if="error"
+        ref="errorNotice"
+        :title="errorTitle"
+        :message="error"
+        :tone="diagnostic === 'schema_consent_required' ? 'warning' : 'error'"
+        :code="diagnostic"
+        :api-version="session?.apiVersion"
+      >
         <button
           v-if="!reply && ['key_missing', 'key_rejected', 'test_certificate_required'].includes(diagnostic)"
           type="button"
-          class="button secondary"
+          class="button"
           :disabled="disabled"
           @click="emit('setup')"
         >
           Schlüssel einrichten
         </button>
         <button
-          v-if="diagnostic.startsWith('schema_')"
+          v-if="diagnostic === 'schema_consent_required'"
+          type="button"
+          class="button"
+          :disabled="disabled"
+          @click="showSchemaSettings(false)"
+        >
+          Zur Freigabe
+        </button>
+        <button
+          v-if="diagnostic.startsWith('schema_') || diagnostic === 'data_schema_invalid'"
           type="button"
           class="button secondary"
           :disabled="disabled"
-          @click="
-            schemaSettings.open = true;
-            nextTick(() => schemaSettings.querySelector('summary')?.focus());
-          "
+          @click="showSchemaSettings(true)"
         >
-          Schemaeinstellungen öffnen
+          Lokales Schema hinzufügen
         </button>
         <DocumentationLink :topic="reply ? 'replies' : 'problems'">Hilfe zu diesem Problem</DocumentationLink>
-      </div>
-      <details v-if="error && diagnostic">
-        <summary>Technische Fehlerangaben</summary>
-        <p>API {{ session?.apiVersion }}</p>
-        <CopyValue :value="diagnostic" label="Fehlercode" />
-      </details>
+      </ActionNotice>
       <template v-if="proof">
         <div class="verification-stages" aria-label="Prüfstatus">
           <p><span class="status-badge ok">Entschlüsselung und Integrität geprüft</span></p>
