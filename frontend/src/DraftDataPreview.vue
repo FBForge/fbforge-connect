@@ -11,6 +11,7 @@ const props = defineProps({
   schemaDocument: String,
   schemaUri: String,
 });
+const emit = defineEmits(['request-schema']);
 const preview = ref(null),
   loading = ref(false),
   notice = ref('');
@@ -48,6 +49,7 @@ async function open() {
     return;
   }
   loading.value = true;
+  emit('request-schema');
   let bytes;
   try {
     bytes = file ? new Uint8Array(await file.arrayBuffer()) : new TextEncoder().encode(text);
@@ -74,7 +76,7 @@ async function open() {
   <div class="draft-data-preview" @invalid.capture="revealInvalid">
     <div class="application-modes" role="group" aria-label="Fachdaten bearbeiten oder lesen">
       <button type="button" class="button secondary" :aria-pressed="!preview" @click="close">
-        Inhalt bearbeiten
+        Bearbeiten
       </button>
       <button
         type="button"
@@ -83,13 +85,13 @@ async function open() {
         :disabled="disabled || loading || (!file && !text)"
         @click="open"
       >
-        {{ loading ? 'Vorschau wird geladen …' : 'Fachdaten visuell ansehen' }}
+        {{ loading ? 'Vorschau wird geladen …' : 'Formularansicht' }}
       </button>
     </div>
     <div v-show="!preview" class="draft-data-editor"><slot /></div>
     <p v-if="notice" class="small-note" role="status">{{ notice }}</p>
     <div v-if="preview" class="draft-inline-preview" aria-label="Lokale Fachdatenansicht">
-      <p class="small-note">Lesende Ansicht. Zum Ändern wählen Sie „Inhalt bearbeiten“.</p>
+      <p class="small-note">Lesende Ansicht. Zum Ändern wählen Sie „Bearbeiten“.</p>
       <StructuredData
         v-if="preview.kind === 'text' && preview.format"
         :text="preview.rawText"

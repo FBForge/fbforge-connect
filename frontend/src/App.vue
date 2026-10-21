@@ -45,6 +45,7 @@ import CaseWorkspace from './CaseWorkspace.vue';
 const ApplicationHelp = defineAsyncComponent(() => import('./ApplicationHelp.vue'));
 const receiveTarget = shallowRef(null);
 function reopenCase(record) {
+  receiveTab.value = 'submissions';
   selectedDestination.value = record.destinationId;
   receiveTarget.value = { ...record, requestId: crypto.randomUUID() };
   void navigate('Empfangen');
@@ -175,6 +176,7 @@ function addEvent(api, action, status, started, role = '—') {
 }
 async function sessionAction(action) {
   if (busy.value) return;
+  if ((await receiveBrowser.value?.confirmLeave()) === false || busy.value) return;
   busy.value = true;
   pendingAction.value = action;
   error.value = '';
@@ -320,6 +322,41 @@ const navigation = [
 const workspaceNavigation = navigation.filter((item) => !item.utility);
 const utilityNavigation = navigation.filter((item) => item.utility);
 const currentView = computed(() => navigation.find((item) => item.name === section.value));
+const receiveTab = ref('submissions'),
+  receiveBrowser = ref(null);
+watch(
+  () => activeSession.value?.sessionId,
+  () => {
+    receiveTab.value = 'submissions';
+  },
+);
+async function selectReceiveTab(value) {
+  if (busy.value || receiveTab.value === value) return;
+  if (receiveTab.value === 'submissions' && !(await receiveBrowser.value?.confirmLeave())) return;
+  receiveTab.value = value;
+}
+async function changeApi(event) {
+  const selected = event.target.value;
+  event.target.value = apiVersion.value;
+  if (busy.value || !['v2', 'v3'].includes(selected) || selected === apiVersion.value) return;
+  if ((await receiveBrowser.value?.confirmLeave()) === false || busy.value) return;
+  apiVersion.value = selected;
+}
+async function receiveTabKey(event) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  const target =
+    event.key === 'Home'
+      ? 'submissions'
+      : event.key === 'End'
+        ? 'replies'
+        : receiveTab.value === 'submissions'
+          ? 'replies'
+          : 'submissions';
+  await selectReceiveTab(target);
+  await nextTick();
+  document.getElementById(`receive-tab-${receiveTab.value}`)?.focus();
+}
 const workspace = ref(null),
   viewHeading = ref(null),
   connectionDialog = ref(null),
@@ -346,6 +383,7 @@ async function navigate(name) {
   viewHeading.value?.focus({ preventScroll: true });
 }
 function beginTask(name) {
+  if (name === 'Empfangen') receiveTab.value = 'submissions';
   void navigate(name);
   if (!activeSession.value) showConnection();
 }
@@ -396,6 +434,7 @@ async function refreshStorageStatus() {
 }
 async function connectProfile(profile, restoreKeys) {
   if (busy.value) return;
+  if ((await receiveBrowser.value?.confirmLeave()) === false || busy.value) return;
   busy.value = true;
   pendingAction.value = 'open';
   error.value = '';
@@ -560,7 +599,13 @@ function clearHistory() {
       <div class="topbar-actions">
         <label class="api-picker" for="session-api">
           <span>API</span>
-          <select id="session-api" v-model="apiVersion" :disabled="busy" aria-label="API-Version">
+          <select
+            id="session-api"
+            :value="apiVersion"
+            :disabled="busy"
+            aria-label="API-Version"
+            @change="changeApi"
+          >
             <option value="v3">v3</option>
             <option value="v2">v2</option>
           </select>
@@ -619,24 +664,23 @@ function clearHistory() {
     <div class="app-workspace">
       <div class="workspace-heading">
         <div>
-          <p class="workspace-eyebrow">
-            {{ currentView.utility ? 'Anwendung' : 'Arbeitsbereich' }}
-          </p>
           <h1 ref="viewHeading" tabindex="-1">{{ section }}</h1>
           <p>{{ currentView.description }}</p>
-          <DocumentationLink
-            v-if="['Senden', 'Empfangen', 'Event Log', 'Destinations', 'Prozesse'].includes(section)"
-            :topic="
-              {
-                Senden: 'send',
-                Empfangen: 'receive',
-                'Event Log': 'events',
-                Destinations: 'destinations',
-                Prozesse: 'processes',
-              }[section]
-            "
-          />
         </div>
+        <DocumentationLink
+          v-if="['Senden', 'Empfangen', 'Event Log', 'Destinations', 'Prozesse'].includes(section)"
+          :topic="
+            {
+              Senden: 'send',
+              Empfangen: 'receive',
+              'Event Log': 'events',
+              Destinations: 'destinations',
+              Prozesse: 'processes',
+            }[section]
+          "
+        >
+          Anleitung
+        </DocumentationLink>
       </div>
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div class="workspace-content">
@@ -710,33 +754,70 @@ function clearHistory() {
               }
             "
           />
-          <DestinationKeys
-            ref="destinationSetup"
-            :default-destination="defaultDestinations?.receiverDestination || ''"
+          <div
             v-show="section === 'Empfangen'"
-            :session="activeSession"
-            :busy="busy"
-            @busy="resourceBusy"
-            @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
-            @fatal="fatal"
-            @destination="(id) => (selectedDestination = id)"
-            @invalidate="keyRevision++"
-          />
-          <SubmissionBrowser
-            @setup="destinationSetup?.showSetup()"
-            :target="receiveTarget"
-            v-show="section === 'Empfangen'"
-            :session="activeSession"
-            :busy="busy"
-            :destination-id="selectedDestination"
-            :key-revision="keyRevision"
-            :receive-revision="submissionRevision"
-            @receive-start="replyRevision++"
-            @event-log="openEventLog"
-            @busy="resourceBusy"
-            @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
-            @fatal="fatal"
-          />
+            class="receive-tabs"
+            role="tablist"
+            aria-label="Eingang"
+            @keydown="receiveTabKey"
+          >
+            <button
+              v-for="tab in [
+                { id: 'submissions', title: 'Einreichungen' },
+                { id: 'replies', title: 'Antworten' },
+              ]"
+              :id="`receive-tab-${tab.id}`"
+              :key="tab.id"
+              type="button"
+              role="tab"
+              :aria-selected="receiveTab === tab.id"
+              :aria-controls="`receive-panel-${tab.id}`"
+              :tabindex="receiveTab === tab.id ? 0 : -1"
+              :disabled="busy"
+              @click="selectReceiveTab(tab.id)"
+            >
+              {{ tab.title }}
+            </button>
+          </div>
+          <div
+            v-show="section === 'Empfangen' && receiveTab === 'submissions'"
+            id="receive-panel-submissions"
+            role="tabpanel"
+            aria-labelledby="receive-tab-submissions"
+          >
+            <DestinationKeys
+              ref="destinationSetup"
+              :default-destination="defaultDestinations?.receiverDestination || ''"
+              v-show="section === 'Empfangen'"
+              :session="activeSession"
+              :busy="busy"
+              @busy="resourceBusy"
+              @activity="
+                (event) => addEvent(event.api, event.action, event.status, event.started, event.role)
+              "
+              @fatal="fatal"
+              @destination="(id) => (selectedDestination = id)"
+              @invalidate="keyRevision++"
+            />
+            <SubmissionBrowser
+              ref="receiveBrowser"
+              @setup="destinationSetup?.showSetup()"
+              :target="receiveTarget"
+              v-show="section === 'Empfangen'"
+              :session="activeSession"
+              :busy="busy"
+              :destination-id="selectedDestination"
+              :key-revision="keyRevision"
+              :receive-revision="submissionRevision"
+              @receive-start="replyRevision++"
+              @event-log="openEventLog"
+              @busy="resourceBusy"
+              @activity="
+                (event) => addEvent(event.api, event.action, event.status, event.started, event.role)
+              "
+              @fatal="fatal"
+            />
+          </div>
           <CaseWorkspace
             v-show="section === 'Vorgänge'"
             :session="activeSession"
@@ -758,18 +839,27 @@ function clearHistory() {
             @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
             @fatal="fatal"
           />
-          <ReplyBrowser
-            @event-log="openEventLog"
-            v-show="section === 'Empfangen'"
-            :session="activeSession"
-            :busy="busy"
-            :key-revision="keyRevision"
-            :receive-revision="replyRevision"
-            @receive-start="submissionRevision++"
-            @busy="resourceBusy"
-            @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
-            @fatal="fatal"
-          />
+          <div
+            v-show="section === 'Empfangen' && receiveTab === 'replies'"
+            id="receive-panel-replies"
+            role="tabpanel"
+            aria-labelledby="receive-tab-replies"
+          >
+            <ReplyBrowser
+              @event-log="openEventLog"
+              v-show="section === 'Empfangen'"
+              :session="activeSession"
+              :busy="busy"
+              :key-revision="keyRevision"
+              :receive-revision="replyRevision"
+              @receive-start="submissionRevision++"
+              @busy="resourceBusy"
+              @activity="
+                (event) => addEvent(event.api, event.action, event.status, event.started, event.role)
+              "
+              @fatal="fatal"
+            />
+          </div>
           <div v-show="section === 'Diagnose'" class="diagnostic-view">
             <section class="tool-section" aria-labelledby="setup-title">
               <div class="tool-section-heading">

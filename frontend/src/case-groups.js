@@ -34,13 +34,15 @@ export function caseGroups(records) {
     })
     .toSorted((left, right) => chronological(right.latest, left.latest));
 }
-export function filterCaseGroups(groups, query = '', direction = 'all') {
+export function filterCaseGroups(groups, query = '', direction = 'all', attentionOnly = false) {
   const needle = query.trim().toLocaleLowerCase('de');
-  return groups.filter((group) =>
-    group.messages.some(
-      (record) =>
-        (direction === 'all' || record.direction === direction) && searchable(record).includes(needle),
-    ),
+  return groups.filter(
+    (group) =>
+      (!attentionOnly || group.attention.length > 0) &&
+      group.messages.some(
+        (record) =>
+          (direction === 'all' || record.direction === direction) && searchable(record).includes(needle),
+      ),
   );
 }
 export function defaultCaseMessage(group, query = '') {

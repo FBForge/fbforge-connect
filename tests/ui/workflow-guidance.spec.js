@@ -17,18 +17,15 @@ test('sending catches incomplete sections before advancing and preserves the dra
     .getByRole('group', { name: 'Versandabschnitte' })
     .getByRole('button', { name: 'Anlagen & Antwortkanal', exact: true })
     .click();
-  await expect(page.locator('#send-source')).toBeFocused();
-  await expect(page.getByRole('alert')).toContainText(
-    'Bitte füllen Sie das Feld „Absender-Destination“ aus.',
-  );
-  await expect(page.locator('[data-send-step="0"]')).toBeVisible();
-  await page.locator('#send-source').fill('11111111-1111-4111-8111-111111111111');
-  await page.getByRole('button', { name: 'Weiter: Fachdaten', exact: true }).click();
   await expect(page.locator('#send-target')).toBeFocused();
   await expect(page.getByRole('alert')).toContainText(
     'Bitte füllen Sie das Feld „Empfänger-Destination“ aus.',
   );
+  await expect(page.locator('[data-send-step="0"]')).toBeVisible();
   await page.locator('#send-target').fill('22222222-2222-4222-8222-222222222222');
+  await page.getByRole('button', { name: 'Weiter: Fachdaten', exact: true }).click();
+  await expect(page.locator('#send-source')).toBeFocused();
+  await page.locator('#send-source').fill('11111111-1111-4111-8111-111111111111');
   await page.getByRole('button', { name: 'Weiter: Fachdaten', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Laden Sie zuerst die Leistungen');
   await expect(page.getByRole('button', { name: 'Leistungen laden', exact: true })).toBeFocused();
@@ -92,4 +89,34 @@ test('case details keep the reading area clear and return to the same filtered r
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByLabel('Vorgänge durchsuchen')).toHaveValue('00000005');
   await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(1);
+});
+
+test('receive tabs support keyboard navigation and make no pickup or reply requests merely by switching', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html');
+  await page.getByRole('button', { name: 'Onlinedienst testen', exact: true }).click();
+  await page.locator('#client-id').fill('synthetic-client');
+  await page.locator('#client-secret').fill('synthetic-secret-marker');
+  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  const incoming = page.getByRole('tab', { name: 'Einreichungen', exact: true });
+  const replies = page.getByRole('tab', { name: 'Antworten', exact: true });
+  await expect(incoming).toHaveAttribute('aria-selected', 'true');
+  await incoming.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(replies).toBeFocused();
+  await expect(replies).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#receive-panel-submissions')).toBeHidden();
+  await expect(page.locator('#receive-panel-replies')).toBeVisible();
+  await page.keyboard.press('Home');
+  await expect(incoming).toBeFocused();
+  await expect(page.locator('#receive-panel-replies')).toBeHidden();
+  const calls = await page.evaluate(() => window.__profilesFixture.calls.map((item) => item.command));
+  expect(
+    calls.some((command) =>
+      ['list_submissions', 'load_submission', 'list_replies', 'prepare_reply', 'execute_reply'].includes(
+        command,
+      ),
+    ),
+  ).toBe(false);
 });

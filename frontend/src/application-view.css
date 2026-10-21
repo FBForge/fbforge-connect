@@ -420,3 +420,82 @@
     }
   }
 }
+/* Task controls and reading tools share the existing theme tokens. */
+.application-tools {
+  padding: 0;
+  margin: 8px 0 16px;
+  border: 0;
+  background: transparent;
+}
+.application-tools > summary {
+  padding: 8px 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+.application-tools .application-toolbar {
+  margin: 12px 0;
+}
+.application-tools .application-technical-toggle {
+  margin-bottom: 12px;
+}
+.application-field-value {
+  font-size: 15px;
+}
+.application-field-label,
+.application-search {
+  font-size: 14px;
+}
+.schema-source-details {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.schema-source-details > summary {
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 0;
+}
+.case-attention-filter {
+  margin: 16px 0;
+}
+.case-list > li > .case-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 24px;
+  width: 100%;
+}
+.case-row-title {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0 !important;
+}
+.case-row-time {
+  grid-column: 2;
+  grid-row: 1;
+  padding-top: 6px;
+}
+.case-row .case-metadata {
+  grid-column: 1;
+}
+.case-row .case-attention,
+.case-row .case-message-copies,
+.case-row .case-identifier {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.case-current-status {
+  margin: 16px 0;
+}
+@media (max-width: 760px) {
+  .case-list > li > .case-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .case-row-time {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 0;
+  }
+}

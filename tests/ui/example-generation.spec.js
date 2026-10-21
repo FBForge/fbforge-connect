@@ -42,7 +42,7 @@ async function setup(page, reply, options = {}) {
   if (reply) {
     await page.locator('#pickup-submission').fill('00000003-1111-4111-8111-111111111111');
     await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
-    await page.getByRole('button', { name: 'Antwortmöglichkeiten laden', exact: true }).click();
+    await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
   } else {
     await page.locator('#send-source').fill('11111111-1111-4111-8111-111111111111');
     await page.locator('#send-target').fill('22222222-2222-4222-8222-222222222222');

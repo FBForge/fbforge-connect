@@ -23,7 +23,8 @@ import ExampleDraftDialog from './ExampleDraftDialog.vue';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 
-const props = defineProps({ session: Object, proof: Object, busy: Boolean });
+const props = defineProps({ session: Object, proof: Object, busy: Boolean, guided: Boolean });
+const expanded = ref(false);
 const emit = defineEmits(['busy', 'activity', 'fatal', 'invalidate', 'event-log']);
 const allowExternalSchemas = ref(false);
 watch(
@@ -56,7 +57,8 @@ const exampleDialog = ref(null),
 const owner = shallowRef(null),
   dialog = ref(null),
   prepareButton = ref(null),
-  resultHeading = ref(null);
+  resultHeading = ref(null),
+  schemaOptions = ref(null);
 const context = computed(
   () => `${props.session?.apiVersion}/${props.session?.sessionId}/${props.proof?.proofId}`,
 );
@@ -160,6 +162,7 @@ async function cancelKnown(value, active) {
   }
 }
 function reset() {
+  expanded.value = false;
   schemaPackage.value = null;
   schemaFile.value = null;
   schemaNotice.value = '';
@@ -305,30 +308,58 @@ function addFiles(files) {
       description: '',
     });
 }
+const hasDraft = computed(
+  () =>
+    !locked.value &&
+    !outcome.value &&
+    (Boolean(file.value) || attachments.value.length > 0 || text.value !== '{\n  "status": "erhalten"\n}'),
+);
+async function begin() {
+  if (disabled.value) return;
+  expanded.value = true;
+  const key = context.value;
+  if (!target.value) await load();
+  await nextTick();
+  if (context.value === key) document.getElementById(file.value ? 'reply-data-file' : 'reply-data')?.focus();
+}
+defineExpose({ begin, hasDraft, discardDraft: reset });
 async function prepare() {
-  if (disabled.value || !selected.value || !schemaPackage.value) return;
-  const proof = { ...props.proof },
-    schema = { ...selected.value };
-  const draft = {
-    proofId: proof.proofId,
-    schemaId: schemaPackage.value.schemaId,
-    schemaUri: schema.schemaUri,
-    mimeType: format.value,
-    processMessage:
+  if (disabled.value || !selected.value) return;
+  const key = schemaContext.value,
+    proof = { ...props.proof },
+    schema = { ...selected.value },
+    mimeType = format.value,
+    local = schemaFile.value,
+    external = !local && allowExternalSchemas.value,
+    payload = file.value || new Blob([text.value]),
+    files = attachments.value.map((item) => ({ ...item })),
+    processMessage =
       props.session.apiVersion === 'v3' && process.value
         ? { processModelId: model.value.trim(), messageId: message.value.trim() }
-        : null,
-  };
+        : null;
   await run('Antwort lokal vorbereiten', async (active, current) => {
-    const result = await prepareReply(
-      invoke,
-      active,
-      proof,
-      draft,
-      file.value || new Blob([text.value]),
-      attachments.value,
-    );
-    if (!current()) {
+    let packet = schemaPackage.value;
+    if (!packet) {
+      packet = await loadReplySchema(
+        invoke,
+        active,
+        proof,
+        { schemaUri: schema.schemaUri, mimeType, allowExternalSchemas: external },
+        local,
+      );
+      if (!current() || schemaContext.value !== key) return 'Abgebrochen';
+      schemaPackage.value = packet;
+    }
+    if (!current() || schemaContext.value !== key) return 'Abgebrochen';
+    const draft = {
+      proofId: proof.proofId,
+      schemaId: packet.schemaId,
+      schemaUri: schema.schemaUri,
+      mimeType,
+      processMessage,
+    };
+    const result = await prepareReply(invoke, active, proof, draft, payload, files);
+    if (!current() || schemaContext.value !== key) {
       await cancelKnown(result, active);
       return 'Abgebrochen';
     }
@@ -338,6 +369,10 @@ async function prepare() {
   });
   await nextTick();
   if (alive && prepared.value) dialog.value?.showModal();
+  else if (error.value && !schemaPackage.value) {
+    schemaOptions.value?.setAttribute('open', '');
+    document.getElementById('reply-schema-sources')?.focus();
+  }
 }
 async function dismiss() {
   if (!prepared.value || working.value) return;
@@ -393,12 +428,17 @@ async function send() {
 </script>
 
 <template>
-  <section class="tool-section" aria-labelledby="reply-send-title" :aria-busy="working">
+  <section
+    v-show="!guided || expanded || outcome || error"
+    class="tool-section"
+    aria-labelledby="reply-send-title"
+    :aria-busy="working"
+  >
     <ExampleDraftDialog ref="exampleDialog" :context-key="schemaContext" />
     <h2 id="reply-send-title">Auf die Einreichung antworten</h2>
     <p>
-      Das SDK verschlüsselt die Antwort mit dem angebotenen Schlüssel aus den geprüften Metadaten. Eine
-      Antwort schließt den Empfang der Einreichung noch nicht ab.
+      Verfassen Sie Ihre Antwort und prüfen Sie den Entwurf vor dem Senden. Eine Antwort schließt den Empfang
+      noch nicht ab.
     </p>
     <p v-if="!proof">Zuerst die Inhalte der Einreichung entschlüsseln und prüfen.</p>
     <button v-if="!target" class="button secondary" type="button" :disabled="disabled" @click="load">
@@ -407,8 +447,33 @@ async function send() {
     <form v-if="target" class="send-form" @submit.prevent="prepare">
       <fieldset :disabled="disabled">
         <legend>Antwort</legend>
+        <div class="client-actions">
+          <button ref="exampleButton" class="button secondary" type="button" @click="loadSchema(true)">
+            Fiktiven Antwortentwurf erzeugen
+          </button>
+        </div>
+        <DraftDataPreview
+          :schema-document="schemaPackage?.document"
+          :schema-uri="selected?.schemaUri"
+          :text="text"
+          :file="file"
+          :mime-type="format"
+          :context-key="context"
+          :disabled="disabled"
+        >
+          <label v-if="!file" for="reply-data">
+            Antwortinhalt
+            <textarea id="reply-data" v-model="text" rows="6" required spellcheck="false"></textarea>
+          </label>
+          <p v-else>
+            {{ file.name }} · {{ file.size }} Bytes
+            <button class="button secondary" type="button" @click="file = null">Eingabefeld verwenden</button>
+          </p>
+        </DraftDataPreview>
+        <p v-if="schemaNotice" class="small-note" role="status">{{ schemaNotice }}</p>
+        <SchemaSourceConsent id="reply-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
         <div class="client-fields">
-          <label for="reply-schema">
+          <label v-if="target.schemas.length > 1" for="reply-schema">
             Angebotenes Antwortschema
             <select id="reply-schema" v-model="choice">
               <option v-for="(item, index) in target.schemas" :key="index" :value="index">
@@ -435,60 +500,42 @@ async function send() {
             @files="(files) => (file = files[0] || null)"
           />
         </div>
-        <div class="client-fields">
-          <FileDropInput
-            id="reply-schema-file"
-            label="Lokales Antwortschema (optional, JSON mit passender $id)"
-            accept=".json,application/json,application/schema+json"
-            :disabled="disabled"
-            @files="chooseSchemaFile"
-          >
-            Maximal 2 MiB. Bei lokaler Auswahl werden keine externen Referenzen geladen.
-          </FileDropInput>
-          <p v-if="schemaFile">
-            {{ schemaFile.name }}
-            <button
-              class="button secondary"
-              type="button"
-              @click="
-                schemaFile = null;
-                schemaPackage = null;
-              "
+        <details ref="schemaOptions" class="reply-schema-options">
+          <summary>Antwortschema und technische Optionen</summary>
+          <CopyValue v-if="selected" label="Antwortschema" :value="selected.schemaUri" />
+          <div class="client-fields">
+            <FileDropInput
+              id="reply-schema-file"
+              label="Lokales Antwortschema (optional, JSON mit passender $id)"
+              accept=".json,application/json,application/schema+json"
+              :disabled="disabled"
+              @files="chooseSchemaFile"
             >
-              Lokales Schema entfernen
-            </button>
-          </p>
-        </div>
-        <SchemaSourceConsent id="reply-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
+              Maximal 2 MiB. Bei lokaler Auswahl werden keine externen Referenzen geladen.
+            </FileDropInput>
+            <p v-if="schemaFile">
+              {{ schemaFile.name }}
+              <button
+                class="button secondary"
+                type="button"
+                @click="
+                  schemaFile = null;
+                  schemaPackage = null;
+                "
+              >
+                Lokales Schema entfernen
+              </button>
+            </p>
+          </div>
 
-        <div class="client-actions">
-          <button class="button secondary" type="button" @click="loadSchema(false)">
-            Antwortschema laden
-          </button>
-          <button ref="exampleButton" class="button secondary" type="button" @click="loadSchema(true)">
-            Fiktiven Antwortentwurf erzeugen
-          </button>
-        </div>
-        <p v-if="schemaNotice" class="small-note" role="status">{{ schemaNotice }}</p>
-        <DraftDataPreview
-          :schema-document="schemaPackage?.document"
-          :schema-uri="selected?.schemaUri"
-          :text="text"
-          :file="file"
-          :mime-type="format"
-          :context-key="context"
-          :disabled="disabled"
-        >
-          <label v-if="!file" for="reply-data">
-            Antwortinhalt
-            <textarea id="reply-data" v-model="text" rows="6" required spellcheck="false"></textarea>
-          </label>
-          <p v-else>
-            {{ file.name }} · {{ file.size }} Bytes
-            <button class="button secondary" type="button" @click="file = null">Eingabefeld verwenden</button>
-          </p>
-        </DraftDataPreview>
-        <template v-if="session?.apiVersion === 'v3'">
+          <div class="client-actions">
+            <button class="button secondary" type="button" @click="loadSchema(false)">
+              Antwortschema laden
+            </button>
+          </div>
+        </details>
+        <details v-if="session?.apiVersion === 'v3'" :open="process">
+          <summary>Als Prozessnachricht antworten</summary>
           <label class="checkbox-label">
             <input v-model="process" type="checkbox" :disabled="!target?.processMessages?.length" />
             Als angebotene Prozessnachricht antworten
@@ -515,7 +562,7 @@ async function send() {
               </select>
             </label>
           </div>
-        </template>
+        </details>
       </fieldset>
       <fieldset :disabled="disabled">
         <legend>Antwortanlagen</legend>
@@ -554,7 +601,7 @@ async function send() {
           Antwortkanal passen.
         </p>
       </fieldset>
-      <button ref="prepareButton" class="button" type="submit" :disabled="disabled || !schemaPackage">
+      <button ref="prepareButton" class="button" type="submit" :disabled="disabled">
         Antwort prüfen und vorbereiten
       </button>
     </form>

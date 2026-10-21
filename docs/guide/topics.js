@@ -10,9 +10,9 @@ export const helpTopics = [
       'FBForge Connect ist ein unabhängiges Testwerkzeug für FIT-Connect. Alle Verbindungen führen ausschließlich in die TEST-Umgebung. Verwenden Sie fiktive Personen- und Antragsdaten.',
     steps: [
       'Wählen Sie oben API v3 für neue Tests. API v2 bleibt für bestehende Integrationen verfügbar.',
-      'Öffnen Sie „Verbinden“ und geben Sie die TEST-Client-ID sowie das Client-Secret Ihres Onlinediensts oder Fachverfahrens ein.',
+      'Wählen Sie auf „Start“ Ihre Testaufgabe: „Fachverfahren testen“ sendet einen Testantrag. „Onlinedienst testen“ führt zum Empfang. Falls nötig, öffnet sich zuerst die Anmeldung. Geben Sie dort Ihre TEST-Client-ID und das Client-Secret ein.',
       'Eine Destination ist ein Zustellpunkt bei FIT-Connect. Ein Onlinedienst sendet Einreichungen und empfängt angebotene Antworten. Ein Subscriber ist das empfangende Fachverfahren. Er ruft Einreichungen ab und kann darauf antworten. Die API und der Zugang müssen zu Ihrem Test passen.',
-      'Wählen Sie auf „Start“ Ihre Testaufgabe: „Fachverfahren testen“ sendet einen Testantrag. „Onlinedienst testen“ führt zum Empfang. Bei Bedarf öffnet sich zuerst die Anmeldung. Die Bereiche sind auch direkt über die Navigation erreichbar. Unter „Vorgänge“ finden Sie lokale Kopien.',
+      'Die Bereiche sind auch direkt über die Navigation erreichbar. Unter „Vorgänge“ finden Sie lokale Kopien. „Anleitung“ öffnet den passenden Abschnitt auf der FBForge-Website.',
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
     ],
     notes: [
@@ -65,9 +65,9 @@ export const helpTopics = [
     steps: [
       'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat. Wenn der Empfänger eine Leistungsbezeichnung liefert, wird sie neben der LeiKa-Kennung angezeigt. Weitere Adressierungsoptionen enthalten die Bezeichnung, Region und eine optionale Case ID. „Weiter“ prüft die Pflichtfelder des Abschnitts und führt Sie zur nächsten Eingabe.',
       'Bei API v3 lädt die Anwendung Ihre eigenen Absender-Destinations zur Auswahl. Eine einzelne aktive Destination wird automatisch übernommen. Über „ID eingeben“ können Sie eine Destination auch manuell hinterlegen. Diese muss zu Ihrem Zugang gehören und passend eingerichtet sein.',
-      'Geben Sie JSON oder XML ein oder ziehen Sie eine Datei in das Dateifeld. „Fachdaten visuell ansehen“ zeigt den Entwurf direkt als Formular. Über „Inhalt bearbeiten“ kehren Sie zur Eingabe zurück. Text und Dateiauswahl bleiben beim Umschalten erhalten.',
+      'Geben Sie JSON oder XML ein oder ziehen Sie eine Datei in das Dateifeld. „Formularansicht“ zeigt den Entwurf lesbar an. Über „Bearbeiten“ kehren Sie zur Eingabe zurück. Text und Dateiauswahl bleiben beim Umschalten erhalten.',
       'Wählen Sie „Fiktive Beispieldaten erzeugen“. Im Dialog wählen Sie bei XML die Nachricht für Ihre Leistung. Erst „Beispieldaten übernehmen“ ersetzt den bisherigen Inhalt oder eine ausgewählte Datei im Entwurf. „Abbrechen“ lässt beides unverändert. Für eine XBau-Genehmigungsfreistellung ist das beispielsweise genehmigungsfreistellung.anzeige.0600. Eine Transportnachricht wird nicht automatisch ausgewählt. Die LeiKa allein bestimmt die XML-Nachricht nicht eindeutig.',
-      'Die Formularansicht zeigt Werte lesbar an. Über JSON-Struktur oder Quelltext können Sie technische Details vergleichen. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar.',
+      'Die Formularansicht zeigt Werte lesbar an. „Struktur, Quelltext und Feldangaben“ enthält die technischen Ansichten. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar. Unter „Schema und technische Optionen“ können Sie ein Schema auch gezielt laden.',
       'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten.',
       'Wenn Sie eine Antwort testen möchten, aktivieren Sie vor dem Versand das Antwortangebot und wählen Sie das erlaubte Antwortschema.',
       'Wählen Sie „Versand vorbereiten“, prüfen Sie die unveränderliche Zusammenfassung und bestätigen Sie den Versand. Kopieren Sie Submission ID und Case ID bei Bedarf mit den Kopierschaltflächen. Nach erfolgreichem Versand können Sie unter „Nächsten Test vorbereiten“ Fachdaten und Anlagen ausdrücklich für einen neuen Entwurf auswählen. Die Case ID wird geleert, Empfängerleistungen und Schema werden erneut geprüft.',
@@ -97,15 +97,22 @@ export const helpTopics = [
     section: 'Empfangen',
     image: 'receive',
     caption: 'Die Formularansicht eines fiktiven Antrags nach Entschlüsselung und technischer Prüfung.',
+    illustrations: [
+      { image: 'receive-inbox', caption: 'Getrennte Eingänge für Einreichungen und Antworten.' },
+      {
+        image: 'receive-review',
+        caption: 'Die geöffnete Nachricht mit Rückweg zum Eingang und Prüfergebnis.',
+      },
+    ],
     intro:
       'Ein Fachverfahren lädt seinen Eingang, entschlüsselt den ausgewählten Antrag und prüft die technischen Inhalte. Die Empfangsbestätigung bleibt eine eigene bewusste Aktion.',
     steps: [
-      'Verbinden Sie den Fachverfahren-Zugang. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Testschlüssel zum Entschlüsseln und Signieren.',
+      'Verbinden Sie den Fachverfahren-Zugang. Öffnen Sie unter „Empfangen“ das Register „Einreichungen“. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Testschlüssel zum Entschlüsseln und Signieren.',
       'Ohne Submission ID laden Sie die verfügbaren Einreichungen. Mit einer Submission ID öffnet die Schaltfläche oder die Eingabetaste direkt die Nachricht und startet die Entschlüsselung und Prüfung.',
       'Nach erfolgreicher Einrichtung wird die Empfangseinrichtung kompakt angezeigt. Über „Einrichtung ändern“ öffnen Sie Destination und Schlüssel erneut. Wenn Schlüssel oder Schemata fehlen, führt die passende Schaltfläche zur Einrichtung oder zu den Schemaeinstellungen. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
-      'Lesen Sie die Fachdaten direkt in der Formularansicht. Die Suche hilft bei umfangreichen Anträgen. Die Struktur- und Quelltextansicht bleiben verfügbar. „Technische Feldangaben anzeigen“ blendet Originalwerte, Pfade und Schemaherkunft ein. Eindeutig typisierte Datumswerte werden lesbar formatiert, Wahrheitswerte als Ja oder Nein. Feldhinweise können Sie einzeln aufklappen.',
-      'Öffnen Sie Anlagen über „Ansehen“ oder laden Sie die unveränderte Datei herunter. Bei breiten Fenstern stehen Anlagen und nächste Schritte neben den Fachdaten, bei schmalen darunter. „Antwort vorbereiten“ und „Annehmen oder ablehnen“ führen zur jeweiligen Aktion. Es wird dabei noch nichts gesendet.',
-      'Prüfen Sie fachlich, ob der Antrag zum Testfall passt. Bereiten Sie dann „Annehmen“ oder „Ablehnen“ vor und kontrollieren Sie die Bestätigung. Beim Ablehnen wird ein passender technischer Grund benötigt.',
+      'Lesen Sie die Fachdaten direkt in der Formularansicht. Die Eingangssuche ist währenddessen ausgeblendet. „Zurück zum Eingang“ stellt Ihre bisherige Suche wieder her. „Struktur, Quelltext und Feldangaben“ enthält die technischen Ansichten. Dort blendet „Technische Feldangaben anzeigen“ Originalwerte, Pfade und Schemaherkunft ein. Datumswerte werden bei eindeutiger Typisierung lesbar formatiert, Wahrheitswerte als Ja oder Nein.',
+      'Öffnen Sie Anlagen über „Ansehen“ oder laden Sie die unveränderte Datei herunter. Bei breiten Fenstern stehen Anlagen und nächste Schritte neben den Fachdaten, bei schmalen darunter. Über „Antwort verfassen“ öffnen Sie den Antwortentwurf.',
+      'Prüfen Sie fachlich, ob der Antrag zum Testfall passt. „Annehmen“ führt bei eindeutigem Signaturschlüssel direkt zur Prüfung und Bestätigung. Bei mehreren Schlüsseln wählen Sie zuerst den passenden aus. „Ablehnen“ verlangt einen ausdrücklich ausgewählten Grund. Erst die abschließende Bestätigung übermittelt die Entscheidung.',
       'Eine lokale Kopie bleibt unter „Vorgänge“ lesbar. Wenn die dauerhafte Aufbewahrung eingeschaltet ist, wird vor der Bestätigung die Sicherung geprüft.',
     ],
     notes: [
@@ -130,8 +137,8 @@ export const helpTopics = [
       'Die Übersicht fasst lokale Nachrichten mit derselben Case ID zu einem Vorgang zusammen. Einreichungen und Antworten behalten ihre eigenen Status. Sie sehen historische Kopien, keinen aktuellen Serverbestand.',
     steps: [
       'Öffnen Sie „Vorgänge“ und verbinden Sie das gewünschte Profil. Die Liste enthält die Nachrichten dieses Zugangs und dieser API.',
-      'Suchen Sie nach Titel, Case ID, Submission ID, Reply ID oder Destination. Filtern Sie bei Bedarf nach „Empfangen“ oder „Gesendet“. Nach dem Öffnen gelangen Sie mit „Zur Vorgangsübersicht“ zur bisherigen Suche zurück.',
-      'Öffnen Sie einen Vorgang über seinen Titel. Im Nachrichtenverlauf wechseln Sie zwischen Einreichung und Antworten. Die früheste verfügbare Einreichung wird zuerst geöffnet. Eine Suche nach der vollständigen Submission ID oder Reply ID öffnet direkt die passende Nachricht. Auch bei aktiven Filtern bleibt der vollständige lokale Verlauf sichtbar.',
+      'Suchen Sie nach Titel, Case ID, Submission ID, Reply ID oder Destination. Filtern Sie bei Bedarf nach „Empfangen“ oder „Gesendet“. „Nur Vorgänge mit Klärungsbedarf“ beschränkt die Liste auf fehlgeschlagene, ungewisse oder nicht verfügbare Nachrichten. Nach dem Öffnen gelangen Sie mit „Zur Vorgangsübersicht“ zur bisherigen Suche zurück.',
+      'Öffnen Sie einen Vorgang über seinen Titel. Im Nachrichtenverlauf wechseln Sie zwischen Einreichung und Antworten. „Status dieser Nachricht“ gilt nur für die ausgewählte Nachricht. Die früheste verfügbare Einreichung wird zuerst geöffnet. Eine Suche nach der vollständigen Submission ID oder Reply ID öffnet direkt die passende Nachricht. Auch bei aktiven Filtern bleibt der vollständige lokale Verlauf sichtbar.',
       'Standardmäßig werden Kopien automatisch nur in der laufenden Anwendung gehalten. Ein Profilwechsel entfernt sie nicht. Verbinden Sie denselben Zugang erneut, um sie wieder zu sehen.',
       'Öffnen Sie „Aufbewahrung: aktuelle Sitzung“. Wenn Sie die Kopien nach einem Neustart benötigen, aktivieren Sie „Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren“. Vorhandene und neue Kopien werden dann mit Ihrem Windows-Benutzerkonto verschlüsselt.',
       'Unter „Einzelne lokale Kopien verwalten“ oder mit „Diese lokale Kopie löschen“ entfernen Sie genau eine Nachricht. „Verlauf leeren“ fragt nach und löscht alle lokalen Kopien des aktuellen Profils und der aktuellen API. Auf dem TEST-Server wird dadurch nichts geändert.',
@@ -172,14 +179,21 @@ export const helpTopics = [
     section: 'Empfangen',
     image: 'replies',
     caption: 'Ein geprüfter Antrag bildet die Grundlage für eine separate Antwort.',
+    illustrations: [
+      {
+        image: 'reply-confirmation',
+        caption: 'Unveränderliche Zusammenfassung vor dem bewussten Antwortversand.',
+      },
+    ],
     intro:
       'Eine Antwort verwendet das beim Versand angebotene Antwortschema. Zum späteren Lesen benötigt der ursprüngliche Sender seinen privaten Antwortschlüssel.',
     steps: [
       'Senden Sie als Onlinedienst eine Einreichung mit aktiviertem Antwortangebot. Verwenden Sie für einen Test über Neustarts ein gespeichertes Profil und sichern Sie dessen Schlüsselzustand.',
-      'Öffnen und prüfen Sie den Antrag im Fachverfahren. Laden Sie im Antwortbereich das angebotene Antwortschema.',
-      'Erstellen Sie passende JSON- oder XML-Antwortdaten und ergänzen Sie bei Bedarf Anlagen. Bereiten Sie die Antwort vor, prüfen Sie die Zusammenfassung und bestätigen Sie den Versand separat.',
+      'Öffnen und prüfen Sie den Antrag im Fachverfahren. Wählen Sie „Antwort verfassen“. Die angebotenen Antwortmöglichkeiten werden geladen. Ein einziges Antwortschema wird automatisch übernommen. Bei mehreren Angeboten wählen Sie das passende Schema.',
+      'Geben Sie passende JSON- oder XML-Antwortdaten ein oder wählen Sie „Fiktiven Antwortentwurf erzeugen“. Wechseln Sie mit „Formularansicht“ zur lesbaren Vorschau. Dateiauswahl und Anlagen stehen unter dem Inhalt.',
+      'Öffentliche Schemaquellen benötigen Ihre ausdrückliche Freigabe. Ein lokales Schema können Sie unter „Antwortschema und technische Optionen“ hinterlegen. „Antwort prüfen und vorbereiten“ lädt das benötigte Schema, prüft den Inhalt und öffnet die Zusammenfassung. Erst „Antwort jetzt senden“ übermittelt die Antwort.',
       'Bei XML-Antworten mit mehreren möglichen Nachrichten wählen Sie zunächst die passende Antwortnachricht und erzeugen danach den Entwurf. Bei einem fehlenden Schema oder einer nicht unterstützten Pflichtstruktur bleibt Ihr bisheriger Antwortinhalt erhalten.',
-      'Verbinden Sie wieder den ursprünglichen Onlinedienst-Zugang. Laden Sie die Antworten und prüfen Sie die gewünschte Antwort mit dem zu diesem Angebot gehörenden Schlüssel.',
+      'Verbinden Sie wieder den ursprünglichen Onlinedienst-Zugang. Öffnen Sie unter „Empfangen“ das Register „Antworten“. Laden Sie die Antworten und prüfen Sie die gewünschte Antwort mit dem zu diesem Angebot gehörenden Schlüssel.',
       'Nehmen Sie die Antwort nach Prüfung an oder lehnen Sie sie mit passendem Grund ab. Auch Antworten bleiben als lokale Kopien in der Vorgangsablage erhalten.',
     ],
     examples: [
@@ -209,6 +223,7 @@ export const helpTopics = [
       },
     ],
     notes: [
+      'Ein ungesendeter Antwortentwurf wird beim Verlassen der Nachricht, beim Wechsel der API oder beim erneuten Verbinden nicht ungefragt verworfen. „Weiter bearbeiten“ behält Ihre Änderungen. Eine Annahme oder Ablehnung der ursprünglichen Einreichung versendet den Antwortentwurf nicht.',
       'Beliebige andere Schlüssel oder eine andere Sitzung ohne wiederhergestellten Antwortschlüssel können eine angebotene Antwort nicht entschlüsseln.',
       'Ein archivierter Antrag allein berechtigt nicht zum Antworten. Der aktuelle native Nachweis und die angebotenen Antwortmöglichkeiten müssen erneut ermittelt werden.',
       'Ungewisse Antwortversuche werden nicht automatisch wiederholt. Prüfen Sie zuerst den Event Log.',

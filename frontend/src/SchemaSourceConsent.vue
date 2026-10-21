@@ -16,9 +16,14 @@ const emit = defineEmits(['update:modelValue']);
       Öffentliche Schemaquellen für diese Sitzung erlauben
     </label>
     <p :id="`${id}-help`" class="small-note">
-      Lokale Schemadateien und mitgelieferte Demos funktionieren ohne Freigabe. Mit Freigabe dürfen Schemata
-      und Referenzen aus öffentlichen HTTPS-Quellen einschließlich XRepository geladen werden. Diese Quellen
-      sehen Ihre IP-Adresse. Zugangsdaten und Fachdaten werden nicht mitgesendet.
+      Schemaquellen erhalten Ihre IP-Adresse, keine Zugangsdaten oder Fachdaten.
     </p>
+    <details class="schema-source-details">
+      <summary>Was wird geladen?</summary>
+      <p class="small-note">
+        Mit Ihrer Freigabe werden Schemata und Referenzen aus öffentlichen HTTPS-Quellen einschließlich
+        XRepository geladen. Lokale Schemadateien und mitgelieferte Demos funktionieren ohne Freigabe.
+      </p>
+    </details>
   </div>
 </template>

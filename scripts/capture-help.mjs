@@ -35,10 +35,24 @@ try {
   await expect(page.locator('#client-id')).toHaveValue('');
   await expect(page.locator('#client-secret')).toHaveValue('');
   await capture('profiles');
+  await page.evaluate(() => {
+    const original = window.__TAURI_INTERNALS__.invoke;
+    window.__TAURI_INTERNALS__.invoke = (command, args) =>
+      command === 'loaded_keys'
+        ? Promise.resolve({
+            apiVersion: args.apiVersion,
+            sessionId: args.sessionId,
+            environment: 'TEST',
+            data: { keys: [] },
+          })
+        : original(command, args);
+  });
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await button('Bei TEST anmelden').click();
   await expect(page.getByRole('dialog')).toBeHidden();
+  await button('Empfangen').click();
+  await capture('receive-inbox');
   await button('Senden').click();
   await expect(page.getByRole('combobox', { name: 'Absender-Destination', exact: true })).toHaveValue(
     '11111111-1111-4111-8111-000000000001',
@@ -106,7 +120,7 @@ try {
   await capture('xml-message-choice');
   await button('Beispieldaten übernehmen').click();
   await expect(page.locator('#send-data')).toHaveValue(/>0600<\/nachrichtentyp>/);
-  await button('Fachdaten visuell ansehen').click();
+  await button('Formularansicht').click();
   await capture('send-data', page.locator('[data-send-step="1"] legend'));
   await button('Prozesse').click();
   await button('Fiktiven Demo-Prozess öffnen').click();
@@ -136,16 +150,17 @@ try {
   await button('Einreichung öffnen und prüfen').click();
   const application = page.getByRole('heading', { name: 'Antrag lesen', exact: true });
   await expect(application).toBeVisible();
+  await capture('receive-review', page.locator('.submission-document-heading'));
   await capture('receive', application);
-  await button('Antwortmöglichkeiten laden').click();
+  await button('Antwort verfassen').click();
   await page.locator('#reply-schema-sources').check();
-  await button('Antwortschema laden').click();
   await button('Fiktiven Antwortentwurf erzeugen').click();
   await button('Beispieldaten übernehmen').click();
   await expect(page.locator('#reply-data')).toHaveValue(/erhalten/);
   await capture('replies', page.getByRole('heading', { name: 'Auf die Einreichung antworten', exact: true }));
   await button('Antwort prüfen und vorbereiten').click();
   await expect(page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true })).toBeVisible();
+  await capture('reply-confirmation');
   await button('Antwort jetzt senden').click();
   await button('Event Log der Antwort prüfen').click();
   await expect(page.getByText('Event Log verifiziert', { exact: true })).toBeVisible();
@@ -181,7 +196,7 @@ try {
     page.getByRole('heading', { name: 'Eigene TEST-Destination anlegen', exact: true }),
   ).toBeVisible();
   await capture('destinations');
-  console.log(`15 Abbildungen mit fiktiven Testdaten: ${directory}`);
+  console.log(`18 Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {
   await browser.close();
 }

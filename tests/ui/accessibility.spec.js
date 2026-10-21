@@ -68,14 +68,17 @@ test('connected sender keeps labels and keyboard focus in high contrast', async 
   const source = page.getByRole('textbox', { name: 'Absender-Destination', exact: true });
   const target = page.getByRole('textbox', { name: 'Empfänger-Destination', exact: true });
   await expect(source).toHaveAccessibleDescription(/Zugangsdaten/);
+  await target.focus();
+  expect(await target.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+  await page.keyboard.press('Tab');
+  await expect(source).toBeFocused();
   await source.focus();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Liste aktualisieren', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByText('Voraussetzungen für Antworten', { exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(target).toBeFocused();
-  expect(await target.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+  await expect(page.getByText('Weitere Adressierungsoptionen', { exact: true })).toBeFocused();
   for (const [theme, forcedColors] of [
     ['light', 'none'],
     ['dark', 'none'],

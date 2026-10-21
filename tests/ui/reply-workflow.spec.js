@@ -23,13 +23,11 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
       1,
     );
     await page.getByText('Fachliche Prüfung: manuell offen', { exact: true }).waitFor();
-    await page.getByRole('button', { name: 'Antwortmöglichkeiten laden', exact: true }).click();
+    await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
     const prepare = page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true });
-    assert.equal(await prepare.isDisabled(), true);
+    assert.equal(await prepare.isDisabled(), false);
     await page.locator('#reply-schema-sources').check();
-    await page.getByRole('button', { name: 'Antwortschema laden', exact: true }).click();
     await prepare.waitFor();
-    await page.waitForFunction(() => window.__applicationFixture.calls.includes('load_reply_schema'));
     await page.getByRole('button', { name: 'Fiktiven Antwortentwurf erzeugen', exact: true }).click();
     await page.getByRole('button', { name: 'Beispieldaten übernehmen', exact: true }).click();
     await page.getByText(/Fiktiver Antwortentwurf erzeugt/).waitFor();
@@ -41,14 +39,14 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     assert.equal(await page.evaluate(() => window.__applicationFixture.replyWrites), 0);
     const valid = '{\n "status":"erhalten"\n}';
     await page.locator('#reply-data').fill(valid);
-    await page.getByRole('button', { name: 'Fachdaten visuell ansehen', exact: true }).click();
+    await page.getByRole('button', { name: 'Formularansicht', exact: true }).click();
     await page.locator('.draft-inline-preview').getByText('erhalten', { exact: true }).waitFor();
     await page
       .locator('.draft-inline-preview')
       .locator('.application-field-label')
       .filter({ hasText: 'Bearbeitungsstatus' })
       .waitFor();
-    await page.getByRole('button', { name: 'Inhalt bearbeiten', exact: true }).click();
+    await page.getByRole('button', { name: 'Bearbeiten', exact: true }).click();
     assert.equal(await page.locator('#reply-data').inputValue(), valid);
     await prepare.click();
     await page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true }).waitFor();

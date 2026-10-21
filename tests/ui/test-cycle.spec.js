@@ -47,7 +47,7 @@ test('next test copies only explicitly selected draft content and requires a fre
   await expect(page.getByRole('button', { name: 'Leistungen laden', exact: true })).toBeFocused();
   await page.getByText('Weitere Adressierungsoptionen', { exact: true }).click();
   await expect(page.locator('#send-case')).toHaveValue('');
-  await expect(page.locator('#send-service')).toHaveValue('');
+  await expect(page.locator('#send-service')).toHaveCount(0);
   await page.getByRole('button', { name: 'Weiter: Fachdaten', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Laden Sie zuerst');
   await page.getByRole('button', { name: 'Leistungen laden', exact: true }).click();
@@ -123,6 +123,7 @@ test('the reading view keeps technical provenance optional without changing the 
   await expect(page.getByRole('heading', { name: 'Antrag lesen', exact: true })).toBeVisible();
   const values = await page.locator('.application-field-value').allTextContents();
   await expect(page.locator('.application-origin')).toHaveCount(0);
+  await page.getByText('Struktur, Quelltext und Feldangaben', { exact: true }).click();
   await page.getByLabel('Technische Feldangaben anzeigen', { exact: true }).check();
   expect(await page.locator('.application-origin').count()).toBeGreaterThan(0);
   expect(await page.locator('.application-field-value').allTextContents()).toEqual(values);

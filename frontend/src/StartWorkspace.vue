@@ -26,27 +26,6 @@ const tasks = [
 
 <template>
   <div class="start-workspace">
-    <section class="start-connection tool-section" aria-labelledby="start-connection-title">
-      <div>
-        <p class="start-eyebrow">IHR TEST-ZUGANG</p>
-        <h2 id="start-connection-title">
-          {{ session ? 'Bereit für Ihren Integrationstest' : 'Verbinden Sie zuerst Ihren TEST-Zugang' }}
-        </h2>
-        <p v-if="session">
-          Sie sind bei FIT-Connect TEST über API {{ apiVersion }} angemeldet. Die verfügbaren Aktionen richten
-          sich nach Ihren Berechtigungen.
-        </p>
-        <p v-else>
-          Verwenden Sie Ihre FIT-Connect-TEST-Zugangsdaten oder öffnen Sie ein gespeichertes Profil. Speichern
-          ist optional. Ohne Speicherung bleiben Zugangsdaten und Schlüssel nur in dieser Sitzung.
-        </p>
-      </div>
-      <button type="button" class="button" :disabled="busy" @click="emit('connect')">
-        <AppIcon name="connection" />
-        {{ session ? 'Verbindung verwalten' : 'Verbindung herstellen' }}
-      </button>
-    </section>
-
     <section class="start-task-section" aria-labelledby="start-tasks-title">
       <p class="start-eyebrow">IHRE AUFGABE</p>
       <h2 id="start-tasks-title">Was möchten Sie testen?</h2>
@@ -68,6 +47,27 @@ const tasks = [
           <span class="start-task-action" aria-hidden="true">Test beginnen →</span>
         </button>
       </div>
+    </section>
+
+    <section class="start-connection tool-section" aria-labelledby="start-connection-title">
+      <div>
+        <p class="start-eyebrow">IHR TEST-ZUGANG</p>
+        <h2 id="start-connection-title">
+          {{ session ? 'Bereit für Ihren Integrationstest' : 'Ihr TEST-Zugang ist noch nicht verbunden' }}
+        </h2>
+        <p v-if="session">
+          Sie sind bei FIT-Connect TEST über API {{ apiVersion }} angemeldet. Die verfügbaren Aktionen richten
+          sich nach Ihren Berechtigungen.
+        </p>
+        <p v-else>
+          Wählen Sie eine Testaufgabe. Falls nötig, öffnet sich die Anmeldung. Sie können Ihren Zugang auch
+          direkt verbinden. Das Speichern von Zugangsdaten ist optional.
+        </p>
+      </div>
+      <button type="button" class="button" :disabled="busy" @click="emit('connect')">
+        <AppIcon name="connection" />
+        {{ session ? 'Verbindung verwalten' : 'Verbindung herstellen' }}
+      </button>
     </section>
 
     <section class="tool-section start-followup" aria-labelledby="start-followup-title">

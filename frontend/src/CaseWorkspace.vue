@@ -23,6 +23,7 @@ const records = shallowRef([]),
   preview = shallowRef(null);
 const search = ref(''),
   direction = ref('all'),
+  attentionOnly = ref(false),
   pending = ref(false),
   error = ref(''),
   notice = ref(''),
@@ -32,7 +33,9 @@ const search = ref(''),
   detailHeading = ref(null),
   searchBox = ref(null);
 const groups = computed(() => caseGroups(records.value));
-const filtered = computed(() => filterCaseGroups(groups.value, search.value, direction.value));
+const filtered = computed(() =>
+  filterCaseGroups(groups.value, search.value, direction.value, attentionOnly.value),
+);
 const selectedGroup = computed(() =>
   groups.value.find((group) => group.messages.some((record) => record.recordId === selected.value?.recordId)),
 );
@@ -340,6 +343,10 @@ onBeforeUnmount(() => {
           </select>
         </label>
       </div>
+      <label class="checkbox-label case-attention-filter">
+        <input v-model="attentionOnly" type="checkbox" />
+        Nur Vorgänge mit Klärungsbedarf
+      </label>
       <div class="client-actions">
         <button class="button secondary" type="button" :disabled="disabled" @click="load">
           Übersicht aktualisieren
@@ -362,9 +369,9 @@ onBeforeUnmount(() => {
       </p>
       <ul v-else class="case-list" aria-label="Lokale Vorgänge">
         <li v-for="group in filtered" :key="group.key">
-          <div>
-            <span class="small-note">Letzte Aktivität: {{ when(group.latest.createdAt) }}</span>
-            <h3>
+          <div class="case-row">
+            <span class="small-note case-row-time">Letzte Aktivität: {{ when(group.latest.createdAt) }}</span>
+            <h3 class="case-row-title">
               <button
                 class="case-open"
                 type="button"
@@ -431,7 +438,10 @@ onBeforeUnmount(() => {
                 : selectedGroup?.title || selected.title
             }}
           </h2>
-          <p>{{ caseStatus(selected.status) }} · {{ when(selected.createdAt) }}</p>
+          <p>
+            {{ selected.direction === 'received' ? 'Empfangen' : 'Gesendet' }}:
+            {{ selected.kind === 'reply' ? 'Antwort' : 'Einreichung' }} · {{ when(selected.createdAt) }}
+          </p>
         </div>
         <button class="button secondary" type="button" :disabled="disabled" @click="closeCase">
           Zur Vorgangsübersicht
@@ -460,6 +470,10 @@ onBeforeUnmount(() => {
           </li>
         </ol>
       </nav>
+      <p class="case-current-status">
+        Status dieser Nachricht:
+        <strong>{{ caseStatus(selected.status) }}</strong>
+      </p>
       <p class="small-note">
         Lokale Kopie. Prüfergebnisse stammen vom damaligen Abruf. Serverzustand und Berechtigungen werden
         dadurch nicht erneut bestätigt.

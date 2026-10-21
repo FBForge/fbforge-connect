@@ -52,31 +52,43 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div class="structured-data">
-    <div class="application-toolbar">
-      <div class="application-modes" role="group" aria-label="Darstellung der Fachdaten">
-        <button type="button" class="button secondary" :aria-pressed="mode === 'form'" @click="mode = 'form'">
-          Formularansicht
-        </button>
-        <button
-          v-if="format === 'json'"
-          type="button"
-          class="button secondary"
-          :aria-pressed="mode === 'tree'"
-          @click="mode = 'tree'"
-        >
-          JSON-Struktur
-        </button>
-        <button
-          type="button"
-          class="button secondary"
-          :aria-pressed="mode === 'source'"
-          @click="mode = 'source'"
-        >
-          Quelltext
-        </button>
+    <details class="application-tools">
+      <summary>Struktur, Quelltext und Feldangaben</summary>
+      <div class="application-toolbar">
+        <div class="application-modes" role="group" aria-label="Darstellung der Fachdaten">
+          <button
+            type="button"
+            class="button secondary"
+            :aria-pressed="mode === 'form'"
+            @click="mode = 'form'"
+          >
+            Formularansicht
+          </button>
+          <button
+            v-if="format === 'json'"
+            type="button"
+            class="button secondary"
+            :aria-pressed="mode === 'tree'"
+            @click="mode = 'tree'"
+          >
+            JSON-Struktur
+          </button>
+          <button
+            type="button"
+            class="button secondary"
+            :aria-pressed="mode === 'source'"
+            @click="mode = 'source'"
+          >
+            Quelltext
+          </button>
+        </div>
+        <span class="status-badge info">{{ format?.toUpperCase() }}</span>
       </div>
-      <span class="status-badge info">{{ format?.toUpperCase() }}</span>
-    </div>
+      <label class="checkbox-label application-technical-toggle">
+        <input v-model="showTechnical" type="checkbox" />
+        Technische Feldangaben anzeigen
+      </label>
+    </details>
     <p class="small-note">
       Lesende Ansicht. Die Originaldaten bleiben unverändert. Eine fachliche Prüfung erfolgt durch Sie.
     </p>
@@ -98,10 +110,6 @@ onBeforeUnmount(() => {
       <p v-if="showTechnical" class="application-path">Schema: {{ schemaUri }}</p>
     </div>
     <template v-if="mode === 'form' && model.status === 'ready'">
-      <label class="checkbox-label application-technical-toggle">
-        <input v-model="showTechnical" type="checkbox" />
-        Technische Feldangaben anzeigen
-      </label>
       <label class="application-search" :for="inputId">
         Felder durchsuchen
         <input

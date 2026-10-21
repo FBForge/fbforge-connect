@@ -19,6 +19,7 @@ import FileDropInput from './FileDropInput.vue';
 import DocumentationLink from './DocumentationLink.vue';
 import CopyValue from './CopyValue.vue';
 import ContentPreview from './ContentPreview.vue';
+import DiscardReplyDialog from './DiscardReplyDialog.vue';
 import ReceiptPanel from './ReceiptPanel.vue';
 import ReplyReceiptPanel from './ReplyReceiptPanel.vue';
 import ReplySender from './ReplySender.vue';
@@ -28,6 +29,9 @@ import StructuredData from './StructuredData.vue';
 import { readReceivedSchema } from './received-schema.js';
 import { STRUCTURED_BYTES, structuredFormat } from './structured-data.js';
 
+const replySender = ref(null),
+  receiptPanel = ref(null),
+  discardReplyDialog = ref(null);
 const preparation = ref(null),
   replySection = ref(null),
   receiptSection = ref(null);
@@ -81,6 +85,12 @@ const proof = ref(null),
 const pending = ref(false),
   action = ref('');
 const receiptOutcome = ref(null);
+const receiptUncertain = computed(
+  () =>
+    receiptOutcome.value?.status === 'uncertain' &&
+    receiptOutcome.value.sessionId === props.session?.sessionId &&
+    receiptOutcome.value.apiVersion === props.session?.apiVersion,
+);
 const completed = computed(
   () =>
     !props.reply &&
@@ -462,10 +472,30 @@ function inspect(part, download = false) {
     },
   );
 }
+async function confirmLeave() {
+  if (props.busy || pending.value) return false;
+  if (!replySender.value?.hasDraft) return true;
+  const discard = await discardReplyDialog.value.ask();
+  if (discard) replySender.value?.discardDraft();
+  return discard;
+}
+async function beginReply() {
+  await replySender.value?.begin();
+  await nextTick();
+  replySection.value?.scrollIntoView({ block: 'start' });
+}
+async function beginReceipt(action) {
+  if (receiptUncertain.value || !(await confirmLeave())) return;
+  await receiptPanel.value?.begin(action);
+  await nextTick();
+  if (!document.querySelector('dialog[open]')) receiptSection.value?.scrollIntoView({ block: 'start' });
+}
+defineExpose({ confirmLeave });
 </script>
 
 <template>
   <div v-if="detail" class="receive-workspace">
+    <DiscardReplyDialog ref="discardReplyDialog" />
     <section
       v-if="!completed"
       class="tool-section"
@@ -664,23 +694,39 @@ function inspect(part, download = false) {
                   class="button secondary"
                   type="button"
                   :disabled="disabled"
-                  @click="
-                    replySection?.scrollIntoView({ block: 'start' });
-                    replySection?.querySelector('button, select')?.focus();
-                  "
+                  @click="beginReply"
                 >
-                  Antwort vorbereiten
+                  Antwort verfassen
                 </button>
                 <button
+                  v-if="!reply"
+                  class="button"
+                  type="button"
+                  :disabled="disabled || receiptUncertain"
+                  @click="beginReceipt('accept')"
+                >
+                  Annehmen
+                </button>
+                <button
+                  v-if="!reply"
+                  class="button secondary"
+                  type="button"
+                  :disabled="disabled || receiptUncertain"
+                  @click="beginReceipt('reject')"
+                >
+                  Ablehnen
+                </button>
+                <button
+                  v-else
                   class="button"
                   type="button"
                   :disabled="disabled"
                   @click="
                     receiptSection?.scrollIntoView({ block: 'start' });
-                    receiptSection?.querySelector('select, button')?.focus();
+                    receiptSection?.querySelector('button, select')?.focus();
                   "
                 >
-                  {{ reply ? 'Antwort quittieren' : 'Annehmen oder ablehnen' }}
+                  Antwort quittieren
                 </button>
               </div>
             </div>
@@ -755,6 +801,8 @@ function inspect(part, download = false) {
     </section>
     <div v-show="!reply && !completed" ref="replySection" class="receive-action-section">
       <ReplySender
+        ref="replySender"
+        guided
         v-if="!reply && !completed"
         :session="session"
         :proof="proof"
@@ -782,6 +830,8 @@ function inspect(part, download = false) {
         @event-log="(value) => emit('event-log', value)"
       />
       <ReceiptPanel
+        ref="receiptPanel"
+        guided
         v-if="!reply"
         :session="session"
         :detail="detail"

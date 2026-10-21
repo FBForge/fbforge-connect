@@ -71,3 +71,18 @@ for (const width of [1440, 640]) {
     }
   });
 }
+
+test('attention filter retains complete message histories and has a recoverable empty state', async ({
+  page,
+}) => {
+  await page.goto(fixture);
+  await page.getByLabel('Nur Vorgänge mit Klärungsbedarf', { exact: true }).check();
+  const rows = page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li');
+  await expect(rows).toHaveCount(1);
+  await expect(rows).toContainText('Testversand mit ungewissem Ausgang');
+  await page.getByLabel('Vorgänge durchsuchen').fill('nicht vorhanden');
+  await expect(page.getByText('Keine Vorgänge passen zur Suche.', { exact: true })).toBeVisible();
+  await page.getByLabel('Vorgänge durchsuchen').fill('');
+  await page.getByLabel('Nur Vorgänge mit Klärungsbedarf', { exact: true }).uncheck();
+  await expect(rows).toHaveCount(2);
+});

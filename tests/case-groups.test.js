@@ -64,3 +64,17 @@ test('missing case IDs stay independent and failed or unavailable messages remai
   );
   assert.equal(caseGroups([record('reply', { kind: 'reply' })])[0].title, 'Vorgang');
 });
+
+test('attention filtering selects entire groups and does not turn a warning into an overall case status', () => {
+  const groups = caseGroups([
+    record('initial'),
+    record('reply', { kind: 'reply', status: 'uncertain' }),
+    record('other', { caseId: 'case-b' }),
+  ]);
+  const filtered = filterCaseGroups(groups, '', 'all', true);
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].messages.length, 2);
+  assert.equal(filtered[0].messages[0].status, 'accepted');
+  assert.equal(Object.hasOwn(filtered[0], 'status'), false);
+  assert.equal(filterCaseGroups(groups).length, 2);
+});

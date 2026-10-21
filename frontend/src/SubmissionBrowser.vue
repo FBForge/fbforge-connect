@@ -21,7 +21,10 @@ const props = defineProps({
   target: Object,
 });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'receive-start', 'setup']);
-const information = ref(null);
+const information = ref(null),
+  receivePanel = ref(null),
+  backButton = ref(null);
+let opener;
 
 const destination = ref(props.destinationId || ''),
   submission = ref(''),
@@ -36,7 +39,7 @@ watch(
   () => props.target?.requestId,
   async () => {
     const target = props.target;
-    if (!target || !props.session) return;
+    if (!target || !props.session || (detail.value && !(await receivePanel.value?.confirmLeave()))) return;
     destination.value = target.destinationId;
     await nextTick();
     submission.value = target.submissionId;
@@ -153,7 +156,8 @@ async function run(action, operation, apply) {
     });
   }
 }
-function search(offset = 0) {
+async function search(offset = 0) {
+  if (disabled.value || (detail.value && !(await receivePanel.value?.confirmLeave()))) return;
   detail.value = null;
   emit('receive-start');
   run(
@@ -165,7 +169,9 @@ function search(offset = 0) {
     },
   );
 }
-function open(id = submission.value.trim()) {
+async function open(id = submission.value.trim()) {
+  if (disabled.value || (detail.value && !(await receivePanel.value?.confirmLeave()))) return;
+  opener = document.activeElement;
   detail.value = null;
   emit('receive-start');
   void run(
@@ -184,132 +190,152 @@ function open(id = submission.value.trim()) {
     if (detail.value?.submissionId === id) autoOpen.value++;
   });
 }
+async function back() {
+  if (disabled.value || !(await receivePanel.value?.confirmLeave())) return;
+  detail.value = null;
+  verified.value = false;
+  await nextTick();
+  if (opener?.isConnected && opener.checkVisibility()) opener.focus();
+  else document.getElementById('pickup-submission')?.focus();
+}
+defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true });
 </script>
 
 <template>
   <div class="submission-workspace">
-    <section class="tool-section" aria-labelledby="submission-search-title">
-      <h2 id="submission-search-title">Einreichungen suchen</h2>
-      <p>
-        Verfügbare Einreichungen einer Destination auflisten oder eine bekannte Submission ID direkt öffnen.
-        Öffnen und prüfen bestätigt noch keinen Empfang.
-      </p>
-      <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
-      <form @submit.prevent="submission.trim() ? open() : search()">
-        <div class="client-fields">
-          <label for="pickup-destination">
-            <span id="pickup-destination-label">Destination ID</span>
-            <input
-              id="pickup-destination"
-              aria-labelledby="pickup-destination-label"
-              aria-describedby="pickup-destination-help"
-              v-model="destination"
-              type="text"
-              maxlength="36"
-              required
-              :disabled="disabled"
-            />
-            <small id="pickup-destination-help">Wird auch aus der Destination-Auswahl übernommen.</small>
-          </label>
-          <label for="pickup-submission">
-            <span>Submission ID (optional)</span>
-            <input
-              id="pickup-submission"
-              v-model="submission"
-              type="text"
-              maxlength="36"
-              :disabled="disabled"
-              aria-describedby="pickup-submission-help"
-            />
-            <small id="pickup-submission-help">
-              Mit einer Submission ID öffnen Sie die Einreichung direkt.
-            </small>
-          </label>
+    <section class="tool-section" aria-label="Einreichungen">
+      <div v-show="!detail" class="submission-inbox">
+        <h2 id="submission-search-title">Einreichungen suchen</h2>
+        <p>
+          Verfügbare Einreichungen einer Destination auflisten oder eine bekannte Submission ID direkt öffnen.
+          Öffnen und prüfen bestätigt noch keinen Empfang.
+        </p>
+        <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
+        <form @submit.prevent="submission.trim() ? open() : search()">
+          <div class="client-fields">
+            <label for="pickup-destination">
+              <span id="pickup-destination-label">Destination ID</span>
+              <input
+                id="pickup-destination"
+                aria-labelledby="pickup-destination-label"
+                aria-describedby="pickup-destination-help"
+                v-model="destination"
+                type="text"
+                maxlength="36"
+                required
+                :disabled="disabled"
+              />
+              <small id="pickup-destination-help">Wird auch aus der Destination-Auswahl übernommen.</small>
+            </label>
+            <label for="pickup-submission">
+              <span>Submission ID (optional)</span>
+              <input
+                id="pickup-submission"
+                v-model="submission"
+                type="text"
+                maxlength="36"
+                :disabled="disabled"
+                aria-describedby="pickup-submission-help"
+              />
+              <small id="pickup-submission-help">
+                Mit einer Submission ID öffnen Sie die Einreichung direkt.
+              </small>
+            </label>
+          </div>
+          <div class="client-actions">
+            <button class="button" type="submit" :disabled="disabled || !destination.trim()">
+              {{ submission.trim() ? 'Einreichung öffnen und prüfen' : 'Einreichungen laden' }}
+            </button>
+          </div>
+        </form>
+        <p v-if="pending" role="status">Einreichungen werden aus TEST geladen …</p>
+        <p v-if="error" role="alert">{{ error }}</p>
+        <template v-if="page">
+          <p>{{ page.totalCount }} verfügbare Einreichungen an dieser Destination.</p>
+          <div v-if="!page.submissions.length">
+            <p v-if="page.totalCount === 0">
+              Noch keine Einreichung eingegangen. Senden Sie einen Testantrag aus Ihrem Onlinedienst an diese
+              Destination und laden Sie die Liste anschließend erneut.
+            </p>
+            <p v-else>Auf dieser Seite sind keine Einreichungen vorhanden.</p>
+          </div>
+          <div v-else class="client-table support-table">
+            <table class="submission-result-table">
+              <thead>
+                <tr>
+                  <th scope="col">Einreichung</th>
+                  <th scope="col">Case ID</th>
+                  <th scope="col">Aktion</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in page.submissions" :key="item.submissionId">
+                  <td data-label="Einreichung">
+                    <code>{{ item.submissionId }}</code>
+                  </td>
+                  <td data-label="Case ID">
+                    <code v-if="item.caseId">{{ item.caseId }}</code>
+                    <span v-else>Beim Detailabruf verfügbar</span>
+                  </td>
+                  <td data-label="Aktion">
+                    <div class="client-actions">
+                      <button
+                        class="button secondary"
+                        type="button"
+                        :disabled="disabled"
+                        @click="open(item.submissionId)"
+                      >
+                        Öffnen und prüfen
+                      </button>
+                      <button
+                        v-if="item.caseId"
+                        class="button secondary"
+                        type="button"
+                        :disabled="disabled"
+                        @click="openEventLog(item)"
+                      >
+                        Event Log prüfen
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="client-actions">
+            <button
+              class="button secondary"
+              type="button"
+              :disabled="disabled || page.offset === 0"
+              @click="search(page.offset - 20)"
+            >
+              Vorherige Seite
+            </button>
+            <button
+              class="button secondary"
+              type="button"
+              :disabled="
+                disabled || page.offset + page.submissions.length >= page.totalCount || page.offset >= 10000
+              "
+              @click="search(page.offset + 20)"
+            >
+              Nächste Seite
+            </button>
+            <button class="button secondary" type="button" :disabled="disabled" @click="search()">
+              Neu laden
+            </button>
+          </div>
+        </template>
+      </div>
+      <div v-if="detail" class="submission-document-heading tool-section-heading">
+        <div>
+          <h2>{{ detail.serviceName || 'Einreichung' }}</h2>
+          <p>Prüfen Sie Fachdaten und Anlagen vor der Empfangsbestätigung.</p>
         </div>
-        <div class="client-actions">
-          <button class="button" type="submit" :disabled="disabled || !destination.trim()">
-            {{ submission.trim() ? 'Einreichung öffnen und prüfen' : 'Einreichungen laden' }}
-          </button>
-        </div>
-      </form>
-      <p v-if="pending" role="status">Einreichungen werden aus TEST geladen …</p>
-      <p v-if="error" role="alert">{{ error }}</p>
-      <template v-if="page">
-        <p>{{ page.totalCount }} verfügbare Einreichungen an dieser Destination.</p>
-        <div v-if="!page.submissions.length">
-          <p v-if="page.totalCount === 0">
-            Noch keine Einreichung eingegangen. Senden Sie einen Testantrag aus Ihrem Onlinedienst an diese
-            Destination und laden Sie die Liste anschließend erneut.
-          </p>
-          <p v-else>Auf dieser Seite sind keine Einreichungen vorhanden.</p>
-        </div>
-        <div v-else class="client-table support-table">
-          <table class="submission-result-table">
-            <thead>
-              <tr>
-                <th scope="col">Einreichung</th>
-                <th scope="col">Case ID</th>
-                <th scope="col">Aktion</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in page.submissions" :key="item.submissionId">
-                <td data-label="Einreichung">
-                  <code>{{ item.submissionId }}</code>
-                </td>
-                <td data-label="Case ID">
-                  <code v-if="item.caseId">{{ item.caseId }}</code>
-                  <span v-else>Beim Detailabruf verfügbar</span>
-                </td>
-                <td data-label="Aktion">
-                  <div class="client-actions">
-                    <button
-                      class="button secondary"
-                      type="button"
-                      :disabled="disabled"
-                      @click="open(item.submissionId)"
-                    >
-                      Öffnen und prüfen
-                    </button>
-                    <button
-                      v-if="item.caseId"
-                      class="button secondary"
-                      type="button"
-                      :disabled="disabled"
-                      @click="openEventLog(item)"
-                    >
-                      Event Log prüfen
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="client-actions">
-          <button
-            class="button secondary"
-            type="button"
-            :disabled="disabled || page.offset === 0"
-            @click="search(page.offset - 20)"
-          >
-            Vorherige Seite
-          </button>
-          <button
-            class="button secondary"
-            type="button"
-            :disabled="
-              disabled || page.offset + page.submissions.length >= page.totalCount || page.offset >= 10000
-            "
-            @click="search(page.offset + 20)"
-          >
-            Nächste Seite
-          </button>
-          <button class="button secondary" type="button" :disabled="disabled" @click="search()">
-            Neu laden
-          </button>
-        </div>
-      </template>
+        <button ref="backButton" class="button secondary" type="button" :disabled="disabled" @click="back">
+          Zurück zum Eingang
+        </button>
+      </div>
       <details v-if="detail" ref="information" class="submission-information">
         <summary>Einreichungsinformationen und Kennungen</summary>
         <h3 ref="heading" tabindex="-1">Einreichungsinformationen</h3>
@@ -401,6 +427,7 @@ function open(id = submission.value.trim()) {
       </span>
     </p>
     <ReceivePanel
+      ref="receivePanel"
       @setup="emit('setup')"
       :auto-open="autoOpen"
       :session="session"

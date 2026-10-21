@@ -13,6 +13,7 @@
       import ReceivePanel from '../src/ReceivePanel.vue';
       import SubmissionBrowser from '../src/SubmissionBrowser.vue';
       import EventLogPanel from '../src/EventLogPanel.vue';
+      import App from '../src/App.vue';
       import '../src/site.css';
       import '../src/layout.css';
       import '../src/desktop.css';
@@ -91,11 +92,29 @@
         environment: 'TEST',
         data,
       });
+      const wholeApp = new URLSearchParams(location.search).has('app');
+      if (wholeApp) window.isTauri = true;
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
           if (command === 'case_workspace' && args.operation === 'status')
             return envelope({ persistent: false, storageError: null });
           fixture.calls.push(command);
+          if (wholeApp) {
+            if (command === 'list_profiles') return [];
+            if (command === 'profile_status') return { profileId: null, saved: false, error: null };
+            if (command === 'open_session' || command === 'check_session') return { ...session };
+            if (command === 'close_session') return { ...session, connected: false };
+            if (command === 'loaded_keys') return envelope({ keys: [] });
+            if (command === 'load_destination')
+              return envelope({
+                destinationId: detail.destinationId,
+                detailsJson: JSON.stringify({
+                  destinationId: detail.destinationId,
+                  name: 'Musterfachverfahren',
+                }),
+                keys: [],
+              });
+          }
           if (command === 'load_submission')
             return envelope({
               ...detail,
@@ -306,51 +325,61 @@
           throw 'resource_denied';
         },
       };
-      createApp({
-        setup() {
-          const busy = ref(false),
-            eventTarget = ref(null),
-            current = ref(detail),
-            keys = ref(0);
-          fixture.invalidate = () => keys.value++;
-          fixture.replaceDetail = () => (current.value = { ...detail, submissionId: uuid(10) });
-          return () =>
-            h('div', { class: 'desktop-shell', style: 'grid-template-columns:1fr' }, [
-              h('header', { class: 'app-topbar' }, [
-                h('strong', productName),
-                h('span', { class: 'environment-tag' }, 'SYNTHETISCHE TESTDATEN'),
-              ]),
-              h('main', { class: 'workspace-scroll', style: 'grid-column:1;grid-row:2' }, [
-                h('div', { class: 'workspace-content' }, [
-                  h('div', { style: { display: eventTarget.value ? 'none' : 'block' } }, [
+      createApp(
+        wholeApp
+          ? App
+          : {
+              setup() {
+                const busy = ref(false),
+                  eventTarget = ref(null),
+                  current = ref(detail),
+                  keys = ref(0);
+                fixture.invalidate = () => keys.value++;
+                fixture.replaceDetail = () => (current.value = { ...detail, submissionId: uuid(10) });
+                return () =>
+                  h('div', { class: 'desktop-shell', style: 'grid-template-columns:1fr' }, [
+                    h('header', { class: 'app-topbar' }, [
+                      h('strong', productName),
+                      h('span', { class: 'environment-tag' }, 'SYNTHETISCHE TESTDATEN'),
+                    ]),
+                    h('main', { class: 'workspace-scroll', style: 'grid-column:1;grid-row:2' }, [
+                      h('div', { class: 'workspace-content' }, [
+                        h('div', { style: { display: eventTarget.value ? 'none' : 'block' } }, [
+                          h(
+                            new URLSearchParams(location.search).has('browser')
+                              ? SubmissionBrowser
+                              : ReceivePanel,
+                            {
+                              session,
+                              destinationId: detail.destinationId,
+                              detail: current.value,
+                              busy: busy.value,
+                              keyRevision: keys.value,
+                              onBusy: (value) => (busy.value = value),
+                              onEventLog: (value) => (eventTarget.value = value),
+                            },
+                          ),
+                        ]),
+                        h('div', { style: { display: eventTarget.value ? 'block' : 'none' } }, [
+                          h(EventLogPanel, {
+                            session,
+                            target: eventTarget.value,
+                            visible: Boolean(eventTarget.value),
+                            busy: busy.value,
+                            onBusy: (value) => (busy.value = value),
+                          }),
+                        ]),
+                      ]),
+                    ]),
                     h(
-                      new URLSearchParams(location.search).has('browser') ? SubmissionBrowser : ReceivePanel,
-                      {
-                        session,
-                        destinationId: detail.destinationId,
-                        detail: current.value,
-                        busy: busy.value,
-                        keyRevision: keys.value,
-                        onBusy: (value) => (busy.value = value),
-                        onEventLog: (value) => (eventTarget.value = value),
-                      },
+                      'footer',
+                      { class: 'app-statusbar' },
+                      'Lokale UI-Prüfung · keine FIT-Connect-Verbindung',
                     ),
-                  ]),
-                  h('div', { style: { display: eventTarget.value ? 'block' : 'none' } }, [
-                    h(EventLogPanel, {
-                      session,
-                      target: eventTarget.value,
-                      visible: Boolean(eventTarget.value),
-                      busy: busy.value,
-                      onBusy: (value) => (busy.value = value),
-                    }),
-                  ]),
-                ]),
-              ]),
-              h('footer', { class: 'app-statusbar' }, 'Lokale UI-Prüfung · keine FIT-Connect-Verbindung'),
-            ]);
-        },
-      }).mount('#app');
+                  ]);
+              },
+            },
+      ).mount('#app');
     </script>
   </body>
 </html>

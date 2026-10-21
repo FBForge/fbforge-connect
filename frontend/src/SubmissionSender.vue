@@ -591,16 +591,7 @@ async function refreshState() {
       <p v-if="stepNotice" role="alert" class="step-notice">{{ stepNotice }}</p>
       <fieldset v-show="sendStep === 0" data-send-step="0" :disabled="disabled">
         <legend tabindex="-1">Adressierung</legend>
-        <div class="client-fields">
-          <SenderDestination
-            v-if="session?.apiVersion === 'v3'"
-            v-model="source"
-            :session="session"
-            :busy="disabled"
-            :visible="visible && sendStep === 0"
-            @activity="emit('activity', $event)"
-            @fatal="emit('fatal', $event)"
-          />
+        <div class="client-fields send-address-fields">
           <label for="send-target">
             <span id="send-target-label">Empfänger-Destination</span>
             <input
@@ -622,14 +613,10 @@ async function refreshState() {
               Leistungen laden
             </button>
           </label>
-          <label v-if="session?.apiVersion === 'v3'" for="send-address">
-            Adressierungsart
-            <select id="send-address" v-model="addressing">
-              <option value="service">Verwaltungsleistung</option>
-              <option value="process">Prozessnachricht</option>
-            </select>
-          </label>
-          <label v-if="recipient?.services.length || addressing !== 'process'" for="send-service">
+          <label
+            v-if="recipient && (recipient.services.length || addressing !== 'process')"
+            for="send-service"
+          >
             Verwaltungsleistung
             <select id="send-service" v-model="service" required :disabled="!recipient?.services.length">
               <option value="" disabled>Bitte zuerst Empfängerleistungen laden</option>
@@ -649,7 +636,7 @@ async function refreshState() {
               }}
             </small>
           </label>
-          <label v-else for="send-service">
+          <label v-else-if="recipient" for="send-service">
             Leistung des Vorgangs
             <input
               id="send-service"
@@ -670,10 +657,30 @@ async function refreshState() {
               </option>
             </select>
           </label>
+          <SenderDestination
+            v-if="session?.apiVersion === 'v3'"
+            v-model="source"
+            :session="session"
+            :busy="disabled"
+            :visible="visible && sendStep === 0"
+            @activity="emit('activity', $event)"
+            @fatal="emit('fatal', $event)"
+          />
         </div>
-        <details class="address-options">
+        <p v-if="!recipient" class="small-note">
+          Geben Sie die Empfänger-Destination ein und laden Sie deren Leistungen.
+        </p>
+        <details class="address-options" :open="addressing === 'process'">
           <summary>Weitere Adressierungsoptionen</summary>
           <div class="client-fields">
+            <label v-if="session?.apiVersion === 'v3'" for="send-address">
+              Adressierungsart
+              <select id="send-address" v-model="addressing">
+                <option value="service">Verwaltungsleistung</option>
+                <option value="process">Prozessnachricht</option>
+              </select>
+            </label>
+
             <label for="send-case">
               Case ID (optional)
               <input
@@ -708,33 +715,15 @@ async function refreshState() {
       </fieldset>
       <fieldset v-show="sendStep === 1" data-send-step="1" :disabled="disabled">
         <legend tabindex="-1">Fachdaten</legend>
-        <div class="client-fields">
-          <label for="send-schema">
-            Fachdaten-Schema
-            <select v-if="schemaOptions.length > 1" id="send-schema" v-model="schemaChoice">
-              <option v-for="(item, index) in schemaOptions" :key="index" :value="index">
-                {{ item.mimeType === 'application/json' ? 'JSON' : 'XML' }} · {{ item.schemaUri }}
-              </option>
-            </select>
-            <output v-else id="send-schema">
-              {{
-                schema
-                  ? `${mime === 'application/json' ? 'JSON' : 'XML'} · ${schema}`
-                  : 'Keine unterstützten Fachdaten-Schemata ausgewählt.'
-              }}
-            </output>
-            <small>Wird aus der gewählten Leistung beziehungsweise Prozessnachricht übernommen.</small>
-          </label>
-          <FileDropInput
-            id="send-data-file"
-            label="Fachdaten aus Datei (optional)"
-            accept=".json,.xml,application/json,application/xml,text/xml"
-            :disabled="disabled"
-            @files="(files) => (dataFile = files[0] || null)"
-          >
-            Ohne Datei wird der Inhalt aus dem Eingabefeld verwendet.
-          </FileDropInput>
-        </div>
+        <FileDropInput
+          id="send-data-file"
+          label="Fachdaten aus Datei (optional)"
+          accept=".json,.xml,application/json,application/xml,text/xml"
+          :disabled="disabled"
+          @files="(files) => (dataFile = files[0] || null)"
+        >
+          Ohne Datei wird der Inhalt aus dem Eingabefeld verwendet.
+        </FileDropInput>
         <SchemaSourceConsent id="send-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
 
         <div class="client-actions">
@@ -747,9 +736,6 @@ async function refreshState() {
           >
             Fiktive Beispieldaten erzeugen
           </button>
-          <button class="button secondary" type="button" :disabled="disabled || !schema" @click="loadLabels">
-            Schema-Beschriftungen laden
-          </button>
         </div>
         <p v-if="exampleNotice" class="small-note" role="status">{{ exampleNotice }}</p>
         <DraftDataPreview
@@ -758,8 +744,9 @@ async function refreshState() {
           :text="dataText"
           :file="dataFile"
           :mime-type="mime"
-          :context-key="session?.sessionId"
+          :context-key="schemaContext"
           :disabled="disabled"
+          @request-schema="allowExternalSchemas && !schemaDocument && loadLabels()"
         >
           <label v-if="!dataFile" for="send-data">
             Inhalt
@@ -772,6 +759,30 @@ async function refreshState() {
             </button>
           </p>
         </DraftDataPreview>
+        <details class="data-schema-options">
+          <summary>Schema und technische Optionen</summary>
+          <div class="client-fields">
+            <label for="send-schema">
+              Fachdaten-Schema
+              <select v-if="schemaOptions.length > 1" id="send-schema" v-model="schemaChoice">
+                <option v-for="(item, index) in schemaOptions" :key="index" :value="index">
+                  {{ item.mimeType === 'application/json' ? 'JSON' : 'XML' }} · {{ item.schemaUri }}
+                </option>
+              </select>
+              <output v-else id="send-schema">
+                {{
+                  schema
+                    ? `${mime === 'application/json' ? 'JSON' : 'XML'} · ${schema}`
+                    : 'Keine unterstützten Fachdaten-Schemata ausgewählt.'
+                }}
+              </output>
+              <small>Wird aus der gewählten Leistung beziehungsweise Prozessnachricht übernommen.</small>
+            </label>
+          </div>
+          <button class="button secondary" type="button" :disabled="disabled || !schema" @click="loadLabels">
+            Schema-Beschriftungen laden
+          </button>
+        </details>
       </fieldset>
       <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
         <legend tabindex="-1">Antwortkanal</legend>

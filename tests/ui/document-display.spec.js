@@ -57,19 +57,19 @@ test('inline reading preserves a selected file and editing text, and never prepa
   await page.getByRole('button', { name: 'Weiter: Fachdaten', exact: true }).click();
   const text = '{"name":"Erika", "zustimmung":true}';
   await page.locator('#send-data').fill(text);
-  await page.getByRole('button', { name: 'Fachdaten visuell ansehen', exact: true }).click();
+  await page.getByRole('button', { name: 'Formularansicht', exact: true }).click();
   await expect(page.locator('.draft-inline-preview')).toContainText('Ja');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Inhalt bearbeiten', exact: true }).click();
+  await page.getByRole('button', { name: 'Bearbeiten', exact: true }).click();
   await expect(page.locator('#send-data')).toHaveValue(text);
   await page.locator('#send-data-file').setInputFiles({
     name: 'antrag.json',
     mimeType: 'application/json',
     buffer: Buffer.from('{"name":"Dateiinhalt"}'),
   });
-  await page.getByRole('button', { name: 'Fachdaten visuell ansehen', exact: true }).click();
+  await page.getByRole('button', { name: 'Formularansicht', exact: true }).click();
   await expect(page.locator('.draft-inline-preview')).toContainText('Dateiinhalt');
-  await page.getByRole('button', { name: 'Inhalt bearbeiten', exact: true }).click();
+  await page.getByRole('button', { name: 'Bearbeiten', exact: true }).click();
   await expect(page.getByText('antrag.json', { exact: false }).last()).toBeVisible();
   await page.getByRole('button', { name: 'Eingabefeld verwenden', exact: true }).click();
   await expect(page.locator('#send-data')).toHaveValue(text);

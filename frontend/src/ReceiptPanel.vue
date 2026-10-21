@@ -12,8 +12,10 @@ const props = defineProps({
   proof: Object,
   busy: Boolean,
   keyRevision: Number,
+  guided: Boolean,
 });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'outcome', 'invalidate']);
+const started = ref(false);
 const intent = ref('accept'),
   reason = ref('technical-error'),
   description = ref(''),
@@ -94,6 +96,7 @@ function reset() {
   error.value = '';
   keys.value = [];
   selectedKey.value = '';
+  started.value = false;
   intent.value = 'accept';
   reason.value = 'technical-error';
   description.value = '';
@@ -155,7 +158,12 @@ async function run(name, operation) {
   }
 }
 async function prepare() {
-  if (disabled.value || (intent.value === 'accept' && !props.proof)) return;
+  if (
+    disabled.value ||
+    (intent.value === 'accept' && !props.proof) ||
+    (intent.value === 'reject' && !Object.hasOwn(reasons, reason.value))
+  )
+    return;
   const detail = props.detail,
     proof = props.proof;
   const draft = {
@@ -206,6 +214,18 @@ async function prepare() {
   await nextTick();
   if (alive && prepared.value) dialog.value?.showModal();
 }
+async function begin(action) {
+  if (disabled.value || !['accept', 'reject'].includes(action)) return;
+  const key = context.value;
+  intent.value = action;
+  started.value = true;
+  if (action === 'reject') reason.value = '';
+  else await prepare();
+  await nextTick();
+  if (context.value === key && !prepared.value)
+    document.getElementById(action === 'reject' ? 'receipt-reason' : 'receipt-key')?.focus();
+}
+defineExpose({ begin });
 async function dismiss() {
   if (!prepared.value || working.value) return;
   const value = prepared.value;
@@ -250,15 +270,29 @@ async function confirm() {
 </script>
 
 <template>
-  <section class="tool-section" aria-labelledby="receipt-title" :aria-busy="working">
+  <section
+    v-show="!guided || started || outcome || error || !proof"
+    class="tool-section"
+    aria-labelledby="receipt-title"
+    :aria-busy="working"
+  >
     <h2 id="receipt-title">Empfang abschließen</h2>
     <p>
       Die Aktion wird mit einem geladenen privaten Testschlüssel lokal signiert. Erst Ihre Bestätigung
       überträgt sie an FIT-Connect TEST.
     </p>
-    <form v-if="!locked" @submit.prevent="prepare">
+    <button
+      v-if="guided && !started && !proof && !locked"
+      class="button secondary"
+      type="button"
+      :disabled="disabled"
+      @click="begin('reject')"
+    >
+      Ohne Entschlüsselung ablehnen
+    </button>
+    <form v-if="!locked && (!guided || started)" @submit.prevent="prepare">
       <div class="client-fields">
-        <label for="receipt-action">
+        <label v-if="!guided" for="receipt-action">
           Aktion
           <select id="receipt-action" v-model="intent" :disabled="disabled">
             <option value="accept">Einreichung annehmen</option>
@@ -277,7 +311,8 @@ async function confirm() {
         <div class="client-fields">
           <label for="receipt-reason">
             Ablehnungsgrund
-            <select id="receipt-reason" v-model="reason" :disabled="disabled">
+            <select id="receipt-reason" v-model="reason" :disabled="disabled" required>
+              <option value="" disabled>Bitte Ablehnungsgrund auswählen</option>
               <option v-for="(label, code) in reasons" :key="code" :value="code">{{ label }}</option>
             </select>
           </label>
@@ -315,7 +350,13 @@ async function confirm() {
           type="submit"
           :disabled="disabled || (intent === 'accept' && !proof)"
         >
-          Lokal signieren und prüfen
+          {{
+            guided
+              ? intent === 'accept'
+                ? 'Annahme prüfen'
+                : 'Ablehnung prüfen'
+              : 'Lokal signieren und prüfen'
+          }}
         </button>
       </div>
     </form>
