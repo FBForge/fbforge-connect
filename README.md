@@ -8,6 +8,7 @@ Desktop-Testclient für FIT-Connect. Für Entwickler, Integratoren und Mitarbeit
 - JSON/XML lesen, Anlagen ansehen und Vorgänge lokal aufbewahren.
 - Event Logs durchsuchen, eigene v3-Destinations verwalten und BPMN-Nachrichten auswählen.
 - Zugänge und Schlüssel optional mit Windows-DPAPI speichern.
+- Testfälle als Paket wiederverwenden und Schemaänderungen lokal vergleichen.
 
 Für **Windows x64 und FIT-Connect TEST**. Kein offizielles Produkt der FITKO. Verwenden Sie fiktive Daten.
 

@@ -6,7 +6,9 @@
 - Lesende Formularansicht mit Anlagen und zusammenhängenden Vorgängen.
 - Client-ID in aktiven Verbindungen und gespeicherten Profilen.
 - Sichtbare Destination-Details, gemeinsame Bearbeitung und erreichbare PDF-Seitensteuerung.
-- Verständliche Schemahinweise mit direkten Aktionen. Beispieldaten werden vor dem Übernehmen geprüft.
+- JSON/XML vor dem Versand gegen das Schema prüfen. Nachfrage beim Abruf öffentlicher Schemaquellen.
+- Testpakete über die Oberfläche wiederverwenden und lokale JSON-Schemata oder XSDs vergleichen.
+- Verständliche Schemahinweise und gezielte XML-Nachrichtenauswahl bei Beispieldaten.
 - Zentral gepflegte Web-Anleitung mit aktuellen Bildern und Beispielen.
 
 ## 0.1.0-alpha.1

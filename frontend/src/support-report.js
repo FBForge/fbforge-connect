@@ -34,6 +34,7 @@ export const operationLabels = Object.freeze({
   destination_update_state: 'Verwaltung: Ergebnis abrufen',
   load_send_destination: 'Empfängerleistungen laden',
   load_send_schema: 'Versandschema laden',
+  validate_send_data: 'Fachdaten vor Versand prüfen',
   prepare_send: 'Versand vorbereiten',
   execute_send: 'Versand bestätigen',
   cancel_send: 'Versand verwerfen',

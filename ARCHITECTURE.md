@@ -20,6 +20,11 @@ Die SDK-Versionen laufen in getrennten Classloadern. Gemeinsame Verträge enthal
 - Profile, private Schlüssel und Vorgangskopien werden getrennt und benutzergebunden mit Windows-DPAPI gespeichert. Vorgänge sind nach Profil und API isoliert. Tokens und alte Prüfnachweise werden nicht wiederhergestellt. Andere Plattformen haben keinen Klartext-Fallback.
 - Profilsicherungen werden nativ entschlüsselt. Drag-and-drop reicht nur größenbegrenzte, verschlüsselte `.fctest-profile`-Dateien weiter und gibt Profilmetadaten zurück. Eine Profil-Sicherung enthält keine Vorgänge.
 - Antwortschlüssel werden vor dem Versand gesichert. Bei aktivierter Vorgangsaufbewahrung muss die Sicherung vor der Empfangsbestätigung gelingen. Ein Speicherfehler nach erfolgtem Versand darf keinen erneuten Versand auslösen.
+- Öffentliche Schemaquellen benötigen eine ausdrückliche Freigabe für die aktive Verbindung. Die Freigabe wird weder im Profil gespeichert noch auf eine andere Verbindung übertragen. Lokale Schemata benötigen sie nicht.
+
+JSON/XML-Fachdaten werden im nativen Kern gegen JSON Schema beziehungsweise XSD geprüft. Vor dem Versand ist die Prüfung standardmäßig aktiv. Bewusste Negativtests lassen sich ausdrücklich ohne Fachdatenprüfung vorbereiten. Die Bestätigung weist darauf hin.
+
+Testpakete und Schema-Vergleich arbeiten lokal im Renderer. Pakete enthalten fiktive Nutzdaten, Anlagen, lokale Schemata und manuelle Erwartungen. Verbindungsdaten und private Schlüssel werden nicht übernommen. Erst die Übernahme in den normalen Versandablauf ermöglicht einen separat bestätigten Versand.
 
 ## BPMN
 

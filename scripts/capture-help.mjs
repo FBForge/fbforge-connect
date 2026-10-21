@@ -32,6 +32,14 @@ try {
   await open('test-fixtures/profiles.html?destinations=1');
   await expect(button('Verbindung herstellen')).toBeVisible();
   await capture('overview');
+  await button('Testwerkzeuge').click();
+  await button('Fiktives Testpaket öffnen').click();
+  await capture('test-packages');
+  await button('Schema-Vergleich').click();
+  await button('Fiktiven Beispielvergleich öffnen').click();
+  await expect(page.locator('.schema-change-list')).toContainText('Jetzt ein Pflichtfeld');
+  await capture('schema-comparison');
+  await button('Start').click();
   await button('Verbindung herstellen').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.locator('#client-id')).toHaveValue('');
@@ -100,6 +108,15 @@ try {
         return envelope({ ...content });
       }
       if (command === 'discard_content') return envelope({ contentId: args.contentId });
+      if (command === 'validate_send_data') {
+        const request = JSON.parse(args.schemaDocument);
+        return envelope({
+          schemaUri: request.schemaUri,
+          mimeType: request.mimeType,
+          dataBytes: content.totalBytes,
+          valid: true,
+        });
+      }
       if (command === 'prepare_send') {
         const { contentId: _contentId, attachments, ...draft } = JSON.parse(args.sendDocument);
         attempt = {
@@ -145,7 +162,6 @@ try {
   await page.locator('#send-target').fill('22222222-2222-4222-8222-222222222222');
   await button('Leistungen laden').click();
   await button('Weiter: Fachdaten').click();
-  await page.locator('#send-schema-sources').check();
   await button('Fiktive Beispieldaten erzeugen').click();
   const messagePicker = page
     .getByRole('dialog', { name: 'Fiktive Beispieldaten', exact: true })
@@ -159,6 +175,9 @@ try {
   await expect(page.locator('#send-data')).toHaveValue(/>0600<\/nachrichtentyp>/);
   await button('Formularansicht').click();
   await capture('send-data', page.locator('[data-send-step="1"] legend'));
+  await button('Fachdaten gegen Schema prüfen').click();
+  await expect(page.getByText('Fachdaten entsprechen dem Schema.', { exact: true })).toBeVisible();
+  await capture('send-validation', page.locator('.send-schema-validation'));
   await button('Weiter: Anlagen & Antwortkanal').click();
   await button('Versand vorbereiten').click();
   const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
@@ -197,8 +216,8 @@ try {
   await capture('receive-review', page.locator('.submission-document-heading'));
   await capture('receive', application);
   await button('Antwort verfassen').click();
-  await page.locator('#reply-schema-sources').check();
   await button('Fiktiven Antwortentwurf erzeugen').click();
+  await button('Für diese Verbindung erlauben').click();
   await button('Beispieldaten übernehmen').click();
   await expect(page.locator('#reply-data')).toHaveValue(/erhalten/);
   await capture('replies', page.getByRole('heading', { name: 'Auf die Einreichung antworten', exact: true }));
@@ -248,12 +267,22 @@ try {
   await page.evaluate(() => {
     const invoke = window.__TAURI_INTERNALS__.invoke;
     window.__TAURI_INTERNALS__.invoke = (command, args) => {
-      if (command === 'verify_submission') return Promise.reject('schema_consent_required');
+      if (command === 'verify_submission')
+        return Promise.reject(
+          JSON.parse(args.schemaDocument).allowExternalSchemas
+            ? 'schema_unavailable'
+            : 'schema_consent_required',
+        );
       return invoke(command, args);
     };
   });
   await page.locator('#pickup-submission').fill('00000003-1111-4111-8111-111111111111');
   await button('Einreichung öffnen und prüfen').click();
+  await expect(
+    page.getByRole('dialog', { name: 'Öffentliche Schemaquellen laden?', exact: true }),
+  ).toBeVisible();
+  await capture('schema-access');
+  await button('Für diese Verbindung erlauben').click();
   await expect(page.getByRole('alert').first()).toBeVisible();
   await capture('problems', page.getByRole('alert').first());
 

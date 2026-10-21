@@ -21,6 +21,7 @@ import {
 import AppIcon from './AppIcon.vue';
 import CopyValue from './CopyValue.vue';
 import DocumentationLink from './DocumentationLink.vue';
+import { createSchemaSourceAccess, schemaSourceAccessKey } from './schema-source-access.js';
 import StartWorkspace from './StartWorkspace.vue';
 import appLogo from './assets/test-client.png';
 import { productName, productBrand, productEdition, productPurpose } from './product.js';
@@ -44,6 +45,9 @@ import SubmissionBrowser from './SubmissionBrowser.vue';
 import EventLogPanel from './EventLogPanel.vue';
 import CaseWorkspace from './CaseWorkspace.vue';
 const ApplicationHelp = defineAsyncComponent(() => import('./ApplicationHelp.vue'));
+const TestTools = defineAsyncComponent(() => import('./TestTools.vue'));
+const testDraft = shallowRef(null);
+const toolsOpened = ref(false);
 const receiveTarget = shallowRef(null);
 function reopenCase(record) {
   receiveTab.value = 'submissions';
@@ -121,6 +125,10 @@ const submissionRevision = ref(0),
   replyRevision = ref(0);
 const eventTarget = ref(null);
 const activeSession = computed(() => sessions.value[apiVersion.value]);
+provide(
+  schemaSourceAccessKey,
+  createSchemaSourceAccess(() => activeSession.value),
+);
 document.documentElement.dataset.theme = theme.value;
 watch(apiVersion, () => {
   clientId.value = '';
@@ -271,11 +279,6 @@ const navigation = [
     description: 'Verbinden Sie Ihren TEST-Zugang und wählen Sie die passende Aufgabe.',
   },
   {
-    name: 'Vorgänge',
-    icon: 'events',
-    description: 'Gesendete und empfangene Anträge, Antworten und Anlagen lokal wieder öffnen.',
-  },
-  {
     name: 'Senden',
     icon: 'send',
     description: 'Einreichungen mit Fachdaten und Anlagen vorbereiten und an TEST übermitteln.',
@@ -286,42 +289,57 @@ const navigation = [
     description: 'Einreichungen abrufen, lokal entschlüsseln und technisch prüfen.',
   },
   {
-    name: 'Event Log',
+    name: 'Vorgänge',
     icon: 'events',
-    description: 'Den Verlauf von Vorgängen, Einreichungen und Antworten nachvollziehen.',
-  },
-  {
-    name: 'Prozesse',
-    icon: 'process',
-    description: 'BPMN-Nachrichten auswählen und passende TEST-Prozess-Destinations finden.',
+    description: 'Gesendete und empfangene Anträge, Antworten und Anlagen lokal wieder öffnen.',
   },
   {
     name: 'Destinations',
-    utility: true,
+    group: 'Test und Verwaltung',
     icon: 'destinations',
     description: 'Eigene Destinations ansehen und über API v3 verwalten.',
   },
   {
+    name: 'Prozesse',
+    group: 'Test und Verwaltung',
+    icon: 'process',
+    description: 'BPMN-Nachrichten auswählen und passende TEST-Prozess-Destinations finden.',
+  },
+  {
+    name: 'Event Log',
+    group: 'Test und Verwaltung',
+    icon: 'events',
+    description: 'Den Verlauf von Vorgängen, Einreichungen und Antworten nachvollziehen.',
+  },
+  {
+    name: 'Testwerkzeuge',
+    group: 'Test und Verwaltung',
+    icon: 'tools',
+    description: 'Testfälle lokal wiederverwenden und Änderungen an JSON-Schemata und XSDs vergleichen.',
+  },
+  {
     name: 'Hilfe',
-    utility: true,
+    group: 'Hilfe und Anwendung',
     icon: 'info',
     description: 'Anleitungen und Beispiele auf der FBForge-Website.',
   },
   {
     name: 'Diagnose',
-    utility: true,
+    group: 'Hilfe und Anwendung',
     icon: 'diagnostics',
     description: 'Lokale Komponenten prüfen und einen technischen Bericht für die Fehleranalyse speichern.',
   },
   {
     name: 'Info',
-    utility: true,
+    group: 'Hilfe und Anwendung',
     icon: 'info',
     description: 'Programmversion, Funktionsumfang und Lizenzinformationen.',
   },
 ];
-const workspaceNavigation = navigation.filter((item) => !item.utility);
-const utilityNavigation = navigation.filter((item) => item.utility);
+const navigationGroups = ['Arbeitsbereich', 'Test und Verwaltung', 'Hilfe und Anwendung'].map((name) => ({
+  name,
+  items: navigation.filter((item) => (item.group || 'Arbeitsbereich') === name),
+}));
 const currentView = computed(() => navigation.find((item) => item.name === section.value));
 const receiveTab = ref('submissions'),
   receiveBrowser = ref(null);
@@ -379,6 +397,7 @@ async function navigate(name) {
   if (section.value === name) return;
   scrollPositions.set(section.value, workspace.value?.scrollTop || 0);
   section.value = name;
+  if (name === 'Testwerkzeuge') toolsOpened.value = true;
   await nextTick();
   if (workspace.value) workspace.value.scrollTop = scrollPositions.get(name) || 0;
   viewHeading.value?.focus({ preventScroll: true });
@@ -387,6 +406,10 @@ function beginTask(name) {
   if (name === 'Empfangen') receiveTab.value = 'submissions';
   void navigate(name);
   if (!activeSession.value) showConnection();
+}
+function openTestDraft(value) {
+  testDraft.value = { ...value, requestId: crypto.randomUUID() };
+  beginTask('Senden');
 }
 let connectionOpener;
 function showConnection() {
@@ -628,23 +651,16 @@ function clearHistory() {
     </header>
     <aside class="app-sidebar" aria-label="Bereichsauswahl">
       <nav class="app-navigation" aria-label="Hauptnavigation">
-        <p class="nav-caption">Arbeitsbereich</p>
-        <button
-          v-for="item in workspaceNavigation"
-          :key="item.name"
-          type="button"
-          class="nav-item"
-          :title="item.name"
-          :aria-current="section === item.name ? 'page' : undefined"
-          @click="navigate(item.name)"
+        <div
+          v-for="(group, index) in navigationGroups"
+          :key="group.name"
+          :class="{ 'nav-utilities': index > 0 }"
+          role="group"
+          :aria-label="group.name"
         >
-          <AppIcon :name="item.icon" />
-          <span>{{ item.name }}</span>
-        </button>
-        <div class="nav-utilities">
-          <p class="nav-caption">Anwendung</p>
+          <p class="nav-caption">{{ group.name }}</p>
           <button
-            v-for="item in utilityNavigation"
+            v-for="item in group.items"
             :key="item.name"
             type="button"
             class="nav-item"
@@ -669,7 +685,11 @@ function clearHistory() {
           <p>{{ currentView.description }}</p>
         </div>
         <DocumentationLink
-          v-if="['Senden', 'Empfangen', 'Event Log', 'Destinations', 'Prozesse'].includes(section)"
+          v-if="
+            ['Senden', 'Empfangen', 'Event Log', 'Destinations', 'Prozesse', 'Testwerkzeuge'].includes(
+              section,
+            )
+          "
           :topic="
             {
               Senden: 'send',
@@ -677,6 +697,7 @@ function clearHistory() {
               'Event Log': 'events',
               Destinations: 'destinations',
               Prozesse: 'processes',
+              Testwerkzeuge: 'tools',
             }[section]
           "
         >
@@ -686,7 +707,10 @@ function clearHistory() {
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div class="workspace-content">
           <div
-            v-if="!activeSession && !['Start', 'Diagnose', 'Info', 'Prozesse', 'Hilfe'].includes(section)"
+            v-if="
+              !activeSession &&
+              !['Start', 'Diagnose', 'Info', 'Prozesse', 'Hilfe', 'Testwerkzeuge'].includes(section)
+            "
             class="connection-notice"
           >
             <AppIcon name="connection" />
@@ -715,6 +739,7 @@ function clearHistory() {
             :visible="section === 'Senden'"
             :default-source="defaultDestinations?.sourceDestination || ''"
             :process-draft="processDraft"
+            :test-draft="testDraft"
             v-show="section === 'Senden'"
             :session="activeSession"
             :busy="busy"
@@ -829,6 +854,12 @@ function clearHistory() {
             @receive="reopenCase"
           />
           <ApplicationHelp v-if="section === 'Hilfe'" />
+          <TestTools
+            v-if="toolsOpened"
+            v-show="section === 'Testwerkzeuge'"
+            :busy="busy"
+            @send="openTestDraft"
+          />
           <EventLogPanel
             :known-targets="caseRecords"
             v-show="section === 'Event Log'"

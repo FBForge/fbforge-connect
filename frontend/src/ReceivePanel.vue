@@ -15,6 +15,7 @@ import { createPreview, disposePreview, canPreview } from './submission-preview.
 import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
+import { useSchemaSourceAccess, withSchemaSourceAccess } from './schema-source-access.js';
 import FileDropInput from './FileDropInput.vue';
 import DocumentationLink from './DocumentationLink.vue';
 import ActionNotice from './ActionNotice.vue';
@@ -55,13 +56,8 @@ const emit = defineEmits([
   'event-log',
   'setup',
 ]);
-const allowExternalSchemas = ref(false);
-watch(
-  () => props.session?.sessionId,
-  () => {
-    allowExternalSchemas.value = false;
-  },
-);
+const allowExternalSchemas = useSchemaSourceAccess(() => props.session);
+const schemaAccess = ref(null);
 const diagnostic = ref('');
 const errorNotice = ref(null);
 const schemaSettings = ref(null);
@@ -125,6 +121,10 @@ watch(error, async (message) => {
 });
 async function showSchemaSettings(local) {
   preparation.value.open = true;
+  if (!local) {
+    if (await schemaAccess.value.request()) verify();
+    return;
+  }
   if (local) schemaSettings.value.open = true;
   await nextTick();
   const target = document.getElementById(`${panelId.value}-${local ? 'schema-file' : 'schema-sources'}`);
@@ -147,7 +147,7 @@ const messages = {
   verification_failed:
     'Die technische Prüfung der Einreichung ist fehlgeschlagen. Prüfen Sie Schlüssel, Event Log und Inhalte. Es liegt kein vollständiges Prüfergebnis vor.',
   schema_consent_required:
-    'Das Schema benötigt eine öffentliche Quelle. Bitte die Freigabe öffentlicher Schemaquellen aktivieren oder eine passende lokale Schemadatei hinzufügen und erneut prüfen.',
+    'Das Schema benötigt eine öffentliche Quelle. Erlauben Sie den Abruf oder fügen Sie ein passendes lokales Schema hinzu.',
   schema_unavailable:
     'Die Schema-URI wurde aus den Metadaten gelesen. Das Schema oder eine seiner Referenzen konnte jedoch nicht vollständig geladen oder aufgelöst werden. Es liegt noch keine vollständige Inhaltsprüfung vor. Bei nicht öffentlich erreichbaren Schemata können Sie eine lokale Datei mit passender $id hinzufügen.',
   schema_tls_error:
@@ -269,12 +269,14 @@ onBeforeUnmount(() => {
   void resetAll();
 });
 
+let actionOpener;
 async function run(name, operation) {
   if (disabled.value) return;
   const active = { ...props.session },
     stamp = generation,
     started = performance.now();
   const current = () => alive && stamp === generation;
+  actionOpener = document.activeElement;
   pending.value = true;
   action.value = name;
   error.value = '';
@@ -314,16 +316,21 @@ function verify() {
   run('Inhalte entschlüsseln und prüfen', async (active, current) => {
     await cleanup;
     const catalog = schemas.value.map(({ uri, contentId }) => ({ uri, contentId }));
-    const result = reply
-      ? await verifyReply(invoke, active, detail.caseId, detail.replyId, catalog, allowExternalSchemas.value)
-      : await verifySubmission(
-          invoke,
-          active,
-          detail.destinationId,
-          detail.submissionId,
-          catalog,
-          allowExternalSchemas.value,
-        );
+    const result = await withSchemaSourceAccess(
+      () =>
+        reply
+          ? verifyReply(invoke, active, detail.caseId, detail.replyId, catalog, allowExternalSchemas.value)
+          : verifySubmission(
+              invoke,
+              active,
+              detail.destinationId,
+              detail.submissionId,
+              catalog,
+              allowExternalSchemas.value,
+            ),
+      () => schemaAccess.value.request(actionOpener),
+      current,
+    );
     try {
       const rows = [];
       for (let offset = 0; offset < result.partCount && current(); offset += 2)
@@ -579,8 +586,8 @@ defineExpose({ confirmLeave });
               :disabled="disabled"
               @files="chooseSchema"
             >
-              Maximal 2 MiB pro Datei, insgesamt 16 MiB. Öffentliche HTTPS-Schemata benötigen die Freigabe
-              unten. Private Netzadressen werden nicht aufgerufen.
+              Maximal 2 MiB pro Datei, insgesamt 16 MiB. Vor dem Abruf öffentlicher HTTPS-Schemata fragt die
+              Anwendung nach Ihrer Freigabe. Private Netzadressen werden nicht aufgerufen.
             </FileDropInput>
           </div>
           <ul v-if="schemas.length" class="receive-schema-list">
@@ -597,9 +604,11 @@ defineExpose({ confirmLeave });
           </ul>
         </details>
         <SchemaSourceConsent
+          ref="schemaAccess"
           :id="`${panelId}-schema-sources`"
           v-model="allowExternalSchemas"
           :disabled="disabled"
+          :context-key="`${context}/${detail?.submissionId || detail?.replyId || ''}`"
         />
         <div class="client-actions">
           <button class="button" type="button" :disabled="disabled" @click="verify">

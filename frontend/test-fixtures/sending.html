@@ -21,6 +21,7 @@
       const eventTarget = ref(null);
       const id = '11111111-1111-4111-8111-111111111111';
       const files = new Map();
+      window.__sendFixture = { validationError: null, validations: 0 };
       let current = { attemptId: null, status: 'idle', submissionId: null, caseId: null, error: null };
       const envelope = (data) => ({ apiVersion: api.value, sessionId: id, environment: 'TEST', data });
       window.__TAURI_INTERNALS__ = {
@@ -91,6 +92,17 @@
           if (command === 'discard_content') {
             files.delete(args.contentId);
             return envelope({ contentId: args.contentId });
+          }
+          if (command === 'validate_send_data') {
+            window.__sendFixture.validations++;
+            if (window.__sendFixture.validationError) throw window.__sendFixture.validationError;
+            const request = JSON.parse(args.schemaDocument);
+            return envelope({
+              schemaUri: request.schemaUri,
+              mimeType: request.mimeType,
+              dataBytes: files.get(request.contentId).total,
+              valid: true,
+            });
           }
           if (command === 'prepare_send') {
             const { contentId, attachments, ...draft } = JSON.parse(args.sendDocument);

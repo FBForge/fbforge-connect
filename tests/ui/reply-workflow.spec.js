@@ -26,9 +26,9 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
     const prepare = page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true });
     assert.equal(await prepare.isDisabled(), false);
-    await page.locator('#reply-schema-sources').check();
     await prepare.waitFor();
     await page.getByRole('button', { name: 'Fiktiven Antwortentwurf erzeugen', exact: true }).click();
+    await page.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
     await page.getByRole('button', { name: 'Beispieldaten übernehmen', exact: true }).click();
     await page.getByText(/Fiktiver Antwortentwurf erzeugt/).waitFor();
     assert.equal(JSON.parse(await page.locator('#reply-data').inputValue()).status, 'erhalten');

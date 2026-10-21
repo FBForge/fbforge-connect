@@ -1,0 +1,66 @@
+{
+  "format": "fbforge-connect-testpack",
+  "version": 1,
+  "name": "Fiktiver Integrationstest",
+  "cases": [
+    {
+      "id": "antrag-mit-antwort",
+      "name": "JSON-Antrag mit Anlage und Antwort",
+      "request": {
+        "serviceIdentifier": "urn:de:fim:leika:leistung:99000000000000",
+        "serviceName": "Fiktive Testleistung",
+        "region": "DE",
+        "schemaUri": "urn:fit-connect:test-client:demo:application:1",
+        "mimeType": "application/json",
+        "data": "{\"antragstellendePerson\":{\"vorname\":\"Erika\",\"nachname\":\"Musterfrau\"},\"anliegen\":\"Fiktiver Integrationstest\"}",
+        "attachments": [
+          {
+            "fileName": "testnachweis.txt",
+            "mimeType": "text/plain",
+            "description": "Fiktiver Nachweis",
+            "base64": "RmlrdGl2ZXIgTmFjaHdlaXMu"
+          }
+        ],
+        "processMessage": null,
+        "replyOffer": {
+          "schemaUri": "urn:fit-connect:test-client:demo:reply:1",
+          "mimeType": "application/json",
+          "processMessages": []
+        }
+      },
+      "reply": {
+        "schemaUri": "urn:fit-connect:test-client:demo:reply:1",
+        "mimeType": "application/json",
+        "data": "{\"status\":\"eingegangen\",\"nachricht\":\"Der fiktive Testantrag ist eingegangen.\"}",
+        "attachments": [],
+        "processMessage": null
+      },
+      "receipt": "accept",
+      "schemas": []
+    },
+    {
+      "id": "xml-antrag",
+      "name": "XML-Antrag ohne Antwort",
+      "request": {
+        "serviceIdentifier": "urn:de:fim:leika:leistung:99000000000000",
+        "serviceName": "Fiktive Testleistung",
+        "region": "DE",
+        "schemaUri": "urn:fbforge:connect:test:xml:1",
+        "mimeType": "application/xml",
+        "data": "<antrag><vorname>Erika</vorname><anliegen>Fiktiver XML-Test</anliegen></antrag>",
+        "attachments": [],
+        "processMessage": null,
+        "replyOffer": null
+      },
+      "reply": null,
+      "receipt": "accept",
+      "schemas": [
+        {
+          "uri": "urn:fbforge:connect:test:xml:1",
+          "mimeType": "application/xml",
+          "content": "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"antrag\"><xs:complexType><xs:sequence><xs:element name=\"vorname\" type=\"xs:string\"/><xs:element name=\"anliegen\" type=\"xs:string\"/></xs:sequence></xs:complexType></xs:element></xs:schema>"
+        }
+      ]
+    }
+  ]
+}

@@ -101,7 +101,7 @@ final class Engine implements AutoCloseable {
                 case "load_destination" -> expected.addAll(Set.of("sessionId", "destinationId"));
                 case "load_send_destination" ->
                         expected.addAll(Set.of("sessionId", "destinationId"));
-                case "load_send_schema" ->
+                case "load_send_schema", "validate_send_data" ->
                         expected.addAll(Set.of("sessionId", "destinationId", "schemaDocument"));
                 case "read_send_schema" ->
                         expected.addAll(Set.of("sessionId", "contentId", "byteOffset"));
@@ -236,7 +236,10 @@ final class Engine implements AutoCloseable {
                                     sessions.check(version, values.get("sessionId"));
                             case "close_session" ->
                                     sessions.close(version, values.get("sessionId"));
-                            case "load_send_destination", "load_send_schema", "read_send_schema" ->
+                            case "load_send_destination",
+                                    "load_send_schema",
+                                    "validate_send_data",
+                                    "read_send_schema" ->
                                     sessions.sendSchema(
                                             version,
                                             values.get("sessionId"),

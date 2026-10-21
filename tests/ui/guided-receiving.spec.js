@@ -139,12 +139,13 @@ test('reply preparation loads the schema only with consent, snapshots the exact 
   const content = '{\n "status":"erhalten"\n}';
   await page.locator('#reply-data').fill(content);
   await page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true }).click();
-  await expect(page.locator('#reply-schema-sources')).toBeFocused();
+  await expect(
+    page.getByRole('dialog', { name: 'Öffentliche Schemaquellen laden?', exact: true }),
+  ).toBeVisible();
   expect(await page.evaluate(() => window.__applicationFixture.calls.includes('load_reply_schema'))).toBe(
     false,
   );
-  await page.locator('#reply-schema-sources').check();
-  await page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true }).click();
+  await page.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true })).toBeVisible();
   expect(
     await page.evaluate(
@@ -213,9 +214,9 @@ test('a changed proof during combined schema loading cannot prepare or send the 
 }) => {
   await open(page);
   await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
-  await page.locator('#reply-schema-sources').check();
   await page.evaluate(() => (window.__applicationFixture.delaySchema = true));
   await page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true }).click();
+  await page.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
   await expect.poll(() => page.evaluate(() => Boolean(window.__applicationFixture.releaseSchema))).toBe(true);
   await page.evaluate(() => {
     window.__applicationFixture.invalidate();

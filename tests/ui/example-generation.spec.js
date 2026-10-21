@@ -49,7 +49,6 @@ async function setup(page, reply, options = {}) {
     await page.getByRole('button', { name: 'Leistungen laden', exact: true }).click();
     await page.getByRole('button', { name: 'Weiter: Fachdaten', exact: true }).click();
   }
-  await page.locator(reply ? '#reply-schema-sources' : '#send-schema-sources').check();
 }
 
 for (const reply of [false, true]) {
@@ -62,6 +61,7 @@ for (const reply of [false, true]) {
     const original = '{"test":"bereits eingegebene Fachdaten"}';
     await page.locator(content).fill(original);
     await page.getByRole('button', { name: buttonName, exact: true }).click();
+    if (reply) await page.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
     await expect(page.getByRole('alert').filter({ hasText: /Schema|Antwortschema/ })).toContainText(
       'nicht verfügbar',
     );
@@ -94,6 +94,7 @@ for (const reply of [false, true]) {
       .setInputFiles({ name: 'bestehend.xml', mimeType: 'application/xml', buffer: Buffer.from(original) });
     const trigger = page.getByRole('button', { name: buttonName, exact: true });
     await trigger.click();
+    if (reply) await page.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
     const chooser = page.getByRole('dialog', { name: 'Fiktive Beispieldaten', exact: true });
     await expect(chooser).toContainText('bisheriger Inhalt');
     await expect(
@@ -121,6 +122,7 @@ for (const reply of [false, true]) {
     const original = '<vorhanden>Unverändert</vorhanden>';
     await page.locator(content).fill(original);
     await page.getByRole('button', { name: buttonName, exact: true }).click();
+    if (reply) await page.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
     const chooser = page.getByRole('dialog', { name: 'Fiktive Beispieldaten', exact: true });
     const picker = chooser.getByRole('combobox');
     await expect(picker).toBeFocused();

@@ -73,6 +73,14 @@ export const helpTopics = [
         image: 'send-confirmation',
         caption: 'Die Versandbestätigung zeigt das Antwortangebot und die Anlagenzahl auch bei null Anlagen.',
       },
+      {
+        image: 'schema-access',
+        caption: 'Nachfrage vor dem ersten Abruf einer öffentlichen Schemaquelle für die aktive Verbindung.',
+      },
+      {
+        image: 'send-validation',
+        caption: 'Aktuelle Fachdatenprüfung gegen das angebotene Schema vor dem Versand.',
+      },
     ],
     steps: [
       'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat. Wenn der Empfänger eine Leistungsbezeichnung liefert, wird sie neben der LeiKa-Kennung angezeigt. Weitere Adressierungsoptionen enthalten die Bezeichnung, Region und eine optionale Case ID. „Weiter“ prüft die Pflichtfelder des Abschnitts und führt Sie zur nächsten Eingabe.',
@@ -80,7 +88,8 @@ export const helpTopics = [
       'Geben Sie JSON oder XML ein oder ziehen Sie eine Datei in das Dateifeld. „Formularansicht“ zeigt den Entwurf lesbar an. Über „Bearbeiten“ kehren Sie zur Eingabe zurück. Text und Dateiauswahl bleiben beim Umschalten erhalten.',
       'Wählen Sie „Fiktive Beispieldaten erzeugen“. Im Dialog wählen Sie bei XML die Nachricht für Ihre Leistung. Erst „Beispieldaten übernehmen“ ersetzt den bisherigen Inhalt oder eine ausgewählte Datei im Entwurf. „Abbrechen“ lässt beides unverändert. Für eine XBau-Genehmigungsfreistellung ist das beispielsweise genehmigungsfreistellung.anzeige.0600. Eine Transportnachricht wird nicht automatisch ausgewählt. Die LeiKa allein bestimmt die XML-Nachricht nicht eindeutig.',
       'Die Formularansicht zeigt Werte lesbar an. „Struktur, Quelltext und Feldangaben“ enthält die technischen Ansichten. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar. Unter „Schema und technische Optionen“ können Sie ein Schema auch gezielt laden.',
-      'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten.',
+      'Prüfen Sie die Fachdaten mit „Fachdaten gegen Schema prüfen“. JSON wird gegen das angebotene JSON-Schema geprüft, XML gegen die aufgelösten XSDs. Beim Vorbereiten läuft diese Prüfung automatisch, sofern kein aktuelles Ergebnis vorhanden ist. Änderungen an Inhalt, Empfänger oder Schema machen das Ergebnis ungültig. Wird eine öffentliche Schemaquelle benötigt, erscheint vor dem Abruf eine Nachfrage. Mit „Für diese Verbindung erlauben“ wird die Prüfung fortgesetzt. „Abbrechen“ lässt Ihre Fachdaten unverändert. Alternativ fügen Sie unter „Schema und technische Optionen“ lokale Prüfschemata mit passender Kennung hinzu.',
+      'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten. Unter „Testfall wiederverwenden“ können Sie den Entwurf einschließlich Anlagen und lokaler Prüfschemata für spätere Tests speichern.',
       'Wenn Sie eine Antwort testen möchten, aktivieren Sie vor dem Versand das Antwortangebot und wählen Sie das erlaubte Antwortschema.',
       'Wählen Sie „Versand vorbereiten“. Prüfen Sie in der unveränderlichen Zusammenfassung auch Antwortangebot und Anlagenzahl und bestätigen Sie den Versand. „Nicht angeboten“ bedeutet, dass die Einreichung keinen FIT-Connect-Antwortkanal enthält. Über „Abbrechen“ können Sie den Entwurf noch ändern. Kopieren Sie Submission ID und Case ID bei Bedarf mit den Kopierschaltflächen. Nach erfolgreichem Versand können Sie unter „Nächsten Test vorbereiten“ Fachdaten und Anlagen ausdrücklich für einen neuen Entwurf auswählen. Die Case ID wird geleert, Empfängerleistungen und Schema werden erneut geprüft.',
     ],
@@ -97,10 +106,11 @@ export const helpTopics = [
       },
     ],
     notes: [
-      'Öffentliche Schemaquellen werden nur nach ausdrücklicher Freigabe geladen. Eigene lokale Schemata sind ebenfalls möglich.',
+      'Die Nachfrage für öffentliche Schemaquellen erscheint beim Laden oder Prüfen. Ihre Freigabe gilt für die aktive Verbindung und lässt sich mit „Freigabe beenden“ widerrufen. Nach einem Verbindungswechsel oder Neustart ist erneut eine Freigabe nötig. Lokale Schemata und mitgelieferte Demos benötigen keine Freigabe.',
       'Ist ein Schema nicht verfügbar oder liefert die Quelle eine Fehlerantwort, erzeugt die Anwendung daraus keine Beispieldaten. Ihre bisherigen Fachdaten bleiben erhalten. Prüfen Sie die angebotene Schema-Version oder verwenden Sie eigene Testdaten. Passen Sie bei erzeugten Entwürfen auch Codelistenwerte und Anlagenverweise an Ihren Test an.',
       'Bei „Ausgang ungewiss“ nicht einfach erneut senden. Nutzen Sie die bekannten IDs zur Event-Log-Prüfung, um doppelte Testnachrichten zu vermeiden.',
       'Die Vorgangsablage übernimmt den tatsächlich vorbereiteten Versandinhalt. Spätere Änderungen im Eingabefeld verändern diese Kopie nicht.',
+      'Für einen bewussten Negativtest können Sie die Fachdaten-Schemaprüfung unter den technischen Optionen ausschalten. Die Versandbestätigung nennt das ausdrücklich. Format und Empfängerangebot werden weiterhin vom SDK geprüft. Eine erfolgreiche Schemaprüfung bestätigt keine fachliche Richtigkeit.',
     ],
   },
   {
@@ -129,7 +139,7 @@ export const helpTopics = [
     ],
     notes: [
       'Eine technische Prüfung bedeutet keine fachliche Freigabe. Hinweise wie „Kein Malwarescanner eingerichtet“ bleiben sichtbar.',
-      'Bei XML kann nur die Syntax geprüft sein. Eine fehlende XSD-Prüfung wird ausdrücklich angezeigt.',
+      'Für XML muss eine passende XSD samt benötigten Referenzen verfügbar sein. Wohlgeformtes XML allein ist kein Schemanachweis.',
       'Die Formularansicht ist auf 256 KiB Fachdaten begrenzt. Größere Inhalte bleiben als Originaldatei verfügbar.',
     ],
   },
@@ -216,7 +226,7 @@ export const helpTopics = [
       'Senden Sie als Onlinedienst eine Einreichung mit aktiviertem Antwortangebot. Verwenden Sie für einen Test über Neustarts ein gespeichertes Profil und sichern Sie dessen Schlüsselzustand.',
       'Öffnen und prüfen Sie den Antrag im Fachverfahren. Wählen Sie „Antwort verfassen“. Die angebotenen Antwortmöglichkeiten werden geladen. Ein einziges Antwortschema wird automatisch übernommen. Bei mehreren Angeboten wählen Sie das passende Schema.',
       'Geben Sie passende JSON- oder XML-Antwortdaten ein oder wählen Sie „Fiktiven Antwortentwurf erzeugen“. Wechseln Sie mit „Formularansicht“ zur lesbaren Vorschau. Dateiauswahl und Anlagen stehen unter dem Inhalt.',
-      'Öffentliche Schemaquellen benötigen Ihre ausdrückliche Freigabe. Ein lokales Schema können Sie unter „Antwortschema und technische Optionen“ hinterlegen. „Antwort prüfen und vorbereiten“ lädt das benötigte Schema, prüft den Inhalt und öffnet die Zusammenfassung. Erst „Antwort jetzt senden“ übermittelt die Antwort.',
+      'Wenn eine öffentliche Schemaquelle benötigt wird, fragt ein Dialog vor dem Abruf nach. Nach Ihrer Zustimmung wird der Schritt fortgesetzt. Ein lokales Schema können Sie unter „Antwortschema und technische Optionen“ hinterlegen. „Antwort prüfen und vorbereiten“ lädt das benötigte Schema, prüft den Inhalt und öffnet die Zusammenfassung. Erst „Antwort jetzt senden“ übermittelt die Antwort.',
       'Bei XML-Antworten mit mehreren möglichen Nachrichten wählen Sie zunächst die passende Antwortnachricht und erzeugen danach den Entwurf. Bei einem fehlenden Schema oder einer nicht unterstützten Pflichtstruktur bleibt Ihr bisheriger Antwortinhalt erhalten.',
       'Verbinden Sie wieder den ursprünglichen Onlinedienst-Zugang. Öffnen Sie unter „Empfangen“ das Register „Antworten“. Laden Sie die Antworten und prüfen Sie die gewünschte Antwort mit dem zu diesem Angebot gehörenden Schlüssel.',
       'Nehmen Sie die Antwort nach Prüfung an oder lehnen Sie sie mit passendem Grund ab. Auch Antworten bleiben als lokale Kopien in der Vorgangsablage erhalten.',
@@ -361,12 +371,13 @@ export const helpTopics = [
     title: 'Probleme verstehen und beheben',
     section: 'Diagnose',
     image: 'problems',
-    caption: 'Fehlende Schemafreigabe mit direkten Aktionen und aufklappbaren technischen Fehlerangaben.',
+    caption:
+      'Ein nicht verfügbares Schema mit direkter lokaler Alternative und aufklappbaren technischen Fehlerangaben.',
     intro:
       'Fehlermeldungen erklären den nächsten sinnvollen Schritt. Wiederholen Sie einen Schreibvorgang nicht unüberlegt.',
     steps: [
       '„Testschlüssel fehlt“: Wählen Sie „Schlüssel einrichten“ und laden Sie einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
-      '„Freigabe für Schemaquellen erforderlich“: „Zur Freigabe“ führt zur Checkbox. Aktivieren Sie diese bewusst und prüfen Sie erneut. Alternativ öffnet „Lokales Schema hinzufügen“ die lokale Dateiauswahl. Die Anwendung erteilt keine Freigabe automatisch.',
+      '„Öffentliche Schemaquellen laden?“: Bestätigen Sie den Abruf im Dialog oder brechen Sie ab und hinterlegen Sie ein lokales Schema. Nach Ihrer Zustimmung wird die angefangene Prüfung fortgesetzt. Eine erteilte Freigabe gilt für die aktive Verbindung. Sie wird nicht gespeichert.',
       'Unter „Technische Fehlerangaben“ finden Sie API-Version und kopierbaren Fehlercode.',
       'Schlüssel abgewiesen: Vergleichen Sie Destination, Verwendungszweck und aktuelle Schlüsselregistrierung. Alte Nachrichten können einen früheren privaten Schlüssel benötigen.',
       'Schema nicht verfügbar: Prüfen Sie die Schema-URI in den Metadaten. Erlauben Sie bei Bedarf öffentliche Quellen oder laden Sie ein lokales Schema mit passender absoluter $id.',
@@ -399,6 +410,37 @@ export const helpTopics = [
     notes: [
       'Schema-Labels werden aus verfügbaren Schemaquellen übernommen. Ohne solche Informationen zeigt die Anwendung die tatsächlichen technischen Feldnamen.',
       'Die ausführliche Anleitung und ihre Abbildungen stehen auf der Website. Die Links in der Anwendung öffnen das passende Kapitel im Browser. Kurze Hinweise bleiben direkt bei den Eingaben verfügbar.',
+    ],
+  },
+  {
+    id: 'tools',
+    title: 'Testpakete und Schema-Vergleich',
+    section: 'Testwerkzeuge',
+    image: 'test-packages',
+    caption:
+      'Ein fiktives Testpaket mit auswählbaren Testfällen, Fachdaten, Anlagen und erwarteten Antworten.',
+    illustrations: [
+      {
+        image: 'schema-comparison',
+        caption:
+          'Lokaler Vergleich zweier JSON-Schemata mit sichtbaren Änderungen an Pflichtfeldern und Auswahlwerten.',
+      },
+    ],
+    intro:
+      'Testpakete und Schema-Vergleich funktionieren lokal. Zum tatsächlichen Senden und Empfangen wechseln Sie in die gewohnten geführten Abläufe.',
+    steps: [
+      'Öffnen Sie „Testwerkzeuge“. Unter „Testpakete“ laden Sie ein gespeichertes Paket oder öffnen das fiktive Beispiel. Eine Anmeldung ist dafür nicht erforderlich.',
+      'Wählen Sie einen Testfall aus. „Fachdaten und Anlagen ansehen“ zeigt den vorbereiteten Inhalt. Unter „Erwartungen für den manuellen Test“ können Sie den erwarteten Antwortinhalt und die Empfangsbestätigung hinterlegen. Diese Angaben lösen keine automatische Antwort oder Bestätigung aus. Paketname und Testfallname lassen sich unter „Bezeichnungen ändern“ anpassen.',
+      '„Als Versandentwurf öffnen“ führt zu „Senden“ und bei Bedarf zur Anmeldung. Tragen Sie eine Empfänger-Destination ein und wählen Sie „Testfall übernehmen“. Nach Ihrer Bestätigung wird deren aktuelles Angebot geprüft. Nur bei passender Leistung, Prozessnachricht und Schema werden Fachdaten, Anlagen und Antwortangebot ersetzt. Die Case ID wird geleert. Prüfen Sie anschließend den Entwurf und bestätigen Sie den Versand separat.',
+      'Einen eigenen Versandentwurf speichern Sie im dritten Versandabschnitt unter „Testfall wiederverwenden“. Das Paket übernimmt keine Verbindung, privaten Schlüssel, Destination IDs oder bisherigen Nachrichtenkennungen. Im Werkzeug können Sie mehrere gespeicherte Pakete unter „Weitere Testfälle hinzufügen“ zusammenführen und das gemeinsame Paket speichern.',
+      'Wechseln Sie zu „Schema-Vergleich“. Ziehen Sie die bisherige und die neue JSON-Schema- oder XSD-Datei in die beschrifteten Dateifelder. Prüfen Sie das Schemaformat und wählen Sie „Schemata vergleichen“. Der Beispielvergleich zeigt den Ablauf mit fiktiven Dateien.',
+      'Die Ergebnisliste nennt hinzugefügte, entfernte und geänderte Struktureinträge. Suchen Sie nach einem Feld oder öffnen Sie dessen bisherige und neue Regeln. „Vergleich speichern“ exportiert den Bericht als JSON.',
+    ],
+    notes: [
+      'Testpakete sind unverschlüsselte Dateien. Verwenden Sie nur fiktive Testdaten und prüfen Sie den Inhalt vor dem Teilen.',
+      'Grenzen: 20 Testfälle, 8 MiB je Paket, 512 KiB Fachdaten, 2 MiB je lokalem Schema und 4 MiB je Anlage. Lokale Paket-Schemata müssen zur angegebenen Schema-URI passen. Eine abweichende $id wird nicht umgeschrieben.',
+      'Der Schema-Vergleich ist ein Strukturvergleich, kein vollständiger Kompatibilitätsnachweis. Externe Referenzen, XSD-Imports und Codelisten werden nicht geladen. Bei XSD werden die ausgewählten Dateien verglichen. Prüfen Sie Änderungen zusätzlich mit Ihren Testfällen.',
+      'Der Vergleich akzeptiert JSON-Schemata und XSD-Dateien bis 512 KiB. Fehlerantworten statt eines Schemas sowie XML mit DTDs oder externen Entitäten werden abgewiesen.',
     ],
   },
 ];

@@ -8,6 +8,7 @@ const processWorkspace = inject(processWorkspaceKey, null);
 import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
+import { useSchemaSourceAccess, withSchemaSourceAccess } from './schema-source-access.js';
 import DraftDataPreview from './DraftDataPreview.vue';
 import FileDropInput from './FileDropInput.vue';
 import SenderDestination from './SenderDestination.vue';
@@ -20,11 +21,21 @@ import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
 import { loadSendDestination, loadSendSchema } from './sender-options.js';
 import ExampleDraftDialog from './ExampleDraftDialog.vue';
+import {
+  packFromDraft,
+  serializeTestPack,
+  testCaseFiles,
+  validateTestPack,
+  testPackError,
+} from './test-packs.js';
+import { downloadLocal } from './local-download.js';
+import { validateSendData } from './send-data-validation.js';
 
 const props = defineProps({
   session: Object,
   busy: Boolean,
   processDraft: Object,
+  testDraft: Object,
   defaultSource: String,
   visible: { type: Boolean, default: true },
 });
@@ -66,6 +77,26 @@ const nextDialog = ref(null),
 const dialog = ref(null),
   progress = ref(''),
   history = ref([]);
+const packDialog = ref(null),
+  pendingTest = shallowRef(null);
+const localValidationSchemas = ref([]),
+  dataValidation = shallowRef(null),
+  skipSchemaValidation = ref(false),
+  confirmedSchemaValidation = ref(false);
+watch(
+  () => props.testDraft?.requestId,
+  () => {
+    if (props.testDraft)
+      pendingTest.value = structuredClone({
+        id: props.testDraft.id,
+        name: props.testDraft.name,
+        request: props.testDraft.request,
+        reply: props.testDraft.reply,
+        receipt: props.testDraft.receipt,
+        schemas: props.testDraft.schemas,
+      });
+  },
+);
 const sendStep = ref(0),
   stepNotice = ref(''),
   sendForm = ref(null),
@@ -119,11 +150,13 @@ async function selectStep(index) {
   sendForm.value?.querySelector(`[data-send-step="${index}"] legend`)?.focus();
 }
 
-const allowExternalSchemas = ref(false);
+const allowExternalSchemas = useSchemaSourceAccess(() => props.session);
+const schemaAccess = ref(null);
 watch(
   () => props.session?.sessionId,
   () => {
-    allowExternalSchemas.value = false;
+    localValidationSchemas.value = [];
+    skipSchemaValidation.value = false;
   },
 );
 const schemaDocument = shallowRef(null);
@@ -148,6 +181,13 @@ watch(
     schemaDocument.value = null;
   },
   { flush: 'sync' },
+);
+watch(
+  [schemaContext, dataText, dataFile, localValidationSchemas, skipSchemaValidation],
+  () => {
+    dataValidation.value = null;
+  },
+  { deep: true, flush: 'sync' },
 );
 const recipient = ref(null),
   schemaChoice = ref(0),
@@ -276,30 +316,41 @@ async function loadLabels() {
     schemaUri: schema.value,
     processModelId: addressing.value === 'process' ? modelId.value : '',
     messageId: addressing.value === 'process' ? messageId.value : '',
-    allowExternalSchemas: allowExternalSchemas.value,
   };
   await act('Schema-Beschriftungen laden', async () => {
-    const document = await loadSendSchema(invoke, active, destination, selection);
+    const document = await withSchemaSourceAccess(
+      () =>
+        loadSendSchema(invoke, active, destination, {
+          ...selection,
+          allowExternalSchemas: allowExternalSchemas.value,
+        }),
+      () => schemaAccess.value.request(actionOpener),
+      () => schemaContext.value === key,
+    );
     if (schemaContext.value === key) schemaDocument.value = document;
   });
 }
 async function createExample() {
   if (disabled.value || !schema.value) return;
   exampleNotice.value = '';
-  schemaDocument.value = null;
   const active = { ...props.session },
     destination = target.value.trim().toLowerCase(),
     uri = schema.value,
     format = mime.value,
     key = schemaContext.value;
   await act('Fiktive Fachdaten erzeugen', async () => {
-    const document = await loadSendSchema(invoke, active, destination, {
-      serviceIdentifier: service.value,
-      schemaUri: uri,
-      processModelId: addressing.value === 'process' ? modelId.value : '',
-      messageId: addressing.value === 'process' ? messageId.value : '',
-      allowExternalSchemas: allowExternalSchemas.value,
-    });
+    const document = await withSchemaSourceAccess(
+      () =>
+        loadSendSchema(invoke, active, destination, {
+          serviceIdentifier: service.value,
+          schemaUri: uri,
+          processModelId: addressing.value === 'process' ? modelId.value : '',
+          messageId: addressing.value === 'process' ? messageId.value : '',
+          allowExternalSchemas: allowExternalSchemas.value,
+        }),
+      () => schemaAccess.value.request(actionOpener),
+      () => schemaContext.value === key,
+    );
     if (schemaContext.value !== key) return;
     const example = await exampleDialog.value.choose({
       source: document,
@@ -331,6 +382,8 @@ const messages = {
   data_format_invalid:
     'Die Fachdaten passen nicht zum ausgewählten Format. Für ein XML-Schema wird wohlgeformtes XML benötigt, für ein JSON-Schema gültiges JSON. Nach einer fehlgeschlagenen Beispielerzeugung bleibt der bisherige Inhalt erhalten.',
   invalid_input: 'Bitte die Destination ID und Case ID sowie die übrigen Eingaben prüfen.',
+  data_schema_invalid:
+    'Die Fachdaten entsprechen nicht dem ausgewählten Schema. Bitte Pflichtfelder, Datentypen, Auswahlwerte und bei XML die gewählte Fachnachricht prüfen.',
   test_certificate_required:
     'Der Empfängerschlüssel benötigt ein gültiges selbstsigniertes TEST-Zertifikat. Es wurde nichts angekündigt.',
   resource_denied: 'Die TEST-Zugangsdaten erlauben diese Aktion oder diese Absender-Destination nicht.',
@@ -339,7 +392,7 @@ const messages = {
   send_locked: 'Dieser Versandversuch kann nicht erneut ausgeführt werden. Bitte seinen Status prüfen.',
   confirmation_expired: 'Die Bestätigung ist abgelaufen. Bitte den Versand erneut vorbereiten.',
   schema_consent_required:
-    'Bitte die Freigabe öffentlicher Schemaquellen aktivieren oder ein mitgeliefertes Demo-Schema verwenden.',
+    'Erlauben Sie den Abruf öffentlicher Schemaquellen oder hinterlegen Sie ein lokales Schema.',
   schema_unavailable:
     'Das Schema ist nicht verfügbar oder die Quelle hat eine Fehlerantwort statt eines Schemas geliefert. Ihre bisherigen Fachdaten bleiben erhalten.',
   schema_tls_error: 'Die TLS-Verbindung zur Schemaquelle ist fehlgeschlagen. Das Schema wurde nicht geladen.',
@@ -356,6 +409,18 @@ const messages = {
 };
 const explain = (cause) => {
   const code = typeof cause === 'string' ? cause : cause?.message;
+  if (
+    [
+      'test_pack_invalid',
+      'test_pack_limit',
+      'test_data_invalid',
+      'test_schema_invalid',
+      'test_reply_mismatch',
+    ].includes(code)
+  )
+    return testPackError({ message: code });
+  if (code === 'test_offer_mismatch')
+    return 'Das aktuelle Empfängerangebot passt nicht zum Testfall. Bitte Destination, Leistung, Prozess und Schema prüfen. Ihr Entwurf wurde nicht ersetzt.';
   return Object.hasOwn(messages, code) ? messages[code] : errorMessage(cause);
 };
 const diagnosticLabels = {
@@ -396,8 +461,10 @@ function addFiles(files) {
       mimeType: file.type || 'application/octet-stream',
     });
 }
+let actionOpener;
 async function act(action, operation) {
   if (working.value || props.busy) return;
+  actionOpener = document.activeElement;
   working.value = true;
   emit('busy', true);
   error.value = '';
@@ -409,8 +476,9 @@ async function act(action, operation) {
     if (outcome.value?.status === 'uncertain') status = 'Ausgang ungewiss';
     else if (outcome.value?.status === 'failed') status = 'Fehlgeschlagen';
   } catch (cause) {
-    status = 'Fehlgeschlagen';
-    error.value = explain(cause);
+    const cancelled = (typeof cause === 'string' ? cause : cause?.message) === 'content_cancelled';
+    status = cancelled ? 'Abgebrochen' : 'Fehlgeschlagen';
+    if (!cancelled) error.value = explain(cause);
     if (resetsSessions(cause)) emit('fatal');
   } finally {
     working.value = false;
@@ -431,27 +499,8 @@ async function prepare() {
     if (!recipient.value || !schema.value || (addressing.value !== 'process' && !selectedService.value))
       throw new Error('invalid_submission');
     confirmedSession = { ...props.session };
-    const draft = {
-      destinationId: target.value.trim().toLowerCase(),
-      fromDestinationId: props.session.apiVersion === 'v3' ? source.value.trim().toLowerCase() : null,
-      serviceIdentifier: service.value.trim(),
-      serviceName: serviceName.value.trim(),
-      region: region.value.trim() || null,
-      schemaUri: schema.value.trim(),
-      mimeType: mime.value,
-      caseId: caseId.value.trim().toLowerCase() || null,
-      processMessage:
-        props.session.apiVersion === 'v3' && addressing.value === 'process'
-          ? { processModelId: modelId.value.trim(), messageId: messageId.value.trim() }
-          : null,
-      replyOffer: offerReplies.value
-        ? {
-            schemaUri: replySchema.value.trim(),
-            mimeType: replyMime.value,
-            processMessages: props.session.apiVersion === 'v3' ? offeredProcessMessages.value : [],
-          }
-        : null,
-    };
+    if (!skipSchemaValidation.value && !dataValidation.value) await checkDataNow();
+    const draft = currentDraft();
     prepared.value = await prepareSend(
       invoke,
       confirmedSession,
@@ -465,10 +514,189 @@ async function prepare() {
       },
     );
     outcome.value = null;
+    confirmedSchemaValidation.value = !skipSchemaValidation.value && Boolean(dataValidation.value);
   });
   if (prepared.value) {
     await nextTick();
     dialog.value.showModal();
+  }
+}
+async function checkDataNow() {
+  const active = { ...props.session },
+    key = schemaContext.value,
+    file = dataFile.value,
+    text = dataText.value;
+  const result = await withSchemaSourceAccess(
+    () =>
+      validateSendData(
+        invoke,
+        active,
+        target.value.trim().toLowerCase(),
+        {
+          serviceIdentifier: service.value,
+          schemaUri: schema.value,
+          processModelId: addressing.value === 'process' ? modelId.value : '',
+          messageId: addressing.value === 'process' ? messageId.value : '',
+          allowExternalSchemas: allowExternalSchemas.value,
+          mimeType: mime.value,
+        },
+        file || new Blob([text]),
+        localValidationSchemas.value,
+      ),
+    () => schemaAccess.value.request(actionOpener),
+    () => schemaContext.value === key,
+  );
+  if (
+    active.sessionId !== props.session?.sessionId ||
+    key !== schemaContext.value ||
+    file !== dataFile.value ||
+    text !== dataText.value
+  )
+    throw new Error('session_missing');
+  dataValidation.value = result;
+}
+async function checkData() {
+  if (disabled.value || !schema.value) return;
+  await act('Fachdaten gegen Schema prüfen', checkDataNow);
+}
+async function addValidationSchemas(files) {
+  if (disabled.value) return;
+  await act('Lokale Versandschemata auswählen', async () => {
+    const rows = [];
+    if (files.length + localValidationSchemas.value.length > 32) throw new Error('content_limit');
+    for (const file of files) {
+      if (file.size > 2 * 1024 * 1024) throw new Error('content_limit');
+      let uri = schema.value;
+      if (/\.json$/i.test(file.name) || file.type.includes('json')) {
+        try {
+          const definition = JSON.parse(await file.text());
+          if (typeof definition.$id === 'string') uri = definition.$id;
+        } catch {
+          throw new Error('schema_unavailable');
+        }
+      }
+      rows.push({ id: crypto.randomUUID(), uri, file });
+    }
+    localValidationSchemas.value = [...localValidationSchemas.value, ...rows];
+  });
+}
+function currentDraft() {
+  return {
+    destinationId: target.value.trim().toLowerCase(),
+    fromDestinationId: props.session.apiVersion === 'v3' ? source.value.trim().toLowerCase() : null,
+    serviceIdentifier: service.value.trim(),
+    serviceName: serviceName.value.trim(),
+    region: region.value.trim() || null,
+    schemaUri: schema.value.trim(),
+    mimeType: mime.value,
+    caseId: caseId.value.trim().toLowerCase() || null,
+    processMessage:
+      props.session.apiVersion === 'v3' && addressing.value === 'process'
+        ? { processModelId: modelId.value.trim(), messageId: messageId.value.trim() }
+        : null,
+    replyOffer: offerReplies.value
+      ? {
+          schemaUri: replySchema.value.trim(),
+          mimeType: replyMime.value,
+          processMessages: props.session.apiVersion === 'v3' ? offeredProcessMessages.value : [],
+        }
+      : null,
+  };
+}
+async function saveTestCase() {
+  if (disabled.value || !recipient.value || !sendForm.value.reportValidity()) return;
+  await act('Testfall lokal speichern', async () => {
+    const pack = await packFromDraft(
+      currentDraft(),
+      dataFile.value || new Blob([dataText.value]),
+      attachments.value,
+      localValidationSchemas.value,
+    );
+    downloadLocal(serializeTestPack(pack), 'testfall.fctest.json');
+    stepNotice.value =
+      'Testfall lokal gespeichert. Er enthält Fachdaten und Anlagen, keine Verbindung und keine bisherige Case ID.';
+  });
+}
+async function importTestCase() {
+  if (disabled.value || !pendingTest.value) return;
+  const item = structuredClone(pendingTest.value),
+    active = { ...props.session },
+    destination = target.value.trim().toLowerCase();
+  if (item.request.processMessage && active.apiVersion !== 'v3') {
+    error.value = 'Dieser Prozesstest benötigt API v3. Bitte die API-Version wechseln und erneut verbinden.';
+    return;
+  }
+  await act('Testfall lokal übernehmen', async () => {
+    validateTestPack({ format: 'fbforge-connect-testpack', version: 1, name: item.name, cases: [item] });
+    const available = await loadSendDestination(invoke, active, destination);
+    if (
+      active.sessionId !== props.session?.sessionId ||
+      pendingTest.value?.id !== item.id ||
+      target.value.trim().toLowerCase() !== destination
+    )
+      return;
+    const request = item.request,
+      process = request.processMessage;
+    const selected = process
+      ? available.processes.findIndex(
+          (entry) => entry.processModelId === process.processModelId && entry.messageId === process.messageId,
+        )
+      : -1;
+    const offered = process
+      ? available.processes[selected]
+      : available.services.find((entry) => entry.identifier === request.serviceIdentifier);
+    const choice =
+      offered?.schemas.findIndex(
+        (entry) => entry.schemaUri === request.schemaUri && entry.mimeType === request.mimeType,
+      ) ?? -1;
+    const serviceOffer = available.services.find((entry) => entry.identifier === request.serviceIdentifier);
+    if (
+      choice < 0 ||
+      (request.replyOffer &&
+        !serviceOffer?.replySchemas.some(
+          (entry) =>
+            entry.schemaUri === request.replyOffer.schemaUri &&
+            entry.mimeType === request.replyOffer.mimeType,
+        ))
+    )
+      throw new Error('test_offer_mismatch');
+    const files = testCaseFiles(item);
+    recipient.value = available;
+    service.value = request.serviceIdentifier;
+    addressing.value = process ? 'process' : 'service';
+    if (process) processChoice.value = selected;
+    await nextTick();
+    schemaChoice.value = choice;
+    selectSchema();
+    serviceName.value = request.serviceName;
+    region.value = request.region || '';
+    caseId.value = '';
+    dataFile.value = null;
+    dataText.value = request.data;
+    localValidationSchemas.value = item.schemas.map((entry) => ({
+      id: crypto.randomUUID(),
+      uri: entry.uri,
+      file: new File([entry.content], entry.mimeType === 'application/xml' ? 'schema.xsd' : 'schema.json', {
+        type: entry.mimeType,
+      }),
+    }));
+    attachments.value = files.map((file) => ({ ...file, id: crypto.randomUUID() }));
+    offerReplies.value = Boolean(request.replyOffer);
+    if (request.replyOffer) {
+      replySchema.value = request.replyOffer.schemaUri;
+      replyMime.value = request.replyOffer.mimeType;
+      offeredProcessMessages.value = structuredClone(request.replyOffer.processMessages);
+    }
+    sendStep.value = 0;
+    outcome.value = null;
+    pendingTest.value = null;
+    packDialog.value.close();
+    stepNotice.value =
+      'Testfall als neuer Entwurf übernommen. Empfängerangebot wurde geprüft, die Case ID wurde geleert. Prüfen Sie die Adressierung und bereiten Sie den Versand anschließend vor.';
+  });
+  if (!pendingTest.value) {
+    await nextTick();
+    sendForm.value?.querySelector('[data-send-step="0"] legend')?.focus();
   }
 }
 async function dismiss() {
@@ -530,7 +758,6 @@ function nextTest() {
   service.value = '';
   schema.value = '';
   schemaDocument.value = null;
-  allowExternalSchemas.value = false;
   offerReplies.value = false;
   offeredProcessMessages.value = [];
   modelId.value = '';
@@ -557,6 +784,26 @@ async function refreshState() {
     <ExampleDraftDialog ref="exampleDialog" :context-key="schemaContext" />
     <h2 id="send-title">Neue Einreichung</h2>
     <p>In drei Schritten zum Testversand. Sie prüfen die Angaben vor dem Senden.</p>
+    <div v-if="pendingTest" class="tool-section">
+      <h3>Testfall bereit: {{ pendingTest.name }}</h3>
+      <p>
+        Wählen Sie zuerst eine Empfänger-Destination. Beim Übernehmen werden deren Angebot geprüft und
+        Fachdaten, Anlagen und Antwortangebot im Entwurf ersetzt. Die Case ID wird geleert.
+      </p>
+      <div class="client-actions">
+        <button
+          type="button"
+          class="button secondary"
+          :disabled="disabled || !target.trim()"
+          @click="packDialog.showModal()"
+        >
+          Testfall übernehmen
+        </button>
+        <button type="button" class="button secondary" :disabled="disabled" @click="pendingTest = null">
+          Testfall verwerfen
+        </button>
+      </div>
+    </div>
     <div
       v-if="processDraft && processDraft.sessionId === session?.sessionId && session?.apiVersion === 'v3'"
       class="tool-section"
@@ -718,7 +965,13 @@ async function refreshState() {
       </fieldset>
       <fieldset v-show="sendStep === 1" data-send-step="1" :disabled="disabled">
         <legend tabindex="-1">Fachdaten</legend>
-        <SchemaSourceConsent id="send-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
+        <SchemaSourceConsent
+          ref="schemaAccess"
+          id="send-schema-sources"
+          v-model="allowExternalSchemas"
+          :disabled="disabled"
+          :context-key="schemaContext"
+        />
 
         <div class="client-actions">
           <button
@@ -740,7 +993,7 @@ async function refreshState() {
           :mime-type="mime"
           :context-key="schemaContext"
           :disabled="disabled"
-          @request-schema="allowExternalSchemas && !schemaDocument && loadLabels()"
+          @request-schema="!schemaDocument && loadLabels()"
         >
           <label v-if="!dataFile" for="send-data">
             Inhalt
@@ -762,6 +1015,21 @@ async function refreshState() {
         >
           Ohne Datei wird der Inhalt aus dem Eingabefeld verwendet.
         </FileDropInput>
+        <div class="send-schema-validation">
+          <h3>Fachdaten prüfen</h3>
+          <p>
+            JSON wird gegen das ausgewählte JSON-Schema geprüft, XML gegen die aufgelösten XSDs. Vor dem
+            Versand läuft diese Prüfung automatisch.
+          </p>
+          <button class="button secondary" type="button" :disabled="disabled || !schema" @click="checkData">
+            Fachdaten gegen Schema prüfen
+          </button>
+          <p v-if="dataValidation" class="status-badge ok" role="status">Fachdaten entsprechen dem Schema.</p>
+          <p v-else class="small-note">
+            Noch kein aktuelles Prüfergebnis. Änderungen an Inhalt, Schema oder Empfänger machen die Prüfung
+            erneut erforderlich.
+          </p>
+        </div>
         <details class="data-schema-options">
           <summary>Schema und technische Optionen</summary>
           <div class="client-fields">
@@ -785,6 +1053,46 @@ async function refreshState() {
           <button class="button secondary" type="button" :disabled="disabled || !schema" @click="loadLabels">
             Schema-Beschriftungen laden
           </button>
+          <FileDropInput
+            id="send-validation-schemas"
+            label="Lokale Prüfschemata hinzufügen"
+            accept=".json,.xsd,application/json,application/xml,text/xml"
+            multiple
+            :disabled="disabled"
+            @files="addValidationSchemas"
+          />
+          <div v-for="item in localValidationSchemas" :key="item.id" class="client-fields">
+            <label :for="`send-local-schema-${item.id}`">
+              Schema-URI für {{ item.file.name }}
+              <input
+                :id="`send-local-schema-${item.id}`"
+                v-model="item.uri"
+                type="text"
+                maxlength="4096"
+                :disabled="disabled"
+              />
+            </label>
+            <button
+              class="button secondary"
+              type="button"
+              :disabled="disabled"
+              @click="localValidationSchemas = localValidationSchemas.filter((entry) => entry.id !== item.id)"
+            >
+              Prüfschema entfernen
+            </button>
+          </div>
+          <p class="small-note">
+            Bei JSON wird die $id übernommen. Die Kennung muss zum gewählten Schema passen. Für XSD-Imports
+            können Sie weitere Dateien und deren Schema-URIs hinterlegen. Maximal 2 MiB pro Datei.
+          </p>
+          <label class="checkbox-label">
+            <input v-model="skipSchemaValidation" type="checkbox" :disabled="disabled" />
+            Für einen bewussten Negativtest ohne Fachdaten-Schemaprüfung senden
+          </label>
+          <p v-if="skipSchemaValidation" class="small-note">
+            Die Fachdaten werden vor dem Versand nicht gegen das Schema geprüft. Das SDK prüft weiterhin das
+            Format und das Empfängerangebot.
+          </p>
         </details>
       </fieldset>
       <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
@@ -906,6 +1214,22 @@ async function refreshState() {
           Versand vorbereiten
         </button>
       </div>
+      <details v-if="sendStep === 2" class="data-schema-options">
+        <summary>Testfall wiederverwenden</summary>
+        <p>
+          Speichern Sie den Entwurf mit seinen Anlagen als unverschlüsseltes Testpaket. Nutzen Sie dafür
+          fiktive Daten. Verbindung, private Schlüssel und bisherige Nachrichtenkennungen werden nicht
+          übernommen.
+        </p>
+        <button
+          class="button secondary"
+          type="button"
+          :disabled="disabled || !recipient"
+          @click="saveTestCase"
+        >
+          Als Testfall speichern
+        </button>
+      </details>
     </form>
     <p v-if="progress" role="status">{{ progress }}</p>
     <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
@@ -1029,6 +1353,36 @@ async function refreshState() {
         </li>
       </ul>
     </details>
+    <dialog
+      ref="packDialog"
+      class="tool-dialog"
+      aria-labelledby="import-test-title"
+      @cancel.prevent="!working && packDialog.close()"
+    >
+      <template v-if="pendingTest">
+        <h2 id="import-test-title">Testfall als neuen Entwurf übernehmen?</h2>
+        <p>{{ pendingTest.name }} · {{ pendingTest.request.attachments.length }} Anlagen</p>
+        <p>
+          Ihre bisherigen Fachdaten, Anlagen und das Antwortangebot werden ersetzt. Die Empfänger- und
+          Absender-Destination bleiben erhalten. Es wird nichts versendet.
+        </p>
+        <p v-if="error" role="alert">{{ error }}</p>
+        <div class="client-actions">
+          <button
+            type="button"
+            class="button secondary"
+            :disabled="working"
+            autofocus
+            @click="packDialog.close()"
+          >
+            Abbrechen
+          </button>
+          <button type="button" class="button" :disabled="disabled" @click="importTestCase">
+            Entwurf ersetzen
+          </button>
+        </div>
+      </template>
+    </dialog>
     <dialog ref="nextDialog" class="tool-dialog" aria-labelledby="next-test-title">
       <h2 id="next-test-title">Nächsten Test vorbereiten?</h2>
       <p>
@@ -1095,6 +1449,10 @@ async function refreshState() {
           <dd>{{ prepared.summary.schemaUri }}</dd>
           <dt>Fachdaten</dt>
           <dd>{{ prepared.summary.mimeType }} · {{ prepared.summary.dataBytes }} Bytes</dd>
+          <dt>Fachdatenprüfung</dt>
+          <dd>
+            {{ confirmedSchemaValidation ? 'Schema erfüllt' : 'Nicht durchgeführt – bewusster Negativtest' }}
+          </dd>
           <dt>Antwortangebot</dt>
           <dd>{{ prepared.summary.replyOffer ? 'Angeboten' : 'Nicht angeboten' }}</dd>
           <dt>Anlagen</dt>

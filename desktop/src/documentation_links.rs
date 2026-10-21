@@ -3,7 +3,7 @@ pub fn documentation_url(topic: &str) -> Result<String, &'static str> {
     match topic {
         "start" | "connection" | "send" | "receive" | "replies" | "cases" | "attachments"
         | "processes" | "destinations" | "events" | "diagnostics" | "problems"
-        | "accessibility" => Ok(format!("https://fbforge.de/connect/hilfe/0.2/{topic}")),
+        | "accessibility" | "tools" => Ok(format!("https://fbforge.de/connect/hilfe/0.2/{topic}")),
         _ => Err("invalid_input"),
     }
 }

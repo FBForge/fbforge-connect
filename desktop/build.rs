@@ -44,6 +44,7 @@ fn main() {
             "close_session",
             "load_send_destination",
             "load_send_schema",
+            "validate_send_data",
             "load_reply_schema",
             "read_reply_schema",
             "read_send_schema",

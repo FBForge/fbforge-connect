@@ -170,6 +170,7 @@ async fn request<T: DeserializeOwned>(
             | "execute_destination_rotation"
             | "execute_destination_creation"
             | "load_send_schema"
+            | "validate_send_data"
             | "execute_send"
             | "execute_reply"
             | "verify_submission"
@@ -703,6 +704,22 @@ async fn load_send_schema(
     }
     resource_action(&app, &state, api_version, &session_id,
         serde_json::json!({"command":"load_send_schema", "destinationId":destination_id, "schemaDocument":schema_document})).await
+}
+
+#[tauri::command]
+async fn validate_send_data(
+    app: tauri::AppHandle,
+    state: State<'_, EngineState>,
+    api_version: ApiVersion,
+    session_id: String,
+    destination_id: String,
+    schema_document: String,
+) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&destination_id) || schema_document.len() > 24 * 1024 {
+        return Err("invalid_input");
+    }
+    resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"validate_send_data", "destinationId":destination_id, "schemaDocument":schema_document})).await
 }
 
 #[tauri::command]
@@ -1980,6 +1997,7 @@ fn main() {
             close_session,
             load_send_destination,
             load_send_schema,
+            validate_send_data,
             read_send_schema,
             load_reply_schema,
             read_reply_schema,

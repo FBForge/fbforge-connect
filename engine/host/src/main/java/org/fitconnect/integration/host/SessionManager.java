@@ -348,6 +348,9 @@ final class SessionManager implements AutoCloseable {
                                                     .computeIfAbsent(
                                                             id, ignored -> new SendSchemas())
                                                     .load(session, destinationId, document);
+                                    case "validate_send_data" ->
+                                            SendDataValidation.validate(
+                                                    session, destinationId, document, content, id);
                                     case "read_send_schema" -> {
                                         var schemas = sendSchemas.get(id);
                                         if (schemas == null)

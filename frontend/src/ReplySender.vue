@@ -11,6 +11,7 @@ const processWorkspace = inject(processWorkspaceKey, null);
 import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
+import { useSchemaSourceAccess, withSchemaSourceAccess } from './schema-source-access.js';
 import DraftDataPreview from './DraftDataPreview.vue';
 import FileDropInput from './FileDropInput.vue';
 import {
@@ -28,13 +29,8 @@ import { resetsSessions } from './sessions.js';
 const props = defineProps({ session: Object, proof: Object, busy: Boolean, guided: Boolean });
 const expanded = ref(false);
 const emit = defineEmits(['busy', 'activity', 'fatal', 'invalidate', 'event-log']);
-const allowExternalSchemas = ref(false);
-watch(
-  () => props.session?.sessionId,
-  () => {
-    allowExternalSchemas.value = false;
-  },
-);
+const allowExternalSchemas = useSchemaSourceAccess(() => props.session);
+const schemaAccess = ref(null);
 const processChoice = ref(0);
 const target = ref(null),
   choice = ref(0),
@@ -142,7 +138,7 @@ const messages = {
   schema_unavailable:
     'Das Antwortschema ist nicht verfügbar oder die Quelle hat eine Fehlerantwort statt eines Schemas geliefert. Ihr bisheriger Antwortinhalt bleibt erhalten. Alternativ können Sie eine lokale JSON-Schemadatei mit passender $id verwenden.',
   schema_consent_required:
-    'Bitte die Freigabe öffentlicher Schemaquellen aktivieren oder ein lokales beziehungsweise mitgeliefertes Schema verwenden.',
+    'Erlauben Sie den Abruf öffentlicher Schemaquellen oder hinterlegen Sie ein lokales Schema.',
   data_format_invalid: 'Der Antwortinhalt passt nicht zum gewählten JSON-/XML-Format.',
   reply_channel_missing:
     'In den geprüften Metadaten ist kein unterstützter FIT-Connect-Antwortkanal enthalten. Der Absender muss eine neue Einreichung mit Antwortschlüssel und Antwortschema senden. In FBForge Connect aktivieren Sie dafür unter „Anlagen & Antwortkanal“ die Option „Antworten über FIT-Connect anbieten“. Bei anderen Onlinediensten prüfen Sie deren Versandkonfiguration. Die vorhandene Einreichung können Sie weiterhin annehmen oder ablehnen.',
@@ -203,12 +199,14 @@ onBeforeUnmount(() => {
   alive = false;
   reset();
 });
+let actionOpener;
 async function run(action, operation) {
   if (working.value || props.busy || !props.session) return;
   const active = { ...props.session },
     stamp = revision,
     started = performance.now();
   const current = () => alive && stamp === revision;
+  actionOpener = document.activeElement;
   working.value = true;
   emit('busy', true);
   error.value = '';
@@ -218,8 +216,9 @@ async function run(action, operation) {
     status = (await operation(active, current)) || status;
     if (!current()) status = 'Abgebrochen';
   } catch (cause) {
-    status = 'Fehlgeschlagen';
-    if (current()) {
+    const cancelled = (typeof cause === 'string' ? cause : cause?.message) === 'content_cancelled';
+    status = cancelled ? 'Abgebrochen' : 'Fehlgeschlagen';
+    if (current() && !cancelled) {
       error.value = explain(cause);
       diagnostic.value = diagnosticCode(cause);
       if ((typeof cause === 'string' ? cause : cause?.message) === 'content_cleanup_failed') {
@@ -275,10 +274,23 @@ async function loadSchema(example = false) {
   const selection = {
     schemaUri: selected.value.schemaUri,
     mimeType: format.value,
-    allowExternalSchemas: external && allowExternalSchemas.value,
   };
   await run('Antwortschema laden', async (active, current) => {
-    const loaded = await loadReplySchema(invoke, active, proof, selection, local);
+    const loaded = await withSchemaSourceAccess(
+      () =>
+        loadReplySchema(
+          invoke,
+          active,
+          proof,
+          {
+            ...selection,
+            allowExternalSchemas: external && allowExternalSchemas.value,
+          },
+          local,
+        ),
+      () => schemaAccess.value.request(actionOpener),
+      () => current() && schemaContext.value === key,
+    );
     if (!current() || schemaContext.value !== key) return 'Abgebrochen';
     schemaPackage.value = loaded;
     schemaNotice.value = 'Schema geladen. Der Antwortinhalt wird beim Vorbereiten im nativen Kern geprüft.';
@@ -361,7 +373,6 @@ async function prepare() {
     schema = { ...selected.value },
     mimeType = format.value,
     local = schemaFile.value,
-    external = !local && allowExternalSchemas.value,
     payload = file.value || new Blob([text.value]),
     files = attachments.value.map((item) => ({ ...item })),
     processMessage =
@@ -371,12 +382,21 @@ async function prepare() {
   await run('Antwort lokal vorbereiten', async (active, current) => {
     let packet = schemaPackage.value;
     if (!packet) {
-      packet = await loadReplySchema(
-        invoke,
-        active,
-        proof,
-        { schemaUri: schema.schemaUri, mimeType, allowExternalSchemas: external },
-        local,
+      packet = await withSchemaSourceAccess(
+        () =>
+          loadReplySchema(
+            invoke,
+            active,
+            proof,
+            {
+              schemaUri: schema.schemaUri,
+              mimeType,
+              allowExternalSchemas: !local && allowExternalSchemas.value,
+            },
+            local,
+          ),
+        () => schemaAccess.value.request(actionOpener),
+        () => current() && schemaContext.value === key,
       );
       if (!current() || schemaContext.value !== key) return 'Abgebrochen';
       schemaPackage.value = packet;
@@ -509,7 +529,13 @@ async function send() {
           </p>
         </DraftDataPreview>
         <p v-if="schemaNotice" class="small-note" role="status">{{ schemaNotice }}</p>
-        <SchemaSourceConsent id="reply-schema-sources" v-model="allowExternalSchemas" :disabled="disabled" />
+        <SchemaSourceConsent
+          ref="schemaAccess"
+          id="reply-schema-sources"
+          v-model="allowExternalSchemas"
+          :disabled="disabled"
+          :context-key="schemaContext"
+        />
         <div class="client-fields">
           <label v-if="target.schemas.length > 1" for="reply-schema">
             Angebotenes Antwortschema

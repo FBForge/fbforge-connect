@@ -22,6 +22,7 @@
     "allow-close-session",
     "allow-load-send-destination",
     "allow-load-send-schema",
+    "allow-validate-send-data",
     "allow-load-reply-schema",
     "allow-read-reply-schema",
     "allow-read-send-schema",
