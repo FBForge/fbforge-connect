@@ -97,12 +97,14 @@ draft = dict(draft=True, prerelease=True, published_at=None, target_commitish=co
 a.check_draft(draft, commit, version)
 for key, value, reason in [
     ('draft', False, 'release_is_not_a_draft'),
-    ('prerelease', False, 'release_is_not_a_prerelease'),
+    ('prerelease', False, 'release_channel_mismatch'),
     ('published_at', '2026-10-19', 'release_is_published'),
     ('target_commitish', 'develop', 'draft_source_mismatch'),
     ('tag_name', 'v0.1.0', 'draft_version_mismatch'),
 ]:
     rejected(lambda: a.check_draft(dict(draft, **{key: value}), commit, version), reason)
+a.check_draft(dict(draft, prerelease=False, tag_name='v0.1.1'), commit, '0.1.1')
+rejected(lambda: a.check_draft(dict(draft, tag_name='v0.1.1'), commit, '0.1.1'), 'release_channel_mismatch')
 print('candidate trust boundary passed')
 `;
   assert.match(

@@ -20,7 +20,7 @@ on:
         required: true
         type: string
       draft_id:
-        description: Existing unpublished prerelease ID
+        description: Existing unpublished release draft ID
         required: true
         type: string
 

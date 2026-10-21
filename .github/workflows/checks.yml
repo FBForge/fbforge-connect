@@ -2,9 +2,9 @@ name: Checks
 
 on:
   pull_request:
-    branches: [main, develop, release/0.2.0]
+    branches: [main, develop, 'release/**']
   push:
-    branches: [main, develop, release/0.2.0]
+    branches: [main, develop, 'release/**']
   workflow_dispatch:
 
 permissions:
