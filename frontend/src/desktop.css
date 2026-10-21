@@ -1112,8 +1112,8 @@ summary {
   .button,
   .start-task,
   .sidebar-link {
+    /* Apply theme colors together to preserve text contrast. */
     transition:
-      background-color 150ms ease,
       border-color 150ms ease,
       box-shadow 150ms ease;
   }
