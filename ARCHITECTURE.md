@@ -12,6 +12,12 @@ Vue → Tauri/Rust → Java-Host → FIT-Connect SDK v2/v3 → TEST
 
 Die SDK-Versionen laufen in getrennten Classloadern. Gemeinsame Verträge enthalten keine SDK-Typen.
 
+## Zuständigkeiten
+
+`App.vue` verbindet die Arbeitsbereiche. Verbindung, Profile und Diagnose liegen unter `frontend/src/app`. Die Fachansichten verwenden ihre Ablaufsteuerung unter `send`, `receive`, `reply`, `cases`, `destinations`, `events` und `process`. Beim Senden gehören Entwurf, Anzeigezustand und bestätigter Versandversuch zu getrennten Zuständen. Styles beginnen bei `styles/index.css`, gemeinsame Farben und Schriften bei `styles/theme.css`.
+
+Rust trennt Befehle unter `commands`, Prozesskommunikation in `engine.rs` und die zentrale Schreibabsicherung in `write_policy.rs`. Der Java-Host prüft Frames in `EngineRequest` und delegiert über `SessionManager` an fachliche Koordinatoren. `SessionState` besitzt die SDK-Sitzungen und räumt deren Ressourcen auf. SDK-spezifische Sitzungen und Destination-Aufrufe bleiben in ihrem Adapter.
+
 ## Sicherheitsgrenzen
 
 - Der Renderer hat keine allgemeinen HTTP-, Shell- oder Dateisystemrechte. Private Archivbefehle (`export_session_item`, `restore_session_item`) sind nur aus Rust erreichbar.

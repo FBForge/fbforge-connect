@@ -1,0 +1,172 @@
+/* Shared passive JSON viewer for destination and submission data. */
+.json-panel {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.json-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.json-panel-head strong {
+  font-size: 0.95rem;
+}
+
+.json-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.json-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.json-search-count {
+  flex: 0 0 auto;
+  min-width: 72px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.json-toolbar-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.json-tree {
+  max-height: 680px;
+  overflow: auto;
+  padding: 11px 12px 14px;
+  background: var(--field-bg);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.json-node {
+  margin: 1px 0;
+  min-width: 0;
+}
+
+.json-node > summary {
+  cursor: pointer;
+  width: fit-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.json-children {
+  margin-left: 16px;
+  padding-left: 10px;
+  border-left: 1px solid var(--line);
+}
+
+.json-leaf {
+  padding: 1px 2px;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.json-key {
+  color: var(--accent);
+  font-weight: 760;
+}
+.json-string {
+  color: var(--brand-strong);
+}
+.json-number {
+  color: var(--warning);
+}
+.json-boolean {
+  color: var(--accent);
+  font-weight: 720;
+}
+.json-null {
+  color: var(--muted);
+  font-style: italic;
+}
+.json-meta {
+  color: var(--muted);
+}
+
+.json-match {
+  outline: 2px solid color-mix(in srgb, var(--warning) 55%, transparent);
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+}
+
+.json-match-current {
+  outline-width: 3px;
+  background: color-mix(in srgb, var(--warning) 24%, transparent);
+}
+
+.json-search {
+  width: 100%;
+}
+.json-formatted {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.json-toolbar [aria-pressed='true'] {
+  background: var(--button-bg);
+  color: var(--button-ink);
+  border-color: transparent;
+}
+@media (max-width: 760px) {
+  .json-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .json-toolbar-actions {
+    justify-content: flex-start;
+  }
+}
+
+.receipt-dialog {
+  max-width: 720px;
+}
+.receipt-dialog h2 {
+  margin-top: 0;
+  font-size: 1.45rem;
+}
+.receipt-dialog-context {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 10px;
+}
+.receipt-dialog-context dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.receipt-dialog pre {
+  max-height: 250px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .receipt-dialog-context {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The sender keeps one native disabled scope while a network write is in flight. */

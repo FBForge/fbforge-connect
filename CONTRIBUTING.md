@@ -41,6 +41,12 @@ Nach Updates der Frontend-Abhängigkeiten `npm run licenses:update` ausführen. 
 - Keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten einchecken oder in Logs und Screenshots übernehmen.
 - README, PRs, Releases und Commit-Meldungen kurz und sachlich halten: Änderung, Grund, relevante Tests. Keine Arbeitsprotokolle, Wiederholungen oder Werbetexte. Commit-Beispiel: `fix: authenticate process search`.
 
+Neue Module nach einer Aufgabe benennen. Etwa 150 bis 350 Zeilen sind ein guter Ausgangspunkt. Ab 500 Zeilen verlangt `npm run quality:check` eine Aufteilung oder eine begründete Ausnahme im Prüfsystem. Kommentare erklären Entscheidungen, Sicherheitsbedingungen und Ressourcenbesitz. Offensichtliche Abläufe benötigen keine Nacherzählung.
+
+Die Frontend-Typisierung wird schrittweise erweitert. Öffentliche Typen stehen in `frontend/src/contracts.ts`. `npm run lint` umfasst ESLint, die strenge Typprüfung der TypeScript-Module und die Größenprüfung aller Produktionsquellen. Bestehende JavaScript-Module werden nicht pauschal als typgeprüft behandelt. Laufzeitprüfungen für native Antworten und Dateien bleiben erforderlich.
+
+Die SDK-Integrationstests sind nach Versand, Empfang, Replies, Empfangsbestätigungen und Event Logs gegliedert. Gemeinsame fiktive Schlüssel und HTTP-Fixtures liegen in `SenderTestSupport`, `ReceiverTestSupport` und den zugehörigen Fixture-Klassen. Der Speichergrenzentest startet weiterhin eine eigene JVM mit dem tatsächlich konfigurierten Desktop-Limit.
+
 ## Anleitung
 
 Quelle: `docs/guide/topics.js`, Abbildungen: `docs/guide/images/`. Die Anwendung enthält nur kurze Hinweise und Links.

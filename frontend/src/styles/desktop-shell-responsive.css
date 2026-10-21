@@ -1,0 +1,239 @@
+@media (max-width: 920px) {
+  .desktop-shell {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+  .app-topbar {
+    gap: 14px;
+    padding: 0 14px;
+  }
+  .build-tag {
+    display: none;
+  }
+  .workspace-heading {
+    padding: 20px;
+  }
+  .workspace-content {
+    padding: 18px;
+  }
+  .connection-notice {
+    flex-wrap: wrap;
+  }
+  .connection-notice > div {
+    flex-basis: 70%;
+  }
+}
+@media (max-width: 640px) {
+  .desktop-shell {
+    grid-template-columns: 60px minmax(0, 1fr);
+    grid-template-rows: 60px minmax(0, 1fr) 28px;
+  }
+  .app-sidebar {
+    padding: 16px 6px;
+  }
+  .nav-item {
+    position: relative;
+    justify-content: center;
+    padding: 10px;
+  }
+  .nav-item > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .nav-caption,
+  .sidebar-note {
+    display: none;
+  }
+  .nav-utilities {
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+  .app-brand > div > span,
+  .topbar-context {
+    display: none;
+  }
+  .app-brand {
+    gap: 7px;
+  }
+  .app-brand strong {
+    font-size: 12px;
+  }
+  .app-mark {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+  }
+  .app-mark > span {
+    font-size: 12px;
+  }
+  .topbar-actions {
+    gap: 6px;
+  }
+  .connection-button {
+    font-size: 11px;
+    padding: 6px;
+    gap: 6px;
+  }
+  .connection-button .app-icon {
+    display: none;
+  }
+  .api-picker {
+    gap: 4px;
+  }
+  .api-picker > span {
+    display: none;
+  }
+  .workspace-heading {
+    padding: 16px;
+  }
+  .workspace-heading h1 {
+    font-size: 22px;
+  }
+  .workspace-heading p:last-child {
+    font-size: 11px;
+  }
+  .workspace-content {
+    padding: 12px;
+    gap: 12px;
+  }
+  .workspace-content .tool-section {
+    padding: 14px;
+  }
+  .connection-notice {
+    padding: 12px;
+    gap: 10px;
+  }
+  .connection-notice > .app-icon {
+    display: none;
+  }
+  .app-statusbar {
+    gap: 12px;
+    padding: 0 10px;
+  }
+  .app-statusbar > span:nth-child(2) {
+    display: none;
+  }
+  .adapter-cards,
+  .info-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .info-facts {
+    gap: 5px;
+  }
+  .info-facts dd {
+    margin-bottom: 12px;
+  }
+  .app-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+.workspace-content p.status-badge,
+.connection-dialog > p.status-badge {
+  white-space: normal;
+  max-width: 100%;
+  line-height: 1.5;
+}
+.send-sections {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+.send-sections button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 8px 10px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+.send-sections button > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 11px;
+}
+.send-sections button[aria-pressed='true'] {
+  color: var(--status-info-ink);
+  background: var(--status-info-bg);
+  font-weight: 600;
+}
+.send-sections button[aria-pressed='true'] > span {
+  border-color: var(--status-info-line);
+}
+.send-sections button:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+.send-step-actions {
+  align-items: center;
+}
+.send-step-actions > span {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: auto;
+}
+.step-notice {
+  font-size: 12px;
+  color: var(--status-error-ink);
+}
+.send-form :user-invalid {
+  border-color: var(--status-error-line);
+}
+@media (max-width: 920px) {
+  .send-sections {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .send-sections button {
+    padding: 6px;
+    font-size: 11px;
+  }
+}
+.workspace-content .send-form {
+  display: block;
+}
+.workspace-content .send-form > fieldset > label:not(.checkbox-label) {
+  display: grid;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 550;
+}
+.workspace-content .send-form > fieldset {
+  margin: 12px 0;
+}
+
+.storage-warning {
+  position: fixed;
+  bottom: 2.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: min(42rem, calc(100vw - 2rem));
+  padding: 0.75rem 1rem;
+  border: 2px solid currentColor;
+  border-radius: 0.5rem;
+  background: var(--surface, #fff);
+  color: var(--text, #172b4d);
+  box-shadow: 0 4px 18px #0003;
+}

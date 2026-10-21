@@ -1,0 +1,159 @@
+/* Shared diagnostic fields use the same tokens in both themes. */
+#processMessagesApp pre {
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#processMessagesApp article {
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+/* Shared tool layout follows the destination view. */
+.tool-header p:not(.eyebrow),
+.verify-header p:not(.eyebrow) {
+  margin: 7px 0 0;
+  color: var(--muted);
+  max-width: 78ch;
+  font-size: 1rem;
+}
+.tool-section {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 18px;
+  background: var(--surface-soft);
+  min-width: 0;
+}
+.tool-section + .tool-section {
+  margin-top: 18px;
+}
+.tool-section h2 {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+}
+.tool-section > p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.api-version-switch.switch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.88rem;
+}
+.api-version-switch.switch input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.api-version-switch.switch > span {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+.switch input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.switch input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.event-log-form > label:not(.switch) {
+  display: grid;
+  gap: 7px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.event-log-form > .button {
+  justify-self: start;
+}
+@media (max-width: 760px) {
+  .tool-section {
+    padding: 16px;
+  }
+}
+
+.tool-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.tool-section-heading p {
+  margin: 0;
+}
+.file-dropzone.dragging {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+.file-picker.disabled {
+  opacity: 0.55;
+}
+.process-diagram-tools .button {
+  padding: 7px 12px;
+}
+.process-diagram-canvas .process-message-selected .djs-visual > path {
+  stroke: #006795 !important;
+  stroke-width: 4px !important;
+}
+.process-diagram-canvas .process-step-related:not(.djs-connection) .djs-visual > :first-child {
+  fill: #e1f2fa !important;
+  stroke: #006795 !important;
+  stroke-width: 3px !important;
+}
+.process-diagram-canvas .process-step-selected:not(.djs-connection) .djs-visual > :first-child {
+  fill: #c8e7f6 !important;
+  stroke: #006795 !important;
+  stroke-width: 4px !important;
+}
+.tool-dialog {
+  width: min(1080px, calc(100% - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.tool-dialog::backdrop {
+  background: rgba(0, 18, 32, 0.55);
+}
+
+.small-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+.inline-message.error {
+  border-color: var(--status-error-line);
+  background: var(--status-error-bg);
+  color: var(--status-error-ink);
+}
+.inline-message.warn {
+  border-color: var(--status-warn-line);
+  background: var(--status-warn-bg);
+  color: var(--status-warn-ink);
+}
+.empty-state {
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.verify-form .form-main > label:not(.switch) {
+  display: grid;
+  gap: 7px;
+  font-size: 0.88rem;
+  font-weight: 650;
+}

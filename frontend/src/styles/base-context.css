@@ -1,0 +1,61 @@
+.environment-choice.unavailable {
+  opacity: 0.6;
+}
+.routing-probe-version .field-label {
+  margin: 0;
+}
+.routing-debugger .form-grid label > .small-note {
+  display: block;
+  margin-top: 6px;
+}
+.submission-context-grid > label:not(.switch) {
+  display: grid;
+  gap: 7px;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+.support-table {
+  overflow-x: auto;
+  margin-top: 16px;
+  white-space: normal;
+}
+.support-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.support-table th,
+.support-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.support-table code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.submission-preview pre {
+  max-height: 32rem;
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}
+.submission-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 36rem;
+  object-fit: contain;
+  margin: 16px auto;
+}
+.submissions-page .small-note {
+  max-width: 90ch;
+}
+.metadata-version-list .status-badge {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

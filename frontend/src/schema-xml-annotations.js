@@ -1,3 +1,4 @@
+import { readAnnotationSchemas } from './xml-schema-files.js';
 import { cleanText, resolveUri, budget, source, mergeHints } from './schema-hints.js';
 const XSD = 'http://www.w3.org/2001/XMLSchema',
   XMLNS = 'http://www.w3.org/2000/xmlns/',
@@ -6,41 +7,8 @@ const children = (node, name) =>
   [...node.children].filter((child) => child.namespaceURI === XSD && (!name || child.localName === name));
 const key = (namespace, local) => JSON.stringify([namespace || '', local]);
 export function annotateXmlSchema(root, packet, Parser) {
-  if (typeof Parser !== 'function' || !packet.schemas.length || packet.schemas.length > 512)
-    throw new Error('unsupported_xsd');
   const tick = budget(),
-    files = new Map();
-  let tags = 0;
-  for (const row of packet.schemas) {
-    tick();
-    if (
-      !row ||
-      typeof row.name !== 'string' ||
-      typeof row.text !== 'string' ||
-      /<!\s*(?:DOCTYPE|ENTITY)\b/i.test(row.text)
-    )
-      throw new Error('invalid_xsd');
-    for (const character of row.text)
-      if (character === '<' && ++tags > 40000) throw new Error('schema_view_limit');
-    const uri = resolveUri(row.name, packet.schemaUri);
-    if (!uri || files.has(uri)) throw new Error('ambiguous_xsd');
-    const doc = new Parser().parseFromString(row.text, 'application/xml');
-    if (
-      !doc.documentElement ||
-      ['http://www.mozilla.org/newlayout/xml/parsererror.xml', 'http://www.w3.org/1999/xhtml'].some(
-        (ns) => doc.getElementsByTagNameNS(ns, 'parsererror').length,
-      ) ||
-      doc.documentElement.namespaceURI !== XSD ||
-      doc.documentElement.localName !== 'schema'
-    )
-      throw new Error('invalid_xsd');
-    files.set(uri, {
-      uri,
-      root: doc.documentElement,
-      namespace: doc.documentElement.getAttribute('targetNamespace') || '',
-      primary: row.primary !== false,
-    });
-  }
+    files = readAnnotationSchemas(packet, Parser, tick);
   function context(node, file, namespace = file.namespace) {
     const parts = [];
     let current = node;

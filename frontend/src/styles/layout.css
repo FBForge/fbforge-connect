@@ -1,4 +1,4 @@
-/* Layout only. Surfaces, controls, typography and status colors come from site.css. */
+/* Layout only. Surfaces, controls, typography and status colors come from theme.css and shared controls. */
 .client-page h1 {
   margin-top: 0;
 }
