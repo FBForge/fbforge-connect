@@ -73,6 +73,13 @@ test('case workspace is keyboard reachable, accessible and reflows at 200 percen
   await expect(
     page.getByRole('heading', { name: 'Fiktiver Antrag auf Testleistung', exact: true, level: 2 }),
   ).toBeFocused();
+  // Content must remain readable from the first frame, including during its entry animation.
+  await page.locator('.case-detail').evaluate((element) => {
+    for (const animation of element.getAnimations({ subtree: true })) {
+      animation.pause();
+      animation.currentTime = 0;
+    }
+  });
   await page.setViewportSize({ width: 640, height: 540 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const result = await new AxeBuilder({ page })

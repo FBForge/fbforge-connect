@@ -5,6 +5,8 @@ const paths = {
   home: 'm3 10 9-7 9 7v11h-6v-7H9v7H3V10Z',
   send: 'm21 3-7 18-4-7-7-4 18-7ZM21 3 10 14',
   receive: 'M12 3v12m-5-5 5 5 5-5M5 14H3v7h18v-7h-2',
+  cases: 'M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm0 2h18',
+  history: 'M3 12a9 9 0 1 0 2.64-6.36L3 8m0-5v5h5m4-1v5l3 2',
   events: 'M8 5h13M8 12h13M8 19h13M3 5h.01M3 12h.01M3 19h.01',
   process: 'M3 3h6v6H3V3Zm12 12h6v6h-6v-6ZM9 6h9v9M6 9v9h9',
   destinations: 'M4 3h16v18H4V3ZM8 7h2m4 0h2M8 11h2m4 0h2M10 21v-6h4v6',

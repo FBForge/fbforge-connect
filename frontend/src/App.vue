@@ -290,7 +290,7 @@ const navigation = [
   },
   {
     name: 'Vorgänge',
-    icon: 'events',
+    icon: 'cases',
     description: 'Gesendete und empfangene Anträge, Antworten und Anlagen lokal wieder öffnen.',
   },
   {
@@ -308,7 +308,7 @@ const navigation = [
   {
     name: 'Event Log',
     group: 'Test und Verwaltung',
-    icon: 'events',
+    icon: 'history',
     description: 'Den Verlauf von Vorgängen, Einreichungen und Antworten nachvollziehen.',
   },
   {
