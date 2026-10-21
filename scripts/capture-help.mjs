@@ -67,6 +67,7 @@ try {
   await page.evaluate((packet) => {
     const original = window.__TAURI_INTERNALS__.invoke;
     const schemaUri = 'urn:test:building';
+    let content, attempt;
     const document = new TextEncoder().encode(
       JSON.stringify({
         ...packet,
@@ -84,6 +85,36 @@ try {
         environment: 'TEST',
         data,
       });
+      if (command === 'begin_content') {
+        content = {
+          contentId: crypto.randomUUID(),
+          totalBytes: args.totalBytes,
+          receivedBytes: 0,
+          complete: args.totalBytes === 0,
+        };
+        return envelope({ ...content });
+      }
+      if (command === 'append_content') {
+        content.receivedBytes += atob(args.chunk).length;
+        content.complete = content.receivedBytes === content.totalBytes;
+        return envelope({ ...content });
+      }
+      if (command === 'discard_content') return envelope({ contentId: args.contentId });
+      if (command === 'prepare_send') {
+        const { contentId: _contentId, attachments, ...draft } = JSON.parse(args.sendDocument);
+        attempt = {
+          attemptId: crypto.randomUUID(),
+          status: 'prepared',
+          submissionId: null,
+          caseId: null,
+          error: null,
+        };
+        return envelope({
+          attempt,
+          summary: { ...draft, dataBytes: content.totalBytes, attachments },
+        });
+      }
+      if (command === 'cancel_send') return envelope({ ...attempt, status: 'cancelled' });
       if (command === 'load_send_destination')
         return envelope({
           destinationId: args.destinationId,
@@ -128,6 +159,13 @@ try {
   await expect(page.locator('#send-data')).toHaveValue(/>0600<\/nachrichtentyp>/);
   await button('Formularansicht').click();
   await capture('send-data', page.locator('[data-send-step="1"] legend'));
+  await button('Weiter: Anlagen & Antwortkanal').click();
+  await button('Versand vorbereiten').click();
+  const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  await expect(confirmation.locator('dt:has-text("Antwortangebot") + dd')).toHaveText('Nicht angeboten');
+  await expect(confirmation.locator('dt:has-text("Anlagen") + dd')).toHaveText('0');
+  await capture('send-confirmation');
+  await confirmation.getByRole('button', { name: 'Abbrechen', exact: true }).click();
   await button('Prozesse').click();
   await button('Fiktiven Demo-Prozess öffnen').click();
   await expect(page.locator('.bpmn-diagram .djs-container > svg')).toBeVisible();
@@ -221,6 +259,13 @@ try {
 
   await open('test-fixtures/case-workspace.html');
   await capture('case-list');
+  await page.getByLabel('Vorgänge durchsuchen').fill('Fiktive Rückfrage');
+  await page.getByRole('combobox', { name: 'Nachrichten', exact: true }).selectOption('sent');
+  await page.getByLabel('Nur Vorgänge mit Klärungsbedarf', { exact: true }).check();
+  await expect(button('Suche und Filter zurücksetzen')).toBeVisible();
+  await capture('case-filter-reset');
+  await button('Suche und Filter zurücksetzen').click();
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
   await button('Fiktiver Antrag auf Testleistung').click();
   await capture('cases', page.locator('.case-detail'));
   await page.locator('.case-detail').getByRole('button', { name: 'Ansehen', exact: true }).click();

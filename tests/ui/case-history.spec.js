@@ -45,6 +45,9 @@ test('late reads cannot restore a document after changing profile', async ({ pag
   });
   await expect(page.locator('.case-detail')).toHaveCount(0);
   await expect(page.getByRole('list', { name: 'Lokale Vorgänge' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Suche und Filter zurücksetzen', exact: true })).toHaveCount(
+    0,
+  );
   await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
   await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
 });
@@ -80,9 +83,20 @@ test('attention filter retains complete message histories and has a recoverable 
   const rows = page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li');
   await expect(rows).toHaveCount(1);
   await expect(rows).toContainText('Testversand mit ungewissem Ausgang');
+  await page.getByRole('combobox', { name: 'Nachrichten', exact: true }).selectOption('sent');
   await page.getByLabel('Vorgänge durchsuchen').fill('nicht vorhanden');
-  await expect(page.getByText('Keine Vorgänge passen zur Suche.', { exact: true })).toBeVisible();
-  await page.getByLabel('Vorgänge durchsuchen').fill('');
-  await page.getByLabel('Nur Vorgänge mit Klärungsbedarf', { exact: true }).uncheck();
+  await expect(
+    page.getByText('Keine Vorgänge passen zur Suche oder den gewählten Filtern.', { exact: true }),
+  ).toBeVisible();
+  const calls = await page.evaluate(() => window.__caseFixture.calls);
+  const reset = page.getByRole('button', { name: 'Suche und Filter zurücksetzen', exact: true });
+  await reset.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByLabel('Vorgänge durchsuchen')).toHaveValue('');
+  await expect(page.getByLabel('Vorgänge durchsuchen')).toBeFocused();
+  await expect(page.getByRole('combobox', { name: 'Nachrichten', exact: true })).toHaveValue('all');
+  await expect(page.getByLabel('Nur Vorgänge mit Klärungsbedarf', { exact: true })).not.toBeChecked();
   await expect(rows).toHaveCount(2);
+  await expect(reset).toHaveCount(0);
+  expect(await page.evaluate(() => window.__caseFixture.calls)).toEqual(calls);
 });

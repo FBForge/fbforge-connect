@@ -203,8 +203,16 @@ for (const api of ['v2', 'v3']) {
     await page.getByRole('button', { name: 'Zurück', exact: true }).click();
     await page.getByRole('button', { name: 'Weiter: Anlagen & Antwortkanal', exact: true }).click();
     await expect(offer).toBeChecked();
+    await page.locator('#send-attachments').setInputFiles({
+      name: 'testanlage.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('Fiktive Testanlage\n'),
+    });
     await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
     const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+    await expect(confirmation.locator('dt:has-text("Antwortangebot") + dd')).toHaveText('Angeboten');
+    await expect(confirmation.locator('dt:has-text("Anlagen") + dd')).toHaveText('1');
+    await expect(confirmation).toContainText('testanlage.txt');
     await expect(confirmation).toContainText('Antwortkanal: urn:test:answer');
     const calls = await page.evaluate(() => window.__replyOfferCalls);
     const preparations = calls.filter((call) => call.command === 'prepare_send');

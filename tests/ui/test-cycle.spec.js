@@ -28,6 +28,9 @@ test('next test copies only explicitly selected draft content and requires a fre
   context,
 }) => {
   await prepare(page);
+  const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  await expect(confirmation.locator('dt:has-text("Antwortangebot") + dd')).toHaveText('Nicht angeboten');
+  await expect(confirmation.locator('dt:has-text("Anlagen") + dd')).toHaveText('0');
   await page.getByRole('button', { name: 'Jetzt an TEST senden', exact: true }).click();
   const start = page.getByRole('button', { name: 'Nächsten Test vorbereiten', exact: true });
   await expect(start).toBeEnabled();
@@ -56,6 +59,23 @@ test('next test copies only explicitly selected draft content and requires a fre
   const calls = await page.evaluate(() => window.__cycle);
   expect(calls.filter((call) => call.command === 'execute_send')).toHaveLength(1);
   expect(calls.filter((call) => call.command === 'prepare_send')).toHaveLength(1);
+});
+
+test('canceling a prepared send restores keyboard focus without transmitting', async ({ page }) => {
+  await prepare(page);
+  const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  const prepareButton = page.getByRole('button', { name: 'Versand vorbereiten', exact: true });
+  await page.keyboard.press('Escape');
+  await expect(confirmation).toBeHidden();
+  await expect(prepareButton).toBeFocused();
+  await prepareButton.click();
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+  await expect(confirmation).toBeHidden();
+  await expect(prepareButton).toBeFocused();
+  const calls = await page.evaluate(() => window.__cycle);
+  expect(calls.filter((call) => call.command === 'cancel_send')).toHaveLength(2);
+  expect(calls.some((call) => call.command === 'execute_send')).toBe(false);
 });
 
 test('uncertain sends remain locked and offer no new-test reset', async ({ page }) => {

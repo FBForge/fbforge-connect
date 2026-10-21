@@ -48,6 +48,14 @@ let generation = 0,
 const bytesLabel = (size) => `${(size / 1024).toLocaleString('de-DE', { maximumFractionDigits: 1 })} KiB`;
 const when = (value) =>
   Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('de-DE') : 'Zeitpunkt nicht lesbar';
+async function resetFilters() {
+  if (disabled.value) return;
+  search.value = '';
+  direction.value = 'all';
+  attentionOnly.value = false;
+  await nextTick();
+  searchBox.value?.focus();
+}
 function closePreview() {
   disposePreview(preview.value);
   preview.value = null;
@@ -360,13 +368,24 @@ onBeforeUnmount(() => {
           Verlauf leeren
         </button>
       </div>
-      <p v-if="!filtered.length && !pending">
-        {{
-          records.length
-            ? 'Keine Vorgänge passen zur Suche.'
-            : 'Noch keine Vorgänge vorhanden. Senden Sie eine Nachricht oder öffnen und prüfen Sie eine empfangene Einreichung.'
-        }}
-      </p>
+      <div v-if="!filtered.length && !pending">
+        <p>
+          {{
+            records.length
+              ? 'Keine Vorgänge passen zur Suche oder den gewählten Filtern.'
+              : 'Noch keine Vorgänge vorhanden. Senden Sie eine Nachricht oder öffnen und prüfen Sie eine empfangene Einreichung.'
+          }}
+        </p>
+        <button
+          v-if="records.length"
+          class="button secondary"
+          type="button"
+          :disabled="disabled"
+          @click="resetFilters"
+        >
+          Suche und Filter zurücksetzen
+        </button>
+      </div>
       <ul v-else class="case-list" aria-label="Lokale Vorgänge">
         <li v-for="group in filtered" :key="group.key">
           <div class="case-row">

@@ -69,7 +69,8 @@ const dialog = ref(null),
 const sendStep = ref(0),
   stepNotice = ref(''),
   sendForm = ref(null),
-  recipientButton = ref(null);
+  recipientButton = ref(null),
+  prepareButton = ref(null);
 const sendSections = ['Adressierung', 'Fachdaten', 'Anlagen & Antwortkanal'];
 let invalidTarget;
 function revealInvalid(event) {
@@ -477,6 +478,8 @@ async function dismiss() {
     prepared.value = null;
     dialog.value.close();
   });
+  await nextTick();
+  if (!disabled.value && props.visible) prepareButton.value?.focus();
 }
 async function send() {
   if (!prepared.value || working.value) return;
@@ -899,7 +902,9 @@ async function refreshState() {
         >
           Weiter: {{ sendSections[sendStep + 1] }}
         </button>
-        <button v-else class="button" type="submit" :disabled="disabled">Versand vorbereiten</button>
+        <button v-else ref="prepareButton" class="button" type="submit" :disabled="disabled">
+          Versand vorbereiten
+        </button>
       </div>
     </form>
     <p v-if="progress" role="status">{{ progress }}</p>
@@ -1090,6 +1095,10 @@ async function refreshState() {
           <dd>{{ prepared.summary.schemaUri }}</dd>
           <dt>Fachdaten</dt>
           <dd>{{ prepared.summary.mimeType }} · {{ prepared.summary.dataBytes }} Bytes</dd>
+          <dt>Antwortangebot</dt>
+          <dd>{{ prepared.summary.replyOffer ? 'Angeboten' : 'Nicht angeboten' }}</dd>
+          <dt>Anlagen</dt>
+          <dd>{{ prepared.summary.attachments.length }}</dd>
         </dl>
         <ul v-if="prepared.summary.replyOffer?.processMessages?.length">
           <li
