@@ -36,7 +36,7 @@ Quelle: `docs/guide/topics.js`, Abbildungen: `docs/guide/images/`. Die Anwendung
 
 ## Live-Tests
 
-`live-exchange.yml` läuft manuell auf `main` oder `develop` mit `confirm_test_writes`. Benötigte Actions-Secrets: `SENDERID`, `SENDERSECRET`, `SENDERDEST`, `SUBSCRIBERID`, `SUBSCRIBERSECRET`. Der Sender braucht eine aktive Typ-C-Destination samt Verwaltungsrechten. Der Subscriber Rechte zur Destination-Verwaltung und zum Empfang.
+`live-exchange.yml` läuft ausschließlich manuell auf `main`, `develop` oder `release/0.2.0` mit `confirm_test_writes`. Benötigte Actions-Secrets: `SENDERID`, `SENDERSECRET`, `SENDERDEST`, `SUBSCRIBERID`, `SUBSCRIBERSECRET`. Der Sender braucht eine aktive Typ-C-Destination samt Verwaltungsrechten. Der Subscriber Rechte zur Destination-Verwaltung und zum Empfang.
 
 Der Test schreibt fiktive Nachrichten und deaktiviert seine temporäre Destination anschließend. `canBeDecommissionedAt` im Laufprotokoll nennt die früheste Löschung. Vor dem Löschen Eigentümer und Zustand erneut prüfen.
 

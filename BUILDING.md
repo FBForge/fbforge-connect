@@ -6,6 +6,7 @@ Das Desktop-Paket wird auf Windows x64 gebaut. Frontend, Java-Engine und isolier
 
 - Git und Node.js ab 22.13.0. Die CI verwendet Node.js 24.20.0.
 - Ein vollständiges JDK 25 mit `javac` und `jlink`. `JAVA_HOME` muss auf dessen Installationsverzeichnis zeigen.
+- Python 3.10 oder neuer für die lokalen Prüfungen. Unter Windows muss `python`, unter Linux und macOS `python3` im `PATH` verfügbar sein.
 - Rust über rustup. Die benötigte Version steht in `desktop/rust-toolchain.toml`.
 - Für Windows: Visual Studio Build Tools mit „Desktopentwicklung mit C++“, MSVC-x64-Werkzeugen und Windows SDK. Außerdem Microsoft Edge WebView2 Runtime. Einzelheiten stehen in den [Tauri-Voraussetzungen](https://v2.tauri.app/start/prerequisites/).
 
