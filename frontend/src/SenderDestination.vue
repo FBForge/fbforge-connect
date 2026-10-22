@@ -136,7 +136,7 @@ function edit(value) {
         type="text"
         required
         maxlength="36"
-        placeholder="Destination ID Ihrer TEST-Zugangsdaten"
+        placeholder="Destination ID Ihrer Zugangsdaten"
         @focus="manual = true"
         @input="edit($event.target.value)"
       />

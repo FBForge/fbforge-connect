@@ -23,6 +23,7 @@ import dev.fitko.fitconnect.core.validation.virusscan.VirusScannerFactory;
 import dev.fitko.fitconnect.core.validation.xml.*;
 import java.nio.file.Path;
 import java.util.*;
+import org.fitconnect.integration.contract.IntegrationEnvironment;
 
 /**
  * SDK3 service composition shared by sending and receiving, always with injected HTTP and storage.
@@ -48,21 +49,22 @@ final class SdkServices {
                             dev.fitko.fitconnect.api.domain.model.event.authtags
                                     .ValidatedAuthenticationTags>
                     observedTags) {
-        var defaults = Environments.TEST.getEnvironment();
+        var selected = Environments.valueOf(IntegrationEnvironment.current().name());
+        var defaults = selected.getEnvironment();
         var environment =
                 new Environment(
                         defaults.getAuthBaseUrl(),
                         defaults.getRoutingBaseUrl(),
-                        List.of("https://test.fit-connect.fitko.dev/submission-api"),
+                        List.of(IntegrationEnvironment.current().submissionApi()),
                         defaults.getSelfServicePortalBaseUrl(),
                         defaults.getDestinationBaseUrl(),
                         false,
-                        true,
+                        !IntegrationEnvironment.current().requiresVpki(),
                         false);
         config =
                 ApplicationConfig.builder()
-                        .activeEnvironment(Environments.TEST.getEnvironmentName())
-                        .environments(Map.of(Environments.TEST.getEnvironmentName(), environment))
+                        .activeEnvironment(selected.getEnvironmentName())
+                        .environments(Map.of(selected.getEnvironmentName(), environment))
                         .attachmentChunkingConfig(
                                 AttachmentChunkingConfig.builder()
                                         .attachmentStoragePath(workspace)

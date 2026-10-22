@@ -1,5 +1,8 @@
 <script setup>
 import AppIcon from '../AppIcon.vue';
+import EnvironmentPicker from './EnvironmentPicker.vue';
+import { useEnvironment } from '../environments.js';
+const environment = useEnvironment();
 import appLogo from '../assets/test-client.png';
 import { productBrand, productEdition } from '../product.js';
 import { navigationGroups } from './navigation.js';
@@ -11,7 +14,7 @@ defineProps({
   section: String,
   version: String,
 });
-const emit = defineEmits(['api', 'connection', 'theme', 'navigate']);
+const emit = defineEmits(['api', 'connection', 'theme', 'navigate', 'environment']);
 </script>
 <template>
   <header class="app-topbar">
@@ -23,10 +26,11 @@ const emit = defineEmits(['api', 'connection', 'theme', 'navigate']);
       </div>
     </div>
     <div class="topbar-context">
-      <span class="environment-tag">TEST</span>
+      <span class="environment-tag" :class="{ error: environment === 'PROD' }">{{ environment }}</span>
       <span class="build-tag">{{ version }}</span>
     </div>
     <div class="topbar-actions">
+      <EnvironmentPicker :environment="environment" :busy="busy" @change="emit('environment', $event)" />
       <label class="api-picker" for="session-api">
         <span>API</span>
         <select
@@ -80,7 +84,7 @@ const emit = defineEmits(['api', 'connection', 'theme', 'navigate']);
       </div>
     </nav>
     <div class="sidebar-note">
-      <span class="environment-tag">TEST</span>
+      <span class="environment-tag" :class="{ error: environment === 'PROD' }">{{ environment }}</span>
       <p>Integrationstests für Verwaltung und Integratoren</p>
     </div>
   </aside>

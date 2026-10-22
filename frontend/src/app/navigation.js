@@ -2,12 +2,12 @@ export const navigation = [
   {
     name: 'Start',
     icon: 'home',
-    description: 'Verbinden Sie Ihren TEST-Zugang und wählen Sie die passende Aufgabe.',
+    description: 'Verbinden Sie Ihren Zugang und wählen Sie die passende Aufgabe.',
   },
   {
     name: 'Senden',
     icon: 'send',
-    description: 'Einreichungen mit Fachdaten und Anlagen vorbereiten und an TEST übermitteln.',
+    description: 'Einreichungen mit Fachdaten und Anlagen vorbereiten und an FIT-Connect übermitteln.',
   },
   {
     name: 'Empfangen',
@@ -29,7 +29,7 @@ export const navigation = [
     name: 'Prozesse',
     group: 'Test und Verwaltung',
     icon: 'process',
-    description: 'BPMN-Nachrichten auswählen und passende TEST-Prozess-Destinations finden.',
+    description: 'BPMN-Nachrichten auswählen und passende Prozess-Destinations finden.',
   },
   {
     name: 'Event Log',

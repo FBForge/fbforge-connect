@@ -36,7 +36,7 @@ test('public schema approval resumes preparation and cancel preserves the comple
   expect(await page.evaluate(() => window.__sourceAccess.prepared)).toBe(0);
   await prepare.click();
   await access.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
-  const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  const confirmation = page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true });
   await expect(confirmation).toBeVisible();
   expect(
     await page.evaluate(() => window.__sourceAccess.selections.map((s) => s.allowExternalSchemas)),
@@ -63,7 +63,7 @@ test('schema validation is invalidated by editing and repeated automatically bef
   await expect(page.getByText('Fachdaten entsprechen dem Schema.', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Weiter: Anlagen & Antwortkanal', exact: true }).click();
   await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true });
   await expect(dialog.locator('dt:has-text("Fachdatenprüfung") + dd')).toHaveText('Schema erfüllt');
   expect(await page.evaluate(() => window.__sendFixture.validations)).toBe(2);
 });
@@ -74,7 +74,9 @@ test('a failed schema check blocks preparation and negative tests need an explic
   await page.evaluate(() => (window.__sendFixture.validationError = 'data_schema_invalid'));
   await page.getByRole('button', { name: 'Weiter: Anlagen & Antwortkanal', exact: true }).click();
   await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true })).toBeHidden();
+  await expect(
+    page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true }),
+  ).toBeHidden();
   await expect(page.getByRole('alert')).toContainText('Pflichtfelder');
   await page.getByRole('button', { name: 'Fachdaten', exact: true }).click();
   await page.getByText('Lokale Schemata und technische Optionen', { exact: true }).click();
@@ -86,8 +88,8 @@ test('a failed schema check blocks preparation and negative tests need an explic
     .check();
   await page.getByRole('button', { name: 'Weiter: Anlagen & Antwortkanal', exact: true }).click();
   await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true })).toContainText(
-    'Nicht durchgeführt – bewusster Negativtest',
-  );
+  await expect(
+    page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true }),
+  ).toContainText('Nicht durchgeführt – bewusster Negativtest');
   expect(await page.evaluate(() => window.__sendFixture.validations)).toBe(1);
 });

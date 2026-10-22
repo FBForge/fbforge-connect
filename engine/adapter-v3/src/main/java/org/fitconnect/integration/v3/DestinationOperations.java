@@ -22,7 +22,7 @@ final class DestinationOperations {
         return new DestinationApiClient(
                 new RequestHeaders(current),
                 http,
-                "https://test.fit-connect.fitko.dev/destination-api");
+                IntegrationEnvironment.current().destinationApi());
     }
 
     public String destinations(int offset, int limit) {
@@ -35,7 +35,7 @@ final class DestinationOperations {
                                 RequestHeaders.withoutCredentials(),
                                 http,
                                 new ConcurrencyLimiter(1),
-                                "https://test.fit-connect.fitko.dev/submission-api")
+                                IntegrationEnvironment.current().submissionApi())
                         .getDestination(UUID.fromString(destinationId)));
     }
 
@@ -63,7 +63,7 @@ final class DestinationOperations {
                         new RequestHeaders(current),
                         transport,
                         new ConcurrencyLimiter(1),
-                        "https://test.fit-connect.fitko.dev/submission-api");
+                        IntegrationEnvironment.current().submissionApi());
         return transport.json(
                 client.searchDestinationsByProcessMessage(model, message, region, offset, limit));
     }
@@ -99,7 +99,7 @@ final class DestinationOperations {
                     new DestinationApiClient(
                             new RequestHeaders(current),
                             new DestinationWriteTransport(authorized),
-                            "https://test.fit-connect.fitko.dev/destination-api");
+                            IntegrationEnvironment.current().destinationApi());
             return http.json(client.createDestination(value));
         } catch (SessionException failure) {
             throw failure;
@@ -113,7 +113,7 @@ final class DestinationOperations {
                 new DestinationApiClient(
                         new RequestHeaders(current),
                         new DestinationWriteTransport(authorized),
-                        "https://test.fit-connect.fitko.dev/destination-api");
+                        IntegrationEnvironment.current().destinationApi());
         client.deleteDestination(UUID.fromString(destinationId));
     }
 
@@ -126,7 +126,7 @@ final class DestinationOperations {
                     new DestinationApiClient(
                             new RequestHeaders(current),
                             new DestinationWriteTransport(authorized),
-                            "https://test.fit-connect.fitko.dev/destination-api");
+                            IntegrationEnvironment.current().destinationApi());
             client.addKey(UUID.fromString(destinationId), key);
         } catch (SessionException failure) {
             throw failure;
@@ -147,7 +147,7 @@ final class DestinationOperations {
                     new DestinationApiClient(
                             new RequestHeaders(current),
                             new DestinationWriteTransport(authorized),
-                            "https://test.fit-connect.fitko.dev/destination-api");
+                            IntegrationEnvironment.current().destinationApi());
             return http.json(client.patchDestination(UUID.fromString(destinationId), value));
         } catch (SessionException failure) {
             throw failure;
@@ -160,7 +160,8 @@ final class DestinationOperations {
         if (offset < 0 || offset > 10000 || limit < 1 || limit > 100)
             throw new SessionException("invalid_input");
         String endpoint =
-                "https://test.fit-connect.fitko.dev/destination-api/v3/destinations/"
+                IntegrationEnvironment.current().destinationApi()
+                        + "/v3/destinations/"
                         + UUID.fromString(id)
                         + "/keys?offset="
                         + offset

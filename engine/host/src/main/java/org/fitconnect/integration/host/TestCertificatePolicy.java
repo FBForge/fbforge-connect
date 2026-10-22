@@ -8,11 +8,13 @@ import java.security.cert.*;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.BiConsumer;
+import org.fitconnect.integration.contract.IntegrationEnvironment;
 
 /**
- * Eligibility guard for registered TEST destination public keys, not proof of TEST origin. Callers
- * must obtain registrations from the fixed TEST API, never trust a renderer assertion. Temporary
- * reply keys have a separate lifecycle and must not pass through this guard.
+ * Structural guard for registered destination certificates. The SDK verifier must additionally
+ * approve V-PKI trust and revocation in STAGE and PROD. Registrations come from the selected API.
+ * Temporary reply keys have a separate lifecycle and must not pass through this guard.
  */
 final class TestCertificatePolicy {
     enum Purpose {
@@ -38,7 +40,10 @@ final class TestCertificatePolicy {
 
     static final class Rejected extends RuntimeException {
         private Rejected() {
-            super("test_certificate_required");
+            super(
+                    IntegrationEnvironment.current().requiresVpki()
+                            ? "vpki_certificate_required"
+                            : "test_certificate_required");
         }
     }
 
@@ -52,6 +57,24 @@ final class TestCertificatePolicy {
     private static final int MAX_CERTIFICATE_BASE64 = 48 * 1024;
 
     static ValidatedKey validate(JsonObject key, Purpose purpose, Instant at) {
+        return validate(
+                key,
+                purpose,
+                at,
+                (document, operation) -> {
+                    if (IntegrationEnvironment.current().requiresVpki()) throw new Rejected();
+                });
+    }
+
+    static ValidatedKey validate(
+            JsonObject key, Purpose purpose, Instant at, BiConsumer<String, String> verifier) {
+        var accepted = inspect(key, purpose, at);
+        verifier.accept(key.toString(), purpose == Purpose.ENCRYPTION ? "decrypt" : "sign");
+        return accepted;
+    }
+
+    /** Identity only, for already SDK-validated material. Never grants eligibility. */
+    static ValidatedKey inspect(JsonObject key, Purpose purpose, Instant at) {
         try {
             if (key == null
                     || purpose == null
@@ -72,8 +95,23 @@ final class TestCertificatePolicy {
                 throw new Rejected();
 
             JsonElement chain = key.get("x5c");
-            if (chain == null || !chain.isJsonArray() || chain.getAsJsonArray().size() != 1)
+            if (chain == null
+                    || !chain.isJsonArray()
+                    || chain.getAsJsonArray().isEmpty()
+                    || chain.getAsJsonArray().size()
+                            > (IntegrationEnvironment.current().requiresVpki() ? 8 : 1))
                 throw new Rejected();
+            X509Certificate previous = null;
+            for (var member : chain.getAsJsonArray()) {
+                var parsed = certificate(string(member), at);
+                if (previous != null) {
+                    if (parsed.getBasicConstraints() < 0
+                            || !previous.getIssuerX500Principal()
+                                    .equals(parsed.getSubjectX500Principal())) throw new Rejected();
+                    previous.verify(parsed.getPublicKey());
+                }
+                previous = parsed;
+            }
             String encoded = string(chain.getAsJsonArray().get(0));
             if (encoded.isEmpty() || encoded.length() > MAX_CERTIFICATE_BASE64)
                 throw new Rejected();
@@ -88,10 +126,11 @@ final class TestCertificatePolicy {
             if (input.available() != 0 || !Arrays.equals(der, certificate.getEncoded()))
                 throw new Rejected();
             certificate.checkValidity(Date.from(at));
-            if (!certificate.getSubjectX500Principal().equals(certificate.getIssuerX500Principal())
-                    || certificate.getBasicConstraints() != -1
+            if (certificate.getBasicConstraints() != -1
                     || certificate.hasUnsupportedCriticalExtension()
-                    || !SIGNATURE_OIDS.contains(certificate.getSigAlgOID())) throw new Rejected();
+                    || (!IntegrationEnvironment.current().requiresVpki()
+                            && !SIGNATURE_OIDS.contains(certificate.getSigAlgOID())))
+                throw new Rejected();
             if (!(certificate.getPublicKey() instanceof RSAPublicKey rsa)
                     || rsa.getModulus().bitLength() < 4096
                     || rsa.getModulus().bitLength() > 8192
@@ -103,8 +142,12 @@ final class TestCertificatePolicy {
             if (!rsa.getModulus().equals(unsigned(key.get("n")))
                     || !rsa.getPublicExponent().equals(unsigned(key.get("e"))))
                 throw new Rejected();
-            certificate.verify(
-                    rsa); // Equal subject/issuer names alone do not establish a self-signature.
+            if (!IntegrationEnvironment.current().requiresVpki()) {
+                if (!certificate
+                        .getSubjectX500Principal()
+                        .equals(certificate.getIssuerX500Principal())) throw new Rejected();
+                certificate.verify(rsa);
+            }
             String fingerprint =
                     HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(der));
             return new ValidatedKey(
@@ -114,6 +157,21 @@ final class TestCertificatePolicy {
         } catch (Exception e) {
             throw new Rejected();
         } // No supplied values or parser errors cross this boundary.
+    }
+
+    private static X509Certificate certificate(String encoded, Instant at) throws Exception {
+        if (encoded.isEmpty() || encoded.length() > MAX_CERTIFICATE_BASE64) throw new Rejected();
+        byte[] der = Base64.getDecoder().decode(encoded);
+        if (!Base64.getEncoder().encodeToString(der).equals(encoded)) throw new Rejected();
+        var input = new ByteArrayInputStream(der);
+        var certificate =
+                (X509Certificate)
+                        CertificateFactory.getInstance("X.509").generateCertificate(input);
+        if (input.available() != 0
+                || !Arrays.equals(der, certificate.getEncoded())
+                || certificate.hasUnsupportedCriticalExtension()) throw new Rejected();
+        certificate.checkValidity(Date.from(at));
+        return certificate;
     }
 
     private static String string(JsonElement value) {

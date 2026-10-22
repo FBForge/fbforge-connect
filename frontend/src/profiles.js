@@ -1,3 +1,4 @@
+import { validEnvironment } from './environments.js';
 /** Public profile operations only. Secrets and private archive items are never returned by native code. */
 const uuid = (value) =>
   typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
@@ -17,7 +18,20 @@ export async function listProfiles(invoke) {
   return Object.freeze(
     value.map((item) => {
       if (
-        !exact(item, ['profileId', 'name', 'clientId', 'apiVersion', 'role', 'keyCount', 'available']) ||
+        !(
+          exact(item, [
+            'profileId',
+            'name',
+            'clientId',
+            'apiVersion',
+            'role',
+            'keyCount',
+            'available',
+            'environment',
+          ]) || exact(item, ['profileId', 'name', 'clientId', 'apiVersion', 'role', 'keyCount', 'available'])
+        ) ||
+        (Object.hasOwn(item, 'environment') &&
+          (item.available ? !validEnvironment(item.environment) : item.environment !== null)) ||
         !uuid(item.profileId) ||
         seen.has(item.profileId) ||
         typeof item.name !== 'string' ||
@@ -40,7 +54,7 @@ export async function listProfiles(invoke) {
       )
         fail();
       seen.add(item.profileId);
-      return Object.freeze({ ...item });
+      return Object.freeze({ ...item, environment: item.environment ?? (item.available ? 'TEST' : null) });
     }),
   );
 }
@@ -53,7 +67,7 @@ export async function openSavedProfile(invoke, profile, restoreKeys = true) {
     !uuid(value.sessionId) ||
     value.apiVersion !== profile.apiVersion ||
     value.role !== profile.role ||
-    value.environment !== 'TEST' ||
+    value.environment !== (profile.environment ?? 'TEST') ||
     value.connected !== true
   )
     fail();
@@ -137,7 +151,7 @@ function defaultsContext(session) {
   if (
     !uuid(session?.sessionId) ||
     !['v2', 'v3'].includes(session.apiVersion) ||
-    session.environment !== 'TEST' ||
+    !validEnvironment(session.environment) ||
     session.connected !== true
   )
     throw new Error('session_missing');

@@ -98,7 +98,7 @@ export function useSendAttempt({
 
   async function send() {
     if (!prepared.value || working.value) return;
-    await act('Einreichung an TEST senden', async () => {
+    await act('Einreichung an FIT-Connect senden', async () => {
       const result = await executeSend(invoke, confirmedSession.value, prepared.value.attempt);
       outcome.value = result;
       if (result.submissionId && result.caseId)

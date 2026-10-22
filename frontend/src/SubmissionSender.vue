@@ -184,7 +184,7 @@ const {
         <span class="status-badge" :class="outcome.status === 'sent' ? 'ok' : 'error'">
           {{
             outcome.status === 'sent'
-              ? 'An TEST übergeben'
+              ? 'An FIT-Connect übergeben'
               : outcome.status === 'uncertain'
                 ? 'Versandausgang ungewiss'
                 : 'Versand fehlgeschlagen'
@@ -270,7 +270,7 @@ const {
           <span>
             {{ item.api }} ·
             {{
-              { sent: 'An TEST übergeben', failed: 'Fehlgeschlagen', uncertain: 'Ausgang ungewiss' }[
+              { sent: 'An FIT-Connect übergeben', failed: 'Fehlgeschlagen', uncertain: 'Ausgang ungewiss' }[
                 item.status
               ] || item.status
             }}

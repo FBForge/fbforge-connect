@@ -33,8 +33,8 @@ pub async fn export_profile_backup(
         let selected = app
             .dialog()
             .file()
-            .set_title("Geschütztes TEST-Profil sichern")
-            .add_filter("Geschütztes TEST-Profil", &["fctest-profile"])
+            .set_title("Geschütztes Profil sichern")
+            .add_filter("Geschütztes Profil", &["fctest-profile"])
             .set_file_name("test-profil.fctest-profile")
             .blocking_save_file();
         let Some(selected) = selected else {
@@ -57,8 +57,8 @@ pub async fn import_profile_backup(
         let selected = dialog_app
             .dialog()
             .file()
-            .set_title("Geschütztes TEST-Profil wiederherstellen")
-            .add_filter("Geschütztes TEST-Profil", &["fctest-profile"])
+            .set_title("Geschütztes Profil wiederherstellen")
+            .add_filter("Geschütztes Profil", &["fctest-profile"])
             .blocking_pick_file();
         let Some(selected) = selected else {
             return Ok(None);

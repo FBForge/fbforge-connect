@@ -8,6 +8,7 @@ import { resetsSessions } from '../sessions.js';
 // Trace exports deliberately exclude user payloads and identifiers.
 export function useDiagnostics({
   version,
+  environment,
   apiVersion,
   busy,
   pendingAction,
@@ -44,7 +45,7 @@ export function useDiagnostics({
         let status = 'Erfolgreich';
         try {
           if (!isTauri()) throw new Error('desktop_required');
-          results.value[version] = await probeAdapter(invoke, version);
+          results.value[version] = await probeAdapter(invoke, version, environment.value);
         } catch (cause) {
           status = 'Fehlgeschlagen';
           error.value = errorMessage(cause);
@@ -77,6 +78,7 @@ export function useDiagnostics({
     JSON.stringify(
       buildSupportReport({
         version,
+        environment: environment.value,
         selectedApi: apiVersion.value,
         probes: results.value,
         entries: trace.value,

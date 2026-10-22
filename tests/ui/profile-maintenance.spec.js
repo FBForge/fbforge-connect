@@ -11,7 +11,7 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
   await page.locator('#client-secret').fill('synthetic-secret');
   await page.getByRole('checkbox', { name: /Zugangsdaten und Testschlüssel/ }).check();
   await page.locator('#profile-name').fill('Bauamt TEST');
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true }).waitFor({ state: 'hidden' });
   await page
     .getByRole('button', { name: /Verbinden|Verbindung|Verbunden/ })
@@ -19,7 +19,7 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
     .click();
   await page.getByText('Profil verwalten', { exact: true }).click();
   await page.getByRole('button', { name: 'Profilname oder Secret ändern', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Gespeichertes TEST-Profil bearbeiten', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Gespeichertes Profil bearbeiten', exact: true });
   await dialog.waitFor();
   await dialog.getByLabel('Profilname', { exact: true }).fill('Bauamt TEST neu');
   await dialog.locator('input[type=password]').fill('synthetic-new-secret');

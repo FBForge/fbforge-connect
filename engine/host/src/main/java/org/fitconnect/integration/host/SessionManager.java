@@ -289,6 +289,10 @@ final class SessionManager implements AutoCloseable {
                 version, id, command, document, attemptId);
     }
 
+    Data<?> importCertifiedKeys(ApiVersion version, String id, String document) {
+        return state.destinationsFlow.importCertifiedKeys(version, id, document);
+    }
+
     Data<?> generatedKeys(ApiVersion version, String id, String command) {
         return state.destinationsFlow.generatedKeys(version, id, command);
     }

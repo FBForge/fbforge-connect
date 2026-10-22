@@ -1,4 +1,5 @@
 //! User-bound encrypted Windows profiles. No plaintext fallback and no renderer access to payloads.
+use crate::environments::Environment;
 use crate::protocol::{valid_session_id, ApiVersion, SessionRole};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -37,6 +38,8 @@ impl ProfileDefaults {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Profile {
     pub version: u8,
+    #[serde(default)]
+    pub environment: Environment,
     pub profile_id: String,
     pub name: String,
     pub api_version: ApiVersion,
@@ -71,6 +74,7 @@ fn wipe(value: &mut serde_json::Value) {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileSummary {
+    pub environment: Option<Environment>,
     pub profile_id: String,
     pub name: String,
     pub client_id: Option<String>,
@@ -102,6 +106,7 @@ impl Profile {
     }
     pub fn summary(&self) -> ProfileSummary {
         ProfileSummary {
+            environment: Some(self.environment),
             profile_id: self.profile_id.clone(),
             name: self.name.clone(),
             client_id: Some(self.client_id.clone()),
@@ -237,6 +242,7 @@ impl Vault {
             summaries.push(match self.load(id) {
                 Ok(profile) => profile.summary(),
                 Err(_) => ProfileSummary {
+                    environment: None,
                     profile_id: id.to_string(),
                     name: "Nicht lesbares Profil".into(),
                     client_id: None,
@@ -325,6 +331,7 @@ mod tests {
     use super::*;
     fn sample() -> Profile {
         Profile {
+            environment: Environment::TEST,
             defaults: ProfileDefaults::default(),
             version: 1,
             profile_id: "11111111-1111-4111-8111-111111111111".into(),
@@ -374,6 +381,25 @@ mod tests {
         let summary = serde_json::to_string(&sample().summary()).unwrap();
         assert!(summary.contains("synthetic-client"));
         assert!(!summary.contains("synthetic-secret-marker"));
+    }
+    #[test]
+    fn profile_environment_is_persisted_and_missing_legacy_environment_defaults_to_test() {
+        let mut original = sample();
+        for environment in [Environment::TEST, Environment::STAGE, Environment::PROD] {
+            original.environment = environment;
+            let encoded = serde_json::to_value(&original).unwrap();
+            let restored: Profile = serde_json::from_value(encoded.clone()).unwrap();
+            assert_eq!(restored.environment, environment);
+            assert_eq!(restored.summary().environment, Some(environment));
+            let mut legacy = encoded;
+            legacy.as_object_mut().unwrap().remove("environment");
+            assert_eq!(
+                serde_json::from_value::<Profile>(legacy)
+                    .unwrap()
+                    .environment,
+                Environment::TEST
+            );
+        }
     }
     #[test]
     fn malformed_backup_never_becomes_a_profile() {

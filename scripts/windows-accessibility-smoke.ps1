@@ -209,11 +209,12 @@ automaticUpdates = disabled
     [AccessibilityKeys]::Press(0x09)
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Client-Secret' } 'native_tab_order_invalid'
     $null = Check-Spoken 'Client-Secret' $editType
-    $login = Find-Control 'Bei TEST anmelden' $buttonType
+    $login = Find-Control 'Anmelden' $buttonType
     if (-not $login -or $login.Current.IsEnabled) { throw 'empty_credentials_login_not_disabled' }
     $null = Check-Spoken 'Verbindungsdialog schließen' $buttonType
     [AccessibilityKeys]::Press(0x1b)
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Verbinden' } 'native_dialog_focus_not_restored'
+    $null = Check-Spoken 'Umgebung' ([System.Windows.Automation.ControlType]::ComboBox)
     foreach ($name in @('Senden','Empfangen','Prozesse')) {
         $control = Check-Spoken $name $buttonType
         Invoke-Control $control
@@ -232,7 +233,7 @@ automaticUpdates = disabled
     [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'fbforge-accessibility-result.json'), ($report | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 } catch {
     # The test never enters credentials. Log only known synthetic control names.
-    $knownNames = @('Verbinden','Client-ID','Client-Secret','Bei TEST anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen','Vorgänge','Vorgänge durchsuchen','Hilfe','Schnellstart (Website im Browser öffnen)')
+    $knownNames = @('Umgebung','Verbinden','Client-ID','Client-Secret','Anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen','Vorgänge','Vorgänge durchsuchen','Hilfe','Schnellstart (Website im Browser öffnen)')
     $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
     if ($focused) {
         $label = if ($knownNames -contains $focused.Current.Name) { $focused.Current.Name } else { '(other control)' }

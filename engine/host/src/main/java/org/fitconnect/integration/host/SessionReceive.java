@@ -19,7 +19,11 @@ final class SessionReceive {
                 this.state.registry.withSession(
                         version, entry.session(), session -> List.copyOf(session.replyChannels()));
         if (channels.size() > 32) throw new SessionException("invalid_resource");
-        return new Data<>(version.wireValue(), id, "TEST", new ReplyChannels(channels));
+        return new Data<>(
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                new ReplyChannels(channels));
     }
 
     Data<?> replies(ApiVersion version, String id, int offset) {
@@ -29,7 +33,7 @@ final class SessionReceive {
         var page =
                 this.state.registry.withSession(
                         version, entry.session(), session -> session.replies(offset, 20));
-        return new Data<>(version.wireValue(), id, "TEST", page);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), page);
     }
 
     Data<?> lookup(
@@ -71,7 +75,7 @@ final class SessionReceive {
                             this.state.cases.notice(this.state.caseScopes.get(id), detail);
                             return detail;
                         });
-        return new Data<>(version.wireValue(), id, "TEST", data);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
     }
 
     Data<?> verify(
@@ -143,7 +147,8 @@ final class SessionReceive {
                             result);
             // Validate the requested destination/submission binding before retaining a local copy.
             this.state.cases.receive(this.state.caseScopes.get(id), result);
-            return new Data<>(version.wireValue(), id, "TEST", summary);
+            return new Data<>(
+                    version.wireValue(), id, IntegrationEnvironment.current().name(), summary);
         } catch (RuntimeException failure) {
             invalidateReceived(entry);
             throw failure;
@@ -215,7 +220,7 @@ final class SessionReceive {
             return new Data<>(
                     version.wireValue(),
                     id,
-                    "TEST",
+                    IntegrationEnvironment.current().name(),
                     publishReplyCase(version, id, caseId, replyId, result));
         } catch (RuntimeException failure) {
             invalidateReceived(entry);
@@ -245,7 +250,11 @@ final class SessionReceive {
                         + entry.key().role().wireValue()
                         + "/profile/"
                         + DestinationAccess.id(profileId));
-        return new Data<>(version.wireValue(), id, "TEST", Map.of("bound", true));
+        return new Data<>(
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                Map.of("bound", true));
     }
 
     Data<?> caseWorkspace(ApiVersion version, String id, String document) {
@@ -253,7 +262,7 @@ final class SessionReceive {
         return new Data<>(
                 version.wireValue(),
                 id,
-                "TEST",
+                IntegrationEnvironment.current().name(),
                 this.state.cases.resource(this.state.caseScopes.get(id), document));
     }
 
@@ -281,7 +290,7 @@ final class SessionReceive {
                     }
                     default -> throw new SessionException("invalid_input");
                 };
-        return new Data<>(version.wireValue(), id, "TEST", result);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
     }
 
     Data<?> received(
@@ -315,7 +324,7 @@ final class SessionReceive {
                     }
                     default -> throw new SessionException("invalid_input");
                 };
-        return new Data<>(version.wireValue(), id, "TEST", data);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
     }
 
     void invalidateReceived(Entry entry) {

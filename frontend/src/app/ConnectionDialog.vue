@@ -1,4 +1,6 @@
 <script setup>
+import { useEnvironment } from '../environments.js';
+const environment = useEnvironment();
 import AppIcon from '../AppIcon.vue';
 import CopyValue from '../CopyValue.vue';
 import FileDropInput from '../FileDropInput.vue';
@@ -49,7 +51,7 @@ const {
   >
     <div class="tool-section-heading">
       <div>
-        <p class="workspace-eyebrow">FIT-Connect TEST · API {{ apiVersion }}</p>
+        <p class="workspace-eyebrow">FIT-Connect {{ environment }} · API {{ apiVersion }}</p>
         <h2 id="session-title">Verbindung verwalten</h2>
       </div>
       <button
@@ -71,7 +73,7 @@ const {
           ['open', 'check', 'close'].includes(pendingAction)
             ? 'Sitzungsaktion wird ausgeführt …'
             : activeSession
-              ? 'Bei TEST angemeldet'
+              ? 'Angemeldet'
               : 'Nicht verbunden'
         }}
       </span>
@@ -81,7 +83,7 @@ const {
       <h3 id="connection-identity-title">
         {{
           profiles.find((profile) => profile.profileId === storageStatus?.profileId)?.name ||
-          'Aktuelle TEST-Verbindung'
+          'Aktuelle Verbindung'
         }}
       </h3>
       <p>
@@ -142,7 +144,7 @@ const {
       </p>
       <div class="client-actions">
         <button class="button" type="submit" :disabled="busy || !clientId.trim() || !clientSecret.trim()">
-          {{ activeSession ? 'Mit anderen Zugangsdaten anmelden' : 'Bei TEST anmelden' }}
+          {{ activeSession ? 'Mit anderen Zugangsdaten anmelden' : 'Anmelden' }}
         </button>
         <button
           v-if="activeSession"
@@ -165,7 +167,7 @@ const {
       </div>
     </form>
     <section v-if="profiles.length" aria-labelledby="saved-profiles-title">
-      <h3 id="saved-profiles-title">Gespeicherte TEST-Profile</h3>
+      <h3 id="saved-profiles-title">Gespeicherte Profile für {{ environment }}</h3>
       <SavedProfiles
         :profiles="profiles"
         :api-version="apiVersion"

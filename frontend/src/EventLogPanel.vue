@@ -46,10 +46,10 @@ const {
   <section class="tool-section" aria-labelledby="event-log-title">
     <h2 id="event-log-title">Event Log prüfen</h2>
     <p>
-      Den Verlauf eines Vorgangs, einer Einreichung oder einer Antwort aus TEST abrufen und technisch prüfen.
-      Funktioniert ohne private Schlüssel und unabhängig von der Verfügbarkeit der Inhalte.
+      Den Verlauf eines Vorgangs, einer Einreichung oder einer Antwort aus FIT-Connect abrufen und technisch
+      prüfen. Funktioniert ohne private Schlüssel und unabhängig von der Verfügbarkeit der Inhalte.
     </p>
-    <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
+    <p v-if="!session">Bitte zuerst eine Sitzung öffnen.</p>
     <details v-if="recent.length">
       <summary>Bekannte Nachrichten dieser Sitzung ({{ recent.length }})</summary>
       <ul class="send-history-list">

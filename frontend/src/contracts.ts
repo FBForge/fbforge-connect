@@ -1,3 +1,4 @@
+export type Environment = 'TEST' | 'STAGE' | 'PROD';
 /** Public renderer types. Native and file input still require runtime validation. */
 export type ApiVersion = 'v2' | 'v3';
 export type SessionRole = 'online-service' | 'administrative-system';
@@ -5,7 +6,7 @@ export interface Session {
   readonly sessionId: string;
   readonly apiVersion: ApiVersion;
   readonly role: SessionRole;
-  readonly environment: 'TEST';
+  readonly environment: Environment;
   readonly connected: boolean;
   readonly clientId?: string;
 }
@@ -16,11 +17,18 @@ export type SavedProfile = {
 } & (
   | {
       readonly available: true;
+      readonly environment: Environment;
       readonly clientId: string;
       readonly apiVersion: ApiVersion;
       readonly role: SessionRole;
     }
-  | { readonly available: false; readonly clientId: null; readonly apiVersion: null; readonly role: null }
+  | {
+      readonly available: false;
+      readonly environment: null;
+      readonly clientId: null;
+      readonly apiVersion: null;
+      readonly role: null;
+    }
 );
 export interface ActivityEvent {
   api?: ApiVersion;

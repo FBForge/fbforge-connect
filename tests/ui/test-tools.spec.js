@@ -113,7 +113,7 @@ test('a test package is imported only after confirmation and a matching current 
   await button(page, 'Als Versandentwurf öffnen').click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
-  await button(page, 'Bei TEST anmelden').click();
+  await button(page, 'Anmelden').click();
   await page.locator('#send-target').fill('22222222-2222-4222-8222-222222222222');
   await page.evaluate(() => (window.__offerMatches = false));
   await button(page, 'Testfall übernehmen').click();

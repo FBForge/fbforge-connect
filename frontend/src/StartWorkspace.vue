@@ -1,4 +1,6 @@
 <script setup>
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import AppIcon from './AppIcon.vue';
 import DocumentationLink from './DocumentationLink.vue';
 
@@ -9,7 +11,7 @@ const tasks = [
     id: 'send',
     title: 'Fachverfahren testen',
     purpose: 'FBForge Connect sendet. Ihr Fachverfahren empfängt.',
-    description: 'Fachdaten und Anlagen vorbereiten und nach Ihrer Bestätigung an TEST senden.',
+    description: 'Fachdaten und Anlagen vorbereiten und nach Ihrer Bestätigung an FIT-Connect senden.',
     destination: 'Senden',
     icon: 'send',
   },
@@ -31,33 +33,32 @@ const tasks = [
       <h2 id="start-tasks-title">Was möchten Sie testen?</h2>
       <p class="start-description">FBForge Connect übernimmt die passende Gegenstelle für Ihren Test.</p>
       <div class="start-tasks">
-        <button
-          v-for="task in tasks"
-          :key="task.id"
-          type="button"
-          class="start-task"
-          :aria-labelledby="`start-${task.id}-title`"
-          :aria-describedby="`start-${task.id}-purpose start-${task.id}-description`"
-          @click="emit('task', task.destination)"
-        >
+        <div v-for="task in tasks" :key="task.id" class="start-task">
           <AppIcon :name="task.icon" />
-          <strong :id="`start-${task.id}-title`">{{ task.title }}</strong>
+          <button
+            type="button"
+            class="start-task-button"
+            :aria-describedby="`start-${task.id}-purpose start-${task.id}-description`"
+            @click="emit('task', task.destination)"
+          >
+            <strong>{{ task.title }}</strong>
+          </button>
           <span :id="`start-${task.id}-purpose`" class="start-task-purpose">{{ task.purpose }}</span>
           <span :id="`start-${task.id}-description`">{{ task.description }}</span>
           <span class="start-task-action" aria-hidden="true">Test beginnen →</span>
-        </button>
+        </div>
       </div>
     </section>
 
     <section class="start-connection tool-section" aria-labelledby="start-connection-title">
       <div>
-        <p class="start-eyebrow">IHR TEST-ZUGANG</p>
+        <p class="start-eyebrow">IHR FIT-CONNECT-ZUGANG</p>
         <h2 id="start-connection-title">
-          {{ session ? 'Bereit für Ihren Integrationstest' : 'Ihr TEST-Zugang ist noch nicht verbunden' }}
+          {{ session ? 'Bereit für Ihren Integrationstest' : 'Ihr Zugang ist noch nicht verbunden' }}
         </h2>
         <p v-if="session">
-          Sie sind bei FIT-Connect TEST über API {{ apiVersion }} angemeldet. Die verfügbaren Aktionen richten
-          sich nach Ihren Berechtigungen.
+          Sie sind bei FIT-Connect {{ environment }} über API {{ apiVersion }} angemeldet. Die verfügbaren
+          Aktionen richten sich nach Ihren Berechtigungen.
         </p>
         <p v-else>
           Wählen Sie eine Testaufgabe. Falls nötig, öffnet sich die Anmeldung. Sie können Ihren Zugang auch
@@ -98,7 +99,8 @@ const tasks = [
         </button>
       </div>
       <p class="small-note">
-        Verwenden Sie ausschließlich fiktive Testdaten. Die Startansicht führt keine Übertragung aus.
+        Nutzen Sie für Tests fiktive Daten. In PROD werden Nachrichten tatsächlich zugestellt. Die
+        Startansicht führt keine Übertragung aus.
       </p>
     </section>
   </div>
@@ -141,6 +143,8 @@ const tasks = [
   margin-top: 20px;
 }
 .start-task {
+  position: relative;
+  cursor: pointer;
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -153,6 +157,27 @@ const tasks = [
   color: var(--ink);
   text-align: left;
   overflow-wrap: anywhere;
+}
+.start-task-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.start-task-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+}
+.start-task-button:focus-visible {
+  outline: none;
+}
+.start-task-button:focus-visible::after {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 .start-task:hover {
   border-color: var(--accent);

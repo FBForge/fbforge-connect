@@ -16,7 +16,14 @@ import {
 } from '../profiles.js';
 
 // Owns connection credentials, saved profiles and their session-bound defaults.
-export function useConnections({ apiVersion, beforeChange, focusFallback, profileOpened, addEvent }) {
+export function useConnections({
+  apiVersion,
+  environment = ref('TEST'),
+  beforeChange,
+  focusFallback,
+  profileOpened,
+  addEvent,
+}) {
   const busy = ref(false),
     pendingAction = ref(''),
     error = ref('');
@@ -79,6 +86,7 @@ export function useConnections({ apiVersion, beforeChange, focusFallback, profil
               rememberProfile.value
                 ? { profileId: crypto.randomUUID(), name: profileName.value.trim() }
                 : null,
+              environment.value,
             )
           : await updateSession(invoke, current, action === 'check');
       if (result.connected) {
@@ -110,7 +118,7 @@ export function useConnections({ apiVersion, beforeChange, focusFallback, profil
       credentials.clientSecret = '';
       addEvent(
         version,
-        { open: 'TEST-Anmeldung', check: 'Sitzung prüfen', close: 'Abmelden' }[action],
+        { open: 'Anmeldung', check: 'Sitzung prüfen', close: 'Abmelden' }[action],
         status,
         started,
         selectedRole === 'online-service' ? 'Onlinedienst' : 'Fachverfahren',
@@ -139,7 +147,9 @@ export function useConnections({ apiVersion, beforeChange, focusFallback, profil
   async function refreshProfiles() {
     if (!isTauri()) return;
     try {
-      profiles.value = await listProfiles(invoke);
+      profiles.value = (await listProfiles(invoke)).filter(
+        (profile) => profile.environment === environment.value || !profile.available,
+      );
       profileError.value = '';
     } catch (cause) {
       profileError.value = errorMessage(cause);

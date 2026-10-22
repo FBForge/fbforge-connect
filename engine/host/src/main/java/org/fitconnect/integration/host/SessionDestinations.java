@@ -50,7 +50,8 @@ final class SessionDestinations {
                                     }
                                     default -> throw new SessionException("invalid_input");
                                 });
-        return new Data<>(version.wireValue(), entry.id(), "TEST", data);
+        return new Data<>(
+                version.wireValue(), entry.id(), IntegrationEnvironment.current().name(), data);
     }
 
     Data<?> keyInventory(ApiVersion version, String id, String command, String itemId, int offset) {
@@ -72,7 +73,7 @@ final class SessionDestinations {
                             }
                             return KeyInventory.list(id, session, generated, offset);
                         });
-        return new Data<>(version.wireValue(), id, "TEST", result);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
     }
 
     Data<?> manageDestination(
@@ -113,7 +114,7 @@ final class SessionDestinations {
                                     case "destination_update_state" -> manager.state();
                                     default -> throw new SessionException("invalid_input");
                                 });
-        return new Data<>(version.wireValue(), id, "TEST", data);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
     }
 
     Data<?> provisionDestination(
@@ -194,7 +195,7 @@ final class SessionDestinations {
                                     }
                                     default -> throw new SessionException("invalid_input");
                                 });
-        return new Data<>(version.wireValue(), id, "TEST", result);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
     }
 
     Data<?> discoverProcess(ApiVersion version, String id, String document) {
@@ -209,7 +210,7 @@ final class SessionDestinations {
                         version,
                         entry.session(),
                         session -> ProcessDiscovery.search(session, document, remote));
-        return new Data<>(version.wireValue(), id, "TEST", result);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
     }
 
     Data<?> cleanupDestination(
@@ -241,7 +242,7 @@ final class SessionDestinations {
                                     case "destination_cleanup_state" -> cleanup.state();
                                     default -> throw new SessionException("invalid_input");
                                 });
-        return new Data<>(version.wireValue(), id, "TEST", result);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
     }
 
     Data<?> rotateDestinationKeys(
@@ -278,7 +279,19 @@ final class SessionDestinations {
                                     case "destination_rotation_state" -> rotation.state();
                                     default -> throw new SessionException("invalid_input");
                                 });
-        return new Data<>(version.wireValue(), id, "TEST", result);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
+    }
+
+    Data<?> importCertifiedKeys(ApiVersion version, String id, String document) {
+        var entry = this.state.find(version, id);
+        if (version != ApiVersion.V3) throw new SessionException("invalid_input");
+        var keys = this.state.localKeys.computeIfAbsent(id, ignored -> new LocalTestKeys());
+        var result =
+                this.state.registry.withSession(
+                        version,
+                        entry.session(),
+                        session -> keys.importCertified(session, document));
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
     }
 
     Data<?> generatedKeys(ApiVersion version, String id, String command) {
@@ -290,6 +303,6 @@ final class SessionDestinations {
                         ? this.state.registry.withSession(
                                 version, entry.session(), generated::generate)
                         : Map.of("bundles", generated.list());
-        return new Data<>(version.wireValue(), id, "TEST", result);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
     }
 }

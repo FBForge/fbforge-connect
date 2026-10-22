@@ -2,6 +2,7 @@ fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
             "test_library",
+            "select_environment",
             "open_documentation",
             "case_workspace",
             "update_profile",
@@ -21,6 +22,7 @@ fn main() {
             "execute_destination_rotation",
             "cancel_destination_rotation",
             "destination_rotation_state",
+            "import_certified_keys",
             "generate_test_keys",
             "list_generated_keys",
             "prepare_destination_creation",

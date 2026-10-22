@@ -23,7 +23,10 @@ test('destination-rotation with synthetic native fixtures', async ({ browser }) 
     await page.getByRole('heading', { name: 'Zur Bestätigung', exact: true }).waitFor();
     assert.equal(await page.evaluate(() => window.__rotationFixture.generated), 2);
     await page
-      .getByRole('button', { name: 'Schlüssel dieser Destinations auf TEST wechseln', exact: true })
+      .getByRole('button', {
+        name: 'Schlüssel dieser Destinations in der gewählten Umgebung wechseln',
+        exact: true,
+      })
       .click();
     if (uncertain) {
       await page.getByRole('heading', { name: 'Ergebnis ungewiss', exact: true }).waitFor();
@@ -36,7 +39,10 @@ test('destination-rotation with synthetic native fixtures', async ({ browser }) 
       await page.getByRole('heading', { name: 'Zur Bestätigung', exact: true }).waitFor();
       assert.equal(await page.evaluate(() => window.__rotationFixture.generated), 2);
       await page
-        .getByRole('button', { name: 'Schlüssel dieser Destinations auf TEST wechseln', exact: true })
+        .getByRole('button', {
+          name: 'Schlüssel dieser Destinations in der gewählten Umgebung wechseln',
+          exact: true,
+        })
         .click();
     }
     await page.getByRole('heading', { name: 'Abgeschlossen', exact: true }).waitFor();

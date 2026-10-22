@@ -13,6 +13,10 @@ import org.fitconnect.integration.contract.ProbeResult;
 import org.fitconnect.integration.contract.SdkAdapter;
 
 public final class V3Adapter implements SdkAdapter {
+    public void validatePublicKey(String document, String purpose) {
+        PublicCertificates.validate(document, purpose);
+    }
+
     public ProbeResult probe() {
         FitConnectSdk.fromConfigBuilder();
         OutgoingSubmission.class.getDeclaredMethods();
@@ -21,7 +25,12 @@ public final class V3Adapter implements SdkAdapter {
         boolean isolated =
                 FitConnectSdk.class.getClassLoader() == getClass().getClassLoader()
                         && dependencyClass().getClassLoader() == getClass().getClassLoader();
-        return new ProbeResult("v3", "4.0.0-rc.2", "TEST", FitConnectSdk.class.getName(), isolated);
+        return new ProbeResult(
+                "v3",
+                "4.0.0-rc.2",
+                IntegrationEnvironment.current().name(),
+                FitConnectSdk.class.getName(),
+                isolated);
     }
 
     public Class<?> dependencyClass() {

@@ -60,6 +60,30 @@ pub(crate) async fn discard_keys(
 }
 
 #[tauri::command]
+pub(crate) async fn import_certified_keys(
+    app: tauri::AppHandle,
+    state: State<'_, EngineState>,
+    api_version: ApiVersion,
+    session_id: String,
+    key_document: String,
+) -> Result<SessionResource, &'static str> {
+    if api_version != ApiVersion::V3
+        || !state.environment().requires_vpki()
+        || key_document.len() > 48 * 1024
+    {
+        return Err("invalid_input");
+    }
+    resource_action(
+        &app,
+        &state,
+        api_version,
+        &session_id,
+        serde_json::json!({"command":"import_certified_keys","keyDocument":key_document}),
+    )
+    .await
+}
+
+#[tauri::command]
 pub(crate) async fn generate_test_keys(
     app: tauri::AppHandle,
     state: State<'_, EngineState>,

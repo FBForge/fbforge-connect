@@ -36,11 +36,11 @@ final class EventLogs {
         try {
             if (caseId == null || source == null || workspace == null)
                 throw new SessionException("invalid_input");
-            var env = dev.fitko.fitconnect.rest.client.config.FitConnectEnvironment.TEST;
+            var env = SdkEnvironment.current();
             var settings =
                     dev.fitko.fitconnect.sdk.config.settings.SdkSettings.withDefaultSettings();
             var headers = new dev.fitko.fitconnect.rest.client.services.auth.RequestHeaders(auth);
-            var base = "https://test.fit-connect.fitko.dev/submission-api";
+            var base = IntegrationEnvironment.current().submissionApi();
             var limiter = new dev.fitko.fitconnect.core.common.concurrent.ConcurrencyLimiter(1);
             var validation =
                     new dev.fitko.fitconnect.sdk.services.validation.ValidationService(
@@ -132,11 +132,11 @@ final class EventLogs {
                     || submission == null
                     || source == null
                     || workspace == null) throw new SessionException("invalid_input");
-            var env = dev.fitko.fitconnect.rest.client.config.FitConnectEnvironment.TEST;
+            var env = SdkEnvironment.current();
             var settings =
                     dev.fitko.fitconnect.sdk.config.settings.SdkSettings.withDefaultSettings();
             var headers = new dev.fitko.fitconnect.rest.client.services.auth.RequestHeaders(auth);
-            var base = "https://test.fit-connect.fitko.dev/submission-api";
+            var base = IntegrationEnvironment.current().submissionApi();
             var limiter = new dev.fitko.fitconnect.core.common.concurrent.ConcurrencyLimiter(1);
             var validation =
                     new dev.fitko.fitconnect.sdk.services.validation.ValidationService(

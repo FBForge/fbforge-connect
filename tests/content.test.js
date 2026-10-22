@@ -90,7 +90,7 @@ test('files larger than an IPC frame upload as bounded sequential chunks without
   assert.equal(progress.at(-1), bytes.length);
 });
 
-test('invalid size and invalid TEST session are rejected before reading a file or invoking native code', async () => {
+test('invalid size and unsupported environment are rejected before reading a file or invoking native code', async () => {
   let calls = 0;
   const invoke = () => {
     calls++;
@@ -99,7 +99,7 @@ test('invalid size and invalid TEST session are rejected before reading a file o
   for (const size of [-1, NaN, Infinity, 1.5, CONTENT_FILE_BYTES + 1])
     await assert.rejects(uploadContent(invoke, session, { size }), /invalid_input/);
   await assert.rejects(
-    uploadContent(invoke, { ...session, environment: 'PROD' }, new Blob(['x'])),
+    uploadContent(invoke, { ...session, environment: 'LOCAL' }, new Blob(['x'])),
     /session_missing/,
   );
   assert.equal(calls, 0);

@@ -101,8 +101,8 @@ defineExpose({ confirmLeave });
             Neustart wiederherstellen.
           </p>
           <p v-else-if="!proof">
-            Mit dem geladenen privaten Testschlüssel lokal entschlüsseln. Schlüssel bleiben für weitere
-            passende Einreichungen in dieser Sitzung verfügbar.
+            Mit dem geladenen privaten Schlüssel lokal entschlüsseln. Schlüssel bleiben für weitere passende
+            Einreichungen in dieser Sitzung verfügbar.
           </p>
         </div>
       </div>

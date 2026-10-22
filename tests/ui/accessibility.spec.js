@@ -62,7 +62,7 @@ test('connected sender keeps labels and keyboard focus in high contrast', async 
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await expect(page.getByRole('button', { name: 'Sitzung prüfen', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Abmelden', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
   await page.getByRole('button', { name: 'Senden', exact: true }).click();
   const source = page.getByRole('textbox', { name: 'Absender-Destination', exact: true });

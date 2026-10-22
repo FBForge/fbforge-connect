@@ -108,9 +108,9 @@ watch(
 let revision = 0;
 const messages = {
   invalid_input: 'Bitte gültige Destination ID und Submission ID eingeben.',
-  resource_denied: 'Diese TEST-Zugangsdaten haben keine Leseberechtigung für die angefragte Einreichung.',
+  resource_denied: 'Diese Zugangsdaten haben keine Leseberechtigung für die angefragte Einreichung.',
   resource_missing: 'Die Einreichung wurde nicht gefunden oder ist nicht mehr abrufbar.',
-  invalid_resource: 'Die TEST-Antwort ist unvollständig oder passt nicht zur angefragten Einreichung.',
+  invalid_resource: 'Die API-Antwort ist unvollständig oder passt nicht zur angefragten Einreichung.',
   resource_unavailable: 'Die Einreichungen konnten nicht geladen werden.',
 };
 watch([context, () => props.destinationId], () => {
@@ -210,7 +210,7 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
           Verfügbare Einreichungen einer Destination auflisten oder eine bekannte Submission ID direkt öffnen.
           Öffnen und prüfen bestätigt noch keinen Empfang.
         </p>
-        <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
+        <p v-if="!session">Bitte zuerst eine Sitzung öffnen.</p>
         <form @submit.prevent="submission.trim() ? open() : search()">
           <div class="client-fields">
             <label for="pickup-destination">
@@ -248,7 +248,7 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
             </button>
           </div>
         </form>
-        <p v-if="pending" role="status">Einreichungen werden aus TEST geladen …</p>
+        <p v-if="pending" role="status">Einreichungen werden aus FIT-Connect geladen …</p>
         <p v-if="error" role="alert">{{ error }}</p>
         <template v-if="page">
           <p>{{ page.totalCount }} verfügbare Einreichungen an dieser Destination.</p>

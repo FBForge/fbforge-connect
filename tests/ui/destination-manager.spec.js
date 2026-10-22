@@ -26,7 +26,10 @@ test('destination details open visibly, return focus and preserve a shared selec
   await expect(page.getByRole('heading', { name: 'Zur Bestätigung', exact: true })).toBeFocused();
   expect(await page.evaluate(() => window.__destinationFixture.writes)).toBe(0);
   await page
-    .getByRole('button', { name: 'Diese Änderungen verbindlich auf TEST speichern', exact: true })
+    .getByRole('button', {
+      name: 'Diese Änderungen verbindlich in der gewählten Umgebung speichern',
+      exact: true,
+    })
     .click();
   expect(await page.evaluate(() => window.__destinationFixture.writes)).toBe(1);
   expect(
@@ -42,9 +45,7 @@ for (const query of ['?readonly=1', '?api=v2']) {
     await page.getByRole('button', { name: 'Eigene Destinations laden', exact: true }).click();
     await expect(page.getByRole('checkbox')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Bearbeiten', exact: true })).toHaveCount(0);
-    await expect(
-      page.getByRole('button', { name: 'Neue TEST-Destination anlegen', exact: true }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Neue Destination anlegen', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Ansehen', exact: true }).first().click();
     await expect(page.getByRole('heading', { name: 'Onlinedienst Nord', exact: true })).toBeFocused();
     await expect(page.getByRole('button', { name: 'Destination bearbeiten', exact: true })).toHaveCount(0);

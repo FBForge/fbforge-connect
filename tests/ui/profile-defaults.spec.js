@@ -12,7 +12,7 @@ test('profile defaults survive reconnect, preserve edited fields and clear witho
   await page.locator('#client-secret').fill('synthetic-secret');
   await page.getByRole('checkbox', { name: /Zugangsdaten und Testschlüssel/ }).check();
   await page.locator('#profile-name').fill('Voreinstellungen TEST');
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   const connection = page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true });
   await expect(connection).toBeHidden();
   await page

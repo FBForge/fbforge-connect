@@ -12,4 +12,4 @@ Kopierbare Kennungen, geführte Testaufgaben und eine zentral gepflegte Web-Anle
 
 Freigabe nach v2/v3-Regression, Tastatur-/NVDA- und Skalierungsprüfungen sowie unabhängig geprüftem signiertem Windows-Upgrade. macOS/Linux-Unterstützung separat prüfen.
 
-PROD-Unterstützung und ein BPMN-Prozessmotor sind nicht geplant.
+TEST, STAGE und PROD werden gezielt ausgewählt. STAGE und PROD benötigen V-PKI-Zertifikate, produktive Schreibaktionen eine zusätzliche Bestätigung. Ein BPMN-Prozessmotor ist nicht geplant.

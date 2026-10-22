@@ -76,6 +76,7 @@ pub async fn save_opened(
     client_secret: String,
 ) -> Result<(), &'static str> {
     let profile = Profile {
+        environment: state.environment(),
         defaults: ProfileDefaults::default(),
         version: 1,
         profile_id: id.clone(),
@@ -127,7 +128,7 @@ pub async fn checkpoint(
     let result = async {
         let store = vault(app)?;
         let mut profile = store.load(&binding.profile_id)?;
-        if profile.api_version != api {
+        if profile.api_version != api || profile.environment != state.environment() {
             return Err("vault_invalid");
         }
         profile.keys = archive(app, state, api, session).await?;
@@ -226,6 +227,9 @@ pub async fn open_saved_profile(
     restore_keys: bool,
 ) -> Result<SessionSnapshot, &'static str> {
     let profile = vault(&app)?.load(&profile_id)?;
+    if profile.environment != state.environment() {
+        return Err("environment_mismatch");
+    }
     let api = profile.api_version;
     before_open(&app, &state, api, profile.role)
         .await
@@ -373,13 +377,16 @@ pub async fn update_profile(
     }
     let store = vault(&app)?;
     let mut profile = store.load(&profile_id)?;
+    if profile.environment != state.environment() {
+        return Err("environment_mismatch");
+    }
     profile.name = name;
     profile.validate()?;
     if let Some(secret) = new_secret {
         let checked: CredentialCheck=request(&app,&state,serde_json::json!({"command":"validate_profile_credentials","apiVersion":profile.api_version,
             "clientId":profile.client_id,"clientSecret":secret})).await?;
         if checked.api_version != profile.api_version
-            || checked.environment != "TEST"
+            || checked.environment != state.environment().name()
             || !checked.valid
         {
             return Err("engine_protocol_error");
@@ -408,7 +415,7 @@ pub async fn get_profile_defaults(
         return Err("session_missing");
     }
     let profile = vault(&app)?.load(&binding.profile_id)?;
-    if profile.api_version != api_version {
+    if profile.api_version != api_version || profile.environment != state.environment() {
         return Err("vault_invalid");
     }
     Ok(Some(profile.defaults.clone()))
@@ -439,7 +446,7 @@ pub async fn save_profile_defaults(
     }
     let store = vault(&app)?;
     let mut profile = store.load(&binding.profile_id)?;
-    if profile.api_version != api_version {
+    if profile.api_version != api_version || profile.environment != state.environment() {
         return Err("vault_invalid");
     }
     profile.defaults = defaults.clone();

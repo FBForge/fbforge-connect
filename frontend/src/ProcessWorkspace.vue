@@ -194,7 +194,7 @@ const {
         </p>
         <form @submit.prevent="discover()">
           <fieldset :disabled="disabled || !connected || !currentMapping || mappingDirty">
-            <legend>Passende TEST-Empfänger für eine Prozess-Einreichung</legend>
+            <legend>Passende Empfänger für eine Prozess-Einreichung</legend>
             <label for="bpmn-region">
               Region
               <input id="bpmn-region" v-model="region" required pattern="DE[0-9]{0,12}" maxlength="14" />
@@ -205,11 +205,11 @@ const {
         </form>
         <p v-if="!connected">
           Die lokale Modellansicht funktioniert ohne Anmeldung. Empfängersuche und Prozessversand benötigen
-          eine v3-TEST-Sitzung.
+          eine v3-Sitzung.
         </p>
       </section>
       <section v-if="page" class="tool-section" aria-labelledby="process-results-title">
-        <h3 id="process-results-title">Passende TEST-Destinations ({{ page.totalCount }})</h3>
+        <h3 id="process-results-title">Passende Destinations ({{ page.totalCount }})</h3>
         <p>
           Der Suchdienst liefert öffentliche Destination IDs. Beim Übernehmen werden die Angebote erneut
           geladen. Die Versandprüfung bleibt ein eigener Schritt.
@@ -229,7 +229,7 @@ const {
         </article>
         <p v-if="!page.destinations.length">
           Keine passenden öffentlichen Empfänger gefunden. Berechtigungen und Angebote der gewünschten
-          TEST-Destination prüfen.
+          Destination prüfen.
         </p>
         <div class="client-actions">
           <button

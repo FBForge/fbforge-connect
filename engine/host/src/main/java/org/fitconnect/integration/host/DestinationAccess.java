@@ -109,7 +109,8 @@ final class DestinationAccess {
                                     purpose.equals("decrypt")
                                             ? TestCertificatePolicy.Purpose.ENCRYPTION
                                             : TestCertificatePolicy.Purpose.SIGNING,
-                                    Instant.now());
+                                    Instant.now(),
+                                    session::validatePublicKey);
                     String encoded = key.toString();
                     bytes += encoded.getBytes(StandardCharsets.UTF_8).length;
                     if (bytes > 512 * 1024) throw new SessionException("invalid_resource");
@@ -122,10 +123,24 @@ final class DestinationAccess {
                                     null,
                                     accepted.certificateSha256(),
                                     accepted.expiresAt().toString()));
-                } catch (TestCertificatePolicy.Rejected | IllegalArgumentException rejected) {
+                } catch (TestCertificatePolicy.Rejected
+                        | IllegalArgumentException
+                        | SessionException rejected) {
+                    if (rejected instanceof SessionException failure
+                            && !Set.of("vpki_certificate_required", "certificate_status_unknown")
+                                    .contains(failure.code())) throw failure;
                     summaries.add(
                             new Eligibility(
-                                    kid, purpose, false, "test_certificate_required", null, null));
+                                    kid,
+                                    purpose,
+                                    false,
+                                    (rejected instanceof SessionException failure
+                                            ? failure.code()
+                                            : IntegrationEnvironment.current().requiresVpki()
+                                                    ? "vpki_certificate_required"
+                                                    : "test_certificate_required"),
+                                    null,
+                                    null));
                 }
             }
             offset += keys.size();
@@ -146,11 +161,18 @@ final class DestinationAccess {
                 || document == null
                 || document.getBytes(StandardCharsets.UTF_8).length > 32768)
             throw new SessionException("key_rejected");
+        if (document.stripLeading().startsWith("{")
+                && StrictJson.object(document, 32768).has("format"))
+            document = CertifiedKeyMaterial.normalizeRegistered(document, purpose);
         Registration registration = registrations.get(id);
         if (registration == null) throw new SessionException("key_missing");
         if ("auto".equals(purpose)) purpose = keyPurpose(document, registration);
         List<String> keys = registration.eligible().getOrDefault(purpose, List.of());
-        if (keys.isEmpty()) throw new SessionException("test_certificate_required");
+        if (keys.isEmpty())
+            throw new SessionException(
+                    IntegrationEnvironment.current().requiresVpki()
+                            ? "vpki_certificate_required"
+                            : "test_certificate_required");
         try {
             for (String key : keys)
                 TestCertificatePolicy.validate(
@@ -158,9 +180,13 @@ final class DestinationAccess {
                         purpose.equals("decrypt")
                                 ? TestCertificatePolicy.Purpose.ENCRYPTION
                                 : TestCertificatePolicy.Purpose.SIGNING,
-                        Instant.now());
+                        Instant.now(),
+                        session::validatePublicKey);
         } catch (TestCertificatePolicy.Rejected e) {
-            throw new SessionException("test_certificate_required");
+            throw new SessionException(
+                    IntegrationEnvironment.current().requiresVpki()
+                            ? "vpki_certificate_required"
+                            : "test_certificate_required");
         }
         if (!document.stripLeading().startsWith("-----BEGIN PRIVATE KEY-----")) {
             try {
@@ -174,7 +200,9 @@ final class DestinationAccess {
                 }
                 if (parsed.has("x5c")) {
                     var chain = array(parsed, "x5c");
-                    if (chain.size() != 1
+                    if (chain.isEmpty()
+                            || chain.size()
+                                    > (IntegrationEnvironment.current().requiresVpki() ? 8 : 1)
                             || !chain.get(0).isJsonPrimitive()
                             || !chain.get(0).getAsJsonPrimitive().isString())
                         throw new IllegalArgumentException();

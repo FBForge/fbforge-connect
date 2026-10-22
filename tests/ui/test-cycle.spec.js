@@ -20,7 +20,9 @@ async function prepare(page, { uncertain = false } = {}) {
   await page.locator('#send-data').fill('{"test":"neuer Entwurf"}');
   await page.getByRole('button', { name: 'Weiter: Anlagen & Antwortkanal', exact: true }).click();
   await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true }),
+  ).toBeVisible();
 }
 
 test('next test copies only explicitly selected draft content and requires a fresh preparation', async ({
@@ -28,10 +30,10 @@ test('next test copies only explicitly selected draft content and requires a fre
   context,
 }) => {
   await prepare(page);
-  const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  const confirmation = page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true });
   await expect(confirmation.locator('dt:has-text("Antwortangebot") + dd')).toHaveText('Nicht angeboten');
   await expect(confirmation.locator('dt:has-text("Anlagen") + dd')).toHaveText('0');
-  await page.getByRole('button', { name: 'Jetzt an TEST senden', exact: true }).click();
+  await page.getByRole('button', { name: 'Jetzt an FIT-Connect senden', exact: true }).click();
   const start = page.getByRole('button', { name: 'Nächsten Test vorbereiten', exact: true });
   await expect(start).toBeEnabled();
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -63,7 +65,7 @@ test('next test copies only explicitly selected draft content and requires a fre
 
 test('canceling a prepared send restores keyboard focus without transmitting', async ({ page }) => {
   await prepare(page);
-  const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  const confirmation = page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true });
   const prepareButton = page.getByRole('button', { name: 'Versand vorbereiten', exact: true });
   await page.keyboard.press('Escape');
   await expect(confirmation).toBeHidden();
@@ -80,7 +82,7 @@ test('canceling a prepared send restores keyboard focus without transmitting', a
 
 test('uncertain sends remain locked and offer no new-test reset', async ({ page }) => {
   await prepare(page, { uncertain: true });
-  await page.getByRole('button', { name: 'Jetzt an TEST senden', exact: true }).click();
+  await page.getByRole('button', { name: 'Jetzt an FIT-Connect senden', exact: true }).click();
   await expect(page.getByText('Versandausgang ungewiss', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Nächsten Test vorbereiten', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Versand vorbereiten', exact: true })).toBeDisabled();
@@ -125,7 +127,7 @@ test('a chosen task resumes after login without preparing or sending a message',
   await page.getByRole('button', { name: 'Fachverfahren testen', exact: true }).click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true })).toBeHidden();
   await expect(page.getByRole('heading', { name: 'Senden', exact: true })).toBeFocused();
   await expect(page.locator('.send-form')).toBeVisible();

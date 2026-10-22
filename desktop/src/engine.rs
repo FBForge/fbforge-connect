@@ -1,11 +1,12 @@
 //! Packaged engine process, bounded frames and timeout handling.
+use crate::environments::{response_environment, Environment};
 use crate::protocol::{EngineFailure, EngineResponse, MAX_FRAME_BYTES};
 use crate::{cases, profiles};
 use serde::de::DeserializeOwned;
 use std::{
     path::PathBuf,
     process::Stdio,
-    sync::atomic::{AtomicU64, Ordering},
+    sync::atomic::{AtomicU64, AtomicU8, Ordering},
     time::Duration,
 };
 use tauri::Manager;
@@ -16,6 +17,7 @@ use tokio::{
 };
 pub(crate) struct EngineProcess {
     child: Child,
+    environment: Environment,
     stdin: Option<ChildStdin>,
     stdout: ChildStdout,
 }
@@ -23,9 +25,16 @@ pub(crate) struct EngineProcess {
 pub(crate) struct EngineState {
     pub(crate) process: Mutex<Option<EngineProcess>>,
     pub(crate) sequence: AtomicU64,
+    pub(crate) selected_environment: AtomicU8,
     pub(crate) profiles: Mutex<profiles::Bindings>,
     pub(crate) case_profiles: Mutex<cases::Bindings>,
     pub(crate) case_errors: Mutex<std::collections::HashMap<String, &'static str>>,
+}
+
+impl EngineState {
+    pub(crate) fn environment(&self) -> Environment {
+        Environment::from_code(self.selected_environment.load(Ordering::Acquire))
+    }
 }
 
 impl Drop for EngineProcess {
@@ -35,7 +44,7 @@ impl Drop for EngineProcess {
 }
 
 impl EngineProcess {
-    fn spawn(resources: PathBuf) -> Result<Self, &'static str> {
+    fn spawn(resources: PathBuf, environment: Environment) -> Result<Self, &'static str> {
         // Never search PATH or accept a renderer-selected runtime/JAR.
         let directory = resources.join("resources/engine");
         let java = directory.join(if cfg!(windows) {
@@ -51,6 +60,7 @@ impl EngineProcess {
         let mut command = Command::new(java);
         command
             .arg("-Xmx512m")
+            .arg(format!("-Dfbforge.environment={}", environment.name()))
             .arg("-jar")
             .arg(jar)
             .current_dir(directory)
@@ -76,6 +86,7 @@ impl EngineProcess {
         let stdout = child.stdout.take().ok_or("engine_start_failed")?;
         Ok(Self {
             child,
+            environment,
             stdin: Some(stdin),
             stdout,
         })
@@ -116,7 +127,13 @@ impl EngineProcess {
             .read_exact(&mut body)
             .await
             .map_err(|_| EngineFailure::Fatal("engine_disconnected"))?;
-        let response = serde_json::from_slice::<EngineResponse<T>>(&body)
+        let parsed = serde_json::from_slice::<serde_json::Value>(&body)
+            .map_err(|_| EngineFailure::Fatal("engine_protocol_error"))?;
+        if parsed["ok"] == true && !response_environment(&parsed["result"], self.environment) {
+            body.fill(0);
+            return Err(EngineFailure::Fatal("engine_protocol_error"));
+        }
+        let response = serde_json::from_value::<EngineResponse<T>>(parsed)
             .map_err(|_| EngineFailure::Fatal("engine_protocol_error"));
         body.fill(0);
         response?.payload(id)
@@ -139,13 +156,17 @@ pub(crate) async fn request<T: DeserializeOwned>(
     let mut guard = state.process.try_lock().map_err(|_| "engine_busy")?;
     if guard.is_none() {
         let resources = app.path().resource_dir().map_err(|_| "engine_not_staged")?;
-        *guard = Some(EngineProcess::spawn(resources)?);
+        *guard = Some(EngineProcess::spawn(resources, state.environment())?);
     }
     let id = format!("op-{}", state.sequence.fetch_add(1, Ordering::Relaxed));
     let timeout_seconds = match command.get("command").and_then(serde_json::Value::as_str) {
         Some(
-            "prepare_destination_cleanup"
+            "load_destination"
+            | "load_managed_destination"
+            | "import_key"
+            | "prepare_destination_cleanup"
             | "execute_destination_cleanup"
+            | "import_certified_keys"
             | "generate_test_keys"
             | "prepare_destination_rotation"
             | "execute_destination_rotation"
@@ -203,8 +224,9 @@ mod process_tests {
     #[test]
     fn packaged_engine_finishes_cleanly_when_native_shutdown_closes_its_input() {
         tauri::async_runtime::block_on(async {
-            let mut process = EngineProcess::spawn(PathBuf::from(env!("CARGO_MANIFEST_DIR")))
-                .expect("Stage the engine before native tests");
+            let mut process =
+                EngineProcess::spawn(PathBuf::from(env!("CARGO_MANIFEST_DIR")), Environment::TEST)
+                    .expect("Stage the engine before native tests");
             let mut request = serde_json::to_vec(&serde_json::json!({
                 "protocolVersion":1,"id":"shutdown-test","command":"probe","apiVersion":"v3"
             }))

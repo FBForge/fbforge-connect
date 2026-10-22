@@ -10,6 +10,8 @@ import {
   onBeforeUnmount,
   defineAsyncComponent,
 } from 'vue';
+import { environmentKey } from './environments.js';
+import { useEnvironmentSwitch } from './app/useEnvironmentSwitch.js';
 import { useDiagnostics } from './app/useDiagnostics.js';
 import { useTheme } from './app/useTheme.ts';
 import { useConnections } from './app/useConnections.js';
@@ -63,6 +65,8 @@ provide(processWorkspaceKey, {
 });
 const section = ref('Start');
 const apiVersion = ref('v3');
+const environment = ref('TEST');
+provide(environmentKey, environment);
 const { theme, toggleTheme } = useTheme();
 const destinationSetup = ref(null);
 const keyRevision = ref(0);
@@ -71,6 +75,7 @@ const submissionRevision = ref(0),
 const eventTarget = ref(null);
 const connections = useConnections({
   apiVersion,
+  environment,
   beforeChange: () => receiveBrowser.value?.confirmLeave(),
   focusFallback: () => viewHeading.value?.focus({ preventScroll: true }),
   profileOpened: () => keyRevision.value++,
@@ -110,6 +115,7 @@ function openEventLog(target) {
 const version = packageInfo.version;
 const diagnostics = useDiagnostics({
   version,
+  environment,
   apiVersion,
   busy,
   pendingAction,
@@ -133,6 +139,25 @@ async function selectReceiveTab(value) {
   if (receiveTab.value === 'submissions' && !(await receiveBrowser.value?.confirmLeave())) return;
   receiveTab.value = value;
 }
+const changeEnvironment = useEnvironmentSwitch({
+  busy,
+  environment,
+  receiveBrowser,
+  sessions,
+  connections,
+  caseWorkspace,
+  testDraft,
+  receiveTarget,
+  processDraft,
+  processContext,
+  processSelection,
+  eventTarget,
+  destinationSetup,
+  diagnostics,
+  clearHistory,
+  error,
+  navigate,
+});
 async function changeApi(event) {
   const selected = event.target.value;
   event.target.value = apiVersion.value;
@@ -200,12 +225,13 @@ onBeforeUnmount(() => {
       :section="section"
       :version="version"
       @api="changeApi"
+      @environment="changeEnvironment"
       @connection="showConnection"
       @theme="toggleTheme"
       @navigate="navigate"
     />
     <div class="app-workspace">
-      <div class="workspace-heading">
+      <div class="workspace-heading" role="region" aria-label="Aktueller Arbeitsbereich">
         <div>
           <h1 ref="viewHeading" tabindex="-1">{{ section }}</h1>
           <p>{{ currentView.description }}</p>
@@ -231,7 +257,15 @@ onBeforeUnmount(() => {
         </DocumentationLink>
       </div>
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
-        <div class="workspace-content">
+        <div :key="environment" class="workspace-content">
+          <p v-if="environment === 'PROD'" class="environment-warning" role="status">
+            <strong>PROD · Produktivbetrieb</strong>
+            Sie arbeiten mit echten Daten. Prüfen Sie vor jeder Aktion Destination und Inhalt.
+          </p>
+          <p v-else-if="environment === 'STAGE'" class="environment-warning" role="status">
+            <strong>STAGE</strong>
+            V-PKI-Zertifikate und Zugangsdaten dieser Umgebung sind erforderlich.
+          </p>
           <div
             v-if="
               !activeSession &&
@@ -241,9 +275,10 @@ onBeforeUnmount(() => {
           >
             <AppIcon name="connection" />
             <div>
-              <strong>Mit FIT-Connect TEST verbinden</strong>
+              <strong>Mit FIT-Connect verbinden</strong>
               <p>
-                Mit Ihren TEST-Zugangsdaten stehen Ihnen die Funktionen Ihrer Berechtigungen zur Verfügung.
+                Mit Ihren Zugangsdaten für {{ environment }} stehen Ihnen die Funktionen Ihrer Berechtigungen
+                zur Verfügung.
               </p>
             </div>
             <button type="button" class="button secondary" @click="showConnection">
@@ -440,9 +475,9 @@ onBeforeUnmount(() => {
     <footer class="app-statusbar">
       <span class="status-connection">
         <span class="connection-dot" :class="{ connected: activeSession }" aria-hidden="true"></span>
-        {{ busy ? 'Aktion läuft …' : activeSession ? 'Bei TEST angemeldet' : 'Nicht verbunden' }}
+        {{ busy ? 'Aktion läuft …' : activeSession ? 'Angemeldet' : 'Nicht verbunden' }}
       </span>
-      <span>TEST · API {{ apiVersion }}</span>
+      <span>{{ environment }} · API {{ apiVersion }}</span>
       <button type="button" @click="navigate('Diagnose')">{{ trace.length }} technische Aufrufe</button>
     </footer>
   </div>

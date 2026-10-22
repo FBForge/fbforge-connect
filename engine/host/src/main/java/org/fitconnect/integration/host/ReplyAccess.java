@@ -31,7 +31,7 @@ final class ReplyAccess implements ResourceExchange {
         this.version = Objects.requireNonNull(version);
         this.remote = Objects.requireNonNull(remote);
         this.clock = Objects.requireNonNull(clock);
-        base = "https://test.fit-connect.fitko.dev/submission-api/" + version.wireValue();
+        base = IntegrationEnvironment.current().submissionApi() + "/" + version.wireValue();
     }
 
     State state() {
@@ -228,7 +228,8 @@ final class ReplyAccess implements ResourceExchange {
                         StrictJson.object(
                                 dispatch(
                                                 "GET",
-                                                "https://test.fit-connect.fitko.dev/destination-api/v3/destinations/"
+                                                IntegrationEnvironment.current().destinationApi()
+                                                        + "/v3/destinations/"
                                                         + input.destinationId(),
                                                 headers,
                                                 null)

@@ -64,8 +64,7 @@ const {
         <DocumentationLink topic="cases">Hilfe zu Vorgängen</DocumentationLink>
       </div>
       <p v-if="!session">
-        Verbinden Sie zuerst das gewünschte TEST-Profil. Die Übersicht zeigt ausschließlich dessen API und
-        Zugang.
+        Verbinden Sie zuerst das gewünschte Profil. Die Übersicht zeigt ausschließlich dessen API und Zugang.
       </p>
       <details class="case-storage">
         <summary>
@@ -369,8 +368,8 @@ const {
       <h2 id="clear-cases-title">Lokalen Verlauf leeren?</h2>
       <p>
         Alle Sitzungskopien und dauerhaft gespeicherten Vorgänge des aktuellen Profils und dieser API werden
-        gelöscht. Profile, Schlüssel und Nachrichten auf dem TEST-Server bleiben erhalten. Das Löschen kann
-        nicht rückgängig gemacht werden.
+        gelöscht. Profile, Schlüssel und Nachrichten auf dem FIT-Connect-Server bleiben erhalten. Das Löschen
+        kann nicht rückgängig gemacht werden.
       </p>
       <div class="client-actions">
         <button class="button secondary" type="button" autofocus @click="clearDialog.close()">

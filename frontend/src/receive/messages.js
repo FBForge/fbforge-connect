@@ -1,10 +1,10 @@
 export function receiveMessages(reply) {
   const messages = {
     key_missing:
-      'Zum Öffnen fehlt der passende private Testschlüssel. Öffnen Sie die Empfangseinrichtung und laden Sie ihn dort.',
+      'Zum Öffnen fehlt der passende private Schlüssel. Öffnen Sie die Empfangseinrichtung und laden Sie ihn dort.',
     key_rejected: reply
       ? 'Für diese Antwort ist in der Sitzung kein passender gebundener Antwortschlüssel verfügbar. Bitte dieselbe Sitzung verwenden, in der das Antwortangebot versendet wurde.'
-      : 'Der geladene Schlüssel passt nicht mehr zu einer aktuellen TEST-Registrierung. Bitte Destination und Schlüssel erneut laden.',
+      : 'Der geladene Schlüssel passt nicht mehr zu einer aktuellen Registrierung. Bitte Destination und Schlüssel erneut laden.',
     test_certificate_required:
       'Für diese Destination fehlt eine gültige Registrierung mit selbstsigniertem Testzertifikat.',
     verification_failed:
@@ -29,7 +29,7 @@ export function receiveMessages(reply) {
       'Die zulässige Größe wurde überschritten. Der Schema-Katalog darf insgesamt höchstens 16 MiB umfassen.',
     resource_unavailable:
       'Die Einreichung oder der lokale Speicher ist nicht verfügbar. Nach einem Bereinigungsfehler bitte abmelden und eine neue Sitzung öffnen.',
-    resource_denied: 'Diese TEST-Zugangsdaten dürfen die angefragte Einreichung nicht abrufen.',
+    resource_denied: 'Diese Zugangsdaten dürfen die angefragte Einreichung nicht abrufen.',
     resource_missing: 'Dieser Inhalt ist nicht mehr verfügbar. Bitte die Einreichung erneut prüfen.',
     invalid_resource:
       'Das Ergebnis ist nicht mehr verfügbar oder passt nicht zum aktuellen Inhalt. Bitte erneut prüfen.',
@@ -45,8 +45,10 @@ export function receiveErrorTitle(code) {
     {
       schema_consent_required: 'Freigabe für Schemaquellen erforderlich',
       schema_unavailable: 'Schema nicht verfügbar',
-      key_missing: 'Testschlüssel fehlt',
-      key_rejected: 'Testschlüssel passt nicht',
+      key_missing: 'Schlüssel fehlt',
+      vpki_certificate_required: 'V-PKI-Zertifikat nicht freigegeben',
+      certificate_status_unknown: 'Zertifikatsstatus nicht feststellbar',
+      key_rejected: 'Schlüssel passt nicht',
       test_certificate_required: 'Testzertifikat fehlt',
       resource_denied: 'Zugriffsberechtigung fehlt',
       data_schema_invalid: 'Fachdaten passen nicht zum Schema',

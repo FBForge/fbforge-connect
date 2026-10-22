@@ -99,7 +99,9 @@ for (const api of ['v2', 'v3']) {
     await expect(page.getByText('Schema geladen.', { exact: false })).toBeVisible();
     await expect(page.locator('#reply-data')).toHaveValue(text);
     await page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('dialog', { name: 'Antwort an FIT-Connect senden?', exact: true }),
+    ).toBeVisible();
     const calls = await page.evaluate(() => window.__replyChannelFixture.calls);
     expect(calls.filter((call) => call === 'load_reply_schema')).toHaveLength(2);
     expect(calls.filter((call) => call === 'prepare_reply')).toHaveLength(1);
@@ -209,7 +211,10 @@ for (const api of ['v2', 'v3']) {
       buffer: Buffer.from('Fiktive Testanlage\n'),
     });
     await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
-    const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+    const confirmation = page.getByRole('dialog', {
+      name: 'Einreichung an FIT-Connect senden?',
+      exact: true,
+    });
     await expect(confirmation.locator('dt:has-text("Antwortangebot") + dd')).toHaveText('Angeboten');
     await expect(confirmation.locator('dt:has-text("Anlagen") + dd')).toHaveText('1');
     await expect(confirmation).toContainText('testanlage.txt');

@@ -36,7 +36,7 @@ final class SessionReplies {
         return new Data<>(
                 version.wireValue(),
                 id,
-                "TEST",
+                IntegrationEnvironment.current().name(),
                 new ReplyTarget(
                         proofId,
                         proof.destinationId(),
@@ -130,7 +130,7 @@ final class SessionReplies {
                                 throw new SessionException("invalid_resource");
                             return schemas.readReply(proofId, schemaId, offset);
                         });
-        return new Data<>(version.wireValue(), id, "TEST", result);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), result);
     }
 
     Data<?> prepareReply(ApiVersion version, String id, String document) {
@@ -169,7 +169,10 @@ final class SessionReplies {
         var attempt = entry.replySender().prepare(draft.input(), recipient);
         this.state.pendingReplies.put(id, draft.summary());
         return new Data<>(
-                version.wireValue(), id, "TEST", new PreparedReply(attempt, draft.summary()));
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                new PreparedReply(attempt, draft.summary()));
     }
 
     Data<?> replySend(ApiVersion version, String id, String command, String attemptId) {
@@ -227,6 +230,6 @@ final class SessionReplies {
         else if (!command.equals("reply_state")) throw new SessionException("invalid_input");
         var state = entry.replySender().state();
         if (!state.status().equals("prepared")) this.state.pendingReplies.remove(id);
-        return new Data<>(version.wireValue(), id, "TEST", state);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), state);
     }
 }

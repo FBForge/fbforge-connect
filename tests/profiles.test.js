@@ -158,7 +158,7 @@ test('backup commands expose only native-dialog outcomes and public imported pro
     /engine_protocol_error/,
   );
   assert.equal(await importProfileBackup(async () => null), null);
-  assert.deepEqual(await importProfileBackup(async () => profile), profile);
+  assert.deepEqual(await importProfileBackup(async () => profile), { ...profile, environment: 'TEST' });
   await assert.rejects(
     importProfileBackup(async () => ({ ...profile, clientSecret: 'forbidden' })),
     /engine_protocol_error/,

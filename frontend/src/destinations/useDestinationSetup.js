@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from '../environments.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from '../native.js';
 import { errorMessage } from '../diagnostics.js';
@@ -82,7 +83,7 @@ export function useDestinationSetup(props, emit) {
       verification_failed:
         'Die zurückgelesene Destination passt nicht vollständig zur Vorschau oder zu den erzeugten Schlüsseln. Bitte die vorhandene Destination prüfen.',
       resource_denied:
-        'Diese TEST-Zugangsdaten dürfen die Destination nicht anlegen oder verwalten. Die Berechtigung muss im TEST-Konto eingerichtet werden.',
+        'Diese Zugangsdaten dürfen die Destination nicht anlegen oder verwalten. Die Berechtigung muss im Konto der gewählten Umgebung eingerichtet werden.',
     })[typeof cause === 'string' ? cause : cause?.message] || errorMessage(cause);
   async function cancelKnown(value, active) {
     if (!value || !active) return;
@@ -195,8 +196,8 @@ export function useDestinationSetup(props, emit) {
     try {
       status = (await operation(active, current)) || status;
     } catch (cause) {
-      status = 'Fehlgeschlagen';
-      if (current()) error.value = explain(cause);
+      status = cancelledProductionAction(cause) ? 'Abgebrochen' : 'Fehlgeschlagen';
+      if (current() && !cancelledProductionAction(cause)) error.value = explain(cause);
       if (resetsSessions(cause)) emit('fatal', cause);
     } finally {
       working.value = false;
@@ -210,9 +211,7 @@ export function useDestinationSetup(props, emit) {
     return rows;
   }
   function loadBundles() {
-    return run('Lokale TEST-Schlüssel laden', (active, current) =>
-      refresh(active, current).then(() => undefined),
-    );
+    return run('Lokale Schlüssel laden', (active, current) => refresh(active, current).then(() => undefined));
   }
   function configuration() {
     const selectedRegions = regions.value
@@ -259,7 +258,7 @@ export function useDestinationSetup(props, emit) {
     if (disabled.value || locked.value) return;
     const draft = configuration(),
       chosen = selectedBundle.value;
-    await run('TEST-Destination vorbereiten', async (active, current) => {
+    await run('Destination vorbereiten', async (active, current) => {
       const previous = await destinationCreationState(invoke, active);
       if (!current()) return 'Abgebrochen';
       if (previous.status === 'uncertain') {
@@ -275,7 +274,7 @@ export function useDestinationSetup(props, emit) {
         keys = rows.find(
           (item) => item.bundleId === (chosen || generatedForDraft) && item.status === 'ready',
         );
-        if (!chosen && !keys) {
+        if (!chosen && !keys && active.environment === 'TEST') {
           keys = await generateTestKeys(invoke, active);
           generatedForDraft = keys.bundleId;
         }
@@ -314,7 +313,7 @@ export function useDestinationSetup(props, emit) {
     if (!prepared.value || props.busy || working.value) return;
     const value = prepared.value,
       active = owner.value;
-    await run('Eigene TEST-Destination anlegen', async (_, current) => {
+    await run('Eigene Destination anlegen', async (_, current) => {
       const result = await executeDestinationCreation(invoke, active, value.attempt);
       prepared.value = null;
       dialog.value?.close();
@@ -349,7 +348,7 @@ export function useDestinationSetup(props, emit) {
       return;
     const bundleId = unresolvedBundle.value || null,
       destinationId = knownDestination.value.trim().toLowerCase();
-    await run('Vorhandene TEST-Destination zuordnen', async (active, current) => {
+    await run('Vorhandene Destination zuordnen', async (active, current) => {
       const result = await reconcileDestinationCreation(invoke, active, bundleId, destinationId);
       if (current()) {
         outcome.value = { ...result, sessionId: active.sessionId };
@@ -365,7 +364,7 @@ export function useDestinationSetup(props, emit) {
     await run('Erzeugte Schlüssel für Empfang laden', async (active, current) => {
       await useGeneratedKeys(invoke, active, target.bundleId, target.destinationId);
       if (current()) {
-        notice.value = 'Die privaten TEST-Schlüssel sind für diese Destination geladen.';
+        notice.value = 'Die privaten Schlüssel sind für diese Destination geladen.';
         ready = true;
       }
       emit('changed');

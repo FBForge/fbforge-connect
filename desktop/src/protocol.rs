@@ -49,7 +49,7 @@ pub struct SessionResource {
 impl SessionResource {
     pub fn validate(&self, version: ApiVersion, id: &str) -> bool {
         self.api_version == version
-            && self.environment == "TEST"
+            && crate::environments::valid_environment(&self.environment)
             && self.session_id == id
             && valid_session_id(id)
             && self.data.is_object()
@@ -113,6 +113,13 @@ impl<T> EngineResponse<T> {
                 Some("test_certificate_required") => {
                     EngineFailure::Remote("test_certificate_required")
                 }
+                Some("vpki_certificate_required") => {
+                    EngineFailure::Remote("vpki_certificate_required")
+                }
+                Some("certificate_status_unknown") => {
+                    EngineFailure::Remote("certificate_status_unknown")
+                }
+                Some("environment_mismatch") => EngineFailure::Remote("environment_mismatch"),
                 Some("invalid_input") => EngineFailure::Remote("invalid_input"),
                 Some("content_limit") => EngineFailure::Remote("content_limit"),
                 Some("invalid_submission") => EngineFailure::Remote("invalid_submission"),
@@ -148,7 +155,7 @@ impl SessionSnapshot {
         connected: bool,
     ) -> bool {
         self.api_version == version
-            && self.environment == "TEST"
+            && crate::environments::valid_environment(&self.environment)
             && self.connected == connected
             && valid_session_id(&self.session_id)
             && role.map_or(true, |r| r == self.role)
@@ -163,7 +170,7 @@ impl ProbeResult {
             ApiVersion::V3 => "4.0.0-rc.2",
         };
         self.api_version == version
-            && self.environment == "TEST"
+            && crate::environments::valid_environment(&self.environment)
             && self.isolated
             && self.sdk_version == expected
     }
@@ -197,7 +204,7 @@ mod tests {
             Err(EngineFailure::Fatal("engine_protocol_error"))
         ));
         let mut prod = response(ApiVersion::V2);
-        prod.result.as_mut().unwrap().environment = "PROD".into();
+        prod.result.as_mut().unwrap().environment = "LOCAL".into();
         assert!(prod
             .payload("op-1")
             .is_ok_and(|value| !value.validate(ApiVersion::V2)));
@@ -275,7 +282,7 @@ mod tests {
         assert!(resource.validate(ApiVersion::V2, id));
         assert!(!resource.validate(ApiVersion::V3, id));
         assert!(!resource.validate(ApiVersion::V2, "00000000-0000-4000-8000-000000000002"));
-        resource.environment = "PROD".into();
+        resource.environment = "LOCAL".into();
         assert!(!resource.validate(ApiVersion::V2, id));
         resource.environment = "TEST".into();
         resource.data = serde_json::Value::Null;

@@ -1,4 +1,6 @@
 <script setup>
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import CopyValue from './CopyValue.vue';
 import ActionNotice from './ActionNotice.vue';
 import DocumentationLink from './DocumentationLink.vue';
@@ -76,6 +78,7 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
     :aria-busy="working"
   >
     <ExampleDraftDialog ref="exampleDialog" :context-key="schemaContext" />
+    <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
     <h2 id="reply-send-title">Auf die Einreichung antworten</h2>
     <p>
       Verfassen Sie Ihre Antwort und prüfen Sie den Entwurf vor dem Senden. Eine Antwort schließt den Empfang
@@ -288,7 +291,7 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
       <h3 ref="resultHeading" tabindex="-1">
         {{
           outcome.status === 'sent'
-            ? 'Antwort an TEST übergeben'
+            ? 'Antwort an FIT-Connect übergeben'
             : outcome.status === 'uncertain'
               ? 'Reply-Versandausgang ungewiss'
               : 'Reply-Versand fehlgeschlagen'
@@ -323,7 +326,7 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
       @cancel.prevent="dismiss"
     >
       <template v-if="prepared">
-        <h2 id="reply-confirm-title">Antwort an TEST senden?</h2>
+        <h2 id="reply-confirm-title">Antwort an FIT-Connect senden?</h2>
         <dl class="receipt-dialog-context">
           <dt>API</dt>
           <dd>{{ owner.apiVersion }}</dd>
@@ -357,7 +360,7 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
         </p>
         <p>
           Die Bestätigung gilt 60 Sekunden. Dieser Schritt versendet die verschlüsselte Antwort an FIT-Connect
-          TEST.
+          {{ environment }}.
         </p>
         <p v-if="error" role="alert">{{ error }}</p>
         <div class="client-actions">

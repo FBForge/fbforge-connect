@@ -30,7 +30,8 @@ final class SessionContent {
                     case "discard_content" -> this.state.content.discard(entry.id(), contentId);
                     default -> throw new SessionException("invalid_input");
                 };
-        return new Data<>(version.wireValue(), entry.id(), "TEST", data);
+        return new Data<>(
+                version.wireValue(), entry.id(), IntegrationEnvironment.current().name(), data);
     }
 
     Data<?> sendSchema(
@@ -71,7 +72,7 @@ final class SessionContent {
                                     }
                                     default -> throw new SessionException("invalid_input");
                                 });
-        return new Data<>(version.wireValue(), id, "TEST", data);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
     }
 
     Data<?> exportSessionItem(ApiVersion version, String id, int offset) {
@@ -79,7 +80,7 @@ final class SessionContent {
         return new Data<>(
                 version.wireValue(),
                 id,
-                "TEST",
+                IntegrationEnvironment.current().name(),
                 this.state.registry.withSession(
                         version,
                         entry.session(),
@@ -116,6 +117,10 @@ final class SessionContent {
                     } else session.restoreReplyKey(item, this.state.content.workspace(id));
                     return null;
                 });
-        return new Data<>(version.wireValue(), id, "TEST", Map.of("restored", true));
+        return new Data<>(
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                Map.of("restored", true));
     }
 }

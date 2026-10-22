@@ -136,7 +136,7 @@ final class TokenSession implements AuthenticatedSession {
                 new RequestHeaders(current),
                 http,
                 new ConcurrencyLimiter(1),
-                "https://test.fit-connect.fitko.dev/submission-api");
+                IntegrationEnvironment.current().submissionApi());
     }
 
     public SubmissionPage submissions(String id, int offset, int limit) {
@@ -173,7 +173,7 @@ final class TokenSession implements AuthenticatedSession {
                                 new RequestHeaders(current),
                                 http,
                                 new ConcurrencyLimiter(1),
-                                "https://test.fit-connect.fitko.dev/submission-api")
+                                IntegrationEnvironment.current().submissionApi())
                         .getAvailableReplies(null, offset, limit);
         if (result == null
                 || result.replies() == null
@@ -282,7 +282,7 @@ final class TokenSession implements AuthenticatedSession {
         new dev.fitko.fitconnect.rest.client.services.submission.impl.CaseApiClient(
                         new RequestHeaders(current),
                         new ReceiptTransport(authorized),
-                        "https://test.fit-connect.fitko.dev/submission-api")
+                        IntegrationEnvironment.current().submissionApi())
                 .sendSubmissionEvent(value.caseId(), value.jwt());
     }
 
@@ -469,6 +469,10 @@ final class TokenSession implements AuthenticatedSession {
         if (workspace == null || input == null) throw new SessionException("invalid_submission");
         ensureSender(workspace);
         return sender.send(input, attemptId);
+    }
+
+    public void validatePublicKey(String document, String purpose) {
+        PublicCertificates.validate(document, purpose);
     }
 
     public void check() {

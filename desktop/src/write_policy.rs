@@ -14,9 +14,20 @@ pub(crate) async fn resource_action(
     command["apiVersion"] = serde_json::to_value(version).map_err(|_| "invalid_input")?;
     command["sessionId"] = id.into();
     let operation = command["command"].as_str().unwrap_or("").to_string();
+    if state.environment() == crate::environments::Environment::PROD {
+        if let Some(action) = crate::environments::production_action(&operation) {
+            crate::environment_commands::confirm_production_action(app, action).await?;
+            if state.environment() != crate::environments::Environment::PROD {
+                return Err("environment_mismatch");
+            }
+        }
+    }
     if matches!(
         operation.as_str(),
-        "generate_test_keys" | "prepare_destination_rotation" | "execute_destination_rotation"
+        "import_certified_keys"
+            | "generate_test_keys"
+            | "prepare_destination_rotation"
+            | "execute_destination_rotation"
     ) {
         profiles::require_profile(state, version, id).await?;
     }
@@ -118,6 +129,7 @@ pub(crate) async fn resource_action(
             | "discard_keys"
             | "remove_key_inventory_item"
             | "execute_destination_cleanup"
+            | "import_certified_keys"
             | "generate_test_keys"
             | "prepare_destination_creation"
             | "execute_destination_creation"
@@ -131,7 +143,7 @@ pub(crate) async fn resource_action(
         if let Err(code) = profiles::checkpoint(app, state, version, id).await {
             if matches!(
                 operation.as_str(),
-                "generate_test_keys" | "remove_key_inventory_item"
+                "import_certified_keys" | "generate_test_keys" | "remove_key_inventory_item"
             ) {
                 return Err(code);
             }

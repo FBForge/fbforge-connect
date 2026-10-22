@@ -27,7 +27,7 @@ test('process-workspace with synthetic native fixtures', async ({ browser }) => 
     .waitFor();
   assert.equal(await page.locator('#bpmn-message-id').inputValue(), 'request-more');
   await page.getByRole('button', { name: 'Passende Prozess-Destinations suchen', exact: true }).click();
-  await page.getByRole('heading', { name: 'Passende TEST-Destinations (1)', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Passende Destinations (1)', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__processFixture.searches), 1);
   await page.getByRole('button', { name: 'Als Prozess-Einreichung vorbereiten', exact: true }).click();
   const draft = await page.evaluate(() => window.__processFixture.draft);

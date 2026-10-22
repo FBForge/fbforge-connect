@@ -49,7 +49,7 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     await page.getByRole('button', { name: 'Bearbeiten', exact: true }).click();
     assert.equal(await page.locator('#reply-data').inputValue(), valid);
     await prepare.click();
-    await page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true }).waitFor();
+    await page.getByRole('dialog', { name: 'Antwort an FIT-Connect senden?', exact: true }).waitFor();
     await page.getByText('Antwortschema geprüft', { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => window.__applicationFixture.replyWrites), 0);
     await page.keyboard.press('Escape');
@@ -59,7 +59,7 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     await page.getByRole('button', { name: 'Antwort jetzt senden', exact: true }).click();
     await page
       .getByRole('heading', {
-        name: uncertain ? 'Reply-Versandausgang ungewiss' : 'Antwort an TEST übergeben',
+        name: uncertain ? 'Reply-Versandausgang ungewiss' : 'Antwort an FIT-Connect übergeben',
         exact: true,
       })
       .waitFor();

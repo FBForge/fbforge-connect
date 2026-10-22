@@ -2,6 +2,8 @@
 
 mod documentation;
 mod documentation_links;
+mod environment_commands;
+mod environments;
 mod test_library;
 mod test_library_command;
 use documentation::open_documentation;
@@ -38,6 +40,7 @@ fn main() {
         .manage(EngineState::default())
         .invoke_handler(tauri::generate_handler![
             test_library_command::test_library,
+            environment_commands::select_environment,
             open_documentation,
             case_workspace,
             update_profile,
@@ -53,6 +56,7 @@ fn main() {
             commands::destination_rotation::execute_destination_rotation,
             commands::destination_rotation::cancel_destination_rotation,
             commands::destination_rotation::destination_rotation_state,
+            commands::keys::import_certified_keys,
             commands::keys::generate_test_keys,
             commands::keys::list_generated_keys,
             commands::keys::list_key_inventory,

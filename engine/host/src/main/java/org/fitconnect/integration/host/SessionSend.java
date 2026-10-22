@@ -65,7 +65,11 @@ final class SessionSend {
                 throw failure;
             }
         }
-        return new Data<>(version.wireValue(), id, "TEST", new Prepared(attempt, draft.summary()));
+        return new Data<>(
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                new Prepared(attempt, draft.summary()));
     }
 
     Data<?> send(ApiVersion version, String id, String command, String attemptId) {
@@ -97,6 +101,10 @@ final class SessionSend {
         } else if (!command.equals("send_state")) throw new SessionException("invalid_input");
         if (Set.of("failed", "cancelled").contains(entry.sender().state().status()))
             discardPendingChannel(entry, entry.sender().state().attemptId());
-        return new Data<>(version.wireValue(), id, "TEST", entry.sender().state());
+        return new Data<>(
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                entry.sender().state());
     }
 }

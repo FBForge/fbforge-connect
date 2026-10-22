@@ -37,8 +37,8 @@ watch(
   { flush: 'sync' },
 );
 const messages = {
-  resource_denied: 'Diese TEST-Zugangsdaten dürfen die verfügbaren Antworten nicht abrufen.',
-  invalid_resource: 'Die TEST-Antwort ist unvollständig oder enthält widersprüchliche Reply-Kennungen.',
+  resource_denied: 'Diese Zugangsdaten dürfen die verfügbaren Antworten nicht abrufen.',
+  invalid_resource: 'Die API-Antwort ist unvollständig oder enthält widersprüchliche Reply-Kennungen.',
   resource_unavailable: 'Die verfügbaren Antworten konnten nicht geladen werden.',
 };
 function open(
@@ -145,7 +145,7 @@ async function loadChannels() {
         gespeicherten Profil können dessen Schlüssel nach einem Neustart wiederhergestellt werden. Ohne
         Speicherung gehen sie beim Abmelden oder Beenden verloren.
       </p>
-      <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
+      <p v-if="!session">Bitte zuerst eine Sitzung öffnen.</p>
       <form @submit.prevent="open()">
         <div class="client-fields">
           <label for="reply-lookup-case">

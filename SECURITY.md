@@ -1,6 +1,6 @@
 # Sicherheit
 
-FBForge Connect unterstützt Windows und FIT-Connect TEST. Verwenden Sie eigene Testzugänge und fiktive Daten.
+FBForge Connect 0.2 unterstützt Windows sowie FIT-Connect TEST, STAGE und PROD. Verwenden Sie passende eigene Zugänge und für Tests fiktive Daten. Version 0.1 unterstützt nur TEST.
 
 ## Sicherheitslücken melden
 
@@ -16,6 +16,9 @@ DPAPI schützt nicht vor Schadsoftware unter demselben Benutzerkonto. Die Vorgan
 
 - Kein integrierter Malwarescanner. Technische Integrität, Schema-Prüfung und fachliche Bewertung sind getrennt.
 - Keine allgemeinen HTTP-, Shell- oder Dateisystemrechte im Renderer. Schreibaktionen erfordern eine Bestätigung. Ungewisse Übertragungen werden nicht automatisch wiederholt.
+- Die Umgebung ist je Engine-Prozess fest. Ein Wechsel beendet bestehende Verbindungen und erfordert eine neue Anmeldung. Gespeicherte Profile und Vorgänge bleiben ihrer Umgebung zugeordnet.
+- STAGE und PROD verlangen V-PKI-Zertifikate. Vertrauenskette und Sperrstatus werden mit den Vorgaben des eingebundenen SDK geprüft. Fehlgeschlagene Prüfungen werden nicht umgangen. Selbstsignierte Destination-Schlüssel sind nur in TEST erlaubt.
+- Jede produktive Schreibaktion erfordert zusätzlich die native PROD-Bestätigung. Diese ist kein Ersatz für serverseitige Berechtigungen.
 - Öffentliche Schemaquellen werden nur nach Freigabe geladen.
 
 ## Abhängigkeiten

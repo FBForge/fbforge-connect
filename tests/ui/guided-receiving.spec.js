@@ -85,7 +85,7 @@ test('accept prepares the current verified message once, cancel sends nothing an
   await open(page);
   await expect(page.getByRole('heading', { name: 'Einreichungen suchen', exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Annehmen', exact: true }).click();
-  const confirmation = page.getByRole('dialog', { name: 'Einreichung in TEST annehmen?', exact: true });
+  const confirmation = page.getByRole('dialog', { name: 'Einreichung annehmen?', exact: true });
   await expect(confirmation).toBeVisible();
   expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(0);
   expect(await page.evaluate(() => window.__guidedFixture.drafts[0].proofId)).toBe(id(9));
@@ -94,7 +94,7 @@ test('accept prepares the current verified message once, cancel sends nothing an
   expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(0);
   await page.getByRole('button', { name: 'Annehmen', exact: true }).click();
   await confirmation.getByRole('button', { name: 'Jetzt annehmen', exact: true }).click();
-  await expect(page.getByText('Annahme von TEST bestätigt', { exact: true })).toBeVisible();
+  await expect(page.getByText('Annahme von FIT-Connect bestätigt', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(1);
   await expect(page.getByRole('button', { name: 'Annehmen', exact: true })).toHaveCount(0);
 });
@@ -111,9 +111,7 @@ test('reject requires a reason and multiple keys require an explicit key selecti
   expect(await page.evaluate(() => window.__guidedFixture.drafts.length)).toBe(0);
   await page.locator('#receipt-key').selectOption('test-sign-1');
   await page.getByRole('button', { name: 'Ablehnung prüfen', exact: true }).click();
-  await expect(
-    page.getByRole('dialog', { name: 'Einreichung in TEST ablehnen?', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Einreichung ablehnen?', exact: true })).toBeVisible();
   expect(await page.evaluate(() => window.__guidedFixture.drafts[0].proofId)).toBeNull();
   expect(await page.evaluate(() => window.__guidedFixture.drafts[0].signingKid)).toBe('test-sign-1');
   expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(0);
@@ -146,7 +144,9 @@ test('reply preparation loads the schema only with consent, snapshots the exact 
     false,
   );
   await page.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('dialog', { name: 'Antwort an FIT-Connect senden?', exact: true }),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => window.__applicationFixture.calls.filter((c) => c === 'load_reply_schema').length,
@@ -232,7 +232,7 @@ test('changing API or reconnecting preserves an unsent reply until explicit disc
   await page.getByRole('button', { name: 'Onlinedienst testen', exact: true }).click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.locator('#destination-id')).toBeEnabled();
   await page.locator('#destination-id').fill(id(2));
   await page.getByRole('button', { name: 'Destination laden', exact: true }).click();

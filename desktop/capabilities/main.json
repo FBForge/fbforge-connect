@@ -1,8 +1,9 @@
 {
   "identifier": "main",
-  "description": "Only the bundled main window may run diagnostics or manage local TEST sessions.",
+  "description": "Only the bundled main window may run diagnostics or manage sessions in the selected FIT-Connect environment.",
   "windows": ["main"],
   "permissions": [
+    "allow-import-certified-keys",
     "allow-generate-test-keys",
     "allow-list-generated-keys",
     "allow-prepare-destination-creation",
@@ -96,6 +97,7 @@
     "allow-update-profile",
     "allow-case-workspace",
     "allow-open-documentation",
+    "allow-select-environment",
     "allow-test-library"
   ]
 }

@@ -65,7 +65,7 @@ final class SessionEvents {
         return new Data<>(
                 version.wireValue(),
                 id,
-                "TEST",
+                IntegrationEnvironment.current().name(),
                 this.state.eventLogs.publish(
                         version,
                         id,
@@ -115,7 +115,7 @@ final class SessionEvents {
         return new Data<>(
                 version.wireValue(),
                 id,
-                "TEST",
+                IntegrationEnvironment.current().name(),
                 this.state.eventLogs.publishCase(version, id, UUID.fromString(caseValue), result));
     }
 
@@ -162,7 +162,7 @@ final class SessionEvents {
         return new Data<>(
                 version.wireValue(),
                 id,
-                "TEST",
+                IntegrationEnvironment.current().name(),
                 this.state.eventLogs.publishReply(
                         version, id, UUID.fromString(caseValue), UUID.fromString(reply), result));
     }
@@ -189,6 +189,6 @@ final class SessionEvents {
                     }
                     default -> throw new SessionException("invalid_input");
                 };
-        return new Data<>(version.wireValue(), id, "TEST", data);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
     }
 }

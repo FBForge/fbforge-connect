@@ -22,7 +22,7 @@ export const messages = {
   invalid_resource: 'Das Ergebnis passt nicht mehr zur aktuellen Einreichung. Bitte erneut prüfen.',
   invalid_submission:
     'Bitte Antwortschema, Format und Inhalte prüfen. Höchstens 32 MiB je Datei und 64 MiB insgesamt.',
-  resource_denied: 'Diese TEST-Zugangsdaten dürfen die Antwort nicht versenden.',
+  resource_denied: 'Diese Zugangsdaten dürfen die Antwort nicht versenden.',
   resource_unavailable:
     'Der Reply-Versand konnte nicht abgeschlossen werden. Bei ungewissem Ausgang bitte nicht erneut senden.',
   confirmation_expired: 'Die Bestätigung ist abgelaufen. Bitte die Antwort erneut vorbereiten.',

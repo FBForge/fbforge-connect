@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from '../environments.js';
 import { ref, computed, watch, nextTick } from 'vue';
 import { invoke } from '../native.js';
 import { listDestinations } from '../resources.js';
@@ -144,8 +145,8 @@ export function useDestinationManager(props, emit) {
     try {
       await operation(active, () => stamp === generation);
     } catch (cause) {
-      resultStatus = 'Fehlgeschlagen';
-      if (stamp === generation)
+      resultStatus = cancelledProductionAction(cause) ? 'Abgebrochen' : 'Fehlgeschlagen';
+      if (stamp === generation && !cancelledProductionAction(cause))
         error.value = `${messages[diagnosticCode(cause)] || errorMessage(cause)} (${diagnosticCode(cause)})`;
       if (resetsSessions(cause)) emit('fatal', cause);
       if (diagnosticCode(cause) === 'resource_denied' && action === 'Destination-Änderung vorbereiten') {
@@ -291,7 +292,9 @@ export function useDestinationManager(props, emit) {
         }
       } catch (cause) {
         if (current()) {
-          preview.value = { ...confirmed, status: 'uncertain' };
+          preview.value = cancelledProductionAction(cause)
+            ? confirmed
+            : { ...confirmed, status: 'uncertain' };
           emit('changed');
         }
         throw cause;

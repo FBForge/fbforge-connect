@@ -1,13 +1,15 @@
+import { validEnvironment } from './environments.js';
 const roles = new Set(['online-service', 'administrative-system']);
 const versions = new Set(['v2', 'v3']);
 const sessionIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function validate(result, apiVersion, role, connected, sessionId) {
+function validate(result, apiVersion, role, connected, sessionId, environment = 'TEST') {
   if (
     !result ||
     result.apiVersion !== apiVersion ||
     result.role !== role ||
-    result.environment !== 'TEST' ||
+    !validEnvironment(environment) ||
+    result.environment !== environment ||
     result.connected !== connected ||
     typeof result.sessionId !== 'string' ||
     !sessionIdPattern.test(result.sessionId) ||
@@ -15,10 +17,18 @@ function validate(result, apiVersion, role, connected, sessionId) {
   )
     throw new Error('engine_protocol_error');
   // Pick public fields explicitly rather than retaining an arbitrary native response object.
-  return { sessionId: result.sessionId, apiVersion, role, environment: 'TEST', connected };
+  return { sessionId: result.sessionId, apiVersion, role, environment, connected };
 }
 
-export async function openSession(invoke, apiVersion, role, clientId, clientSecret, profile = null) {
+export async function openSession(
+  invoke,
+  apiVersion,
+  role,
+  clientId,
+  clientSecret,
+  profile = null,
+  environment = 'TEST',
+) {
   if (
     !versions.has(apiVersion) ||
     !roles.has(role) ||
@@ -50,6 +60,8 @@ export async function openSession(invoke, apiVersion, role, clientId, clientSecr
     apiVersion,
     role,
     true,
+    undefined,
+    environment,
   );
   return { ...result, clientId };
 }
@@ -71,6 +83,7 @@ export async function updateSession(invoke, session, connected) {
     session.role,
     connected,
     session.sessionId,
+    session.environment,
   );
   return connected && typeof session.clientId === 'string'
     ? { ...result, clientId: session.clientId }

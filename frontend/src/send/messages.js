@@ -10,9 +10,9 @@ const messages = {
     'Die Fachdaten entsprechen nicht dem ausgewählten Schema. Bitte Pflichtfelder, Datentypen, Auswahlwerte und bei XML die gewählte Fachnachricht prüfen.',
   test_certificate_required:
     'Der Empfängerschlüssel benötigt ein gültiges selbstsigniertes TEST-Zertifikat. Es wurde nichts angekündigt.',
-  resource_denied: 'Die TEST-Zugangsdaten erlauben diese Aktion oder diese Absender-Destination nicht.',
-  resource_unavailable: 'Die TEST-Aktion konnte nicht vollständig abgeschlossen werden.',
-  invalid_resource: 'Die TEST-Antwort ist unvollständig oder widersprüchlich.',
+  resource_denied: 'Die Zugangsdaten erlauben diese Aktion oder diese Absender-Destination nicht.',
+  resource_unavailable: 'Die Aktion konnte nicht vollständig abgeschlossen werden.',
+  invalid_resource: 'Die API-Antwort ist unvollständig oder widersprüchlich.',
   send_locked: 'Dieser Versandversuch kann nicht erneut ausgeführt werden. Bitte seinen Status prüfen.',
   confirmation_expired: 'Die Bestätigung ist abgelaufen. Bitte den Versand erneut vorbereiten.',
   schema_consent_required:

@@ -84,7 +84,7 @@ test('missing keys show a targeted action while unknown native text remains priv
   await verify.click();
   await expect(
     page
-      .getByRole('alert', { name: 'Testschlüssel fehlt', exact: true })
+      .getByRole('alert', { name: 'Schlüssel fehlt', exact: true })
       .getByRole('button', { name: 'Schlüssel einrichten', exact: true }),
   ).toBeVisible();
   for (const code of ['__proto__', 'constructor', 'toString', 'private-server-text-secret-marker']) {

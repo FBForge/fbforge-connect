@@ -3,6 +3,8 @@ import { productName } from './product.js';
 
 // Deliberately exclude arguments, response bodies, identifiers, paths and free-form messages.
 export const operationLabels = Object.freeze({
+  select_environment: 'Umgebung wechseln',
+  import_certified_keys: 'V-PKI-Schlüssel importieren',
   test_library: 'Lokale Testfallsammlung',
   case_workspace: 'Lokale Vorgangsablage',
   list_key_inventory: 'Schlüsselbestand ansehen',
@@ -17,11 +19,11 @@ export const operationLabels = Object.freeze({
   cancel_destination_rotation: 'Schlüsselwechsel verwerfen',
   destination_rotation_state: 'Schlüsselwechsel prüfen',
   prepare_destination_cleanup: 'Entwurfsbereinigung vorbereiten',
-  execute_destination_cleanup: 'TEST-Entwurf entfernen',
+  execute_destination_cleanup: 'Destination-Entwurf entfernen',
   cancel_destination_cleanup: 'Entwurfsbereinigung verwerfen',
   destination_cleanup_state: 'Entwurfsbereinigung prüfen',
   probe_engine: 'Lokalen Kern prüfen',
-  open_session: 'Bei TEST anmelden',
+  open_session: 'Anmelden',
   check_session: 'Sitzung prüfen',
   close_session: 'Abmelden',
   list_destinations: 'Eigene Destinations laden',
@@ -55,7 +57,7 @@ export const operationLabels = Object.freeze({
   cancel_destination_creation: 'Destination-Anlage verwerfen',
   destination_creation_state: 'Anlageergebnis prüfen',
   reconcile_destination_creation: 'Destination zuordnen',
-  use_generated_keys: 'Erzeugte TEST-Schlüssel verwenden',
+  use_generated_keys: 'Lokale Schlüssel verwenden',
   list_profiles: 'Gespeicherte Profile laden',
   open_saved_profile: 'Mit gespeichertem Profil anmelden',
   forget_profile: 'Gespeichertes Profil entfernen',
@@ -112,6 +114,10 @@ const stateLabels = new Map([
   ['rejected', 'Abgelehnt'],
 ]);
 const codeLabels = new Map([
+  ['content_cancelled', 'Abgebrochen'],
+  ['vpki_certificate_required', 'V-PKI-Zertifikat nicht freigegeben'],
+  ['certificate_status_unknown', 'Zertifikatsstatus nicht feststellbar'],
+  ['environment_mismatch', 'Umgebung passt nicht'],
   ['schema_unavailable', 'Schema nicht verfügbar'],
   ['schema_required', 'Schema fehlt'],
   ['schema_consent_required', 'Schemafreigabe fehlt'],
@@ -125,7 +131,7 @@ const codeLabels = new Map([
   ['key_rejected', 'Schlüssel nicht verwendbar'],
   ['resource_denied', 'Berechtigung fehlt'],
   ['resource_missing', 'Nicht gefunden'],
-  ['resource_unavailable', 'TEST-Dienst nicht verfügbar'],
+  ['resource_unavailable', 'FIT-Connect-Dienst nicht verfügbar'],
   ['authentication_failed', 'Anmeldung fehlgeschlagen'],
   ['session_missing', 'Sitzung nicht verfügbar'],
   ['engine_timeout', 'Zeitlimit überschritten'],
@@ -238,20 +244,27 @@ export function observeInvoke(operation, record, clock = () => performance.now()
     }
   };
 }
-export function buildSupportReport({ version, selectedApi, probes = {}, entries = [] }) {
+export function buildSupportReport({
+  version,
+  selectedApi,
+  environment = 'TEST',
+  probes = {},
+  entries = [],
+}) {
   if (typeof version !== 'string' || !/^\d+\.\d+\.\d+(?:-[a-z0-9.]+)?$/.test(version))
     throw new Error('invalid_input');
+  if (!['TEST', 'STAGE', 'PROD'].includes(environment)) throw new Error('invalid_input');
   return {
     format: 'fit-connect-support-v1',
     application: productName,
     version,
-    environment: 'TEST',
+    environment,
     selectedApi: api(selectedApi),
     localAdapters: ['v2', 'v3'].map((apiVersion) => ({
       apiVersion,
       verified:
         probes[apiVersion]?.isolated === true &&
-        probes[apiVersion]?.environment === 'TEST' &&
+        probes[apiVersion]?.environment === environment &&
         probes[apiVersion]?.apiVersion === apiVersion,
     })),
     operations: entries.slice(0, 100).map(safeEntry).filter(Boolean),

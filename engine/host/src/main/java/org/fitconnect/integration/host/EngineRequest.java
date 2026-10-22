@@ -170,6 +170,7 @@ record EngineRequest(
             case "destination_creation_state" -> expected.add("sessionId");
             case "reconcile_destination_creation", "use_generated_keys" ->
                     expected.addAll(Set.of("sessionId", "bundleId", "destinationId"));
+            case "import_certified_keys" -> expected.addAll(Set.of("sessionId", "keyDocument"));
             case "generate_test_keys", "list_generated_keys" -> expected.add("sessionId");
             case "list_key_inventory" -> expected.addAll(Set.of("sessionId", "offset"));
             case "remove_key_inventory_item" -> expected.addAll(Set.of("sessionId", "itemId"));

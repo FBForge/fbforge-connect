@@ -311,3 +311,18 @@ summary {
   font-size: 14px;
   color: var(--muted);
 }
+
+.environment-warning {
+  padding: 0.75rem 1rem;
+  border: 2px solid currentColor;
+  border-radius: var(--radius, 0.5rem);
+  color: var(--status-warn-ink);
+  background: var(--status-warn-bg);
+}
+.environment-warning strong {
+  display: block;
+}
+.environment-tag.error {
+  border: 2px solid currentColor;
+  font-weight: 800;
+}

@@ -1,3 +1,4 @@
+import { validEnvironment } from './environments.js';
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const purposes = new Set(['decrypt', 'sign']);
 const fail = () => {
@@ -34,7 +35,7 @@ function context(session) {
     !session ||
     !['v2', 'v3'].includes(session.apiVersion) ||
     !uuid(session.sessionId) ||
-    session.environment !== 'TEST' ||
+    !validEnvironment(session.environment) ||
     session.connected !== true
   )
     throw new Error('session_missing');
@@ -49,7 +50,7 @@ export async function requestResource(invoke, session, command, args = {}) {
   const result = await invoke(command, { ...expected, ...args });
   if (
     !exact(result, ['apiVersion', 'sessionId', 'environment', 'data']) ||
-    result.environment !== 'TEST' ||
+    result.environment !== session.environment ||
     result.apiVersion !== expected.apiVersion ||
     result.sessionId !== expected.sessionId
   )

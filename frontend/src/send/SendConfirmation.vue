@@ -1,4 +1,6 @@
 <script setup>
+import { useEnvironment } from '../environments.js';
+const environment = useEnvironment();
 import ServiceLabel from '../ServiceLabel.vue';
 const props = defineProps({ controller: Object, session: Object, visible: Boolean });
 const { prepared, working, error, dialog, confirmedSchemaValidation, confirmedSession, dismiss, send } =
@@ -12,7 +14,8 @@ const { prepared, working, error, dialog, confirmedSchemaValidation, confirmedSe
     @cancel.prevent="dismiss"
   >
     <template v-if="prepared">
-      <h2 id="send-confirm-title">Einreichung an TEST senden?</h2>
+      <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
+      <h2 id="send-confirm-title">Einreichung an FIT-Connect senden?</h2>
       <dl class="receipt-dialog-context">
         <dt>API</dt>
         <dd>{{ confirmedSession.apiVersion }}</dd>
@@ -82,7 +85,7 @@ const { prepared, working, error, dialog, confirmedSchemaValidation, confirmedSe
           Abbrechen
         </button>
         <button class="button" type="button" :disabled="working" @click="send">
-          {{ working ? 'Wird an TEST übertragen …' : 'Jetzt an TEST senden' }}
+          {{ working ? 'Wird an FIT-Connect übertragen …' : 'Jetzt an FIT-Connect senden' }}
         </button>
       </div>
     </template>

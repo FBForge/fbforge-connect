@@ -1,4 +1,8 @@
 <script setup>
+import { cancelledProductionAction } from './environments.js';
+
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import { loadedKeys } from './resources.js';
@@ -55,21 +59,21 @@ const reasons = {
   'data-schema-violation': 'Fachdaten entsprechen nicht dem Schema',
 };
 const messages = {
-  key_missing: 'Bitte oben unter Destination-Schlüssel einen privaten Testschlüssel zum Signieren laden.',
+  key_missing: 'Bitte oben unter Destination-Schlüssel einen privaten Schlüssel zum Signieren laden.',
   signing_selection_required:
     'Mehrere Signaturschlüssel sind geladen. Bitte den gewünschten Schlüssel auswählen.',
   key_rejected:
-    'Bitte einen passenden geladenen Signaturschlüssel auswählen. Er muss weiterhin in TEST registriert sein.',
+    'Bitte einen passenden geladenen Signaturschlüssel auswählen. Er muss weiterhin in der gewählten Umgebung registriert sein.',
   invalid_input: 'Bitte Aktion, Ablehnungsgrund und gegebenenfalls die betroffene Anlage prüfen.',
   invalid_resource: 'Einreichung oder Prüfnachweis haben sich geändert. Bitte erneut abrufen und prüfen.',
   verification_failed:
     'Für die Annahme fehlt ein aktueller vollständiger Inhaltsnachweis. Bitte erneut entschlüsseln und prüfen.',
   confirmation_expired: 'Die Bestätigungsfrist ist abgelaufen. Bitte die Aktion erneut vorbereiten.',
   send_locked: 'Diese Aktion kann nicht erneut gesendet werden. Bitte den bekannten Vorgang prüfen.',
-  resource_denied: 'Die TEST-Zugangsdaten berechtigen nicht zu dieser Empfangsaktion.',
+  resource_denied: 'Die Zugangsdaten berechtigen nicht zu dieser Empfangsaktion.',
   resource_missing: 'Die Einreichung ist nicht mehr abrufbar. Bitte den Vorgang prüfen.',
   resource_unavailable:
-    'Die TEST-Aktion konnte nicht abgeschlossen werden. Bei einem ungewissen Ausgang nicht erneut senden.',
+    'Die Aktion konnte nicht abgeschlossen werden. Bei einem ungewissen Ausgang nicht erneut senden.',
 };
 const warning = (stage) =>
   ({
@@ -135,8 +139,8 @@ async function run(name, operation) {
   try {
     status = (await operation(active, current)) || status;
   } catch (cause) {
-    status = 'Fehlgeschlagen';
-    if (current()) {
+    status = cancelledProductionAction(cause) ? 'Abgebrochen' : 'Fehlgeschlagen';
+    if (current() && !cancelledProductionAction(cause)) {
       error.value = explain(cause);
       if (
         (typeof cause === 'string' ? cause : cause?.message) !== 'engine_busy' &&
@@ -276,10 +280,11 @@ async function confirm() {
     aria-labelledby="receipt-title"
     :aria-busy="working"
   >
+    <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
     <h2 id="receipt-title">Empfang abschließen</h2>
     <p>
-      Die Aktion wird mit einem geladenen privaten Testschlüssel lokal signiert. Erst Ihre Bestätigung
-      überträgt sie an FIT-Connect TEST.
+      Die Aktion wird mit einem geladenen privaten Schlüssel lokal signiert. Erst Ihre Bestätigung überträgt
+      sie an FIT-Connect.
     </p>
     <button
       v-if="guided && !started && !proof && !locked"
@@ -369,8 +374,8 @@ async function confirm() {
           {{
             outcome.status === 'confirmed'
               ? outcome.action === 'accept'
-                ? 'Annahme von TEST bestätigt'
-                : 'Ablehnung von TEST bestätigt'
+                ? 'Annahme von FIT-Connect bestätigt'
+                : 'Ablehnung von FIT-Connect bestätigt'
               : outcome.status === 'uncertain'
                 ? 'Ausgang ungewiss – nicht erneut senden'
                 : 'Aktion nicht abgeschlossen'
@@ -404,15 +409,11 @@ async function confirm() {
     >
       <p v-if="error" role="alert">{{ error }}</p>
       <h2 id="receipt-confirm-title">
-        {{
-          prepared.attempt.action === 'accept'
-            ? 'Einreichung in TEST annehmen?'
-            : 'Einreichung in TEST ablehnen?'
-        }}
+        {{ prepared.attempt.action === 'accept' ? 'Einreichung annehmen?' : 'Einreichung ablehnen?' }}
       </h2>
       <dl class="receipt-dialog-context">
         <dt>Umgebung / API</dt>
-        <dd>TEST / {{ owner.apiVersion }}</dd>
+        <dd>{{ environment }} / {{ owner.apiVersion }}</dd>
         <dt>Einreichung</dt>
         <dd>
           <code>{{ prepared.attempt.submissionId }}</code>

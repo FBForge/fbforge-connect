@@ -1,4 +1,7 @@
 <script setup>
+import CertifiedKeyImport from './destinations/CertifiedKeyImport.vue';
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import { demoSchemas, downloadDemoSchema } from './demo-data.js';
 import { useDestinationSetup } from './destinations/useDestinationSetup.js';
 const props = defineProps({ session: Object, busy: Boolean });
@@ -55,10 +58,11 @@ const {
 
 <template>
   <section class="tool-section" aria-labelledby="destination-setup-title" :aria-busy="working">
-    <h2 id="destination-setup-title">Eigene TEST-Destination anlegen</h2>
+    <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
+    <h2 id="destination-setup-title">Eigene Destination anlegen</h2>
     <p>
-      Eine Destination ist die Adresse Ihrer Testanwendung bei FIT-Connect. Sie benötigen ein TEST-Konto mit
-      Berechtigung für die Destination API und ein gespeichertes Windows-Profil.
+      Eine Destination ist die Adresse Ihrer Testanwendung bei FIT-Connect. Sie benötigen ein Konto der
+      gewählten Umgebung mit Berechtigung für die Destination API und ein gespeichertes Windows-Profil.
     </p>
     <p class="small-note">
       Die privaten Schlüssel werden lokal erzeugt und geschützt gesichert. Nur die öffentlichen Teile werden
@@ -250,7 +254,15 @@ const {
       </p>
       <fieldset v-show="wizardStep === 2 && kind === 'A'" data-setup-step="2" :disabled="disabled">
         <legend>Schlüssel und Kompatibilität</legend>
-        <p>
+        <CertifiedKeyImport
+          v-if="environment !== 'TEST'"
+          :session="session"
+          :busy="disabled"
+          @busy="emit('busy', $event)"
+          @fatal="emit('fatal', $event)"
+          @imported="loadBundles"
+        />
+        <p v-if="environment === 'TEST'">
           Ohne eigene Auswahl erzeugt die Vorbereitung zwei neue RSA-4096-Schlüssel mit selbstsignierten
           TEST-Zertifikaten: einen für Verschlüsselung und einen für Signaturen. Die Zertifikate gelten ein
           Jahr.
@@ -260,16 +272,22 @@ const {
           Die Verschlüsselung von Antworten wird später für jeden Antwortkanal automatisch eingerichtet.
         </p>
         <label for="setup-key-bundle">
-          TEST-Schlüssel
+          Schlüsselpaar
           <select id="setup-key-bundle" v-model="selectedBundle">
-            <option value="">Neue TEST-Schlüssel automatisch bereitstellen</option>
+            <option value="">
+              {{
+                environment === 'TEST'
+                  ? 'Neue TEST-Schlüssel automatisch bereitstellen'
+                  : 'Bitte importiertes V-PKI-Schlüsselpaar wählen'
+              }}
+            </option>
             <option v-for="item in available" :key="item.bundleId" :value="item.bundleId">
               Vorhandenes ungenutztes Paar · {{ item.encryption.kid }}
             </option>
           </select>
         </label>
         <button type="button" class="button secondary" :disabled="disabled" @click="loadBundles">
-          Gespeicherte TEST-Schlüssel laden
+          Gespeicherte Schlüssel laden
         </button>
         <label class="checkbox-label">
           <input v-model="compatible" type="checkbox" />
@@ -333,7 +351,7 @@ const {
       <p v-else>
         {{
           outcome.httpStatus === 400 || outcome.httpStatus === 422
-            ? 'TEST hat die Angaben abgelehnt. Bitte Pflichtfelder, Schemata und die erlaubte Verwendung des Clients prüfen.'
+            ? 'FIT-Connect hat die Angaben abgelehnt. Bitte Pflichtfelder, Schemata und die erlaubte Verwendung des Clients prüfen.'
             : explain(outcome.error)
         }}
         <span v-if="outcome.httpStatus">(HTTP {{ outcome.httpStatus }})</span>
@@ -357,7 +375,7 @@ const {
           Schlüssel laden und zum Empfang wechseln
         </button>
         <button type="button" class="button secondary" :disabled="disabled" @click="outcome = null">
-          Weitere TEST-Destination vorbereiten
+          Weitere Destination vorbereiten
         </button>
       </div>
     </section>
@@ -405,7 +423,7 @@ const {
       aria-labelledby="destination-create-confirm-title"
       @cancel.prevent="dismiss"
     >
-      <h2 id="destination-create-confirm-title">Diese Destination in TEST anlegen?</h2>
+      <h2 id="destination-create-confirm-title">Diese Destination anlegen?</h2>
       <dl class="receipt-dialog-context">
         <dt>Name</dt>
         <dd>{{ prepared.configuration.name }}</dd>
@@ -455,7 +473,7 @@ const {
           Abbrechen
         </button>
         <button type="button" class="button" :disabled="working" @click="confirm">
-          Destination jetzt auf TEST anlegen
+          Destination jetzt anlegen
         </button>
       </div>
     </dialog>

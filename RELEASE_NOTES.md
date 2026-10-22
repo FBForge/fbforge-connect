@@ -2,6 +2,9 @@
 
 ## 0.2.0 (in Vorbereitung)
 
+- TEST, STAGE und PROD auswählbar. Getrennte Profile, erneute Anmeldung beim Wechsel und zusätzliche native Bestätigung für produktive Schreibaktionen.
+- V-PKI-Schlüssel mit Zertifikatsketten als PKCS#12 oder private JWK importieren. STAGE und PROD prüfen Vertrauenskette und Sperrstatus mit dem SDK.
+
 - Geführte Testaufgaben und einfachere Abläufe beim Senden, Empfangen und Antworten.
 - Lesende Formularansicht mit Anlagen und zusammenhängenden Vorgängen.
 - Kompakte Profilauswahl mit Client-ID und eingeklappter Verwaltung.

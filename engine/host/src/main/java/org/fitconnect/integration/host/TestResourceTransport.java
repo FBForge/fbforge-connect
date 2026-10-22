@@ -163,7 +163,7 @@ final class TestResourceTransport implements AutoCloseable {
             URI uri = URI.create(endpoint);
             String prefix = "/" + version.wireValue() + "/destinations";
             if (!"https".equals(uri.getScheme())
-                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || !IntegrationEnvironment.current().gatewayHost().equals(uri.getRawAuthority())
                     || uri.getRawFragment() != null
                     || uri.getRawPath().contains("%")) throw new IllegalArgumentException();
             boolean directory =

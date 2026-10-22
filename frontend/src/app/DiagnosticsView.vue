@@ -40,7 +40,7 @@ const emit = defineEmits(['probe', 'export', 'clear']);
       <div class="tool-section-heading">
         <div>
           <h2 id="report-title">Technischer Diagnosebericht</h2>
-          <p>Version, TEST-Umgebung und die letzten {{ trace.length }} protokollierten Aufrufe.</p>
+          <p>Version, gewählte Umgebung und die letzten {{ trace.length }} protokollierten Aufrufe.</p>
         </div>
         <button class="button secondary" type="button" :disabled="busy" @click="emit('export')">
           Diagnosebericht speichern
@@ -75,7 +75,7 @@ const emit = defineEmits(['probe', 'export', 'clear']);
         </button>
       </div>
       <p v-if="!trace.length" class="empty-state">
-        Noch keine technischen Aufrufe. Starten Sie eine Komponentenprüfung oder melden Sie sich bei TEST an.
+        Noch keine technischen Aufrufe. Starten Sie eine Komponentenprüfung oder melden Sie sich an.
       </p>
       <div v-else class="client-table">
         <table class="submission-result-table">

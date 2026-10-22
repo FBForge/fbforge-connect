@@ -28,6 +28,16 @@ const capture = async (name, anchor) => {
   captures.add(name);
 };
 try {
+  await open('test-fixtures/environments.html');
+  await page.getByRole('combobox', { name: 'Umgebung', exact: true }).selectOption('PROD');
+  await expect(page.getByRole('dialog', { name: 'Zu PROD wechseln?', exact: true })).toBeVisible();
+  await capture('environment-switch');
+  await button('Zu PROD wechseln').click();
+  await expect(page.locator('.environment-warning')).toContainText('PROD · Produktivbetrieb');
+  await capture('environment-prod');
+  await open('test-fixtures/environments.html?certificates=1');
+  await page.getByText('V-PKI-Schlüsselpaar importieren', { exact: true }).click();
+  await capture('vpki-import');
   // Only the native boundary is synthetic. The application and components are unchanged.
   await open('test-fixtures/profiles.html?destinations=1');
   await expect(button('Verbindung herstellen')).toBeVisible();
@@ -74,7 +84,7 @@ try {
   });
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
-  await button('Bei TEST anmelden').click();
+  await button('Anmelden').click();
   await expect(page.getByRole('dialog')).toBeHidden();
   await button('Verbunden').click();
   await expect(page.locator('.connection-identity')).toContainText('synthetic-client');
@@ -208,7 +218,7 @@ try {
   await capture('send-test-cases', page.locator('.save-test-case'));
   await capture('test-case-library', page.locator('.test-case-library'));
   await button('Versand vorbereiten').click();
-  const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  const confirmation = page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true });
   await expect(confirmation.locator('dt:has-text("Antwortangebot") + dd')).toHaveText('Nicht angeboten');
   await expect(confirmation.locator('dt:has-text("Anlagen") + dd')).toHaveText('0');
   await capture('send-confirmation');
@@ -250,7 +260,9 @@ try {
   await expect(page.locator('#reply-data')).toHaveValue(/erhalten/);
   await capture('replies', page.getByRole('heading', { name: 'Auf die Einreichung antworten', exact: true }));
   await button('Antwort prüfen und vorbereiten').click();
-  await expect(page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('dialog', { name: 'Antwort an FIT-Connect senden?', exact: true }),
+  ).toBeVisible();
   await capture('reply-confirmation');
   await button('Antwort jetzt senden').click();
   await button('Event Log der Antwort prüfen').click();
@@ -333,9 +345,7 @@ try {
   await capture('pdf');
 
   await open('test-fixtures/destination-setup.html');
-  await expect(
-    page.getByRole('heading', { name: 'Eigene TEST-Destination anlegen', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Eigene Destination anlegen', exact: true })).toBeVisible();
   await capture('destinations');
   console.log(`${captures.size} Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {

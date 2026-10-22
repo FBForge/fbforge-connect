@@ -7,10 +7,10 @@ export const helpTopics = [
     image: 'overview',
     caption: 'Die Startansicht führt zur passenden Testaufgabe.',
     intro:
-      'FBForge Connect ist ein unabhängiges Testwerkzeug für FIT-Connect. Alle Verbindungen führen ausschließlich in die TEST-Umgebung. Verwenden Sie fiktive Personen- und Antragsdaten.',
+      'FBForge Connect ist ein unabhängiges Testwerkzeug für FIT-Connect. Wählen Sie TEST, STAGE oder PROD passend zu Ihren Zugangsdaten. Für Tests verwenden Sie fiktive Daten. In PROD werden Nachrichten tatsächlich zugestellt.',
     steps: [
-      'Wählen Sie oben API v3 für neue Tests. API v2 bleibt für bestehende Integrationen verfügbar.',
-      'Wählen Sie auf „Start“ Ihre Testaufgabe: „Fachverfahren testen“ sendet einen Testantrag. „Onlinedienst testen“ führt zum Empfang. Falls nötig, öffnet sich zuerst die Anmeldung. Geben Sie dort Ihre TEST-Client-ID und das Client-Secret ein.',
+      'Wählen Sie oben zuerst die Umgebung TEST, STAGE oder PROD. Beim Wechsel werden aktuelle Verbindungen beendet und nicht gespeicherte Sitzungsschlüssel sowie Inhalte verworfen. Melden Sie sich anschließend mit den passenden Zugangsdaten neu an. Wählen Sie API v3 für neue Tests. API v2 bleibt für bestehende Integrationen verfügbar.',
+      'Wählen Sie auf „Start“ Ihre Testaufgabe: „Fachverfahren testen“ sendet einen Testantrag. „Onlinedienst testen“ führt zum Empfang. Falls nötig, öffnet sich zuerst die Anmeldung. Geben Sie dort Ihre Client-ID für die gewählte Umgebung und das Client-Secret ein.',
       'Eine Destination ist ein Zustellpunkt bei FIT-Connect. Ein Onlinedienst sendet Einreichungen und empfängt angebotene Antworten. Ein Subscriber ist das empfangende Fachverfahren. Er ruft Einreichungen ab und kann darauf antworten. Die API und der Zugang müssen zu Ihrem Test passen.',
       'Die Bereiche sind auch direkt über die Navigation erreichbar. Unter „Vorgänge“ finden Sie lokale Kopien. „Anleitung“ öffnet den passenden Abschnitt auf der FBForge-Website.',
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
@@ -26,8 +26,17 @@ export const helpTopics = [
     section: 'Senden',
     image: 'profiles',
     caption:
-      'Verbindungsdialog für den TEST-Zugang und die optionale Profilspeicherung. Zugangsdaten werden in der Anleitung nicht gezeigt.',
+      'Verbindungsdialog für den gewählten Zugang und die optionale Profilspeicherung. Zugangsdaten werden in der Anleitung nicht gezeigt.',
     illustrations: [
+      {
+        image: 'environment-prod',
+        caption:
+          'Auswahl von PROD mit dauerhafter Kennzeichnung des Produktivbetriebs. Es werden keine Zugangsdaten gezeigt.',
+      },
+      {
+        image: 'environment-switch',
+        caption: 'Der Umgebungswechsel fragt vor dem Beenden aktueller Verbindungen nach.',
+      },
       {
         image: 'saved-profiles',
         caption: 'Kompakte Auswahl gespeicherter Profile. Weitere Aktionen bleiben eingeklappt.',
@@ -39,12 +48,12 @@ export const helpTopics = [
       },
     ],
     intro:
-      'Ein Profil bündelt einen TEST-Zugang und seine API-Version. Gespeicherte Profile ersparen die erneute Eingabe nach einem Neustart.',
+      'Ein Profil bündelt einen Zugang, seine Umgebung und die API-Version. Profile anderer Umgebungen werden nicht zum Verbinden angeboten. Bestehende Profile aus Version 0.1 gehören weiterhin zu TEST. Gespeicherte Profile ersparen die erneute Eingabe nach einem Neustart.',
     steps: [
-      'Öffnen Sie „Verbinden“. Für einen einmaligen Test lassen Sie das Speichern ausgeschaltet.',
+      'Wählen Sie die Umgebung in der Kopfzeile und öffnen Sie „Verbinden“. Für einen einmaligen Test lassen Sie das Speichern ausgeschaltet.',
       'Für wiederkehrende Tests aktivieren Sie das Speichern und vergeben Sie einen verständlichen Namen, zum Beispiel „Musterfachverfahren v3“.',
       'Prüfen Sie vor dem Verbinden, ob Zugang und API-Version zu Ihrem Test passen. Die Berechtigungen Ihres Zugangs bestimmen die verfügbaren Funktionen.',
-      'Wählen Sie unter „Gespeicherte TEST-Profile“ das gewünschte Profil aus. Es werden nur dessen Client-ID, API-Version und Schlüsselanzahl angezeigt. „Mit Profil verbinden“ öffnet den Zugang. Umbenennen, Secret ändern, Export und Löschen finden Sie unter „Profil verwalten“.',
+      'Wählen Sie unter „Gespeicherte Profile“ das gewünschte Profil aus. Es werden nur dessen Client-ID, API-Version und Schlüsselanzahl angezeigt. „Mit Profil verbinden“ öffnet den Zugang. Umbenennen, Secret ändern, Export und Löschen finden Sie unter „Profil verwalten“.',
       'Unter „Verbunden“ sehen Sie die aktive Client-ID und können sie kopieren. Auch gespeicherte Profile zeigen ihre Client-ID, API-Version und Schlüsselanzahl. Das Client-Secret wird nicht angezeigt.',
       'Speichern Sie Schlüsseländerungen im Profil und beachten Sie Hinweise auf ausstehende Sicherungen. Bewahren Sie zusätzlich eine eigene sichere Schlüsselsicherung auf.',
     ],
@@ -53,6 +62,7 @@ export const helpTopics = [
       'Beim Entfernen eines gespeicherten Profils werden auch dessen dauerhaft gespeicherte Vorgangskopien gelöscht.',
       'Profil-Sicherungen sind verschlüsselt und an das Windows-Benutzerkonto gebunden. Sie sind kein allgemeiner Export für andere Rechner oder Benutzer.',
       'Ein Profil-Backup enthält keine Vorgangsablage. Die Aufbewahrung von Vorgängen wird separat eingeschaltet.',
+      'STAGE und PROD benötigen gültige Zertifikate der Verwaltungs-PKI. Selbstsignierte Testzertifikate werden dort nicht freigegeben. Jede PROD-Schreibaktion fragt zusätzlich in einem nativen Windows-Dialog nach. Abbrechen überträgt nichts.',
     ],
   },
   {
@@ -179,7 +189,7 @@ export const helpTopics = [
       'Öffnen Sie einen Vorgang über seinen Titel. Im Nachrichtenverlauf wechseln Sie zwischen Einreichung und Antworten. „Status dieser Nachricht“ gilt nur für die ausgewählte Nachricht. Die früheste verfügbare Einreichung wird zuerst geöffnet. Eine Suche nach der vollständigen Submission ID oder Reply ID öffnet direkt die passende Nachricht. Auch bei aktiven Filtern bleibt der vollständige lokale Verlauf sichtbar.',
       'Standardmäßig werden Kopien automatisch nur in der laufenden Anwendung gehalten. Ein Profilwechsel entfernt sie nicht. Verbinden Sie denselben Zugang erneut, um sie wieder zu sehen.',
       'Öffnen Sie „Aufbewahrung: aktuelle Sitzung“. Wenn Sie die Kopien nach einem Neustart benötigen, aktivieren Sie „Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren“. Vorhandene und neue Kopien werden dann mit Ihrem Windows-Benutzerkonto verschlüsselt.',
-      'Unter „Einzelne lokale Kopien verwalten“ oder mit „Diese lokale Kopie löschen“ entfernen Sie genau eine Nachricht. „Verlauf leeren“ fragt nach und löscht alle lokalen Kopien des aktuellen Profils und der aktuellen API. Auf dem TEST-Server wird dadurch nichts geändert.',
+      'Unter „Einzelne lokale Kopien verwalten“ oder mit „Diese lokale Kopie löschen“ entfernen Sie genau eine Nachricht. „Verlauf leeren“ fragt nach und löscht alle lokalen Kopien des aktuellen Profils und der aktuellen API. Auf dem FIT-Connect-Server wird dadurch nichts geändert.',
       'Zum Antworten oder erneuten technischen Prüfen wählen Sie „Im Empfang erneut prüfen / antworten“. Dafür sind eine aktuelle Sitzung und ein erneut abrufbarer Antrag erforderlich.',
     ],
     notes: [
@@ -289,7 +299,7 @@ export const helpTopics = [
     steps: [
       'Öffnen Sie „Prozesse“ und laden Sie eine BPMN-Datei per Drag-and-drop oder Dateiauswahl. Das mitgelieferte Beispiel ist ausschließlich für fiktive Tests gedacht.',
       'Wählen Sie einen unterstützten Nachrichtenbezug direkt im Diagramm oder über die zugängliche Auswahlliste. Prüfen Sie die ermittelte Prozessmodell-ID und Nachrichten-ID.',
-      'Suchen Sie nach TEST-Destinations, die diesen Nachrichtenbezug unterstützen. Wählen Sie optional eine Region. Die Suche verwendet den aktuellen nativen Bearer-Zugang.',
+      'Suchen Sie nach Destinations, die diesen Nachrichtenbezug unterstützen. Wählen Sie optional eine Region. Die Suche verwendet den aktuellen nativen Bearer-Zugang.',
       'Übernehmen Sie eine passende Destination und den Nachrichtenbezug in den Versand. Prüfen Sie die Zuordnung erneut in der Versandzusammenfassung.',
       'Bei eingegangenen Prozessnachrichten können Sie den Nachrichtenbezug im geladenen BPMN-Modell anzeigen lassen. Antwortnachrichten müssen zum angebotenen Prozessbezug passen.',
     ],
@@ -318,15 +328,22 @@ export const helpTopics = [
     title: 'Eigene Destinations verwalten',
     section: 'Destinations',
     image: 'destinations',
-    caption: 'Verwaltung eigener TEST-Destinations mit getrennten Vorbereitungs- und Bestätigungsschritten.',
+    caption: 'Verwaltung eigener Destinations mit getrennten Vorbereitungs- und Bestätigungsschritten.',
+    illustrations: [
+      {
+        image: 'vpki-import',
+        caption:
+          'Import zertifizierter Verschlüsselungs- und Signaturschlüssel für STAGE und PROD. Passwörter sind ausgeblendet.',
+      },
+    ],
     intro:
-      'Mit API v3 können Sie eigene TEST-Destinations anlegen und deren Konfiguration verwalten. Änderungen benötigen die passenden Rechte Ihres Fachverfahren-Zugangs.',
+      'Mit API v3 können Sie eigene Destinations anlegen und deren Konfiguration verwalten. Änderungen benötigen die passenden Rechte Ihres Fachverfahren-Zugangs.',
     steps: [
       'Verbinden Sie ein gespeichertes Fachverfahren-Profil mit API v3 und öffnen Sie „Destinations“.',
       'Laden Sie eine eigene Destination oder bereiten Sie die Anlage einer neuen Test-Destination vor.',
       '„Ansehen“ öffnet die Destination-Details. „Bearbeiten“ führt direkt in die Bearbeitung. Zurück gelangen Sie über „Zur Destination-Übersicht“.',
       'Für gemeinsame Änderungen wählen Sie bis zu zehn Destinations und anschließend „Destinations gemeinsam bearbeiten“. Die Auswahl bleibt beim Ansehen einzelner Details erhalten.',
-      'Für verschlüsselte Nachrichten erzeugen Sie lokale Testschlüssel beziehungsweise wählen Sie ein erzeugtes Schlüsselpaket. Die Schlüssel müssen vor einer Registrierung sicher im Profil gespeichert sein.',
+      'In TEST können Sie für verschlüsselte Nachrichten lokale Testschlüssel erzeugen. In STAGE und PROD importieren Sie unter „V-PKI-Schlüsselpaar importieren“ einen Verschlüsselungs- und einen davon verschiedenen Signaturschlüssel. Verwenden Sie je eine PKCS#12-Datei (.p12 oder .pfx) mit privatem Schlüssel und vollständiger Zertifikatskette oder einen privaten JWK mit vollständigem x5c. Dateipasswörter werden nur beim Import verwendet und nicht gespeichert. Die Schlüssel müssen vor einer Registrierung sicher im Profil gespeichert sein.',
       'Prüfen Sie Typ, Bezeichnung, Leistungen und Schemainformationen. Bereiten Sie die Änderung vor und lesen Sie die Zusammenfassung, bevor Sie sie bestätigen.',
       'Übernehmen Sie die eigenen Schlüssel anschließend für den Empfang und senden Sie einen kleinen fiktiven Testantrag an die neue Destination.',
       'Bei einem Schlüsselwechsel nutzen Sie den vorgesehenen Rotationsablauf. Entfernen Sie alte Schlüssel erst, wenn keine entsprechenden Nachrichten mehr entschlüsselt werden müssen.',
@@ -335,7 +352,9 @@ export const helpTopics = [
       'Bei erkannten Leserechten werden keine Auswahl- oder Bearbeitungsaktionen angeboten. Änderungen erfordern die Berechtigung manage-destinations. Unbekannte Rechte werden erst beim Aufruf geprüft. Der Server entscheidet über jede Änderung.',
       'Eine Destination kann existieren, obwohl der Bestätigungsschritt unterbrochen wurde. Bei ungewissem Ausgang zuerst abgleichen, statt eine weitere Destination anzulegen.',
       'Vorbereitungen und Bestätigungen gelten nur kurz und für genau die gezeigte Konfiguration.',
-      'Aufräumaktionen verändern TEST-Ressourcen. Prüfen Sie Auswahl und Folgen. Das Leeren der lokalen Vorgangsablage ist davon unabhängig.',
+      'Vertrauenskette, Gültigkeit, Schlüsselverwendung und Sperrstatus werden über das SDK geprüft. Fehlen Zwischenzertifikate oder schlägt die Prüfung fehl, wird der Schlüssel nicht freigegeben. Es gibt keinen Schalter zum Umgehen von OCSP- oder Vertrauensprüfungen.',
+      'Für einen Schlüsselwechsel in STAGE oder PROD importieren Sie je ausgewählter Destination ein eigenes ungenutztes V-PKI-Schlüsselpaar. Alte Schlüssel bleiben zum Entschlüsseln früherer Einreichungen erforderlich.',
+      'Aufräumaktionen verändern Ressourcen in der ausgewählten Umgebung. In PROD sind dies echte produktive Änderungen. Prüfen Sie Auswahl und Folgen. Das Leeren der lokalen Vorgangsablage ist davon unabhängig.',
     ],
   },
   {
@@ -349,7 +368,7 @@ export const helpTopics = [
     steps: [
       'Öffnen Sie den Event Log direkt aus einem Versandversuch, einem Empfangsdetail oder einem lokalen Vorgang. Bekannte Kennungen werden übernommen.',
       'Wählen Sie die gewünschte Suche: Vorgang über Case ID, Einreichung über Submission ID oder Antwort über Reply ID.',
-      'Verbinden Sie den passenden TEST-Zugang. Tragen Sie fehlende Kennungen vollständig ein und starten Sie die Prüfung.',
+      'Verbinden Sie den zur Umgebung passenden Zugang. Tragen Sie fehlende Kennungen vollständig ein und starten Sie die Prüfung.',
       'Lesen Sie Ereignisse und Prüfhinweise. Bei längeren Verläufen laden Sie die weiteren Seiten.',
       'Vergleichen Sie nach einem ungewissen Schreibversuch zunächst die vorhandenen Ereignisse und den Serverzustand. Ein neuer Versand ist eine eigene bewusste Aktion.',
     ],

@@ -39,7 +39,7 @@ final class SessionReceipts {
         return new Data<>(
                 version.wireValue(),
                 id,
-                "TEST",
+                IntegrationEnvironment.current().name(),
                 new PreparedReplyAction(
                         state,
                         request.reason(),
@@ -100,7 +100,7 @@ final class SessionReceipts {
             throw new SessionException("invalid_input");
         var state = entry.replyReceipts().state();
         if (!state.status().equals("prepared")) this.state.pendingReplyReceipts.remove(id);
-        return new Data<>(version.wireValue(), id, "TEST", state);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), state);
     }
 
     Data<?> prepareReceipt(ApiVersion version, String id, ReceiptRequest request, String proofId) {
@@ -135,7 +135,7 @@ final class SessionReceipts {
         return new Data<>(
                 version.wireValue(),
                 id,
-                "TEST",
+                IntegrationEnvironment.current().name(),
                 new PreparedReceipt(
                         state,
                         request.reason(),
@@ -215,6 +215,6 @@ final class SessionReceipts {
         else if (!command.equals("receipt_state")) throw new SessionException("invalid_input");
         var state = entry.receipts().state();
         if (!state.status().equals("prepared")) this.state.pendingReceipts.remove(id);
-        return new Data<>(version.wireValue(), id, "TEST", state);
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), state);
     }
 }

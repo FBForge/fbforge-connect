@@ -13,7 +13,7 @@ import org.fitconnect.integration.contract.*;
  * policy.
  */
 final class ReceiveAccess implements ReplySource, AutoCloseable {
-    private static final String ROOT = "https://test.fit-connect.fitko.dev/submission-api";
+    private static final String ROOT = IntegrationEnvironment.current().submissionApi();
     private static final String UUID =
             "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
     private static final int DETAIL_BYTES = 46 * 1024 * 1024;
@@ -292,7 +292,7 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
         try {
             URI uri = URI.create(endpoint);
             if (!"https".equals(uri.getScheme())
-                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || !IntegrationEnvironment.current().gatewayHost().equals(uri.getRawAuthority())
                     || uri.getRawFragment() != null) throw error("endpoint_blocked");
             String path = uri.getRawPath(), prefix = "/submission-api/" + version.wireValue();
             boolean trust = path.equals("/submission-api/.well-known/jwks.json");

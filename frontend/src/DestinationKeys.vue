@@ -4,6 +4,11 @@ import { invoke } from './native.js';
 import { listDestinations, loadDestination, importKey, loadedKeys, discardKeys } from './resources.js';
 import { resetsSessions } from './sessions.js';
 import { importKeyFiles } from './key-files.js';
+import CertifiedKeyImport from './destinations/CertifiedKeyImport.vue';
+import CertificateResults from './destinations/CertificateResults.vue';
+import { useEnvironment } from './environments.js';
+import { errorMessage } from './diagnostics.js';
+const environment = useEnvironment();
 import FileDropInput from './FileDropInput.vue';
 import CopyValue from './CopyValue.vue';
 import DocumentationLink from './DocumentationLink.vue';
@@ -60,13 +65,13 @@ const messages = {
   content_limit: 'Die zulässige Anzahl oder Gesamtgröße der Schlüssel ist erreicht.',
   resource_denied:
     'Für diese Anfrage fehlen die Berechtigungen. Sie können eine Destination auch direkt über ihre ID laden.',
-  resource_missing: 'Die Destination wurde in TEST nicht gefunden.',
-  resource_unavailable: 'Die TEST-Daten konnten nicht geladen werden. Bitte erneut versuchen.',
+  resource_missing: 'Die Destination wurde nicht gefunden.',
+  resource_unavailable: 'Die Daten konnten nicht geladen werden. Bitte erneut versuchen.',
   key_rejected:
-    'Der private Schlüssel passt nicht eindeutig zu einem freigegebenen registrierten Testschlüssel oder hat den falschen Verwendungszweck.',
+    'Der private Schlüssel passt nicht eindeutig zu einem freigegebenen registrierten Schlüssel oder hat den falschen Verwendungszweck.',
   test_certificate_required:
     'Es werden ausschließlich registrierte selbstsignierte Testzertifikate akzeptiert.',
-  session_missing: 'Bitte erneut bei TEST anmelden.',
+  session_missing: 'Bitte erneut anmelden.',
   file_invalid:
     'Die Datei muss genau einen Schlüssel als JWK, JWKS oder unverschlüsseltes PKCS#8-PEM enthalten und gültiges UTF-8 verwenden.',
 };
@@ -94,9 +99,7 @@ async function run(name, operation, apply) {
     status = 'Fehlgeschlagen';
     if (version === revision) {
       const code = typeof cause === 'string' ? cause : cause?.message;
-      error.value = Object.hasOwn(messages, code)
-        ? messages[code]
-        : 'Die Aktion konnte nicht abgeschlossen werden.';
+      error.value = Object.hasOwn(messages, code) ? messages[code] : errorMessage(cause);
     }
     if (resetsSessions(cause)) emit('fatal', cause);
   } finally {
@@ -157,7 +160,7 @@ function discard() {
   if (
     disabled.value ||
     !window.confirm(
-      'Alle importierten privaten Destination-Schlüssel dieser TEST-Sitzung entfernen? Temporäre Antwortschlüssel bleiben bis zum Abmelden verfügbar.',
+      'Alle importierten privaten Destination-Schlüssel dieser Sitzung entfernen? Temporäre Antwortschlüssel bleiben bis zum Abmelden verfügbar.',
     )
   )
     return;
@@ -233,7 +236,8 @@ watch(
         entfernt ihn auch aus dem aktiven Profil. Antwortkanäle werden separat verwaltet.
       </p>
       <p v-if="!session">
-        Melden Sie sich bei TEST an, um Destinations und ihre registrierten Testschlüssel zu prüfen.
+        Melden Sie sich in der gewählten Umgebung an, um Destinations und ihre registrierten Schlüssel zu
+        prüfen.
       </p>
       <template v-else>
         <p>Einmal geladene Schlüssel bleiben für weitere passende Einreichungen verfügbar.</p>
@@ -248,7 +252,7 @@ watch(
                 maxlength="36"
                 required
                 :disabled="disabled"
-                placeholder="UUID der TEST-Destination"
+                placeholder="UUID der Destination"
               />
             </label>
           </div>
@@ -318,12 +322,20 @@ watch(
           </div>
         </template>
         <template v-if="selected">
-          <p>
-            {{ selected.keys.filter((key) => key.eligible).length }} registrierte Testschlüssel verfügbar.
-          </p>
+          <CertificateResults v-if="environment !== 'TEST'" :keys="selected.keys" />
+          <p>{{ selected.keys.filter((key) => key.eligible).length }} registrierte Schlüssel verfügbar.</p>
+          <CertifiedKeyImport
+            v-if="environment !== 'TEST'"
+            :session="session"
+            :busy="disabled"
+            :destination-id="selected.destinationId"
+            @busy="emit('busy', $event)"
+            @fatal="emit('fatal', $event)"
+            @imported="keys = $event.keys"
+          />
           <FileDropInput
             id="private-test-key"
-            label="Private Testschlüssel laden"
+            label="Private Schlüssel laden"
             multiple
             accept=".json,.jwk,.jwks,.pem,.key"
             :disabled="disabled || !selected.keys.some((key) => key.eligible)"
@@ -338,10 +350,10 @@ watch(
           </details>
         </template>
         <p v-if="keys.length" class="status-badge ok">
-          {{ keys.length === 1 ? 'Testschlüssel geladen' : `${keys.length} Testschlüssel geladen` }} · für
-          passende Einreichungen verfügbar
+          {{ keys.length === 1 ? 'Schlüssel geladen' : `${keys.length} Schlüssel geladen` }} · für passende
+          Einreichungen verfügbar
         </p>
-        <p v-else>Noch kein privater Testschlüssel geladen.</p>
+        <p v-else>Noch kein privater Schlüssel geladen.</p>
         <div class="client-actions">
           <button
             class="button secondary"

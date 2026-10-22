@@ -413,7 +413,7 @@ export function useReplySender(props, emit) {
     if (!prepared.value || working.value || props.busy) return;
     const value = prepared.value,
       active = owner.value;
-    await run('Antwort an TEST senden', async (_, current) => {
+    await run('Antwort an FIT-Connect senden', async (_, current) => {
       const result = await executeReply(invoke, active, value.attempt);
       if (result.replyId && result.caseId) caseWorkspace?.remember(active, result);
       prepared.value = null;

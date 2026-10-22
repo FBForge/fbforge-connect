@@ -257,6 +257,11 @@ final class Engine implements AutoCloseable {
                                             command,
                                             values.get("destinationDocument"),
                                             values.get("attemptId"));
+                            case "import_certified_keys" ->
+                                    sessions.importCertifiedKeys(
+                                            version,
+                                            values.get("sessionId"),
+                                            values.get("keyDocument"));
                             case "generate_test_keys", "list_generated_keys" ->
                                     sessions.generatedKeys(
                                             version, values.get("sessionId"), command);

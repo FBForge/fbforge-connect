@@ -36,10 +36,10 @@ final class TokenSession implements AuthenticatedSession {
         this.resources = resources;
         destinations =
                 new DestinationApiService(
-                        provider, http, "https://test.fit-connect.fitko.dev/destination-api");
+                        provider, http, IntegrationEnvironment.current().destinationApi());
         submissions =
                 new SubmissionApiService(
-                        provider, http, "https://test.fit-connect.fitko.dev/submission-api");
+                        provider, http, IntegrationEnvironment.current().submissionApi());
     }
 
     private void requireOpen() {
@@ -91,7 +91,7 @@ final class TokenSession implements AuthenticatedSession {
         requireOpen();
         return http.json(
                 new dev.fitko.fitconnect.core.destination.DestinationApiService(
-                                current, http, "https://test.fit-connect.fitko.dev/destination-api")
+                                current, http, IntegrationEnvironment.current().destinationApi())
                         .getDestination(UUID.fromString(destinationId)));
     }
 
@@ -135,7 +135,7 @@ final class TokenSession implements AuthenticatedSession {
             throw new SessionException("invalid_input");
         var result =
                 new dev.fitko.fitconnect.core.reply.ReplyApiService(
-                                current, http, "https://test.fit-connect.fitko.dev/submission-api")
+                                current, http, IntegrationEnvironment.current().submissionApi())
                         .getAvailableReplies(limit, offset);
         if (result == null
                 || result.getReplies() == null
@@ -243,7 +243,7 @@ final class TokenSession implements AuthenticatedSession {
                         current,
                         new ReceiptTransport(authorized),
                         null,
-                        "https://test.fit-connect.fitko.dev/submission-api")
+                        IntegrationEnvironment.current().submissionApi())
                 .sendEvent(value.caseId(), value.jwt());
     }
 
@@ -430,6 +430,10 @@ final class TokenSession implements AuthenticatedSession {
         if (workspace == null || input == null) throw new SessionException("invalid_submission");
         ensureSender(workspace);
         return sender.send(input, attemptId);
+    }
+
+    public void validatePublicKey(String document, String purpose) {
+        PublicCertificates.validate(document, purpose);
     }
 
     public void check() {

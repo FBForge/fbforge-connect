@@ -12,3 +12,6 @@ pub mod documentation_links;
 
 #[path = "../src/test_library.rs"]
 pub mod test_library;
+
+#[path = "../src/environments.rs"]
+pub mod environments;

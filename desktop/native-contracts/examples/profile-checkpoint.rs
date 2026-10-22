@@ -50,6 +50,7 @@ fn run() -> Result<(), &'static str> {
 }
 fn installation_fixture(id: &str) -> Profile {
     Profile {
+        environment: Default::default(),
         version: 1,
         profile_id: id.to_owned(),
         name: "CI TEST Profil".into(),

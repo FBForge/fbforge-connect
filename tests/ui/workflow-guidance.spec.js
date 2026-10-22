@@ -98,7 +98,7 @@ test('receive tabs support keyboard navigation and make no pickup or reply reque
   await page.getByRole('button', { name: 'Onlinedienst testen', exact: true }).click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   const incoming = page.getByRole('tab', { name: 'Einreichungen', exact: true });
   const replies = page.getByRole('tab', { name: 'Antworten', exact: true });
   await expect(incoming).toHaveAttribute('aria-selected', 'true');

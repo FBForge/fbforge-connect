@@ -61,7 +61,7 @@ export function useEventLogPanel(props, emit) {
     invalid_resource:
       'Die Antwort ist unvollständig oder das lokale Ergebnis nicht mehr verfügbar. Bitte den Event Log erneut laden.',
     resource_missing: 'Für diese Kennungen ist kein abrufbarer Event Log vorhanden.',
-    resource_denied: 'Diese TEST-Zugangsdaten dürfen den angefragten Event Log nicht lesen.',
+    resource_denied: 'Diese Zugangsdaten dürfen den angefragten Event Log nicht lesen.',
     resource_unavailable:
       'Der Event Log konnte nicht geladen werden. Nach einem lokalen Bereinigungsfehler bitte abmelden und eine neue Sitzung öffnen.',
     content_limit: 'Der Event Log überschreitet die zulässige Größe oder Anzahl von Ereignissen.',

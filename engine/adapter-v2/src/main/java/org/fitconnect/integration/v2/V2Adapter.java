@@ -9,6 +9,10 @@ import java.nio.charset.StandardCharsets;
 import org.fitconnect.integration.contract.*;
 
 public final class V2Adapter implements SdkAdapter {
+    public void validatePublicKey(String document, String purpose) {
+        PublicCertificates.validate(document, purpose);
+    }
+
     public ProbeResult probe() {
         // Resolve method signatures as well as entry classes without creating a network client.
         SenderClient.class.getDeclaredMethods();
@@ -17,7 +21,12 @@ public final class V2Adapter implements SdkAdapter {
         boolean isolated =
                 SenderClient.class.getClassLoader() == getClass().getClassLoader()
                         && dependencyClass().getClassLoader() == getClass().getClassLoader();
-        return new ProbeResult("v2", "3.5.2", "TEST", SenderClient.class.getName(), isolated);
+        return new ProbeResult(
+                "v2",
+                "3.5.2",
+                IntegrationEnvironment.current().name(),
+                SenderClient.class.getName(),
+                isolated);
     }
 
     public Class<?> dependencyClass() {
@@ -36,7 +45,7 @@ public final class V2Adapter implements SdkAdapter {
                         http,
                         URLEncoder.encode(clientId, StandardCharsets.UTF_8),
                         URLEncoder.encode(clientSecret, StandardCharsets.UTF_8),
-                        "https://auth-testing.fit-connect.fitko.dev");
+                        IntegrationEnvironment.current().authRoot());
         return new TokenSession(provider, http, transport, resources);
     }
 }

@@ -1,4 +1,6 @@
 <script setup>
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import DestinationSetup from './DestinationSetup.vue';
 import DestinationCleanup from './DestinationCleanup.vue';
 import DestinationOffers from './DestinationOffers.vue';
@@ -73,7 +75,7 @@ const {
         :disabled="disabled"
         @click="setupOpen = true"
       >
-        Neue TEST-Destination anlegen
+        Neue Destination anlegen
       </button>
     </div>
     <DestinationSetup
@@ -89,12 +91,13 @@ const {
     />
     <section v-show="!setupOpen" class="tool-section" aria-labelledby="manager-title" :aria-busy="pending">
       <p v-if="setupNotice" role="status">{{ setupNotice }}</p>
+      <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
       <h2 id="manager-title" ref="listHeading" tabindex="-1">Eigene Destinations verwalten</h2>
       <p v-if="view === 'list'">
-        Destinations der angemeldeten TEST-Zugangsdaten laden und einzeln oder gemeinsam bearbeiten. Bis zu
-        zehn Destinations pro Änderung.
+        Destinations der angemeldeten Zugangsdaten laden und einzeln oder gemeinsam bearbeiten. Bis zu zehn
+        Destinations pro Änderung.
       </p>
-      <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
+      <p v-if="!session">Bitte zuerst eine Sitzung öffnen.</p>
       <p v-else-if="session.apiVersion === 'v2'">
         Die Bearbeitung steht zunächst über API v3 bereit. Sie können eigene Destinations mit v2 ansehen oder
         oben eine v3-Sitzung öffnen.
@@ -443,7 +446,7 @@ const {
             :disabled="disabled || preview.changes.every((row) => row.status === 'unchanged')"
             @click="execute"
           >
-            Diese Änderungen verbindlich auf TEST speichern
+            Diese Änderungen verbindlich in der gewählten Umgebung speichern
           </button>
           <button class="button secondary" :disabled="disabled" @click="cancel">Abbrechen</button>
         </div>

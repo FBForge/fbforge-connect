@@ -203,7 +203,7 @@ onBeforeUnmount(() => revision++);
       </p>
       <p class="small-note">
         Die Empfänger-Destination wählen Sie im Versand. Dort wird das aktuelle Empfängerangebot erneut
-        geprüft. Erst die separate Versandbestätigung übermittelt Daten an TEST.
+        geprüft. Erst die separate Versandbestätigung übermittelt Daten an die gewählte Umgebung.
       </p>
       <details>
         <summary>Fachdaten und Anlagen ansehen</summary>

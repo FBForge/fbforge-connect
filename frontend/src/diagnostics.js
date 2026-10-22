@@ -1,12 +1,12 @@
 const sdkVersions = Object.freeze({ v2: '3.5.2', v3: '4.0.0-rc.2' });
 
-export async function probeAdapter(invoke, apiVersion) {
+export async function probeAdapter(invoke, apiVersion, environment = 'TEST') {
   if (!Object.hasOwn(sdkVersions, apiVersion)) throw new Error('unsupported_api');
   const result = await invoke('probe_engine', { apiVersion });
   if (
     !result ||
     result.apiVersion !== apiVersion ||
-    result.environment !== 'TEST' ||
+    result.environment !== environment ||
     result.sdkVersion !== sdkVersions[apiVersion] ||
     result.isolated !== true ||
     typeof result.entrypoint !== 'string' ||
@@ -45,9 +45,9 @@ export function errorMessage(code) {
     vault_unsupported:
       'Geschütztes Speichern wird in diesem Entwicklungsstand nur unter Windows unterstützt. Bitte ohne Speichern verbinden.',
     vault_limit:
-      'Es können höchstens 32 TEST-Profile gespeichert werden. Bitte ein nicht mehr benötigtes Profil entfernen.',
+      'Es können höchstens 32 Profile gespeichert werden. Bitte ein nicht mehr benötigtes Profil entfernen.',
     vault_restore_failed:
-      'Gespeicherte Schlüssel konnten nicht vollständig wiederhergestellt oder gegen TEST geprüft werden. Das Profil bleibt erhalten. Sie können zunächst nur seine Zugangsdaten verwenden und die Schlüsselzuordnung prüfen.',
+      'Gespeicherte Schlüssel konnten nicht vollständig wiederhergestellt oder gegen die gewählte Umgebung geprüft werden. Das Profil bleibt erhalten. Sie können zunächst nur seine Zugangsdaten verwenden und die Schlüsselzuordnung prüfen.',
     invalid_credentials:
       'Bitte eine Client-ID und ein Client-Secret innerhalb der zulässigen Länge eingeben.',
     reply_metadata_required:
@@ -58,10 +58,17 @@ export function errorMessage(code) {
       'Die Kennung $id der lokalen Schemadatei fehlt oder passt nicht zum angebotenen Schema. Bitte wählen Sie die passende Schemadatei.',
     destination_no_keys:
       'Onlinedienst-Destinations vom Typ C benötigen keine Zertifikate oder dauerhaften Destination-Schlüssel. Antwortschlüssel werden je Antwortkanal erzeugt.',
-    authentication_failed: 'Die TEST-Anmeldung ist fehlgeschlagen. Bitte Client-ID und Client-Secret prüfen.',
-    auth_unavailable: 'Der TEST-Anmeldedienst konnte nicht sicher erreicht werden. Bitte erneut versuchen.',
+    content_cancelled: 'Aktion abgebrochen. Es wurde nichts übertragen.',
+    environment_mismatch:
+      'Die Umgebung passt nicht zum gespeicherten Profil. Bitte die passende Umgebung wählen und neu anmelden.',
+    vpki_certificate_required:
+      'STAGE und PROD benötigen gültige V-PKI-Zertifikate mit vollständiger x5c-Zertifikatskette. Bitte Gültigkeit, Schlüsselverwendung und Vertrauenskette prüfen. Eine fehlgeschlagene Sperrprüfung wird nicht übergangen.',
+    certificate_status_unknown:
+      'Der Sperrstatus des V-PKI-Zertifikats konnte nicht sicher festgestellt werden. Bitte die Erreichbarkeit der Zertifikatsdienste prüfen und erneut versuchen. Die Aktion wurde nicht freigegeben.',
+    authentication_failed: 'Die Anmeldung ist fehlgeschlagen. Bitte Client-ID und Client-Secret prüfen.',
+    auth_unavailable: 'Der Anmeldedienst konnte nicht sicher erreicht werden. Bitte erneut versuchen.',
     endpoint_blocked:
-      'Ein unzulässiges Ziel oder eine Weiterleitung wurde blockiert. Es ist ausschließlich TEST erlaubt.',
+      'Ein unzulässiges Ziel oder eine Weiterleitung wurde blockiert. Erlaubt sind ausschließlich die festen Endpunkte der gewählten Umgebung.',
     session_missing: 'Diese Sitzung ist nicht mehr verfügbar. Bitte erneut anmelden.',
   };
   const key = typeof code === 'string' ? code : code?.message;
@@ -107,6 +114,10 @@ const reportableCodes = new Set([
   'key_rejected',
   'key_missing',
   'test_certificate_required',
+  'vpki_certificate_required',
+  'certificate_status_unknown',
+  'environment_mismatch',
+  'content_cancelled',
   'invalid_input',
   'content_limit',
   'verification_failed',

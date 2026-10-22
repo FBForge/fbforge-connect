@@ -3,6 +3,8 @@ const fileErrors = new Set([
   'file_invalid',
   'key_rejected',
   'test_certificate_required',
+  'vpki_certificate_required',
+  'certificate_status_unknown',
   'content_limit',
 ]);
 

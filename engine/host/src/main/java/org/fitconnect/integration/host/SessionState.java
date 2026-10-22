@@ -19,7 +19,11 @@ final class SessionState implements AutoCloseable {
             ReplyReceiptAccess replyReceipts) {
         SessionSnapshot snapshot(boolean connected) {
             return new SessionSnapshot(
-                    id, key.version().wireValue(), key.role().wireValue(), "TEST", connected);
+                    id,
+                    key.version().wireValue(),
+                    key.role().wireValue(),
+                    IntegrationEnvironment.current().name(),
+                    connected);
         }
     }
 
@@ -95,6 +99,8 @@ final class SessionState implements AutoCloseable {
         AuthenticatedSession candidate = null;
         try {
             var sender = new SendAccess(version, resources.apply(version));
+            sender.certificateVerifier(
+                    (document, purpose) -> registry.validatePublicKey(version, document, purpose));
             candidate = registry.openSession(version, clientId, clientSecret, exchange, sender);
             registry.checkSession(version, candidate);
             var receipts =
@@ -152,7 +158,13 @@ final class SessionState implements AutoCloseable {
                         exchange,
                         new SendAccess(version, resources.apply(version)))) {
             registry.checkSession(version, candidate);
-            return Map.of("apiVersion", version.wireValue(), "environment", "TEST", "valid", true);
+            return Map.of(
+                    "apiVersion",
+                    version.wireValue(),
+                    "environment",
+                    IntegrationEnvironment.current().name(),
+                    "valid",
+                    true);
         } catch (Exception | LinkageError failure) {
             throw safe(failure);
         }

@@ -39,7 +39,7 @@ async function showDependencyLicenses() {
       <h2 id="scope-title">Aktueller Funktionsumfang</h2>
       <dl class="info-facts">
         <dt>Umgebung</dt>
-        <dd>Ausschließlich FIT-Connect TEST</dd>
+        <dd>FIT-Connect TEST, STAGE und PROD</dd>
         <dt>Austausch</dt>
         <dd>Senden, Empfangen, lokale Entschlüsselung und technische Fachdatenprüfung über API v2 und v3</dd>
         <dt>Verwaltung</dt>
