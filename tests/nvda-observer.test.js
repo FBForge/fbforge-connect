@@ -22,11 +22,19 @@ def exercise():
     observer=module.GlobalPlugin.__new__(module.GlobalPlugin); observer.path=MemoryCapture(); observer.count=0
     # This validates recorder capacity only; the Windows job separately observes real NVDA speech.
     # Use memory here so thousands of file opens do not measure antivirus/disk latency.
-    labels=['control-'+str(index) for index in range(13)]
+    labels=['control-'+str(index) for index in range(14)]
     for label in labels:
         for step in range(60):
             observer.write({'key':9,'pressed':True}); observer.write({'key':9,'pressed':False}); observer.write({'text':'fictional focus','focus':'other'})
         observer.write({'text':label,'focus':label})
+    # A known combo-box name must be retained, without rewriting actual generated speech.
+    observer.owns_focus=lambda: True
+    sys.modules['api'].getFocusObject=lambda: types.SimpleNamespace(name='Umgebung')
+    observer.observe(['Umgebung', 'combo box', 'TEST'])
+    assert observer.path.records()[-1] == {'text':'Umgebung combo box TEST','focus':'Umgebung'}
+    sys.modules['api'].getFocusObject=lambda: types.SimpleNamespace(name='synthetic-unknown-control')
+    observer.observe(['fictional unclassified control'])
+    assert observer.path.records()[-1]['focus'] == '(other control)'
     records=observer.path.records()
     assert all(any(record.get('focus')==label for record in records) for label in labels), 'expanded journey was truncated'
     for index in range(module.MAX_RECORDS+1): observer.write({'text':'bounded'})
