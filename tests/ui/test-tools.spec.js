@@ -129,9 +129,10 @@ test('a test package is imported only after confirmation and a matching current 
   await expect(
     page.getByRole('checkbox', { name: 'Antworten über FIT-Connect anbieten', exact: true }),
   ).toBeChecked();
-  await page.getByText('Testfall wiederverwenden', { exact: true }).click();
+  await page.getByText('Entwurf als Testfall wiederverwenden', { exact: true }).click();
+  await page.locator('#send-test-name').fill('Fiktiver Integrationstest');
   const download = page.waitForEvent('download');
-  await button(page, 'Als Testfall speichern').click();
+  await button(page, 'Entwurf als Testpaket exportieren').click();
   const saved = JSON.parse(await readFile(await (await download).path(), 'utf8'));
   expect(saved.cases[0].request.data).toEqual(example.cases[0].request.data);
   expect(saved.cases[0].request.attachments).toEqual(example.cases[0].request.attachments);

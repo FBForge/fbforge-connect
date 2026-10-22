@@ -1,4 +1,5 @@
 <script setup>
+import ServiceNames from './ServiceNames.vue';
 import SenderDestination from '../SenderDestination.vue';
 import { serviceLabel } from '../service-label.js';
 const props = defineProps({ controller: Object, session: Object, visible: Boolean });
@@ -57,7 +58,7 @@ const {
           {{
             serviceLabel(service, selectedService?.name).hasName
               ? `LeiKa / Leistungskennung: ${serviceLabel(service).code}`
-              : 'Keine Leistungsbezeichnung vom Empfänger hinterlegt. Sie können sie unter „Weitere Adressierungsoptionen“ ergänzen.'
+              : 'Auswahl nach Leistungskennung. Eine Bezeichnung können Sie unter „Weitere Adressierungsoptionen“ ergänzen.'
           }}
         </small>
       </label>
@@ -92,6 +93,20 @@ const {
         @fatal="emit('fatal', $event)"
       />
     </div>
+    <ServiceNames
+      v-if="recipient?.services.length"
+      :services="recipient.services"
+      :context-key="`${session?.sessionId}:${target.trim().toLowerCase()}`"
+      :disabled="disabled"
+      @names="
+        (names) => {
+          if (Object.hasOwn(names, service) && (!serviceName || serviceName === service))
+            serviceName = names[service];
+          for (const item of recipient.services)
+            if (Object.hasOwn(names, item.identifier)) item.name = names[item.identifier];
+        }
+      "
+    />
     <p v-if="!recipient" class="small-note">
       Geben Sie die Empfänger-Destination ein und laden Sie deren Leistungen.
     </p>

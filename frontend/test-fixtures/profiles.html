@@ -8,6 +8,7 @@
   <body>
     <div id="app"></div>
     <script type="module">
+      import { testLibraryFixture } from './test-library-fixture.js';
       import { createApp } from 'vue';
       import App from '../src/App.vue';
       import '../src/styles/index.css';
@@ -37,6 +38,7 @@
       window.isTauri = true;
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args = {}) {
+          if (command === 'test_library') return testLibraryFixture(args.request);
           fixture.calls.push({ command, args });
           if (command === 'list_profiles') return fixture.profiles;
           if (command === 'list_destinations' && new URLSearchParams(location.search).has('destinations'))

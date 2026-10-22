@@ -2,7 +2,7 @@
 import AppIcon from '../AppIcon.vue';
 import CopyValue from '../CopyValue.vue';
 import FileDropInput from '../FileDropInput.vue';
-import ProfileEditor from '../ProfileEditor.vue';
+import SavedProfiles from './SavedProfiles.vue';
 import ProfileDefaults from '../ProfileDefaults.vue';
 import KeyInventory from '../KeyInventory.vue';
 const props = defineProps({ apiVersion: String, connection: Object });
@@ -166,69 +166,21 @@ const {
     </form>
     <section v-if="profiles.length" aria-labelledby="saved-profiles-title">
       <h3 id="saved-profiles-title">Gespeicherte TEST-Profile</h3>
-      <ul class="send-history-list">
-        <li v-for="profile in profiles" :key="profile.profileId">
-          <div>
-            <strong>{{ profile.name }}</strong>
-            <p v-if="profile.available">
-              <strong>Client-ID</strong>
-              <CopyValue :value="profile.clientId" label="Client-ID" />
-            </p>
-            <p>
-              {{
-                profile.available
-                  ? `${profile.apiVersion} · ${profile.keyCount} gespeicherte Schlüssel / Antwortkanäle`
-                  : 'Unter diesem Benutzerkonto nicht lesbar'
-              }}
-            </p>
-            <div class="client-actions">
-              <button
-                type="button"
-                class="button"
-                :disabled="busy || !profile.available"
-                @click="connectProfile(profile, true)"
-              >
-                Mit Profil verbinden
-              </button>
-              <button
-                v-if="profile.keyCount"
-                type="button"
-                class="button secondary"
-                :disabled="busy || !profile.available"
-                @click="connectProfile(profile, false)"
-              >
-                Nur Zugangsdaten verwenden
-              </button>
-              <ProfileEditor
-                :profile="profile"
-                :busy="busy"
-                @fatal="fatal"
-                @busy="resourceBusy"
-                @updated="
-                  refreshProfiles();
-                  profileNotice = 'Profil gespeichert. Ein neues Secret gilt bei der nächsten Anmeldung.';
-                "
-              />
-              <button
-                type="button"
-                class="button secondary"
-                :disabled="busy || !profile.available"
-                @click="backupProfile(profile)"
-              >
-                Geschützte Sicherung exportieren
-              </button>
-              <button
-                type="button"
-                class="button secondary"
-                :disabled="busy"
-                @click="askRemoveProfile(profile)"
-              >
-                Gespeichertes Profil entfernen
-              </button>
-            </div>
-          </div>
-        </li>
-      </ul>
+      <SavedProfiles
+        :profiles="profiles"
+        :api-version="apiVersion"
+        :active-profile-id="storageStatus?.profileId"
+        :busy="busy"
+        @connect="(profile, restoreKeys) => connectProfile(profile, restoreKeys)"
+        @backup="backupProfile"
+        @remove="askRemoveProfile"
+        @fatal="fatal"
+        @busy="resourceBusy"
+        @updated="
+          refreshProfiles();
+          profileNotice = 'Profil gespeichert. Ein neues Secret gilt bei der nächsten Anmeldung.';
+        "
+      />
       <p class="small-note">
         „Nur Zugangsdaten verwenden“ öffnet eine Sitzung ohne gespeicherte Schlüssel und verändert deren
         Sicherung nicht.

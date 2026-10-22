@@ -29,6 +29,10 @@ export const helpTopics = [
       'Verbindungsdialog für den TEST-Zugang und die optionale Profilspeicherung. Zugangsdaten werden in der Anleitung nicht gezeigt.',
     illustrations: [
       {
+        image: 'saved-profiles',
+        caption: 'Kompakte Auswahl gespeicherter Profile. Weitere Aktionen bleiben eingeklappt.',
+      },
+      {
         image: 'connection-identity',
         caption:
           'Die aktive Verbindung zeigt API und Client-ID. Das Bild enthält ausschließlich fiktive Kennungen.',
@@ -40,7 +44,7 @@ export const helpTopics = [
       'Öffnen Sie „Verbinden“. Für einen einmaligen Test lassen Sie das Speichern ausgeschaltet.',
       'Für wiederkehrende Tests aktivieren Sie das Speichern und vergeben Sie einen verständlichen Namen, zum Beispiel „Musterfachverfahren v3“.',
       'Prüfen Sie vor dem Verbinden, ob Zugang und API-Version zu Ihrem Test passen. Die Berechtigungen Ihres Zugangs bestimmen die verfügbaren Funktionen.',
-      'Unter den gespeicherten Profilen können Sie einen Zugang wieder öffnen, umbenennen, aktualisieren oder entfernen.',
+      'Wählen Sie unter „Gespeicherte TEST-Profile“ das gewünschte Profil aus. Es werden nur dessen Client-ID, API-Version und Schlüsselanzahl angezeigt. „Mit Profil verbinden“ öffnet den Zugang. Umbenennen, Secret ändern, Export und Löschen finden Sie unter „Profil verwalten“.',
       'Unter „Verbunden“ sehen Sie die aktive Client-ID und können sie kopieren. Auch gespeicherte Profile zeigen ihre Client-ID, API-Version und Schlüsselanzahl. Das Client-Secret wird nicht angezeigt.',
       'Speichern Sie Schlüsseländerungen im Profil und beachten Sie Hinweise auf ausstehende Sicherungen. Bewahren Sie zusätzlich eine eigene sichere Schlüsselsicherung auf.',
     ],
@@ -60,6 +64,14 @@ export const helpTopics = [
     intro:
       'Sie bereiten zunächst Fachdaten und Anlagen vor. Erst die separate Bestätigung löst den Versand aus.',
     illustrations: [
+      {
+        image: 'leika-labels',
+        caption: 'Leistungsnamen aus dem FIM-Portal ergänzen die unveränderten LeiKa-Kennungen.',
+      },
+      {
+        image: 'send-test-cases',
+        caption: 'Benannte Testfälle für einen neuen Entwurf speichern und direkt aus der Sammlung wählen.',
+      },
       {
         image: 'send-data',
         caption: 'Direkter Wechsel zwischen Eingabe und lesender Formularansicht im Versand.',
@@ -83,13 +95,13 @@ export const helpTopics = [
       },
     ],
     steps: [
-      'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat. Wenn der Empfänger eine Leistungsbezeichnung liefert, wird sie neben der LeiKa-Kennung angezeigt. Weitere Adressierungsoptionen enthalten die Bezeichnung, Region und eine optionale Case ID. „Weiter“ prüft die Pflichtfelder des Abschnitts und führt Sie zur nächsten Eingabe.',
+      'Verbinden Sie einen Onlinedienst-Zugang und tragen Sie die Ziel-Destination ein. Laden Sie deren Leistungen und wählen Sie die passende Leistung und das Fachdatenformat. „Leistungsnamen aus FIM laden“ ergänzt fehlende Bezeichnungen aus dem öffentlichen FIM-Portal. Übertragen werden nur LeiKa-Kennungen. Nur exakte, eindeutige Treffer werden übernommen. Ohne Treffer bleibt die Kennung sichtbar. Weitere Adressierungsoptionen enthalten die Bezeichnung, Region und eine optionale Case ID. „Weiter“ prüft die Pflichtfelder des Abschnitts und führt Sie zur nächsten Eingabe.',
       'Bei API v3 lädt die Anwendung Ihre eigenen Absender-Destinations zur Auswahl. Eine einzelne aktive Destination wird automatisch übernommen. Über „ID eingeben“ können Sie eine Destination auch manuell hinterlegen. Diese muss zu Ihrem Zugang gehören und passend eingerichtet sein.',
       'Geben Sie JSON oder XML ein oder ziehen Sie eine Datei in das Dateifeld. „Formularansicht“ zeigt den Entwurf lesbar an. Über „Bearbeiten“ kehren Sie zur Eingabe zurück. Text und Dateiauswahl bleiben beim Umschalten erhalten.',
-      'Wählen Sie „Fiktive Beispieldaten erzeugen“. Im Dialog wählen Sie bei XML die Nachricht für Ihre Leistung. Erst „Beispieldaten übernehmen“ ersetzt den bisherigen Inhalt oder eine ausgewählte Datei im Entwurf. „Abbrechen“ lässt beides unverändert. Für eine XBau-Genehmigungsfreistellung ist das beispielsweise genehmigungsfreistellung.anzeige.0600. Eine Transportnachricht wird nicht automatisch ausgewählt. Die LeiKa allein bestimmt die XML-Nachricht nicht eindeutig.',
-      'Die Formularansicht zeigt Werte lesbar an. „Struktur, Quelltext und Feldangaben“ enthält die technischen Ansichten. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar. Unter „Schema und technische Optionen“ können Sie ein Schema auch gezielt laden.',
-      'Prüfen Sie die Fachdaten mit „Fachdaten gegen Schema prüfen“. JSON wird gegen das angebotene JSON-Schema geprüft, XML gegen die aufgelösten XSDs. Beim Vorbereiten läuft diese Prüfung automatisch, sofern kein aktuelles Ergebnis vorhanden ist. Änderungen an Inhalt, Empfänger oder Schema machen das Ergebnis ungültig. Wird eine öffentliche Schemaquelle benötigt, erscheint vor dem Abruf eine Nachfrage. Mit „Für diese Verbindung erlauben“ wird die Prüfung fortgesetzt. „Abbrechen“ lässt Ihre Fachdaten unverändert. Alternativ fügen Sie unter „Schema und technische Optionen“ lokale Prüfschemata mit passender Kennung hinzu.',
-      'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten. Unter „Testfall wiederverwenden“ können Sie den Entwurf einschließlich Anlagen und lokaler Prüfschemata für spätere Tests speichern.',
+      'Wählen Sie im Abschnitt „Fachdaten“ zuerst das sichtbare Fachdaten-Schema. Es steht oberhalb von „Fiktive Beispieldaten erzeugen“. Wählen Sie anschließend „Fiktive Beispieldaten erzeugen“. Im Dialog wählen Sie bei XML die Nachricht für Ihre Leistung. Erst „Beispieldaten übernehmen“ ersetzt den bisherigen Inhalt oder eine ausgewählte Datei im Entwurf. „Abbrechen“ lässt beides unverändert. Für eine XBau-Genehmigungsfreistellung ist das beispielsweise genehmigungsfreistellung.anzeige.0600. Eine Transportnachricht wird nicht automatisch ausgewählt. Die LeiKa allein bestimmt die XML-Nachricht nicht eindeutig.',
+      'Die Formularansicht zeigt Werte lesbar an. „Struktur, Quelltext und Feldangaben“ enthält die technischen Ansichten. Schema-Feldnamen und Beschreibungen werden angezeigt, wenn ein passendes Schema verfügbar ist. Ansonsten bleiben Originalnamen sichtbar. „Schema-Beschriftungen laden“ steht direkt unter der Schemaauswahl.',
+      'Prüfen Sie die Fachdaten mit „Fachdaten gegen Schema prüfen“. JSON wird gegen das angebotene JSON-Schema geprüft, XML gegen die aufgelösten XSDs. Beim Vorbereiten läuft diese Prüfung automatisch, sofern kein aktuelles Ergebnis vorhanden ist. Änderungen an Inhalt, Empfänger oder Schema machen das Ergebnis ungültig. Wird eine öffentliche Schemaquelle benötigt, erscheint vor dem Abruf eine Nachfrage. Mit „Für diese Verbindung erlauben“ wird die Prüfung fortgesetzt. „Abbrechen“ lässt Ihre Fachdaten unverändert. Alternativ fügen Sie unter „Lokale Schemata und technische Optionen“ lokale Prüfschemata mit passender Kennung hinzu.',
+      'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten. Unter „Entwurf als Testfall wiederverwenden“ vergeben Sie einen Namen und speichern den Entwurf mit Anlagen und lokalen Prüfschemata geschützt in der Sammlung oder exportieren ihn als Datei.',
       'Wenn Sie eine Antwort testen möchten, aktivieren Sie vor dem Versand das Antwortangebot und wählen Sie das erlaubte Antwortschema.',
       'Wählen Sie „Versand vorbereiten“. Prüfen Sie in der unveränderlichen Zusammenfassung auch Antwortangebot und Anlagenzahl und bestätigen Sie den Versand. „Nicht angeboten“ bedeutet, dass die Einreichung keinen FIT-Connect-Antwortkanal enthält. Über „Abbrechen“ können Sie den Entwurf noch ändern. Kopieren Sie Submission ID und Case ID bei Bedarf mit den Kopierschaltflächen. Nach erfolgreichem Versand können Sie unter „Nächsten Test vorbereiten“ Fachdaten und Anlagen ausdrücklich für einen neuen Entwurf auswählen. Die Case ID wird geleert, Empfängerleistungen und Schema werden erneut geprüft.',
     ],
@@ -421,6 +433,10 @@ export const helpTopics = [
       'Ein fiktives Testpaket mit auswählbaren Testfällen, Fachdaten, Anlagen und erwarteten Antworten.',
     illustrations: [
       {
+        image: 'test-case-library',
+        caption: 'Direkte Auswahl eines geschützten Testfalls für einen neuen Versandentwurf.',
+      },
+      {
         image: 'schema-comparison',
         caption:
           'Lokaler Vergleich zweier JSON-Schemata mit sichtbaren Änderungen an Pflichtfeldern und Auswahlwerten.',
@@ -432,12 +448,12 @@ export const helpTopics = [
       'Öffnen Sie „Testwerkzeuge“. Unter „Testpakete“ laden Sie ein gespeichertes Paket oder öffnen das fiktive Beispiel. Eine Anmeldung ist dafür nicht erforderlich.',
       'Wählen Sie einen Testfall aus. „Fachdaten und Anlagen ansehen“ zeigt den vorbereiteten Inhalt. Unter „Erwartungen für den manuellen Test“ können Sie den erwarteten Antwortinhalt und die Empfangsbestätigung hinterlegen. Diese Angaben lösen keine automatische Antwort oder Bestätigung aus. Paketname und Testfallname lassen sich unter „Bezeichnungen ändern“ anpassen.',
       '„Als Versandentwurf öffnen“ führt zu „Senden“ und bei Bedarf zur Anmeldung. Tragen Sie eine Empfänger-Destination ein und wählen Sie „Testfall übernehmen“. Nach Ihrer Bestätigung wird deren aktuelles Angebot geprüft. Nur bei passender Leistung, Prozessnachricht und Schema werden Fachdaten, Anlagen und Antwortangebot ersetzt. Die Case ID wird geleert. Prüfen Sie anschließend den Entwurf und bestätigen Sie den Versand separat.',
-      'Einen eigenen Versandentwurf speichern Sie im dritten Versandabschnitt unter „Testfall wiederverwenden“. Das Paket übernimmt keine Verbindung, privaten Schlüssel, Destination IDs oder bisherigen Nachrichtenkennungen. Im Werkzeug können Sie mehrere gespeicherte Pakete unter „Weitere Testfälle hinzufügen“ zusammenführen und das gemeinsame Paket speichern.',
+      'Einen eigenen Versandentwurf speichern Sie im dritten Versandabschnitt unter „Entwurf als Testfall wiederverwenden“. Vergeben Sie einen Namen. „Testfall speichern“ legt ihn geschützt in der lokalen Windows-Sammlung ab. Oben in „Senden“ wählen Sie ihn unter „Meine Testfälle“ direkt aus. „Testfall laden“ prüft nach Ihrer Bestätigung das Empfängerangebot und ersetzt den Entwurf. Unter „Testpakete importieren, exportieren und löschen“ verwalten Sie die Sammlung. Das Paket übernimmt keine Verbindung, privaten Schlüssel, Destination IDs oder bisherigen Nachrichtenkennungen. Im Werkzeug können Sie mehrere gespeicherte Pakete unter „Weitere Testfälle hinzufügen“ zusammenführen und das gemeinsame Paket speichern.',
       'Wechseln Sie zu „Schema-Vergleich“. Ziehen Sie die bisherige und die neue JSON-Schema- oder XSD-Datei in die beschrifteten Dateifelder. Prüfen Sie das Schemaformat und wählen Sie „Schemata vergleichen“. Der Beispielvergleich zeigt den Ablauf mit fiktiven Dateien.',
       'Die Ergebnisliste nennt hinzugefügte, entfernte und geänderte Struktureinträge. Suchen Sie nach einem Feld oder öffnen Sie dessen bisherige und neue Regeln. „Vergleich speichern“ exportiert den Bericht als JSON.',
     ],
     notes: [
-      'Testpakete sind unverschlüsselte Dateien. Verwenden Sie nur fiktive Testdaten und prüfen Sie den Inhalt vor dem Teilen.',
+      'Exportierte Testpakete sind unverschlüsselte Dateien. Die lokale Sammlung wird mit dem Windows-Benutzerkonto verschlüsselt und bleibt nach einem Neustart verfügbar. Sie ist unabhängig vom Verbindungsprofil. Maximal 32 Pakete und insgesamt 64 MiB. Verwenden Sie nur fiktive Testdaten und prüfen Sie den Inhalt vor dem Teilen.',
       'Grenzen: 20 Testfälle, 8 MiB je Paket, 512 KiB Fachdaten, 2 MiB je lokalem Schema und 4 MiB je Anlage. Lokale Paket-Schemata müssen zur angegebenen Schema-URI passen. Eine abweichende $id wird nicht umgeschrieben.',
       'Der Schema-Vergleich ist ein Strukturvergleich, kein vollständiger Kompatibilitätsnachweis. Externe Referenzen, XSD-Imports und Codelisten werden nicht geladen. Bei XSD werden die ausgewählten Dateien verglichen. Prüfen Sie Änderungen zusätzlich mit Ihren Testfällen.',
       'Der Vergleich akzeptiert JSON-Schemata und XSD-Dateien bis 512 KiB. Fehlerantworten statt eines Schemas sowie XML mit DTDs oder externen Entitäten werden abgewiesen.',

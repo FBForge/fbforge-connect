@@ -387,8 +387,8 @@ export function useSubmissionSender(props, emit) {
   function addValidationSchemas(...args) {
     return schemaActions.addValidationSchemas(...args);
   }
-  function saveTestCase(...args) {
-    return testCasesActions.saveTestCase(...args);
+  function createTestPack(...args) {
+    return testCasesActions.createTestPack(...args);
   }
   function importTestCase(...args) {
     return testCasesActions.importTestCase(...args);
@@ -442,7 +442,7 @@ export function useSubmissionSender(props, emit) {
     explain,
     diagnosticLabels,
     prepare,
-    saveTestCase,
+    createTestPack,
     importTestCase,
     nextTest,
     refreshState,

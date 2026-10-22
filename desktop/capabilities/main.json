@@ -95,6 +95,7 @@
     "allow-remove-key-inventory-item",
     "allow-update-profile",
     "allow-case-workspace",
-    "allow-open-documentation"
+    "allow-open-documentation",
+    "allow-test-library"
   ]
 }

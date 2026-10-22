@@ -30,6 +30,29 @@ const {
 <template>
   <fieldset v-show="sendStep === 1" data-send-step="1" :disabled="disabled">
     <legend tabindex="-1">Fachdaten</legend>
+    <div class="send-schema-selection">
+      <div class="client-fields">
+        <label for="send-schema">
+          Fachdaten-Schema
+          <select v-if="schemaOptions.length > 1" id="send-schema" v-model="schemaChoice">
+            <option v-for="(item, index) in schemaOptions" :key="index" :value="index">
+              {{ item.mimeType === 'application/json' ? 'JSON' : 'XML' }} · {{ item.schemaUri }}
+            </option>
+          </select>
+          <output v-else id="send-schema">
+            {{
+              schema
+                ? `${mime === 'application/json' ? 'JSON' : 'XML'} · ${schema}`
+                : 'Keine unterstützten Fachdaten-Schemata ausgewählt.'
+            }}
+          </output>
+          <small>Wird aus der gewählten Leistung beziehungsweise Prozessnachricht übernommen.</small>
+        </label>
+      </div>
+      <button class="button secondary" type="button" :disabled="disabled || !schema" @click="loadLabels">
+        Schema-Beschriftungen laden
+      </button>
+    </div>
     <SchemaSourceConsent
       ref="schemaAccess"
       id="send-schema-sources"
@@ -94,28 +117,7 @@ const {
       </p>
     </div>
     <details class="data-schema-options">
-      <summary>Schema und technische Optionen</summary>
-      <div class="client-fields">
-        <label for="send-schema">
-          Fachdaten-Schema
-          <select v-if="schemaOptions.length > 1" id="send-schema" v-model="schemaChoice">
-            <option v-for="(item, index) in schemaOptions" :key="index" :value="index">
-              {{ item.mimeType === 'application/json' ? 'JSON' : 'XML' }} · {{ item.schemaUri }}
-            </option>
-          </select>
-          <output v-else id="send-schema">
-            {{
-              schema
-                ? `${mime === 'application/json' ? 'JSON' : 'XML'} · ${schema}`
-                : 'Keine unterstützten Fachdaten-Schemata ausgewählt.'
-            }}
-          </output>
-          <small>Wird aus der gewählten Leistung beziehungsweise Prozessnachricht übernommen.</small>
-        </label>
-      </div>
-      <button class="button secondary" type="button" :disabled="disabled || !schema" @click="loadLabels">
-        Schema-Beschriftungen laden
-      </button>
+      <summary>Lokale Schemata und technische Optionen</summary>
       <FileDropInput
         id="send-validation-schemas"
         label="Lokale Prüfschemata hinzufügen"

@@ -4,11 +4,12 @@
 
 - Geführte Testaufgaben und einfachere Abläufe beim Senden, Empfangen und Antworten.
 - Lesende Formularansicht mit Anlagen und zusammenhängenden Vorgängen.
-- Client-ID in aktiven Verbindungen und gespeicherten Profilen.
+- Kompakte Profilauswahl mit Client-ID und eingeklappter Verwaltung.
 - Programmdatei `fbforge-connect.exe` und einheitliche Paketnamen. Bestehende Installationen und Profile bleiben erhalten.
 - Sichtbare Destination-Details, gemeinsame Bearbeitung und erreichbare PDF-Seitensteuerung.
 - JSON/XML vor dem Versand gegen das Schema prüfen. Nachfrage beim Abruf öffentlicher Schemaquellen.
-- Testpakete über die Oberfläche wiederverwenden und lokale JSON-Schemata oder XSDs vergleichen.
+- Benannte Testfälle geschützt speichern, direkt laden und als Testpaket austauschen. Lokale JSON-Schemata oder XSDs vergleichen.
+- Leistungsnamen aus dem FIM-Portal ergänzen und das Schema vor der Beispielerzeugung auswählen.
 - Verständliche Schemahinweise und gezielte XML-Nachrichtenauswahl bei Beispieldaten.
 - Zentral gepflegte Web-Anleitung mit aktuellen Bildern und Beispielen.
 

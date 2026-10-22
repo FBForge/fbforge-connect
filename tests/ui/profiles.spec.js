@@ -31,6 +31,7 @@ test('profiles with synthetic native fixtures', async ({ browser }) => {
     .getByRole('button', { name: /Verbinden|Verbindung|Verbunden/ })
     .first()
     .click();
+  await page.getByText('Profil verwalten', { exact: true }).click();
   await page.getByRole('button', { name: 'Gespeichertes Profil entfernen', exact: true }).click();
   await page.getByRole('dialog', { name: 'Gespeichertes Profil entfernen?', exact: true }).waitFor();
   await page.keyboard.press('Escape');

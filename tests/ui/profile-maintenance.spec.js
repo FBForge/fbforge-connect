@@ -17,6 +17,7 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
     .getByRole('button', { name: /Verbinden|Verbindung|Verbunden/ })
     .first()
     .click();
+  await page.getByText('Profil verwalten', { exact: true }).click();
   await page.getByRole('button', { name: 'Profilname oder Secret ändern', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Gespeichertes TEST-Profil bearbeiten', exact: true });
   await dialog.waitFor();
@@ -38,7 +39,10 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
   assert.equal(await page.evaluate(() => window.__profilesFixture.backups), 1);
   await page.getByText('Geschützte Profilsicherung importieren', { exact: true }).click();
   await page.getByRole('button', { name: 'Geschützte Sicherung importieren', exact: true }).click();
-  await page.getByText('Wiederhergestellt TEST', { exact: true }).waitFor();
+  await page
+    .locator('#saved-profile-choice')
+    .selectOption({ label: 'Wiederhergestellt TEST · v3 · synthetic-restored-client' });
+  await page.locator('.selected-profile').getByText('Wiederhergestellt TEST', { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__profilesFixture.profiles.length), 2);
   assert.deepEqual(errors, []);
   console.log(

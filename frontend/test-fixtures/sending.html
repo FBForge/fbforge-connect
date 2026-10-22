@@ -10,6 +10,7 @@
   <body>
     <div id="app"></div>
     <script type="module">
+      import { testLibraryFixture } from './test-library-fixture.js';
       import { createApp, h, ref } from 'vue';
       import SubmissionSender from '../src/SubmissionSender.vue';
       import '../src/styles/index.css';
@@ -26,6 +27,7 @@
       const envelope = (data) => ({ apiVersion: api.value, sessionId: id, environment: 'TEST', data });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'test_library') return testLibraryFixture(args.request);
           if (args.apiVersion !== api.value || args.sessionId !== id) throw 'session_missing';
           if (command === 'load_send_destination')
             return envelope({

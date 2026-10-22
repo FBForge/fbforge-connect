@@ -1,4 +1,4 @@
-/** Display only names supplied by the API or the message. Never guess a LeiKa title. */
+/** Display only supplied names or exact FIM catalogue matches. Never guess a LeiKa title. */
 export function serviceLabel(identifier, name) {
   const id = typeof identifier === 'string' ? identifier.trim() : '';
   const supplied = typeof name === 'string' ? name.trim() : '';

@@ -77,7 +77,7 @@ test('a failed schema check blocks preparation and negative tests need an explic
   await expect(page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true })).toBeHidden();
   await expect(page.getByRole('alert')).toContainText('Pflichtfelder');
   await page.getByRole('button', { name: 'Fachdaten', exact: true }).click();
-  await page.getByText('Schema und technische Optionen', { exact: true }).click();
+  await page.getByText('Lokale Schemata und technische Optionen', { exact: true }).click();
   await page
     .getByRole('checkbox', {
       name: 'Für einen bewussten Negativtest ohne Fachdaten-Schemaprüfung senden',

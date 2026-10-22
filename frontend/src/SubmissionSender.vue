@@ -1,4 +1,7 @@
 <script setup>
+import { ref } from 'vue';
+import SaveTestCase from './send/SaveTestCase.vue';
+import TestCaseLibrary from './send/TestCaseLibrary.vue';
 import SendConfirmation from './send/SendConfirmation.vue';
 import ReplyAttachmentsStep from './send/ReplyAttachmentsStep.vue';
 import DataStep from './send/DataStep.vue';
@@ -17,6 +20,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'cases']);
 const controller = useSubmissionSender(props, emit);
+const testLibrary = ref(null);
 const {
   storageWarning,
   target,
@@ -48,7 +52,7 @@ const {
   explain,
   diagnosticLabels,
   prepare,
-  saveTestCase,
+  createTestPack,
   importTestCase,
   nextTest,
   refreshState,
@@ -92,6 +96,20 @@ const {
         Prozessauswahl übernehmen und Empfänger erneut prüfen
       </button>
     </div>
+    <TestCaseLibrary
+      v-if="session"
+      :disabled="disabled"
+      ref="testLibrary"
+      :create-pack="createTestPack"
+      @choose="
+        (item) => {
+          pendingTest = item;
+          if (target.trim()) packDialog.showModal();
+          else selectStep(0);
+        }
+      "
+      @busy="emit('busy', $event)"
+    />
     <form
       v-if="session"
       :key="draftRevision"
@@ -148,23 +166,15 @@ const {
           Versand vorbereiten
         </button>
       </div>
-      <details v-if="sendStep === 2" class="data-schema-options">
-        <summary>Testfall wiederverwenden</summary>
-        <p>
-          Speichern Sie den Entwurf mit seinen Anlagen als unverschlüsseltes Testpaket. Nutzen Sie dafür
-          fiktive Daten. Verbindung, private Schlüssel und bisherige Nachrichtenkennungen werden nicht
-          übernommen.
-        </p>
-        <button
-          class="button secondary"
-          type="button"
-          :disabled="disabled || !recipient"
-          @click="saveTestCase"
-        >
-          Als Testfall speichern
-        </button>
-      </details>
     </form>
+    <SaveTestCase
+      v-if="session && sendStep === 2 && recipient"
+      :disabled="disabled"
+      :pending="testLibrary?.pending"
+      :notice="testLibrary?.saveNotice"
+      :error="testLibrary?.saveError"
+      @save="(name, exportOnly) => testLibrary?.saveDraft(name, exportOnly)"
+    />
     <p v-if="progress" role="status">{{ progress }}</p>
     <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
     <p v-if="error" role="alert">{{ error }}</p>

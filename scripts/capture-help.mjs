@@ -46,6 +46,21 @@ try {
   await expect(page.locator('#client-secret')).toHaveValue('');
   await capture('profiles');
   await page.evaluate(() => {
+    window.__profilesFixture.profiles = Array.from({ length: 10 }, (_, n) => ({
+      profileId: `11111111-1111-4111-8111-${String(100 + n).padStart(12, '0')}`,
+      name: `Musterfachverfahren ${n + 1}`,
+      clientId: `fiktiver-testzugang-${n + 1}`,
+      apiVersion: n % 2 ? 'v2' : 'v3',
+      role: 'administrative-system',
+      keyCount: 2,
+      available: true,
+    }));
+  });
+  await page.keyboard.press('Escape');
+  await button('Verbindung herstellen').click();
+  await expect(page.locator('#saved-profile-choice option')).toHaveCount(10);
+  await capture('saved-profiles');
+  await page.evaluate(() => {
     const original = window.__TAURI_INTERNALS__.invoke;
     window.__TAURI_INTERNALS__.invoke = (command, args) =>
       command === 'loaded_keys'
@@ -139,8 +154,7 @@ try {
             destinationId: args.destinationId,
             publicServices: [
               {
-                identifier: 'urn:test:service',
-                name: 'Fiktive Bauleistung',
+                identifier: 'urn:de:fim:leika:leistung:99000000000001',
                 submissionSchemas: [{ schemaUri, mimeType: 'application/xml' }],
               },
             ],
@@ -159,8 +173,16 @@ try {
       return original(command, args);
     };
   }, xmlPacket);
+  await page.route('https://fimportal.de/**', (route) =>
+    route.fulfill({
+      json: { items: [{ leistungsschluessel: '99000000000001', title: 'Fiktive Bauleistung für den Test' }] },
+    }),
+  );
   await page.locator('#send-target').fill('22222222-2222-4222-8222-222222222222');
   await button('Leistungen laden').click();
+  await button('Leistungsnamen aus FIM laden').click();
+  await expect(page.locator('#send-service')).toContainText('Fiktive Bauleistung für den Test');
+  await capture('leika-labels', page.locator('[data-send-step="0"] legend'));
   await button('Weiter: Fachdaten').click();
   await button('Fiktive Beispieldaten erzeugen').click();
   const messagePicker = page
@@ -179,6 +201,12 @@ try {
   await expect(page.getByText('Fachdaten entsprechen dem Schema.', { exact: true })).toBeVisible();
   await capture('send-validation', page.locator('.send-schema-validation'));
   await button('Weiter: Anlagen & Antwortkanal').click();
+  await page.getByText('Entwurf als Testfall wiederverwenden', { exact: true }).click();
+  await page.locator('#send-test-name').fill('Fiktive XBau-Anzeige mit Beispieldaten');
+  await button('Testfall speichern').click();
+  await expect(page.locator('#send-library-choice')).toContainText('Fiktive XBau-Anzeige mit Beispieldaten');
+  await capture('send-test-cases', page.locator('.save-test-case'));
+  await capture('test-case-library', page.locator('.test-case-library'));
   await button('Versand vorbereiten').click();
   const confirmation = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
   await expect(confirmation.locator('dt:has-text("Antwortangebot") + dd')).toHaveText('Nicht angeboten');

@@ -1,5 +1,4 @@
-import { packFromDraft, serializeTestPack, testCaseFiles, validateTestPack } from '../test-packs.js';
-import { downloadLocal } from '../local-download.js';
+import { packFromDraft, testCaseFiles, validateTestPack } from '../test-packs.js';
 import { loadSendDestination } from '../sender-options.js';
 import { invoke } from '../native.js';
 import { nextTick } from 'vue';
@@ -28,19 +27,17 @@ export function useSendTestCases({ act, currentDraft, props, selectSchema, draft
   const { sendForm, stepNotice, pendingTest, sendStep, packDialog } = view;
   const { error, outcome } = state;
   const { disabled } = selection;
-  async function saveTestCase() {
-    if (disabled.value || !recipient.value || !sendForm.value.reportValidity()) return;
-    await act('Testfall lokal speichern', async () => {
-      const pack = await packFromDraft(
-        currentDraft(),
-        dataFile.value || new Blob([dataText.value]),
-        attachments.value,
-        localValidationSchemas.value,
-      );
-      downloadLocal(serializeTestPack(pack), 'testfall.fctest.json');
-      stepNotice.value =
-        'Testfall lokal gespeichert. Er enthält Fachdaten und Anlagen, keine Verbindung und keine bisherige Case ID.';
-    });
+  async function createTestPack(name) {
+    if (disabled.value || !recipient.value || !sendForm.value.reportValidity()) return null;
+    const pack = await packFromDraft(
+      currentDraft(),
+      dataFile.value || new Blob([dataText.value]),
+      attachments.value.map(({ file, mimeType, description }) => ({ file, mimeType, description })),
+      localValidationSchemas.value.map(({ file, uri }) => ({ file, uri })),
+    );
+    pack.name = name;
+    pack.cases[0].name = name;
+    return validateTestPack(pack);
   }
 
   async function importTestCase() {
@@ -127,5 +124,5 @@ export function useSendTestCases({ act, currentDraft, props, selectSchema, draft
       sendForm.value?.querySelector('[data-send-step="0"] legend')?.focus();
     }
   }
-  return { saveTestCase, importTestCase };
+  return { createTestPack, importTestCase };
 }

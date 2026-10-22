@@ -2,6 +2,8 @@
 
 mod documentation;
 mod documentation_links;
+mod test_library;
+mod test_library_command;
 use documentation::open_documentation;
 mod case_store;
 mod cases;
@@ -35,6 +37,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .manage(EngineState::default())
         .invoke_handler(tauri::generate_handler![
+            test_library_command::test_library,
             open_documentation,
             case_workspace,
             update_profile,

@@ -9,3 +9,6 @@ pub mod case_store;
 
 #[path = "../src/documentation_links.rs"]
 pub mod documentation_links;
+
+#[path = "../src/test_library.rs"]
+pub mod test_library;
