@@ -226,13 +226,13 @@ automaticUpdates = disabled
     $null = Check-Spoken 'Vorgänge durchsuchen' $editType
     $help = Check-Spoken 'Hilfe' $buttonType
     Invoke-Control $help
-    $null = Check-Spoken 'Anleitung durchsuchen' $editType
+    $null = Check-Spoken 'Schnellstart (Website im Browser öffnen)' ([System.Windows.Automation.ControlType]::Hyperlink)
     Write-Output ('Actual NVDA 2026.2 speech observation, ' + $checks.Count + ' control labels, protected field, native Tab order and Escape focus restoration passed')
     $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; installerSha256 = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant(); harnessCommit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; candidate = $(if ($ExpectedBinaryPath) { 'current build' } else { 'pinned previously verified installer' }); scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); initialWebViewActivation = 'one pointer click in empty Client-ID field'; keyboardTab = 'passed'; modalFocusRestoration = 'passed' }
     [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'fbforge-accessibility-result.json'), ($report | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 } catch {
     # The test never enters credentials. Log only known synthetic control names.
-    $knownNames = @('Verbinden','Client-ID','Client-Secret','Bei TEST anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen','Vorgänge','Vorgänge durchsuchen','Hilfe','Anleitung durchsuchen')
+    $knownNames = @('Verbinden','Client-ID','Client-Secret','Bei TEST anmelden','Verbindungsdialog schließen','Senden','Empfangen','Prozesse','Fiktiven Demo-Prozess öffnen','Modell einpassen','Vorgänge','Vorgänge durchsuchen','Hilfe','Schnellstart (Website im Browser öffnen)')
     $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
     if ($focused) {
         $label = if ($knownNames -contains $focused.Current.Name) { $focused.Current.Name } else { '(other control)' }

@@ -4,30 +4,7 @@ Beiträge per Pull Request nach `develop`. Vor größeren Änderungen bitte ein 
 
 ## Entwicklung
 
-Benötigt: Node.js ab 22.13.0, JDK 25 und Rust gemäß `desktop/rust-toolchain.toml`. Für Windows gelten die [Tauri-Buildvoraussetzungen](https://v2.tauri.app/start/prerequisites/). `JAVA_HOME` muss auf JDK 25 zeigen.
-
-Unter Windows:
-
-```powershell
-.\scripts\verify-windows.cmd
-npm run desktop:dev
-```
-
-Auf anderen Entwicklungssystemen lassen sich Engine, Frontend und isolierte native Module prüfen:
-
-```sh
-npm ci --ignore-scripts
-(cd engine && ./mvnw verify)
-npm run stage:engine
-npm run lint
-npm run format:check
-npm test
-npm run test:engine
-npm run build:frontend
-cargo test --manifest-path desktop/native-contracts/Cargo.toml --locked
-```
-
-Browsertests: `npx playwright install chromium`, danach `npm run test:ui`. Öffentliche FIM-Beispiele bei Bedarf mit `node scripts/fetch-public-schemas.mjs` laden. Ohne Cache werden diese Integrationstests übersprungen.
+Die [Buildanleitung](BUILDING.md) beschreibt Voraussetzungen, Entwicklungsstart, lokale Tests und Windows-Installer. Die [Architektur](ARCHITECTURE.md) zeigt die zuständigen Module.
 
 Formatieren: `npm run format`, `./mvnw spotless:apply` im Engine-Verzeichnis und `cargo fmt --manifest-path desktop/Cargo.toml --all`.
 
@@ -67,7 +44,7 @@ Der Test schreibt fiktive Nachrichten und deaktiviert seine temporäre Destinati
 
 `Checks` prüft bei Änderungen die betroffenen Bereiche: Frontend mit Browsertests, Java-Engine und native Verträge. Reine Dokumentationsänderungen benötigen keinen Installer-Build. Diese Jobs verwenden keine TEST-Secrets und keinen Signier-Runner.
 
-`Windows release validation` wird vor einem Release manuell gestartet. Sie prüft zusätzlich das vollständige Desktop-Paket, Installation, Profilerhalt, NVDA und die schreibgeschützten TEST-Aufrufe. `upgrade_run` kann die Lauf-ID eines früheren erfolgreichen Signierlaufs enthalten. Dessen noch verfügbares signiertes Paket wird vor dem Upgrade anhand von Herkunft, Prüfsumme, Signatur und Zeitstempel geprüft. Ohne Angabe werden Neuinstallation und erneute Installation derselben Version geprüft.
+`Windows release validation` wird vor einem Release manuell gestartet. Auf `release/0.2.0` starten Änderungen am Windows-Abnahme-Workflow und seinen UI-Prüfskripten außerdem eine Cloud-Abnahme. Dieser Lauf prüft das Upgrade vom letzten erfolgreich signierten Paket und veröffentlicht nichts. Sie prüft zusätzlich das vollständige Desktop-Paket, Installation, Profilerhalt, NVDA und die schreibgeschützten TEST-Aufrufe. `upgrade_run` kann die Lauf-ID eines früheren erfolgreichen Signierlaufs enthalten. Dessen noch verfügbares signiertes Paket wird vor dem Upgrade anhand von Herkunft, Prüfsumme, Signatur und Zeitstempel geprüft. Ohne Angabe werden Neuinstallation und erneute Installation derselben Version geprüft.
 
 ## Windows-Pakete
 

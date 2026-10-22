@@ -1,6 +1,14 @@
 name: Windows release validation
 
 on:
+  push:
+    branches: ['release/0.2.0']
+    paths:
+      - .github/workflows/windows.yml
+      - scripts/windows-install-smoke.ps1
+      - scripts/windows-accessibility-smoke.ps1
+      - scripts/ci/prepare-nvda.ps1
+      - scripts/ci/nvda-capture.py
   workflow_dispatch:
     inputs:
       upgrade_run:
@@ -33,7 +41,7 @@ jobs:
         run: ./scripts/ci/test-windows-signing.ps1
 
   test-readonly:
-    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/release/0.2.0')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -65,7 +73,7 @@ jobs:
         run: node scripts/live-readonly.mjs
 
   windows:
-    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/release/0.2.0')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
     runs-on: windows-2025
     timeout-minutes: 40
     steps:
@@ -150,13 +158,14 @@ jobs:
             desktop/native-contracts/target
           key: ${{ steps.rust-cache.outputs.cache-primary-key }}
       - name: Load a verified signed upgrade baseline
-        if: inputs.upgrade_run != ''
+        if: github.event_name == 'push' || inputs.upgrade_run != ''
         env:
           GH_TOKEN: ${{ github.token }}
           UPGRADE_RUN: ${{ inputs.upgrade_run }}
+          UPGRADE_LATEST: ${{ github.event_name == 'push' }}
         run: python scripts/load-upgrade-baseline.py
       - name: Verify baseline signature and timestamp
-        if: inputs.upgrade_run != ''
+        if: github.event_name == 'push' || inputs.upgrade_run != ''
         run: |
           Import-Module './scripts/windows-signing.psm1' -Force
           $tool = Get-WindowsSignTool

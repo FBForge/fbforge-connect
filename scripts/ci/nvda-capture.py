@@ -57,7 +57,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         text = " ".join(part for part in speechSequence if isinstance(part, str))[:2048]
         if text.strip():
             name = api.getFocusObject().name
-            known = {"Verbinden", "Client-ID", "Client-Secret", "Verbindungsdialog schließen", "Senden", "Empfangen", "Prozesse", "Fiktiven Demo-Prozess öffnen", "Modell einpassen", "Vorgänge", "Vorgänge durchsuchen", "Hilfe", "Anleitung durchsuchen"}
+            known = {"Verbinden", "Client-ID", "Client-Secret", "Verbindungsdialog schließen", "Senden", "Empfangen", "Prozesse", "Fiktiven Demo-Prozess öffnen", "Modell einpassen", "Vorgänge", "Vorgänge durchsuchen", "Hilfe", "Schnellstart (Website im Browser öffnen)"}
             self.write({"text": text, "focus": name if name in known else "(other control)"})
 
     def terminate(self):

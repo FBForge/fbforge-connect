@@ -22,7 +22,7 @@ Die Pakete werden mit digitaler Signatur, Zeitstempel und SHA-256-Prüfsumme ber
 
 Die [Anleitung mit Bildern und Beispielen](https://fbforge.de/connect/hilfe/0.2/start) wird auf der Website gepflegt. In der Anwendung finden Sie Hinweise und Links zum passenden Kapitel.
 
-[Versionshinweise](RELEASE_NOTES.md) · [Roadmap](ROADMAP.md) · [Mitwirken](CONTRIBUTING.md) · [Issues](https://github.com/FBForge/fbforge-connect/issues) · [Sicherheit](SECURITY.md)
+[Versionshinweise](RELEASE_NOTES.md) · [Roadmap](ROADMAP.md) · [Lokal bauen](BUILDING.md) · [Mitwirken](CONTRIBUTING.md) · [Issues](https://github.com/FBForge/fbforge-connect/issues) · [Sicherheit](SECURITY.md)
 
 ## Lizenz
 
