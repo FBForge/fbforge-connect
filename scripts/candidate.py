@@ -11,6 +11,12 @@ REPOSITORY = "FBForge/fbforge-connect"
 LIMIT = 160 * 1024 * 1024
 
 
+def application_binary(version):
+    # Signed 0.1 packages are immutable upgrade baselines. New packages must use
+    # the new filename, rather than accepting either name in a signature report.
+    return "fit-connect-integration-client.exe" if version.startswith("0.1.") else "fbforge-connect.exe"
+
+
 def require(condition, reason):
     if not condition:
         raise RuntimeError(reason)
@@ -72,7 +78,7 @@ def read_candidate(archive_bytes, commit, checksum, version, run_id):
     require(hashlib.sha256(files[installer]).hexdigest() == checksum, "installer_digest_mismatch")
     require(files["SHA256SUMS.txt"].decode("utf-8-sig").strip() == checksum + "  " + installer, "checksum_file_mismatch")
     signatures = json.loads(files["signature-info.json"].decode("utf-8-sig"))
-    signed_files = {installer, "fit-connect-integration-client.exe", "uninstall.exe"}
+    signed_files = {installer, application_binary(version), "uninstall.exe"}
     require(isinstance(signatures, list) and len(signatures) == 3, "signature_report_incomplete")
     require({entry.get("file") for entry in signatures} == signed_files, "signature_files_mismatch")
     for entry in signatures:

@@ -16,7 +16,7 @@ for (const secretName of secretNames)
   requireCheck(Boolean(process.env[secretName]), 'actions_secret_missing');
 const root = fileURLToPath(new URL('../', import.meta.url));
 const bridge = join(root, 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe');
-const directory = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), 'fitconnect-live-'));
+const directory = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), 'fbforge-live-'));
 const runName = `FBForge Connect CI ${randomUUID()}`;
 const applicationUri = 'urn:fit-connect:test-client:demo:application:1';
 const replyUri = 'urn:fit-connect:test-client:demo:reply:1';

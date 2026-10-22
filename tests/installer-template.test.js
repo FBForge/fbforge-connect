@@ -6,16 +6,22 @@ import { productName } from '../frontend/src/product.js';
 
 test('renamed installer preserves the legacy upgrade identity with only two reviewed upstream changes', async () => {
   const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
-  const [template, provenance, pkg, config, page] = await Promise.all([
+  const [template, provenance, pkg, config, page, cargo, lock] = await Promise.all([
     read('desktop/installer/installer.nsi'),
     read('desktop/installer/upstream.json'),
     read('package.json'),
     read('desktop/tauri.conf.json'),
     read('frontend/index.html'),
+    read('desktop/Cargo.toml'),
+    read('package-lock.json'),
   ]);
   const source = JSON.parse(provenance),
     app = JSON.parse(config);
   assert.equal(JSON.parse(pkg).devDependencies['@tauri-apps/cli'], source.version);
+  assert.equal(JSON.parse(pkg).name, 'fbforge-connect');
+  assert.equal(JSON.parse(lock).name, 'fbforge-connect');
+  assert.equal(JSON.parse(lock).packages[''].name, 'fbforge-connect');
+  assert.match(cargo, /^name = "fbforge-connect"$/m);
   const original = template
     .replace(
       '!define UNINSTKEY "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\FIT-Connect Test-Client"',

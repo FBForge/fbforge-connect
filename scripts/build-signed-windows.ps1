@@ -17,7 +17,7 @@ Assert-CodeSigningCertificate $certificate
 $root = Split-Path -Parent $PSScriptRoot
 $temporary = Join-Path $env:RUNNER_TEMP ('fbforge-signing-' + [Guid]::NewGuid().ToString('N') + '.json')
 $output = Join-Path $env:RUNNER_TEMP ('fbforge-signed-' + [Guid]::NewGuid().ToString('N'))
-$binary = Join-Path $output 'fit-connect-integration-client.exe'
+$binary = Join-Path $output 'fbforge-connect.exe'
 $signer = Join-Path $PSScriptRoot 'sign-windows-file.ps1'
 $config = @{ bundle = @{ windows = @{ certificateThumbprint = $Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = $TimestampUrl; tsp = $true; signCommand = @{ cmd = 'powershell.exe'; args = @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',$signer,'-Thumbprint',$Thumbprint,'-TimestampUrl',$TimestampUrl,'-SignedMainBinaryPath',$binary,'-Path','%1') } } } }
 [IO.File]::WriteAllText($temporary, ($config | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))

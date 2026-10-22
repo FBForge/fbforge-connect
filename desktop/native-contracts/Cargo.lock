@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "fit-connect-native-contracts"
+name = "fbforge-connect-native-contracts"
 version = "0.1.0"
 dependencies = [
  "serde",

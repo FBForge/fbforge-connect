@@ -113,6 +113,7 @@ pub(crate) mod platform {
         result
     }
     pub fn encrypt(bytes: &[u8]) -> Result<Vec<u8>, &'static str> {
+        // DPAPI entropy is part of the persisted format, independent of the app name.
         transform_with_purpose(bytes, true, b"FIT-Connect Test-Client / user profile / v1")
     }
     pub fn decrypt(bytes: &[u8]) -> Result<Vec<u8>, &'static str> {

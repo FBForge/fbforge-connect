@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import tempfile
 
-from candidate import REPOSITORY, api, download_candidate, require
+from candidate import REPOSITORY, api, application_binary, download_candidate, require
 
 
 def main():
@@ -28,6 +28,7 @@ def main():
     with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
         output.write(f"FITCONNECT_PREVIOUS_INSTALLER={installer}\n")
         output.write(f"FITCONNECT_PREVIOUS_SIGNER={manifest['certificateThumbprint']}\n")
+        output.write(f"FITCONNECT_PREVIOUS_BINARY={application_binary(manifest['version'])}\n")
     print("Verified signed upgrade baseline downloaded. Authenticode verification follows on Windows.")
 
 

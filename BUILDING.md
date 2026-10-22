@@ -44,7 +44,7 @@ Der Befehl startet Frontend und Desktop-Anwendung gemeinsam. Frontend-Änderunge
 npm run desktop:build -- -- --locked
 ```
 
-Das unsignierte Setup liegt unter `desktop/target/release/bundle/nsis/`. Die gebaute Anwendung liegt unter `desktop/target/release/fit-connect-integration-client.exe`. Das Paket enthält Java. Fehlt WebView2 auf dem Zielrechner, lädt das Standard-Setup die Runtime bei der Installation nach.
+Das unsignierte Setup liegt unter `desktop/target/release/bundle/nsis/`. Die gebaute Anwendung liegt unter `desktop/target/release/fbforge-connect.exe`. Das Paket enthält Java. Fehlt WebView2 auf dem Zielrechner, lädt das Standard-Setup die Runtime bei der Installation nach.
 
 Für einen Installer mit eingebettetem WebView2-Installer:
 

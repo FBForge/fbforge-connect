@@ -177,7 +177,7 @@ automaticUpdates = disabled
     [IO.File]::WriteAllText((Join-Path $taskConfig 'nvda.ini'), $config, [Text.UTF8Encoding]::new($false))
     $setup = Start-Process -FilePath ([IO.Path]::GetFullPath($InstallerPath)) -ArgumentList ('/S /D=' + $taskInstall) -PassThru
     if (-not $setup.WaitForExit(120000) -or $setup.ExitCode -ne 0) { throw 'a11y_install_failed' }
-    $binary = Join-Path $taskInstall 'fit-connect-integration-client.exe'
+    $binary = Join-Path $taskInstall 'fbforge-connect.exe'
     if ($ExpectedBinaryPath -and (Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedBinaryPath -Algorithm SHA256).Hash) { throw 'a11y_binary_revision_mismatch' }
     $taskApp = [Diagnostics.Process]::Start((Start-Clean $binary))
     $taskWindow = Wait-Check {

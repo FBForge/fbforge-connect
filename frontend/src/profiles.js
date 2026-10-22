@@ -99,6 +99,7 @@ export async function importProfileBackup(invoke) {
   if (value === null) return null;
   return (await listProfiles(async () => [value]))[0];
 }
+// Keep the persisted v1 marker so existing protected backups remain importable.
 const backupMagic = new TextEncoder().encode('FIT-Connect Test-Client protected profile v1\n');
 const backupLimit = 8 * 1024 * 1024 + backupMagic.length;
 /** The WebView forwards only a bounded encrypted file. DPAPI decryption stays native. */

@@ -15,7 +15,7 @@ spec.loader.exec_module(module)
 calls = []
 def candidate(run):
     calls.append(run)
-    return b'', {'setup.exe': b'fixture'}, {'installer': 'setup.exe', 'certificateThumbprint': 'f' * 40}
+    return b'', {'setup.exe': b'fixture'}, {'version': '0.2.0' if run == '8' else '0.1.0-alpha.1', 'installer': 'setup.exe', 'certificateThumbprint': 'f' * 40}
 module.download_candidate = candidate
 def listing(path):
     assert path.endswith('/sign-windows.yml/runs?status=success&per_page=20')
@@ -32,11 +32,13 @@ with tempfile.TemporaryDirectory() as root:
     module.main()
     assert calls == ['4']
     assert 'FITCONNECT_PREVIOUS_SIGNER=' + 'f' * 40 in output.read_text()
+    assert 'FITCONNECT_PREVIOUS_BINARY=fit-connect-integration-client.exe' in output.read_text()
     assert next(pathlib.Path(root).glob('fbforge-upgrade-*/setup.exe')).read_bytes() == b'fixture'
     # Explicit manual selection wins over automatic baseline discovery.
     os.environ['UPGRADE_RUN'] = '8'
     module.main()
     assert calls == ['4', '8']
+    assert 'FITCONNECT_PREVIOUS_BINARY=fbforge-connect.exe' in output.read_text()
     # No successful trusted baseline must fail closed, before downloading anything.
     os.environ['UPGRADE_RUN'] = ''
     module.api = lambda path: {'workflow_runs': []}

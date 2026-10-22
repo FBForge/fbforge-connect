@@ -9,6 +9,7 @@ use std::{
 
 const MAX_FILE: usize = 8 * 1024 * 1024;
 const MAX_PROFILES: usize = 32;
+// Persisted v1 format, shared with the renderer. Keep existing backups readable.
 const BACKUP_MAGIC: &[u8] = b"FIT-Connect Test-Client protected profile v1\n";
 pub const MAX_BACKUP_BYTES: usize = MAX_FILE + BACKUP_MAGIC.len();
 

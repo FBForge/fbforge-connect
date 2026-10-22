@@ -39,6 +39,27 @@ def rejected(fn, reason):
 def read(data): return c.read_candidate(data, commit, checksum, version, run_id)
 files, parsed = read(archive())
 assert files[installer] == content and parsed == manifest
+# An immutable 0.1 baseline keeps its original executable name. A current
+# release must have exactly the rebranded name in its signed-file report.
+current_version = '0.2.0'
+current_installer = f'FBForge Connect_{current_version}_x64-setup.exe'
+current_manifest = dict(manifest, version=current_version, installer=current_installer)
+def current_archive(binary):
+    stream = io.BytesIO()
+    signatures = copy.deepcopy(report)
+    signatures[0]['file'] = current_installer
+    signatures[1]['file'] = binary
+    with zipfile.ZipFile(stream, 'w') as output:
+        output.writestr(current_installer, content)
+        output.writestr('build-info.json', json.dumps(current_manifest))
+        output.writestr('signature-info.json', json.dumps(signatures))
+        output.writestr('SHA256SUMS.txt', checksum + '  ' + current_installer + '\\n')
+    return stream.getvalue()
+def read_current(binary):
+    return c.read_candidate(current_archive(binary), commit, checksum, current_version, run_id)
+assert read_current('fbforge-connect.exe')[1] == current_manifest
+rejected(lambda: read_current('fit-connect-integration-client.exe'), 'signature_files_mismatch')
+rejected(lambda: read_current('../fbforge-connect.exe'), 'signature_files_mismatch')
 for key, value, reason in [
     ('signing', 'unsigned', 'manifest_mismatch'),
     ('commit', 'd' * 40, 'manifest_mismatch'),

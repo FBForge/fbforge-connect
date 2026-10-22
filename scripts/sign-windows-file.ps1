@@ -8,6 +8,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'windows-signing.psm1') -Force
-$main = Join-Path $PSScriptRoot '../desktop/target/release/fit-connect-integration-client.exe'
+$main = Join-Path $PSScriptRoot '../desktop/target/release/fbforge-connect.exe'
 Invoke-WindowsFileSigning -Path $Path -Thumbprint $Thumbprint -TimestampUrl $TimestampUrl -SignTool (Get-WindowsSignTool) -MainBinaryPath $main -SignedMainBinaryPath $SignedMainBinaryPath
 exit 0

@@ -1,6 +1,6 @@
 //! CI-only checkpoint bridge using the actual product vault. Not part of the desktop bundle.
 //! Private archive JSON travels through pipes; the on-disk representation is always Windows DPAPI.
-use fit_connect_native_contracts::{
+use fbforge_connect_native_contracts::{
     protocol::{ApiVersion, SessionRole},
     vault::{Profile, ProfileDefaults, Vault},
 };

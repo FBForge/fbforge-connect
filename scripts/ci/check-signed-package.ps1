@@ -18,7 +18,7 @@ $checksums = [IO.File]::ReadAllText((Join-Path $Directory 'SHA256SUMS.txt')).Tri
 if ($checksums -ne ($hash + '  ' + $manifest.installer)) { throw 'signed_checksum_manifest_mismatch' }
 Import-Module (Join-Path $PSScriptRoot '../windows-signing.psm1') -Force
 $tool = Get-WindowsSignTool
-$binary = Join-Path $Directory 'fit-connect-integration-client.exe'
+$binary = Join-Path $Directory 'fbforge-connect.exe'
 $null = Assert-WindowsSignature -Path $setup -Thumbprint $Thumbprint -SignTool $tool
 $null = Assert-WindowsSignature -Path $binary -Thumbprint $Thumbprint -SignTool $tool
 $previous = @(Get-ChildItem -LiteralPath $Baseline -Filter '*-setup.exe' -File)

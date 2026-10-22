@@ -4,6 +4,7 @@ param(
     [Parameter(Mandatory)][string]$CheckpointBridge,
     [Parameter(Mandatory)][string]$ExpectedBinaryPath,
     [string]$PreviousInstallerPath = '',
+    [ValidateSet('fbforge-connect.exe', 'fit-connect-integration-client.exe')][string]$PreviousBinaryName = 'fbforge-connect.exe',
     [string]$RecentInstallerPath = '',
     [ValidatePattern('^$|^[a-fA-F0-9]{40}$')][string]$ExpectedSignerThumbprint = '',
     [string]$SignatureReportPath = ''
@@ -28,7 +29,7 @@ public static class InstallerWindowFocus {
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr window, int command);
 }
 '@
-$taskRoot = Join-Path $env:RUNNER_TEMP ('fitconnect-install-' + [Guid]::NewGuid().ToString('N'))
+$taskRoot = Join-Path $env:RUNNER_TEMP ('fbforge-install-' + [Guid]::NewGuid().ToString('N'))
 $taskInstall = Join-Path $taskRoot 'application files'
 $taskProfiles = Join-Path $env:APPDATA 'org.fitconnect.integration-client\profiles'
 $taskProfileId = [Guid]::NewGuid().ToString()
@@ -36,6 +37,8 @@ $taskProfileFile = Join-Path $taskProfiles ($taskProfileId + '.profile')
 $taskApp = $null
 $taskJavaIds = @()
 $taskOwnsProfiles = $false
+$taskBinaryName = 'fbforge-connect.exe'
+$taskLegacyShortcuts = [Collections.Generic.List[string]]::new()
 
 function Wait-Condition([scriptblock]$Check, [string]$Failure, [int]$Seconds = 45) {
     $deadline = [DateTime]::UtcNow.AddSeconds($Seconds)
@@ -46,13 +49,46 @@ function Wait-Condition([scriptblock]$Check, [string]$Failure, [int]$Seconds = 4
     } while ([DateTime]::UtcNow -lt $deadline)
     throw $Failure
 }
-function Install-Owned([string]$Setup) {
+function Install-Owned([string]$Setup, [string]$BinaryName = $taskBinaryName) {
     if (-not (Test-Path -LiteralPath $Setup -PathType Leaf)) { throw 'installer_missing' }
     # NSIS requires /D last; the remaining command line is the destination, including spaces.
     $install = Start-Process -FilePath $Setup -ArgumentList ('/S /D=' + $taskInstall) -PassThru
     if (-not $install.WaitForExit(120000)) { $install.Kill(); throw 'installer_timeout' }
     if ($install.ExitCode -ne 0) { throw 'installer_failed' }
-    if (-not (Test-Path -LiteralPath (Join-Path $taskInstall 'fit-connect-integration-client.exe'))) { throw 'installed_binary_missing' }
+    if (-not (Test-Path -LiteralPath (Join-Path $taskInstall $BinaryName))) { throw 'installed_binary_missing' }
+}
+function Shortcut-Folders {
+    @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))
+}
+function Seed-LegacyShortcuts {
+    $shell = New-Object -ComObject WScript.Shell
+    try {
+        foreach ($folder in @(Shortcut-Folders)) {
+            $path = Join-Path $folder 'FIT-Connect Test-Client.lnk'
+            if (Test-Path -LiteralPath $path) { throw 'legacy_shortcut_fixture_conflict' }
+            $shortcut = $shell.CreateShortcut($path)
+            $shortcut.TargetPath = Join-Path $taskInstall 'fit-connect-integration-client.exe'
+            $shortcut.Save()
+            $taskLegacyShortcuts.Add($path)
+            $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shortcut)
+        }
+    } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
+}
+function Check-Shortcuts {
+    $shell = New-Object -ComObject WScript.Shell
+    try {
+        foreach ($folder in @(Shortcut-Folders)) {
+            $path = Join-Path $folder 'FBForge Connect.lnk'
+            if (-not (Test-Path -LiteralPath $path)) { throw 'installed_shortcut_missing' }
+            $shortcut = $shell.CreateShortcut($path)
+            try {
+                if ($shortcut.TargetPath -ne (Join-Path $taskInstall $taskBinaryName)) { throw 'installed_shortcut_target_mismatch' }
+            } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shortcut) }
+        }
+        foreach ($path in $taskLegacyShortcuts) {
+            if (Test-Path -LiteralPath $path) { throw 'legacy_shortcut_not_removed' }
+        }
+    } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
 }
 function Stop-OwnedApp {
     if ($script:taskApp) {
@@ -76,16 +112,18 @@ function Invoke-Named($Root, [string]$Name) {
     $pattern.Invoke()
 }
 function Check-Installed([bool]$ExpectProfile) {
-    $installedBinary = Join-Path $taskInstall 'fit-connect-integration-client.exe'
+    $installedBinary = Join-Path $taskInstall $taskBinaryName
+    if (Test-Path -LiteralPath (Join-Path $taskInstall 'fit-connect-integration-client.exe')) { throw 'legacy_binary_not_removed' }
+    Check-Shortcuts
     if ((Get-FileHash -LiteralPath $installedBinary -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedBinaryPath -Algorithm SHA256).Hash) { throw 'installed_binary_revision_mismatch' }
     if ($ExpectedSignerThumbprint) {
         $script:taskSignatures['application'] = Assert-WindowsSignature -Path $installedBinary -Thumbprint $ExpectedSignerThumbprint -SignTool $taskSignTool
         $script:taskSignatures['uninstaller'] = Assert-WindowsSignature -Path (Join-Path $taskInstall 'uninstall.exe') -Thumbprint $ExpectedSignerThumbprint -SignTool $taskSignTool
     }
     $registration = Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FIT-Connect Test-Client'
-    if ($registration.DisplayName -ne 'FBForge Connect' -or $registration.Publisher -ne 'FBForge' -or $registration.MainBinaryName -ne 'fit-connect-integration-client.exe' -or $registration.InstallLocation.Trim('"') -ne $taskInstall) { throw 'installed_upgrade_identity_mismatch' }
+    if ($registration.DisplayName -ne 'FBForge Connect' -or $registration.Publisher -ne 'FBForge' -or $registration.MainBinaryName -ne $taskBinaryName -or $registration.InstallLocation.Trim('"') -ne $taskInstall) { throw 'installed_upgrade_identity_mismatch' }
     if (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FBForge Connect') { throw 'duplicate_upgrade_registration' }
-    $info = [System.Diagnostics.ProcessStartInfo]::new((Join-Path $taskInstall 'fit-connect-integration-client.exe'))
+    $info = [System.Diagnostics.ProcessStartInfo]::new($installedBinary)
     $info.UseShellExecute = $false; $info.WorkingDirectory = $taskInstall
     # Prove that the application uses its own JDK; do not inherit CI credentials or JVM injection options.
     foreach ($key in @('JAVA_HOME','JDK_HOME','JAVA_TOOL_OPTIONS','_JAVA_OPTIONS','JDK_JAVA_OPTIONS','CLASSPATH','GH_TOKEN','GITHUB_TOKEN','ACTIONS_RUNTIME_TOKEN','ACTIONS_ID_TOKEN_REQUEST_TOKEN','SENDERID','SENDERSECRET','SENDERDEST','SUBSCRIBERID','SUBSCRIBERSECRET')) { $null = $info.EnvironmentVariables.Remove($key) }
@@ -150,7 +188,9 @@ try {
     Write-Output 'Fresh installation, native SDK loading and uninstall preserving the protected profile passed'
     foreach ($previous in @($PreviousInstallerPath, $RecentInstallerPath)) {
         if (-not $previous) { continue }
-        Install-Owned ([IO.Path]::GetFullPath($previous))
+        $baselineBinary = if ($previous -eq $PreviousInstallerPath) { $PreviousBinaryName } else { $taskBinaryName }
+        Install-Owned ([IO.Path]::GetFullPath($previous)) $baselineBinary
+        if ($baselineBinary -eq 'fit-connect-integration-client.exe') { Seed-LegacyShortcuts }
         Install-Owned ([IO.Path]::GetFullPath($InstallerPath))
         Check-Installed $true
         Uninstall-Owned
@@ -164,5 +204,6 @@ try {
 } finally {
     Stop-OwnedApp
     if ($taskOwnsProfiles -and (Test-Path -LiteralPath $taskProfiles)) { Remove-Item -LiteralPath $taskProfiles -Recurse -Force }
+    foreach ($path in $taskLegacyShortcuts) { if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force } }
     if (Test-Path -LiteralPath $taskRoot) { Remove-Item -LiteralPath $taskRoot -Recurse -Force }
 }
