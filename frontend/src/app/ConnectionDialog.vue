@@ -124,7 +124,7 @@ const {
       </div>
       <label class="checkbox-label">
         <input v-model="rememberProfile" type="checkbox" :disabled="busy" />
-        Zugangsdaten und Testschlüssel auf diesem Windows-Benutzerkonto geschützt speichern
+        Zugangsdaten und Schlüssel auf diesem Windows-Benutzerkonto geschützt speichern
       </label>
       <label v-if="rememberProfile" for="profile-name">
         Profilname

@@ -9,7 +9,7 @@ test('profiles with synthetic native fixtures', async ({ browser }) => {
   await page.getByRole('button', { name: 'Verbindung herstellen', exact: true }).click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
-  await page.getByRole('checkbox', { name: /Zugangsdaten und Testschlüssel/ }).check();
+  await page.getByRole('checkbox', { name: /Zugangsdaten und Schlüssel/ }).check();
   await page.locator('#profile-name').fill('Bauamt TEST');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await page.getByRole('dialog').waitFor({ state: 'hidden' });
@@ -70,7 +70,7 @@ test('connection identity remains visible for temporary and restored profiles in
     assert.equal(await identity.count(), 0);
     await page.locator('#client-id').fill(`saved-client-${api}`);
     await page.locator('#client-secret').fill('synthetic-secret-marker');
-    await page.getByRole('checkbox', { name: /Zugangsdaten und Testschlüssel/ }).check();
+    await page.getByRole('checkbox', { name: /Zugangsdaten und Schlüssel/ }).check();
     await page.locator('#profile-name').fill(`Testsender ${api}`);
     await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
     await page.getByRole('button', { name: 'Verbunden', exact: true }).click();

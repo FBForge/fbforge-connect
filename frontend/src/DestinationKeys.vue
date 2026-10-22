@@ -86,8 +86,7 @@ async function run(name, operation, apply) {
   action.value = name;
   error.value = '';
   emit('busy', true);
-  if (['Destination prüfen', 'Testschlüssel laden', 'Testschlüssel verwerfen'].includes(name))
-    emit('invalidate');
+  if (['Destination prüfen', 'Schlüssel laden', 'Schlüssel verwerfen'].includes(name)) emit('invalidate');
   let status = 'Erfolgreich';
   try {
     const value = await operation(snapshot);
@@ -141,7 +140,7 @@ function chooseFile(files) {
   const destination = selected.value.destinationId;
   const fileRevision = revision;
   run(
-    'Testschlüssel laden',
+    'Schlüssel laden',
     async (session) => {
       return importKeyFiles(
         files,
@@ -165,7 +164,7 @@ function discard() {
   )
     return;
   run(
-    'Testschlüssel verwerfen',
+    'Schlüssel verwerfen',
     (session) => discardKeys(invoke, session),
     (value) => {
       keys.value = value.keys;

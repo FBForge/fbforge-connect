@@ -151,7 +151,7 @@ export const helpTopics = [
     intro:
       'Ein Fachverfahren lädt seinen Eingang, entschlüsselt den ausgewählten Antrag und prüft die technischen Inhalte. Die Empfangsbestätigung bleibt eine eigene bewusste Aktion.',
     steps: [
-      'Verbinden Sie den Fachverfahren-Zugang. Öffnen Sie unter „Empfangen“ das Register „Einreichungen“. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Testschlüssel zum Entschlüsseln und Signieren.',
+      'Verbinden Sie den Fachverfahren-Zugang. Öffnen Sie unter „Empfangen“ das Register „Einreichungen“. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Schlüssel zum Entschlüsseln und Signieren.',
       'Ohne Submission ID laden Sie die verfügbaren Einreichungen. Mit einer Submission ID öffnet die Schaltfläche oder die Eingabetaste direkt die Nachricht und startet die Entschlüsselung und Prüfung.',
       'Nach erfolgreicher Einrichtung wird die Empfangseinrichtung kompakt angezeigt. Über „Einrichtung ändern“ öffnen Sie Destination und Schlüssel erneut. Wenn Schlüssel oder Schemata fehlen, führt die passende Schaltfläche zur Einrichtung oder zu den Schemaeinstellungen. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
       'Lesen Sie die Fachdaten direkt in der Formularansicht. Die Eingangssuche ist währenddessen ausgeblendet. „Zurück zum Eingang“ stellt Ihre bisherige Suche wieder her. „Struktur, Quelltext und Feldangaben“ enthält die technischen Ansichten. Dort blendet „Technische Feldangaben anzeigen“ Originalwerte, Pfade und Schemaherkunft ein. Datumswerte werden bei eindeutiger Typisierung lesbar formatiert, Wahrheitswerte als Ja oder Nein.',
@@ -407,7 +407,7 @@ export const helpTopics = [
     intro:
       'Fehlermeldungen erklären den nächsten sinnvollen Schritt. Wiederholen Sie einen Schreibvorgang nicht unüberlegt.',
     steps: [
-      '„Testschlüssel fehlt“: Wählen Sie „Schlüssel einrichten“ und laden Sie einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
+      '„Schlüssel fehlt“: Wählen Sie „Schlüssel einrichten“ und laden Sie einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
       '„Öffentliche Schemaquellen laden?“: Bestätigen Sie den Abruf im Dialog oder brechen Sie ab und hinterlegen Sie ein lokales Schema. Nach Ihrer Zustimmung wird die angefangene Prüfung fortgesetzt. Eine erteilte Freigabe gilt für die aktive Verbindung. Sie wird nicht gespeichert.',
       'Unter „Technische Fehlerangaben“ finden Sie API-Version und kopierbaren Fehlercode.',
       'Schlüssel abgewiesen: Vergleichen Sie Destination, Verwendungszweck und aktuelle Schlüsselregistrierung. Alte Nachrichten können einen früheren privaten Schlüssel benötigen.',
