@@ -2,6 +2,7 @@
 export function fieldDisplay(node) {
   const raw = node.value;
   const hint = node.schema?.ambiguous ? null : node.schema;
+  if (hint?.valueLabel) return hint.valueLabel;
   const type = node.type === 'boolean' ? 'boolean' : hint?.valueType;
   if (type === 'boolean') {
     if (raw === 'true' || raw === '1') return 'Ja';

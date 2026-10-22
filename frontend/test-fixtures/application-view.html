@@ -85,6 +85,7 @@
           description: 'Fiktiver Nachweis zum Antrag',
           bytes: textBytes('Synthetischer Nachweis.'),
         },
+        ...(fixture.extraAttachments || []),
       ];
       const envelope = (data) => ({
         apiVersion: session.apiVersion,
@@ -132,7 +133,7 @@
               destinationId: detail.destinationId,
               submissionId: detail.submissionId,
               caseId: detail.caseId,
-              partCount: 3,
+              partCount: parts().length,
               warningCount: 1,
               warnings: ['MALWARE_SCAN_NOT_CONFIGURED'],
             });
@@ -140,7 +141,7 @@
             return envelope({
               proofId: uuid(9),
               offset: args.offset,
-              total: 3,
+              total: parts().length,
               parts: parts()
                 .slice(args.offset, args.offset + 2)
                 .map(({ bytes, ...part }) => ({ ...part, totalBytes: bytes.length })),
@@ -339,7 +340,7 @@
                 return () =>
                   h('div', { class: 'desktop-shell', style: 'grid-template-columns:1fr' }, [
                     h('header', { class: 'app-topbar' }, [
-                      h('strong', productName),
+                      h('h1', { style: 'font-size:14px;margin:0' }, productName),
                       h('span', { class: 'environment-tag' }, 'SYNTHETISCHE TESTDATEN'),
                     ]),
                     h('main', { class: 'workspace-scroll', style: 'grid-column:1;grid-row:2' }, [

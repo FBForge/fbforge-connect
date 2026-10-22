@@ -22,11 +22,6 @@
   overflow-wrap: anywhere;
   margin: 6px 0 10px;
 }
-.application-value-label {
-  color: var(--muted);
-  font-size: 11px;
-  margin: 5px 0;
-}
 .schema-required {
   font-size: 10px;
   font-weight: 400;
@@ -39,21 +34,57 @@
   overflow-wrap: anywhere;
 }
 
+.document-reading {
+  container: document-reading / inline-size;
+  margin-block: 20px;
+}
 .document-layout {
   display: grid;
   gap: 24px;
-  margin-block: 20px;
+  align-items: start;
+  scroll-margin-top: 16px;
 }
 .document-main,
 .document-aside {
   min-width: 0;
 }
+.document-main,
 .document-aside {
-  padding: 18px;
-  background: var(--surface-soft);
+  padding: 20px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
+}
+.document-main {
+  background: var(--surface);
+}
+.document-main h3,
+.document-aside h3 {
+  margin: 0 0 12px;
+}
+.document-main .tool-section-heading p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.document-aside {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-soft);
   align-self: start;
+}
+.document-aside .document-attachments {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.document-aside .document-attachments > h3 {
+  flex-shrink: 0;
+}
+.document-aside .application-attachment-list {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  margin: 0;
 }
 .document-aside .application-attachment-list li {
   flex-wrap: wrap;
@@ -62,13 +93,33 @@
   border-bottom: 1px solid var(--line);
   border-radius: 0;
 }
+.document-aside .application-attachment-list li:last-child {
+  border-bottom: 0;
+}
+.document-aside .application-attachment-list:focus-visible {
+  outline-offset: -2px;
+}
 .document-aside .application-attachment-list .client-actions {
   flex-shrink: 1;
 }
 .document-next-actions {
+  flex-shrink: 0;
   border-top: 1px solid var(--line);
   padding-top: 16px;
   margin-top: 20px;
+}
+.document-next-actions .client-actions:last-child {
+  margin-bottom: 0;
+}
+.document-shortcut {
+  position: sticky;
+  top: 8px;
+  z-index: 2;
+  margin-bottom: 12px;
+  box-shadow: var(--soft-shadow);
+}
+.document-return {
+  margin-top: 16px;
 }
 .document-next-actions .client-actions {
   align-items: stretch;
@@ -166,12 +217,23 @@
 .receive-action-section {
   scroll-margin-top: 24px;
 }
-@media (min-width: 1280px) {
+@container document-reading (min-width: 56rem) {
   .document-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  }
+  .document-aside {
+    position: sticky;
+    top: 16px;
+    max-height: var(--document-aside-height, calc(100dvh - 32px));
+    overflow: auto;
+  }
+  .document-shortcut,
+  .document-return {
+    display: none;
   }
 }
 @media (max-width: 760px) {
+  .document-main,
   .document-aside {
     padding: 14px;
   }

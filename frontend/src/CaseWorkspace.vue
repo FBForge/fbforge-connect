@@ -272,6 +272,12 @@ const {
       </p>
       <DocumentLayout>
         <template #data>
+          <div class="tool-section-heading">
+            <div>
+              <h3>Fachdaten</h3>
+              <p>Inhalt der gespeicherten Nachricht</p>
+            </div>
+          </div>
           <StructuredData
             v-if="application"
             :text="application.text"

@@ -64,7 +64,22 @@
   font-size: 11px;
 }
 .application-group-body {
-  padding: 4px 16px 16px;
+  padding: 16px 18px 18px;
+}
+/* Nested groups use an indent instead of another box around every level. */
+.application-group .application-group {
+  border: 0;
+  border-inline-start: 2px solid var(--line);
+  border-radius: 0;
+  padding-inline-start: 12px;
+}
+.application-group .application-group > summary {
+  background: transparent;
+  border-radius: 0;
+  padding: 10px 8px !important;
+}
+.application-group .application-group-body {
+  padding: 8px 8px 12px;
 }
 .application-path {
   color: var(--muted);
@@ -75,7 +90,8 @@
 .application-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px 24px;
+  align-items: start;
 }
 .application-fields > .application-group {
   grid-column: 1 / -1;
@@ -91,11 +107,11 @@
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   overflow-wrap: anywhere;
 }
 .application-field-value {
-  padding: 3px 0 10px;
+  padding: 4px 0 12px;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
   white-space: pre-wrap;

@@ -93,9 +93,6 @@ const emptyLabel = (type) =>
             : displayValue
       }}
     </div>
-    <p v-if="node.schema?.valueLabel" class="application-value-label">
-      {{ node.schema.valueLabel }} · Bezeichnung aus Schema
-    </p>
     <p v-if="node.schema?.ambiguous" class="application-duplicate">Schema-Beschriftung nicht eindeutig.</p>
     <details v-if="showTechnical" class="application-origin">
       <summary>Feldherkunft</summary>
@@ -113,6 +110,10 @@ const emptyLabel = (type) =>
           <dd>{{ node.namespace }}</dd>
         </template>
         <template v-if="node.schema">
+          <template v-if="node.schema.valueLabel">
+            <dt>Schema-Bezeichnung</dt>
+            <dd>{{ node.schema.valueLabel }}</dd>
+          </template>
           <dt>Schema-Typ</dt>
           <dd>
             {{ node.schema.type || 'Nicht angegeben'

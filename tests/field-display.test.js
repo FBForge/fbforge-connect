@@ -73,3 +73,38 @@ test('a JSON schema cannot make invalid string or numeric booleans appear as val
   assert.deepEqual(result.root.children.map(fieldDisplay), ['1', 'true', 'Ja']);
   assert.equal(JSON.stringify(model), before);
 });
+
+test('proven enum labels replace codes only for display and remain searchable alongside the original', async () => {
+  const { filterStructuredData } = await import('../frontend/src/structured-data.js');
+  const uri = 'urn:test:labelled-values';
+  const text = '{"consent":"false","group":"eh","unknown":"false"}';
+  const model = parseStructuredData(text, 'json');
+  const original = JSON.stringify(model);
+  const result = annotateSchema(
+    model,
+    JSON.stringify({
+      schemaPackage: 1,
+      schemaUri: uri,
+      documents: {
+        [uri]: {
+          type: 'object',
+          properties: {
+            consent: { type: 'string', oneOf: [{ const: 'false', title: 'Nein' }] },
+            group: { type: 'string', oneOf: [{ const: 'eh', title: 'Ehrenamtliche Tätigkeit' }] },
+            unknown: { type: 'string' },
+          },
+        },
+      },
+    }),
+    uri,
+  );
+  assert.deepEqual(result.root.children.map(fieldDisplay), ['Nein', 'Ehrenamtliche Tätigkeit', 'false']);
+  assert.equal(fieldDisplay({ value: 'eh', schema: { valueLabel: 'Ehrenamt', ambiguous: true } }), 'eh');
+  assert.ok(filterStructuredData(result.root, 'eh'));
+  assert.ok(filterStructuredData(result.root, 'Ehrenamtliche Tätigkeit'));
+  assert.equal(JSON.stringify(model), original);
+  assert.deepEqual(
+    result.root.children.map((node) => node.value),
+    ['false', 'eh', 'false'],
+  );
+});

@@ -88,10 +88,20 @@ onBeforeUnmount(() => {
         <input v-model="showTechnical" type="checkbox" />
         Technische Feldangaben anzeigen
       </label>
+      <p class="small-note">
+        Lesende Ansicht. Die Originaldaten bleiben unverändert. Eine fachliche Prüfung erfolgt durch Sie.
+      </p>
+      <div v-if="schemaUri || schemaDocument" class="application-schema-status">
+        <p class="small-note" role="status">
+          {{
+            schemaStatus === 'limited'
+              ? 'Das Schema überschreitet die Grenze für die Ansicht. Originalfeldnamen bleiben sichtbar.'
+              : annotations.message
+          }}
+        </p>
+        <p v-if="showTechnical" class="application-path">Schema: {{ schemaUri }}</p>
+      </div>
     </details>
-    <p class="small-note">
-      Lesende Ansicht. Die Originaldaten bleiben unverändert. Eine fachliche Prüfung erfolgt durch Sie.
-    </p>
     <details v-if="format === 'xml'" class="application-field-help">
       <summary>Hinweise zur XML-Ansicht</summary>
       <p class="small-note">
@@ -99,16 +109,14 @@ onBeforeUnmount(() => {
         Verarbeitungsanweisungen stehen im Quelltext.
       </p>
     </details>
-    <div v-if="schemaUri || schemaDocument" class="application-schema-status">
-      <p class="small-note" role="status">
-        {{
-          schemaStatus === 'limited'
-            ? 'Das Schema überschreitet die Grenze für die Ansicht. Originalfeldnamen bleiben sichtbar.'
-            : annotations.message
-        }}
-      </p>
-      <p v-if="showTechnical" class="application-path">Schema: {{ schemaUri }}</p>
-    </div>
+    <p
+      v-if="(schemaUri || schemaDocument) && (schemaStatus === 'limited' || annotations.status !== 'ready')"
+      class="small-note"
+      role="status"
+    >
+      Einige Felder werden mit ihren Originalnamen angezeigt. Details stehen unter „Struktur, Quelltext und
+      Feldangaben“.
+    </p>
     <template v-if="mode === 'form' && model.status === 'ready'">
       <label class="application-search" :for="inputId">
         Felder durchsuchen

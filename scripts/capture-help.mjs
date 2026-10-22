@@ -252,7 +252,7 @@ try {
   const application = page.getByRole('heading', { name: 'Antrag lesen', exact: true });
   await expect(application).toBeVisible();
   await capture('receive-review', page.locator('.submission-document-heading'));
-  await capture('receive', application);
+  await capture('receive', page.locator('.document-layout'));
   await button('Antwort verfassen').click();
   await button('Fiktiven Antwortentwurf erzeugen').click();
   await button('Für diese Verbindung erlauben').click();
