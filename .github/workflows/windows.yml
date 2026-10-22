@@ -9,6 +9,9 @@ on:
       - scripts/windows-accessibility-smoke.ps1
       - scripts/ci/prepare-nvda.ps1
       - scripts/ci/nvda-capture.py
+      - scripts/load-upgrade-baseline.py
+      - tests/nvda-observer.test.js
+      - tests/upgrade-baseline.test.js
   workflow_dispatch:
     inputs:
       upgrade_run:
