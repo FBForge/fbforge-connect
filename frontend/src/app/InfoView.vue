@@ -31,7 +31,7 @@ async function showDependencyLicenses() {
       <div>
         <p class="workspace-eyebrow">Desktop-Anwendung</p>
         <h2 id="about-title">{{ productName }}</h2>
-        <p>Version {{ version }} · Alpha 1</p>
+        <p>Version {{ version }}</p>
         <p>{{ productPurpose }}.</p>
       </div>
     </section>
@@ -44,23 +44,20 @@ async function showDependencyLicenses() {
         <dd>Senden, Empfangen, lokale Entschlüsselung und technische Fachdatenprüfung über API v2 und v3</dd>
         <dt>Verwaltung</dt>
         <dd>Vorhandene eigene Destinations ansehen. Änderungen und Bulk-Edit über API v3</dd>
-        <dt>Entwicklungsstand</dt>
-        <dd>
-          Alpha 1 für Integrationstests. Installation und Verhalten auf Ihren Zielgeräten vor dem Einsatz
-          prüfen.
-        </dd>
       </dl>
     </section>
     <section class="tool-section" aria-labelledby="license-title">
       <h2 id="license-title">Lizenz und Einordnung</h2>
       <p>Unabhängiges Projekt. Kein offizielles Produkt der FITKO.</p>
       <p>Diese Anwendung steht unter der European Union Public Licence 1.2 (EUPL-1.2).</p>
-      <button type="button" class="button secondary" @click="licenseDialog.showModal()">
-        Lizenztext anzeigen
-      </button>
-      <button type="button" class="button secondary" @click="showDependencyLicenses">
-        Drittanbieter-Lizenzen anzeigen
-      </button>
+      <div class="client-actions">
+        <button type="button" class="button secondary" @click="licenseDialog.showModal()">
+          Lizenztext anzeigen
+        </button>
+        <button type="button" class="button secondary" @click="showDependencyLicenses">
+          Drittanbieter-Lizenzen anzeigen
+        </button>
+      </div>
     </section>
   </div>
   <dialog ref="dependencyDialog" class="tool-dialog license-dialog" aria-labelledby="dependency-title">
