@@ -2,6 +2,7 @@ import { chromium, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { xmlPacket } from '../frontend/test-fixtures/xml-message-schema.js';
+import { openBatch, id as batchId } from '../frontend/test-fixtures/message-batch.js';
 
 const output = process.argv[2];
 if (!output || process.argv.length !== 3)
@@ -28,6 +29,27 @@ const capture = async (name, anchor) => {
   captures.add(name);
 };
 try {
+  await openBatch(page);
+  await page.evaluate((value) => (window.__batchFixture.schemaError = value), batchId(4));
+  await page.getByRole('checkbox', { name: 'Alle auf dieser Seite auswählen', exact: true }).check();
+  await button('Prüfen, speichern und annehmen').click();
+  await page.getByRole('checkbox', { name: 'Annahmen ohne Malwarescan erlauben', exact: true }).check();
+  await button('Zielordner wählen und starten').click();
+  await expect(page.getByText('Gespeichert und angenommen', { exact: true })).toHaveCount(2);
+  await capture('receive-batch');
+  await button('Schließen').click();
+  await openBatch(page, { replies: true });
+  await page.getByRole('checkbox', { name: 'Alle auf dieser Seite auswählen', exact: true }).check();
+  await button('Auswahl herunterladen').click();
+  await button('Zielordner wählen und starten').click();
+  await expect(page.getByText('Gespeichert', { exact: true })).toHaveCount(3);
+  await capture('reply-batch');
+  await button('Schließen').click();
+  await openBatch(page);
+  await button('Öffnen und prüfen').first().click();
+  await button('Alle Dateien herunterladen').click();
+  await expect(page.getByText('3 Dateien gespeichert.', { exact: true })).toBeVisible();
+  await capture('message-download', page.locator('.document-layout'));
   await open('test-fixtures/environments.html');
   await page.getByRole('combobox', { name: 'Umgebung', exact: true }).selectOption('PROD');
   await expect(page.getByRole('dialog', { name: 'Zu PROD wechseln?', exact: true })).toBeVisible();

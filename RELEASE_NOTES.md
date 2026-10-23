@@ -7,6 +7,7 @@
 
 - Geführte Testaufgaben und einfachere Abläufe beim Senden, Empfangen und Antworten.
 - Lesende Formularansicht mit Anlagen und zusammenhängenden Vorgängen.
+- Metadaten, Fachdaten und Anlagen gemeinsam herunterladen. Mehrfachauswahl mit Prüfung, Dateiablage und anschließender Annahme. Fehlerhafte Einreichungen bleiben manuell bearbeitbar.
 - Kompakte Profilauswahl mit Client-ID und eingeklappter Verwaltung.
 - Programmdatei `fbforge-connect.exe` und einheitliche Paketnamen. Bestehende Installationen und Profile bleiben erhalten.
 - Sichtbare Destination-Details, gemeinsame Bearbeitung und erreichbare PDF-Seitensteuerung.

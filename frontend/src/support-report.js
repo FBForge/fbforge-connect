@@ -3,6 +3,9 @@ import { productName } from './product.js';
 
 // Deliberately exclude arguments, response bodies, identifiers, paths and free-form messages.
 export const operationLabels = Object.freeze({
+  begin_message_export: 'Exportordner auswählen',
+  export_message: 'Nachricht vollständig speichern',
+  finish_message_export: 'Dateiexport abschließen',
   select_environment: 'Umgebung wechseln',
   import_certified_keys: 'V-PKI-Schlüssel importieren',
   test_library: 'Lokale Testfallsammlung',

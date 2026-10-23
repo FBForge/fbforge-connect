@@ -98,6 +98,9 @@
     "allow-case-workspace",
     "allow-open-documentation",
     "allow-select-environment",
-    "allow-test-library"
+    "allow-test-library",
+    "allow-begin-message-export",
+    "allow-export-message",
+    "allow-finish-message-export"
   ]
 }

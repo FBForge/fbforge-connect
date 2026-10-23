@@ -1,10 +1,12 @@
 <script setup>
 import CopyValue from './CopyValue.vue';
+import InboxSelection from './InboxSelection.vue';
 import { inject, ref, computed, watch, nextTick } from 'vue';
 import ReceivePanel from './ReceivePanel.vue';
 import { invoke } from './native.js';
 import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
+const selection = ref(null);
 import { listReplies, listReplyChannels } from './replies.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
@@ -178,10 +180,22 @@ async function loadChannels() {
       <template v-if="page">
         <h3 ref="heading" tabindex="-1">{{ page.totalCount }} verfügbare Antworten</h3>
         <p v-if="!page.replies.length">Keine Antworten zur Abholung vorhanden.</p>
-        <div v-else class="client-table support-table">
+        <InboxSelection
+          ref="selection"
+          :session="session"
+          :items="page.replies"
+          :total="page.totalCount"
+          :busy="disabled"
+          reply
+          :load-page="(offset) => listReplies(invoke, session, offset)"
+          @busy="emit('busy', $event)"
+          @open="open($event)"
+        />
+        <div v-if="page.replies.length" class="client-table support-table">
           <table class="receipt-history-table">
             <thead>
               <tr>
+                <th scope="col">Auswahl</th>
                 <th scope="col">Reply ID</th>
                 <th scope="col">Case ID</th>
                 <th scope="col">Aktion</th>
@@ -189,6 +203,15 @@ async function loadChannels() {
             </thead>
             <tbody>
               <tr v-for="item in page.replies" :key="item.replyId">
+                <td data-label="Auswahl">
+                  <input
+                    type="checkbox"
+                    :aria-label="`Antwort ${item.replyId} auswählen`"
+                    :checked="selection?.has(item) || false"
+                    :disabled="disabled"
+                    @change="selection?.toggle(item, $event.target.checked)"
+                  />
+                </td>
                 <td data-label="Reply ID">
                   <code>{{ item.replyId }}</code>
                 </td>

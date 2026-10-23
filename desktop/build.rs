@@ -1,6 +1,9 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "begin_message_export",
+            "export_message",
+            "finish_message_export",
             "test_library",
             "select_environment",
             "open_documentation",

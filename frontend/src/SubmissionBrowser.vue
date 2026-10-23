@@ -6,6 +6,9 @@ const processWorkspace = inject(processWorkspaceKey, null);
 import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
 import ReceivePanel from './ReceivePanel.vue';
+import ReceiptHistory from './ReceiptHistory.vue';
+import InboxSelection from './InboxSelection.vue';
+const selection = ref(null);
 import CopyValue from './CopyValue.vue';
 import ServiceLabel from './ServiceLabel.vue';
 import { listSubmissions, loadSubmission } from './submissions.js';
@@ -57,6 +60,12 @@ const confirmedDetail = computed(() =>
   ),
 );
 function recordReceipt(value) {
+  const alreadyConfirmed = receiptHistory.value.some(
+    (item) =>
+      item.status === 'confirmed' &&
+      item.sessionId === value.sessionId &&
+      item.submissionId === value.submissionId,
+  );
   receiptHistory.value = [
     value,
     ...receiptHistory.value.filter((item) => item.attemptId !== value.attemptId),
@@ -66,11 +75,12 @@ function recordReceipt(value) {
     value.sessionId === props.session?.sessionId &&
     value.apiVersion === props.session?.apiVersion &&
     value.destinationId === destination.value.trim() &&
-    page.value?.submissions.some((item) => item.submissionId === value.submissionId)
+    page.value &&
+    !alreadyConfirmed
   )
     page.value = {
       ...page.value,
-      totalCount: page.value.totalCount - 1,
+      totalCount: Math.max(0, page.value.totalCount - 1),
       submissions: page.value.submissions.filter((item) => item.submissionId !== value.submissionId),
     };
 }
@@ -254,15 +264,29 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
           <p>{{ page.totalCount }} verfügbare Einreichungen an dieser Destination.</p>
           <div v-if="!page.submissions.length">
             <p v-if="page.totalCount === 0">
-              Noch keine Einreichung eingegangen. Senden Sie einen Testantrag aus Ihrem Onlinedienst an diese
-              Destination und laden Sie die Liste anschließend erneut.
+              Keine Einreichungen zur Abholung vorhanden. Laden Sie die Liste erneut, wenn neue Einreichungen
+              eingegangen sind.
             </p>
             <p v-else>Auf dieser Seite sind keine Einreichungen vorhanden.</p>
           </div>
-          <div v-else class="client-table support-table">
+          <InboxSelection
+            ref="selection"
+            :session="session"
+            :destination-id="destination.trim()"
+            :items="page.submissions"
+            :total="page.totalCount"
+            :busy="disabled"
+            :load-page="(offset) => listSubmissions(invoke, session, destination.trim(), offset)"
+            :schemas="() => receivePanel?.getSchemas() || []"
+            @busy="emit('busy', $event)"
+            @outcome="recordReceipt"
+            @open="open($event.submissionId)"
+          />
+          <div v-if="page.submissions.length" class="client-table support-table">
             <table class="submission-result-table">
               <thead>
                 <tr>
+                  <th scope="col">Auswahl</th>
                   <th scope="col">Einreichung</th>
                   <th scope="col">Case ID</th>
                   <th scope="col">Aktion</th>
@@ -270,6 +294,15 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
               </thead>
               <tbody>
                 <tr v-for="item in page.submissions" :key="item.submissionId">
+                  <td data-label="Auswahl">
+                    <input
+                      type="checkbox"
+                      :aria-label="`Einreichung ${item.submissionId} auswählen`"
+                      :checked="selection?.has(item) || false"
+                      :disabled="disabled"
+                      @change="selection?.toggle(item, $event.target.checked)"
+                    />
+                  </td>
                   <td data-label="Einreichung">
                     <code>{{ item.submissionId }}</code>
                   </td>
@@ -444,55 +477,6 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
       @verified="(value) => (verified = value)"
       @outcome="recordReceipt"
     />
-    <section v-if="receiptHistory.length" class="tool-section" aria-labelledby="receipt-history-title">
-      <h2 id="receipt-history-title">Empfangsaktionen</h2>
-      <p class="small-note">
-        Die letzten 20 Ergebnisse dieser Anwendungssitzung. Bekannte Kennungen bleiben auch bei einem
-        ungewissen Ausgang verfügbar.
-      </p>
-      <div class="client-table support-table">
-        <table class="receipt-history-table">
-          <thead>
-            <tr>
-              <th scope="col">API / Aktion</th>
-              <th scope="col">Ergebnis</th>
-              <th scope="col">Einreichung / Vorgang</th>
-              <th scope="col">Aktion</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in receiptHistory" :key="item.attemptId">
-              <td data-label="API / Aktion">
-                {{ item.apiVersion }} · {{ item.action === 'accept' ? 'Annehmen' : 'Ablehnen' }}
-              </td>
-              <td data-label="Ergebnis">
-                {{
-                  item.status === 'confirmed'
-                    ? 'Bestätigt'
-                    : item.status === 'uncertain'
-                      ? 'Ausgang ungewiss'
-                      : 'Nicht abgeschlossen'
-                }}
-              </td>
-              <td data-label="Einreichung / Vorgang">
-                <code>{{ item.submissionId }}</code>
-                <br />
-                <code>{{ item.caseId }}</code>
-              </td>
-              <td data-label="Aktion">
-                <button
-                  class="button secondary"
-                  type="button"
-                  :disabled="busy || pending"
-                  @click="openEventLog(item)"
-                >
-                  Event Log prüfen
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <ReceiptHistory :history="receiptHistory" :busy="busy || pending" @event-log="openEventLog" />
   </div>
 </template>

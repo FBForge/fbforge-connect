@@ -19,6 +19,15 @@ export async function probeAdapter(invoke, apiVersion, environment = 'TEST') {
 
 export function errorMessage(code) {
   const messages = {
+    batch_selection_limit: 'Bitte höchstens 100 Nachrichten für einen Durchlauf auswählen.',
+    export_failed:
+      'Die Dateien konnten nicht vollständig gespeichert werden. Bitte Schreibrechte und freien Speicherplatz im Zielordner prüfen.',
+    export_expired:
+      'Der Zielordner ist nicht mehr für diesen Durchlauf freigegeben. Bitte den Download erneut starten.',
+    batch_review_required:
+      'Die Dateien wurden gespeichert. Offene technische Prüfungen oder die fehlende Malwarescan-Freigabe erfordern eine manuelle Entscheidung.',
+    batch_list_changed:
+      'Der Eingang hat sich während der Auswahl geändert. Bitte die Übersicht neu laden und erneut auswählen.',
     case_limit:
       'Die lokale Vorgangsablage ist voll. Löschen Sie unter „Vorgänge“ nicht mehr benötigte Kopien und bereiten Sie die Aktion erneut vor. Es wurden keine Serverdaten verändert.',
     case_storage_pending:
@@ -79,6 +88,11 @@ export function errorMessage(code) {
 
 // Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
 const reportableCodes = new Set([
+  'export_failed',
+  'export_expired',
+  'batch_review_required',
+  'batch_list_changed',
+  'batch_selection_limit',
   'case_limit',
   'case_storage_pending',
   'vault_profile_required',

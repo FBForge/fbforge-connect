@@ -12,6 +12,7 @@
       import { productName } from '../src/product.js';
       import ReceivePanel from '../src/ReceivePanel.vue';
       import SubmissionBrowser from '../src/SubmissionBrowser.vue';
+      import ReplyBrowser from '../src/ReplyBrowser.vue';
       import EventLogPanel from '../src/EventLogPanel.vue';
       import App from '../src/App.vue';
       import '../src/styles/index.css';
@@ -348,7 +349,9 @@
                         h('div', { style: { display: eventTarget.value ? 'none' : 'block' } }, [
                           h(
                             new URLSearchParams(location.search).has('browser')
-                              ? SubmissionBrowser
+                              ? new URLSearchParams(location.search).has('replies')
+                                ? ReplyBrowser
+                                : SubmissionBrowser
                               : ReceivePanel,
                             {
                               session,

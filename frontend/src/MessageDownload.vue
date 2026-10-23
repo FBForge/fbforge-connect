@@ -1,0 +1,73 @@
+<script setup>
+import { ref, watch, onBeforeUnmount } from 'vue';
+import { invoke } from './native.js';
+import { beginMessageExport, exportMessage, finishMessageExport } from './message-export.js';
+import { errorMessage } from './diagnostics.js';
+import CopyValue from './CopyValue.vue';
+const props = defineProps({ session: Object, source: Object, disabled: Boolean });
+const emit = defineEmits(['busy']);
+const pending = ref(false),
+  error = ref(''),
+  saved = ref(null);
+let generation = 0;
+watch(
+  () => `${props.session?.sessionId}/${JSON.stringify(props.source)}`,
+  () => {
+    generation++;
+    saved.value = null;
+    error.value = '';
+  },
+);
+onBeforeUnmount(() => generation++);
+async function download() {
+  if (pending.value || props.disabled || !props.session) return;
+  const session = { ...props.session },
+    source = { ...props.source },
+    stamp = generation;
+  pending.value = true;
+  emit('busy', true);
+  error.value = '';
+  saved.value = null;
+  let target;
+  try {
+    target = await beginMessageExport(invoke, session);
+    if (target && stamp === generation) {
+      const result = await exportMessage(invoke, session, target.exportId, source);
+      if (stamp === generation) saved.value = result;
+    }
+  } catch (cause) {
+    if (stamp === generation) error.value = errorMessage(cause);
+  } finally {
+    if (target) await finishMessageExport(invoke, target.exportId).catch(() => {});
+    pending.value = false;
+    emit('busy', false);
+  }
+}
+</script>
+<template>
+  <div class="message-download">
+    <button
+      type="button"
+      class="button secondary"
+      :disabled="disabled || pending || !session"
+      @click="download"
+    >
+      {{ pending ? 'Dateien werden gespeichert …' : 'Alle Dateien herunterladen' }}
+    </button>
+    <p v-if="error" role="alert">{{ error }}</p>
+    <div v-if="saved" role="status" class="small-note">
+      <p>{{ saved.fileCount }} Dateien gespeichert.</p>
+      <CopyValue :value="saved.directory" label="Exportordner" />
+    </div>
+  </div>
+</template>
+<style scoped>
+.message-download {
+  flex-shrink: 0;
+  margin-block: 16px;
+  overflow-wrap: anywhere;
+}
+.message-download > .button {
+  width: 100%;
+}
+</style>

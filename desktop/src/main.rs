@@ -9,6 +9,9 @@ mod test_library_command;
 use documentation::open_documentation;
 mod case_store;
 mod cases;
+mod message_export_store;
+mod message_export_stream;
+mod message_exports;
 mod profile_backup;
 use cases::case_workspace;
 mod profiles;
@@ -38,7 +41,11 @@ fn main() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .manage(EngineState::default())
+        .manage(message_exports::MessageExports::default())
         .invoke_handler(tauri::generate_handler![
+            message_exports::begin_message_export,
+            message_exports::export_message,
+            message_exports::finish_message_export,
             test_library_command::test_library,
             environment_commands::select_environment,
             open_documentation,

@@ -2,6 +2,8 @@
 import { defaultCaseMessage } from './case-groups.js';
 import DocumentLayout from './DocumentLayout.vue';
 import AttachmentList from './AttachmentList.vue';
+import MessageDownload from './MessageDownload.vue';
+import { exportSource } from './message-export.js';
 import CopyValue from './CopyValue.vue';
 import DocumentationLink from './DocumentationLink.vue';
 import { serviceLabel } from './service-label.js';
@@ -301,6 +303,12 @@ const {
             :disabled="disabled"
             @inspect="inspect"
             @download="inspect($event, true)"
+          />
+          <MessageDownload
+            :session="session"
+            :source="exportSource(selected, selected.kind === 'reply')"
+            :disabled="disabled"
+            @busy="emit('busy', $event)"
           />
         </template>
       </DocumentLayout>

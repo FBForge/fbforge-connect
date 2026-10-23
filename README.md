@@ -5,7 +5,8 @@
 Desktop-Client für FIT-Connect. Für Entwickler, Integratoren und Mitarbeiter der öffentlichen Verwaltung.
 
 - Einreichungen und Antworten über API v2/v3 senden, empfangen und prüfen.
-- JSON/XML lesen, Anlagen ansehen und Vorgänge lokal aufbewahren.
+- JSON/XML lesen, Nachrichten gesammelt herunterladen und geprüfte Einreichungen gemeinsam annehmen.
+- Anlagen ansehen und Vorgänge lokal aufbewahren.
 - Event Logs durchsuchen, eigene v3-Destinations verwalten und BPMN-Nachrichten auswählen.
 - Zugänge und Schlüssel optional mit Windows-DPAPI speichern.
 - Testfälle als Paket wiederverwenden und Schemaänderungen lokal vergleichen.

@@ -12,6 +12,8 @@ import ReplyReceiptPanel from './ReplyReceiptPanel.vue';
 import ReplySender from './ReplySender.vue';
 import DocumentLayout from './DocumentLayout.vue';
 import AttachmentList from './AttachmentList.vue';
+import MessageDownload from './MessageDownload.vue';
+import { exportSource } from './message-export.js';
 import StructuredData from './StructuredData.vue';
 import { useReceivePanel } from './receive/useReceivePanel.js';
 const props = defineProps({
@@ -80,7 +82,10 @@ const {
   beginReply,
   beginReceipt,
 } = receiveController;
-defineExpose({ confirmLeave });
+defineExpose({
+  confirmLeave,
+  getSchemas: () => schemas.value.map(({ uri, contentId }) => ({ uri, contentId })),
+});
 </script>
 
 <template>
@@ -284,6 +289,12 @@ defineExpose({ confirmLeave });
               @download="inspect($event, true)"
             />
             <div class="document-next-actions">
+              <MessageDownload
+                :session="session"
+                :source="exportSource(proof, reply)"
+                :disabled="disabled"
+                @busy="emit('busy', $event)"
+              />
               <h3>Nächster Schritt</h3>
               <p class="small-note">
                 Prüfen Sie die Fachdaten und Anlagen. Eine Antwort schließt den Empfang noch nicht ab.

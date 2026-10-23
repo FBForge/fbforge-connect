@@ -147,6 +147,15 @@ export const helpTopics = [
         image: 'receive-review',
         caption: 'Die geöffnete Nachricht mit Rückweg zum Eingang und Prüfergebnis.',
       },
+      {
+        image: 'message-download',
+        caption: 'Alle verfügbaren Originaldateien einer fiktiven Einreichung gemeinsam speichern.',
+      },
+      {
+        image: 'receive-batch',
+        caption:
+          'Fiktiver Sammeldurchlauf mit erfolgreichen Annahmen und einem Schemafehler zur manuellen Prüfung.',
+      },
     ],
     intro:
       'Ein Fachverfahren lädt seinen Eingang, entschlüsselt den ausgewählten Antrag und prüft die technischen Inhalte. Die Empfangsbestätigung bleibt eine eigene bewusste Aktion.',
@@ -156,6 +165,10 @@ export const helpTopics = [
       'Nach erfolgreicher Einrichtung wird die Empfangseinrichtung kompakt angezeigt. Über „Einrichtung ändern“ öffnen Sie Destination und Schlüssel erneut. Wenn Schlüssel oder Schemata fehlen, führt die passende Schaltfläche zur Einrichtung oder zu den Schemaeinstellungen. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
       'Lesen Sie die Fachdaten direkt in der Formularansicht. Eindeutige Schema-Bezeichnungen ersetzen technische Auswahlwerte, Datumswerte und Wahrheitswerte werden lesbar angezeigt. „Struktur, Quelltext und Feldangaben“ enthält Originalwerte, Pfade, Schemaherkunft und Quelltext. Die Eingangssuche ist während des Lesens ausgeblendet. „Zurück zum Eingang“ stellt Ihre bisherige Suche wieder her.',
       'Öffnen Sie Anlagen über „Ansehen“ oder laden Sie das Original herunter. Bei breiten Fenstern bleibt die rechte Spalte mit Anlagen und Aktionen beim Lesen sichtbar. Lange Anlagenlisten scrollen innerhalb der Spalte. Bei schmalen Fenstern führt „Zu Anlagen und Aktionen“ direkt zum Bereich unter den Fachdaten. Über „Antwort verfassen“ öffnen Sie den Antwortentwurf.',
+      'Mit „Alle Dateien herunterladen“ speichern Sie Metadaten, Fachdaten und Anlagen gemeinsam. Wählen Sie im nativen Dialog einen Zielordner. Die Dateien werden entschlüsselt außerhalb der geschützten Vorgangsablage gespeichert. Jede Nachricht erhält einen eigenen Ordner mit einer Exportübersicht. Bestehende Exporte werden nicht überschrieben.',
+      'Markieren Sie im Eingang einzelne Nachrichten oder wählen Sie alle aus. „Alle auf dieser Seite auswählen“ betrifft die angezeigte Seite. Bis zu 100 Nachrichten lassen sich über mehrere Seiten gemeinsam auswählen. „Auswahl herunterladen“ prüft und speichert die Auswahl. „Prüfen, speichern und annehmen“ bestätigt anschließend nur erfolgreich geprüfte und vollständig gespeicherte Einreichungen.',
+      'Ohne Malwarescanner bleiben Annahmen standardmäßig zur manuellen Prüfung stehen. „Annahmen ohne Malwarescan erlauben“ gibt ausschließlich diesen fehlenden Prüfschritt ausdrücklich frei. Schemafehler und andere offene Prüfungen bleiben weiterhin manuell. Bei mehreren Signaturschlüsseln wählen Sie den gewünschten Schlüssel. In PROD wird jede Annahme zusätzlich nativ bestätigt.',
+      'Die Ergebnisliste zeigt gespeicherte, angenommene und manuell zu prüfende Nachrichten getrennt. „Einzeln öffnen und prüfen“ führt zur betroffenen Einreichung. „Durchlauf stoppen“ verhindert weitere Annahmen. Bei einem ungewissen Annahmestatus stoppt die Verarbeitung. Prüfen Sie den Event Log, bevor Sie erneut beginnen.',
       'Prüfen Sie fachlich, ob der Antrag zum Testfall passt. „Annehmen“ führt bei eindeutigem Signaturschlüssel direkt zur Prüfung und Bestätigung. Bei mehreren Schlüsseln wählen Sie zuerst den passenden aus. „Ablehnen“ verlangt einen ausdrücklich ausgewählten Grund. Erst die abschließende Bestätigung übermittelt die Entscheidung.',
       'Eine lokale Kopie bleibt unter „Vorgänge“ lesbar. Wenn die dauerhafte Aufbewahrung eingeschaltet ist, wird vor der Bestätigung die Sicherung geprüft.',
     ],
@@ -188,6 +201,7 @@ export const helpTopics = [
       'Suchen Sie nach Titel, Case ID, Submission ID, Reply ID oder Destination. Filtern Sie bei Bedarf nach „Empfangen“ oder „Gesendet“. „Nur Vorgänge mit Klärungsbedarf“ beschränkt die Liste auf fehlgeschlagene, ungewisse oder nicht verfügbare Nachrichten. Ohne Treffer zeigt „Suche und Filter zurücksetzen“ wieder alle Vorgänge an. Dabei werden keine Nachrichten gelöscht. Nach dem Öffnen gelangen Sie mit „Zur Vorgangsübersicht“ zur bisherigen Suche zurück.',
       'Öffnen Sie einen Vorgang über seinen Titel. Im Nachrichtenverlauf wechseln Sie zwischen Einreichung und Antworten. „Status dieser Nachricht“ gilt nur für die ausgewählte Nachricht. Die früheste verfügbare Einreichung wird zuerst geöffnet. Eine Suche nach der vollständigen Submission ID oder Reply ID öffnet direkt die passende Nachricht. Auch bei aktiven Filtern bleibt der vollständige lokale Verlauf sichtbar.',
       'Lesen Sie die gespeicherten Fachdaten wie im Empfang. Die Anlagenspalte bleibt bei breiten Fenstern beim Scrollen sichtbar. In schmalen Fenstern führt „Zu Anlagen und Aktionen“ direkt zu den Dateien. „Zurück zu den Fachdaten“ führt zur Formularansicht.',
+      '„Alle Dateien herunterladen“ exportiert die verfügbaren Originaldateien der ausgewählten lokalen Nachricht. Die Exportübersicht kennzeichnet die Dateien als historische Kopie. Fehlen archivierte Metadaten, werden diese nicht ergänzt. Eine neue Empfangsbestätigung ist über diese Kopie nicht möglich.',
       'Standardmäßig werden Kopien automatisch nur in der laufenden Anwendung gehalten. Ein Profilwechsel entfernt sie nicht. Verbinden Sie denselben Zugang erneut, um sie wieder zu sehen.',
       'Öffnen Sie „Aufbewahrung: aktuelle Sitzung“. Wenn Sie die Kopien nach einem Neustart benötigen, aktivieren Sie „Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren“. Vorhandene und neue Kopien werden dann mit Ihrem Windows-Benutzerkonto verschlüsselt.',
       'Unter „Einzelne lokale Kopien verwalten“ oder mit „Diese lokale Kopie löschen“ entfernen Sie genau eine Nachricht. „Verlauf leeren“ fragt nach und löscht alle lokalen Kopien des aktuellen Profils und der aktuellen API. Auf dem FIT-Connect-Server wird dadurch nichts geändert.',
@@ -234,6 +248,10 @@ export const helpTopics = [
         caption: 'Unveränderliche Zusammenfassung vor dem bewussten Antwortversand.',
       },
       {
+        image: 'reply-batch',
+        caption: 'Mehrere fiktive Antworten gemeinsam herunterladen. Der Download quittiert keinen Empfang.',
+      },
+      {
         image: 'reply-missing-channel',
         caption: 'Ein fehlendes Antwortangebot wird ohne irreführenden Anmeldehinweis erklärt.',
       },
@@ -253,6 +271,7 @@ export const helpTopics = [
       'Bei XML-Antworten mit mehreren möglichen Nachrichten wählen Sie zunächst die passende Antwortnachricht und erzeugen danach den Entwurf. Bei einem fehlenden Schema oder einer nicht unterstützten Pflichtstruktur bleibt Ihr bisheriger Antwortinhalt erhalten.',
       'Verbinden Sie wieder den ursprünglichen Onlinedienst-Zugang. Öffnen Sie unter „Empfangen“ das Register „Antworten“. Laden Sie die Antworten und prüfen Sie die gewünschte Antwort mit dem zu diesem Angebot gehörenden Schlüssel.',
       'Nehmen Sie die Antwort nach Prüfung an oder lehnen Sie sie mit passendem Grund ab. Auch Antworten bleiben als lokale Kopien in der Vorgangsablage erhalten.',
+      'Nach erfolgreicher Prüfung speichert „Alle Dateien herunterladen“ Metadaten, Antwortdaten und Anlagen gemeinsam. In der Antwortübersicht markieren Sie mehrere Antworten und wählen „Auswahl herunterladen“. Die Dateien werden geprüft und entschlüsselt in getrennten Nachrichtenordnern gespeichert. Ein Download bestätigt noch keinen Empfang der Antworten.',
     ],
     examples: [
       {

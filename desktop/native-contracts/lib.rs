@@ -15,3 +15,9 @@ pub mod test_library;
 
 #[path = "../src/environments.rs"]
 pub mod environments;
+
+#[path = "../src/message_export_store.rs"]
+pub mod message_export_store;
+
+#[path = "../src/message_export_stream.rs"]
+pub mod message_export_stream;

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-finish-message-export"
+description = "Enables the finish_message_export command without any pre-configured scope."
+commands.allow = ["finish_message_export"]
+
+[[permission]]
+identifier = "deny-finish-message-export"
+description = "Denies the finish_message_export command without any pre-configured scope."
+commands.deny = ["finish_message_export"]
