@@ -31,6 +31,8 @@ test('web guide exports complete chapters with escaped executable examples', asy
       const html = await readFile(join(destination, `${topic.id}.html`), 'utf8');
       assert.ok(html.includes(`https://fbforge.de/connect/hilfe/0.2/${topic.id}`));
       assert.ok(html.includes('Anleitung für Version 0.2.0'));
+      assert.ok(html.includes('<a href="/connect">FBForge Connect</a>'));
+      assert.ok(!html.includes('>Connect</a>'));
       for (const picture of [topic, ...(topic.illustrations || [])]) {
         assert.ok(html.includes(`images/${picture.image}.png`));
         assert.ok((await readFile(join(destination, 'images', `${picture.image}.png`))).length > 0);
