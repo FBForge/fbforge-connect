@@ -73,6 +73,7 @@ final class Receiver {
             for (var issue : result.report().issues())
                 issues.add(new ReceivedContent.Issue(issue.stage().name(), issue.isError()));
             issues.add(new ReceivedContent.Issue("MALWARE_SCAN_NOT_CONFIGURED", false));
+            issues.addAll(0, transport.validation.reviewIssues());
             var content =
                     new ReceivedContent(
                             result.getDestinationId(),
@@ -240,22 +241,16 @@ final class Receiver {
                                                                         context.decryptedData(),
                                                                         schema.schemaUri()
                                                                                 .toString())
-                                                                : http.validation.sources
-                                                                        .validateXml(
-                                                                                context
-                                                                                        .decryptedData(),
-                                                                                schema.schemaUri()
-                                                                                        .toString());
-                                                if (!valid)
-                                                    http.failed(
-                                                            new SessionException(
-                                                                    "data_schema_invalid"));
+                                                                : http.validation.xml(
+                                                                        context.decryptedData(),
+                                                                        schema.schemaUri()
+                                                                                .toString());
                                                 return valid
                                                         ? dev.fitko.fitconnect.core.validation.api
                                                                 .ValidationResult.valid()
                                                         : dev.fitko.fitconnect.core.validation.api
-                                                                .ValidationResult.error(
-                                                                "Fachdaten entsprechen nicht dem Schema.");
+                                                                .ValidationResult.warning(
+                                                                "Fachdaten benötigen eine manuelle Schema-Prüfung.");
                                             } catch (SessionException failure) {
                                                 http.failed(failure);
                                                 return dev.fitko.fitconnect.core.validation.api

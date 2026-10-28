@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.fitconnect.integration</groupId>
   <artifactId>engine-parent</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
   <packaging>pom</packaging>
   <licenses><license><name>EUPL-1.2</name><url>https://interoperable-europe.ec.europa.eu/licence/european-union-public-licence-version-12-eupl</url></license></licenses>
   <modules><module>contract</module><module>adapter-v2</module><module>adapter-v3</module><module>host</module></modules>

@@ -50,6 +50,7 @@ final class SendAccess implements ResourceExchange {
     private long expires;
     private long operationExpires;
     private boolean writing, sourceVerified, finalStarted, keyVerified, cleanupFailed;
+    private boolean announcementDeclined, uncertaintyAcknowledged;
     private String encryptionKid, boundaryFailure;
     private Set<String> attachments = Set.of();
     private final Set<String> uploaded = new HashSet<>();
@@ -86,7 +87,9 @@ final class SendAccess implements ResourceExchange {
     }
 
     State prepare(SubmissionInput request) {
-        if (cleanupFailed || Set.of("running", "uncertain").contains(state.status()))
+        if (cleanupFailed
+                || "running".equals(state.status())
+                || "uncertain".equals(state.status()) && !uncertaintyAcknowledged)
             throw error("send_locked");
         if (request == null
                 || version == ApiVersion.V2
@@ -101,6 +104,8 @@ final class SendAccess implements ResourceExchange {
         diagnostics.clear();
         expires = clock.getAsLong() + 60_000;
         writing = false;
+        announcementDeclined = false;
+        uncertaintyAcknowledged = false;
         sourceVerified = false;
         finalStarted = false;
         keyVerified = false;
@@ -157,7 +162,7 @@ final class SendAccess implements ResourceExchange {
                                     .contains(candidate)
                             ? candidate
                             : "resource_unavailable";
-            state = outcome(writing ? "uncertain" : "failed", code);
+            state = outcome(writing && !announcementDeclined ? "uncertain" : "failed", code);
         } finally {
             try {
                 if (input.replyOffer() != null)
@@ -189,6 +194,14 @@ final class SendAccess implements ResourceExchange {
             throw error("send_locked");
         input = null;
         state = outcome("cancelled", null);
+    }
+
+    /** Keep the unresolved outcome intact; only a new, separately confirmed attempt is unlocked. */
+    void acknowledgeUncertainty(String id) {
+        if (cleanupFailed
+                || !"uncertain".equals(state.status())
+                || !Objects.equals(state.attemptId(), id)) throw error("send_locked");
+        uncertaintyAcknowledged = true;
     }
 
     void close() {
@@ -384,6 +397,13 @@ final class SendAccess implements ResourceExchange {
                             : "resource_unavailable";
             if (failure instanceof SessionException known && known.httpStatus() != null)
                 status = known.httpStatus();
+            // A definite authorization rejection of the initial announcement created no submission.
+            // Later failures and missing/ambiguous responses retain the conservative outcome.
+            if ("POST".equals(method)
+                    && endpoint.equals(base + "/submissions")
+                    && state.submissionId() == null
+                    && (Objects.equals(status, 401) || Objects.equals(status, 403)))
+                announcementDeclined = true;
             diagnostic(
                     step(method, endpoint),
                     method,

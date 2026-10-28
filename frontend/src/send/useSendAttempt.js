@@ -1,4 +1,4 @@
-import { prepareSend, executeSend, cancelSend, sendState } from '../sending.js';
+import { prepareSend, executeSend, cancelSend, sendState, acknowledgeSendUncertainty } from '../sending.js';
 import { invoke } from '../native.js';
 import { nextTick } from 'vue';
 import { resetsSessions } from '../sessions.js';
@@ -36,6 +36,7 @@ export function useSendAttempt({
     prepareButton,
     keepData,
     keepAttachments,
+    acknowledgeRisk,
     draftRevision,
     sendStep,
     stepNotice,
@@ -125,13 +126,27 @@ export function useSendAttempt({
     });
   }
 
-  function nextTest() {
+  async function nextTest() {
     if (
-      disabled.value ||
-      outcome.value?.status !== 'sent' ||
+      props.busy ||
+      working.value ||
+      prepared.value ||
+      !['sent', 'uncertain'].includes(outcome.value?.status) ||
+      outcome.value?.error === 'content_cleanup_failed' ||
       confirmedSession.value?.sessionId !== props.session?.sessionId
     )
       return;
+    if (outcome.value.status === 'uncertain') {
+      if (!acknowledgeRisk.value) return;
+      const owner = { ...confirmedSession.value },
+        attempt = outcome.value;
+      let acknowledged = false;
+      await act('Ungewissen Versand für neuen Entwurf bestätigen', async () => {
+        await acknowledgeSendUncertainty(invoke, owner, attempt);
+        acknowledged = props.session?.sessionId === owner.sessionId && outcome.value === attempt;
+      });
+      if (!acknowledged) return;
+    }
     if (!keepData.value) {
       dataText.value = '';
       dataFile.value = null;
@@ -141,6 +156,7 @@ export function useSendAttempt({
     caseId.value = '';
     prepared.value = null;
     outcome.value = null;
+    acknowledgeRisk.value = false;
     confirmedSession.value = null;
     recipient.value = null;
     service.value = '';

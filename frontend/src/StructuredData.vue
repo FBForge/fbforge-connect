@@ -4,6 +4,8 @@ import { parseStructuredData, filterStructuredData } from './structured-data.js'
 import { mount } from './json-viewer.js';
 import ApplicationField from './ApplicationField.vue';
 import { annotateSchema } from './schema-annotations.js';
+import { readSchemaReview } from './schema-review.js';
+import SchemaReview from './SchemaReview.vue';
 const showTechnical = ref(false);
 const props = defineProps({
   text: String,
@@ -20,6 +22,22 @@ let viewer,
   revision = 0;
 const model = computed(() => parseStructuredData(props.text, props.format));
 const annotations = computed(() => annotateSchema(model.value, props.schemaDocument, props.schemaUri));
+const review = computed(() => readSchemaReview(props.schemaDocument));
+const validationErrors = computed(() => review.value?.errors || []);
+const root = ref(null);
+async function showField(path) {
+  query.value = '';
+  mode.value = 'form';
+  await nextTick();
+  const fields = [...root.value.querySelectorAll('[data-field-path]')];
+  const target = fields.find((node) => node.dataset.fieldPath === path);
+  if (target) {
+    for (let parent = target.parentElement; parent && parent !== root.value; parent = parent.parentElement)
+      if (parent.tagName === 'DETAILS') parent.open = true;
+    target.focus();
+    target.scrollIntoView({ block: 'center', behavior: 'auto' });
+  }
+}
 const filtered = computed(() => filterStructuredData(annotations.value.root, query.value));
 const documentFields = computed(() =>
   props.format === 'json' &&
@@ -51,7 +69,13 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
-  <div class="structured-data">
+  <div ref="root" class="structured-data">
+    <SchemaReview
+      :review="review"
+      :schema-uri="schemaUri"
+      :schema-document="schemaDocument"
+      @field="showField"
+    />
     <details class="application-tools">
       <summary>Struktur, Quelltext und Feldangaben</summary>
       <div class="application-toolbar">
@@ -152,6 +176,7 @@ onBeforeUnmount(() => {
             v-for="node in documentFields"
             :key="node.id"
             :node="node"
+            :validation-errors="validationErrors"
             :show-technical="showTechnical"
             :query="query.trim()"
           />
@@ -160,6 +185,7 @@ onBeforeUnmount(() => {
       <ApplicationField
         v-else-if="filtered"
         :node="filtered"
+        :validation-errors="validationErrors"
         :show-technical="showTechnical"
         :query="query.trim()"
       />

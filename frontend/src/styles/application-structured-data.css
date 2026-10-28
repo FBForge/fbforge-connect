@@ -163,6 +163,34 @@
   font-size: 12px;
   line-height: 1.6;
 }
+.schema-review {
+  overflow-wrap: anywhere;
+  border: 1px solid var(--danger);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.schema-review h4 {
+  margin-top: 0;
+}
+.schema-review li {
+  margin-bottom: 12px;
+}
+.application-invalid {
+  border-left: 3px solid var(--danger);
+  padding-left: 12px;
+}
+.application-field-error {
+  color: var(--danger);
+  font-size: 12px;
+}
+@media (forced-colors: active) {
+  .schema-review,
+  .application-invalid {
+    border-color: CanvasText;
+  }
+}
 .received-application {
   border-top: 1px solid var(--line);
   padding-top: 20px;

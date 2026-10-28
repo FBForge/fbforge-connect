@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel)
+param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 trap {
@@ -67,6 +67,12 @@ function Invoke-Button($Root, [string]$Name) {
     $button.SetFocus()
     $pattern = $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
     $pattern.Invoke()
+}
+if ($SchemaReview) {
+    $notice = Wait-Ui { Find-Dialog 'Trotz Schemaabweichungen annehmen?' } 'ui_schema_warning_missing'
+    Invoke-Button $notice $(if ($Cancel) { 'Abbrechen' } else { 'Trotz Abweichungen annehmen' })
+    Write-Output 'Native schema-review confirmation handled'
+    exit 0
 }
 $notice = Wait-Ui { Find-Dialog 'Nachrichten herunterladen' } 'ui_export_warning_missing'
 Invoke-Button $notice $(if ($Cancel) { 'Abbrechen' } else { 'Zielordner wählen' })

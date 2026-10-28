@@ -232,6 +232,7 @@ export async function replyAndAccept(desktop, fixture, message, saveBeforeAccept
 export async function otherAreas(page) {
   for (const name of ['Start', 'Vorgänge', 'Destinations', 'Prozesse', 'Testwerkzeuge', 'Diagnose', 'Info'])
     await navigate(page, name);
-  await page.getByText('Version 0.2.0', { exact: false }).first().waitFor();
+  const { version } = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));
+  await page.getByText(`Version ${version}`, { exact: false }).first().waitFor();
   console.log('Real desktop UI: all workspace navigation and installed version view passed');
 }

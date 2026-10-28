@@ -19,7 +19,7 @@ try {
       run.conclusion === 'success' &&
       run.path === '.github/workflows/windows.yml' &&
       run.head_repository?.full_name === repository &&
-      ['main', 'release/0.2.0'].includes(run.head_branch),
+      (run.head_branch === 'main' || /^(?:release|fix)\/[A-Za-z0-9._/-]+$/.test(run.head_branch)),
     'ui_validation_not_trusted',
   );
   const directory = await mkdtemp(join(process.env.RUNNER_TEMP, 'fbforge-ui-candidate-'));

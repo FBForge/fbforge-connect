@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { prepareSend, executeSend, sendState } from '../frontend/src/sending.js';
+import { prepareSend, executeSend, sendState, acknowledgeSendUncertainty } from '../frontend/src/sending.js';
 
 const session = {
   apiVersion: 'v3',
@@ -11,6 +11,30 @@ const session = {
 const attempt = '22222222-2222-4222-8222-222222222222';
 const content = '33333333-3333-4333-8333-333333333333';
 const identity = { attemptId: attempt, status: 'prepared', submissionId: null, caseId: null, error: null };
+
+test('acknowledging uncertainty preserves the exact attempt and never sends or cancels it', async () => {
+  const outcome = { ...identity, status: 'uncertain', error: 'resource_unavailable' };
+  let calls = 0;
+  const invoke = async (command, args) => {
+    calls++;
+    assert.equal(command, 'acknowledge_send_uncertainty');
+    assert.equal(args.attemptId, attempt);
+    return envelope(outcome);
+  };
+  assert.deepEqual(await acknowledgeSendUncertainty(invoke, session, outcome), outcome);
+  assert.equal(calls, 1);
+  await assert.rejects(acknowledgeSendUncertainty(invoke, session, identity), /invalid_input/);
+  assert.equal(calls, 1);
+  for (const result of [
+    { ...outcome, status: 'sent' },
+    { ...outcome, error: null },
+    { ...outcome, attemptId: content },
+  ])
+    await assert.rejects(
+      acknowledgeSendUncertainty(async () => envelope(result), session, outcome),
+      /engine_protocol_error/,
+    );
+});
 const draft = {
   destinationId: '44444444-4444-4444-8444-444444444444',
   fromDestinationId: session.sessionId,

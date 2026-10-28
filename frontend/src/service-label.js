@@ -9,6 +9,6 @@ export function serviceLabel(identifier, name) {
     identifier: id,
     code: leika || id,
     hasName: Boolean(title),
-    option: title && id ? `${title} · ${leika || id}` : leika ? `LeiKa ${leika}` : title || id,
+    option: title && id ? `${title} · ${leika || id}` : title || id,
   };
 }

@@ -26,6 +26,7 @@ DPAPI schützt nicht vor Schadsoftware unter demselben Benutzerkonto. Die Vorgan
 - Öffentliche Schemaquellen werden nur nach Freigabe geladen.
 - Das optionale Laden von Leistungsnamen fragt das öffentliche FIM-Portal anhand von LeiKa-Kennungen ab. Zugangsdaten und Fachdaten werden dabei nicht übertragen. Öffentliche Schemaabrufe übermitteln die benötigten Schema-URIs; geben Sie diese Quellen nur bewusst frei.
 - Technische Fehler im Sammeldurchlauf führen weder zu einer automatischen Annahme noch zu einer automatischen Ablehnung. Fachlich falsche, technisch gültige Daten benötigen eine manuelle Bewertung. Eine Annahme ohne Malwarescan muss im Sammeldurchlauf ausdrücklich erlaubt werden.
+- Ab 0.2.1 bleiben erfolgreich entschlüsselte und kryptografisch geprüfte Inhalte bei nachgewiesenen Schemaabweichungen lesbar. Die Abweichungen werden separat angezeigt. Eine Einzelannahme benötigt eine zusätzliche native Bestätigung des aktuellen vorbereiteten Vorgangs; im Sammeldurchlauf bleibt die Nachricht manuell. Hash-, Signatur-, Zertifikats- und Entschlüsselungsfehler werden dadurch nicht übergangen.
 
 ## Abhängigkeiten
 

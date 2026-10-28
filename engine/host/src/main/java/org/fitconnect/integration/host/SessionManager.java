@@ -265,6 +265,10 @@ final class SessionManager implements AutoCloseable {
         return state.receiptsFlow.receipt(version, id, command, attemptId);
     }
 
+    Data<?> receiptReview(ApiVersion version, String id, String attemptId, boolean reply) {
+        return state.receiptsFlow.review(version, id, attemptId, reply);
+    }
+
     Data<?> provisionDestination(
             ApiVersion version,
             String id,

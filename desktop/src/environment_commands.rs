@@ -54,3 +54,22 @@ pub async fn confirm_production_action(
         Err("content_cancelled")
     }
 }
+
+pub async fn confirm_schema_review(app: &tauri::AppHandle) -> Result<(), &'static str> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or("resource_unavailable")?;
+    let app = app.clone();
+    let confirmed = tauri::async_runtime::spawn_blocking(move || {
+        app.dialog().message("Die Fachdaten weichen vom angegebenen Schema ab. Entschlüsselung und Integrität wurden geprüft. Die Schemaabweichungen bleiben bestehen.\n\nHaben Sie die angezeigten Daten und Fehler geprüft und möchten Sie diese Nachricht trotzdem annehmen?")
+            .parent(&window).title("Trotz Schemaabweichungen annehmen?")
+            .kind(MessageDialogKind::Warning)
+            .buttons(MessageDialogButtons::OkCancelCustom("Trotz Abweichungen annehmen".into(), "Abbrechen".into()))
+            .blocking_show()
+    }).await.map_err(|_| "resource_unavailable")?;
+    if confirmed {
+        Ok(())
+    } else {
+        Err("content_cancelled")
+    }
+}

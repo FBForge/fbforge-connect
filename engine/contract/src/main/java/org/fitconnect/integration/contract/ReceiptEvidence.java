@@ -3,8 +3,8 @@ package org.fitconnect.integration.contract;
 import java.util.*;
 
 /**
- * Native-only receipt evidence retained after the complete SDK receive succeeds. Never a renderer
- * response.
+ * Native-only cryptographic receipt evidence retained after SDK receive succeeds. Schema conformity
+ * is a separate review result and cannot substitute for these authentication tags.
  */
 public record ReceiptEvidence(
         UUID destinationId,

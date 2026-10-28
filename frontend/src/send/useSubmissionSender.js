@@ -50,6 +50,7 @@ export function useSubmissionSender(props, emit) {
   const nextDialog = ref(null),
     keepData = ref(true),
     keepAttachments = ref(false),
+    acknowledgeRisk = ref(false),
     draftRevision = ref(0);
   const dialog = ref(null),
     progress = ref(''),
@@ -310,6 +311,7 @@ export function useSubmissionSender(props, emit) {
     nextDialog,
     keepData,
     keepAttachments,
+    acknowledgeRisk,
     draftRevision,
     packDialog,
     pendingTest,
@@ -423,6 +425,7 @@ export function useSubmissionSender(props, emit) {
     nextDialog,
     keepData,
     keepAttachments,
+    acknowledgeRisk,
     draftRevision,
     progress,
     history,

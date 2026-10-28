@@ -1,6 +1,6 @@
 import { navigate, queryEventLog } from './exchange.mjs';
 import { check, until } from './desktop.mjs';
-import { downloadMessage, nativeFolder, verifyDownload } from './downloads.mjs';
+import { downloadMessage, nativeFolder, nativeSchemaReview, verifyDownload } from './downloads.mjs';
 
 export async function previewPdf(page) {
   const row = page
@@ -109,13 +109,9 @@ export async function rejectInvalid(page, fixture, message) {
   await page.locator('#pickup-destination').fill(fixture.destination);
   await page.locator('#pickup-submission').fill(message.submissionId);
   await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
-  // An actual negative-test payload must fail schema validation and remain unaccepted.
-  await page.getByText('Fachdaten passen nicht zum Schema', { exact: true }).first().waitFor();
-  check(
-    !(await page.getByRole('button', { name: 'Annehmen', exact: true }).isVisible()),
-    'live_ui_invalid_data_accepted',
-  );
-  await page.getByRole('button', { name: 'Ohne Entschlüsselung ablehnen', exact: true }).click();
+  await page.getByRole('heading', { name: 'Fachdaten weichen vom Schema ab', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Antrag lesen', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Ablehnen', exact: true }).click();
   await page.locator('#receipt-reason').selectOption('data-schema-violation');
   await page.locator('#receipt-description').fill('Fiktiver Negativtest: erforderliche JSON-Felder fehlen.');
   await page.getByRole('button', { name: 'Ablehnung prüfen', exact: true }).click();
@@ -132,9 +128,7 @@ export async function rejectInvalid(page, fixture, message) {
   await dialog.getByRole('button', { name: 'Jetzt ablehnen', exact: true }).click();
   await page.getByText('Ablehnung von FIT-Connect bestätigt', { exact: true }).waitFor();
   await queryEventLog(page, fixture, message);
-  console.log(
-    'Real desktop UI: actual schema failure blocked acceptance; explicit reasoned rejection passed',
-  );
+  console.log('Real desktop UI: schema-invalid data stayed readable; explicit reasoned rejection passed');
 }
 
 export async function caseWorkspace(page, message) {
@@ -147,4 +141,59 @@ export async function caseWorkspace(page, message) {
   await page.locator('#case-detail-title').waitFor();
   check((await page.locator('.case-timeline button').count()) >= 2, 'live_ui_case_timeline_incomplete');
   console.log('Real desktop UI: sent/received case grouping and local message reopening passed');
+}
+
+export async function acceptInvalid(desktop, fixture, message) {
+  const { page } = desktop;
+  await navigate(page, 'Empfangen');
+  await page.getByRole('tab', { name: 'Einreichungen', exact: true }).click();
+  await page.locator('#pickup-destination').fill(fixture.destination);
+  await page.locator('#pickup-submission').fill(message.submissionId);
+  await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
+  await page.getByRole('heading', { name: 'Fachdaten weichen vom Schema ab', exact: true }).waitFor();
+  await page.getByText('Struktur, Quelltext und Feldangaben', { exact: true }).click();
+  await page.getByRole('button', { name: 'Quelltext', exact: true }).click();
+  check(
+    (await page.locator('.structured-data > .application-source').innerText()).trim() === message.text,
+    'live_ui_schema_invalid_data_hidden',
+  );
+  await page.getByText('Verwendetes Schema anzeigen', { exact: true }).click();
+  check(
+    (await page.locator('.schema-review pre').innerText()).includes('required'),
+    'live_ui_used_schema_hidden',
+  );
+  await page.getByRole('button', { name: 'Annehmen', exact: true }).click();
+  const dialog = page.locator('dialog[aria-labelledby="receipt-confirm-title"]');
+  const key = page.locator('#receipt-key');
+  await until(
+    async () => (await dialog.isVisible()) || (await key.isVisible()),
+    'live_ui_review_receipt_not_prepared',
+  );
+  if (!(await dialog.isVisible())) {
+    await key.selectOption(fixture.signingKid);
+    await page.getByRole('button', { name: 'Annahme prüfen', exact: true }).click();
+  }
+  await dialog.getByRole('radio', { name: 'Nein, ohne Download annehmen', exact: true }).check();
+  await nativeSchemaReview(
+    desktop,
+    fixture,
+    () => dialog.getByRole('button', { name: 'Jetzt annehmen', exact: true }).click(),
+    true,
+  );
+  await until(
+    async () => !(await dialog.getByRole('button', { name: 'Jetzt annehmen', exact: true }).isDisabled()),
+    'live_ui_review_cancel_did_not_resume',
+  );
+  check(
+    !(await page.getByText('Annahme von FIT-Connect bestätigt', { exact: true }).isVisible()),
+    'live_ui_review_cancel_accepted',
+  );
+  await nativeSchemaReview(desktop, fixture, () =>
+    dialog.getByRole('button', { name: 'Jetzt annehmen', exact: true }).click(),
+  );
+  await page.getByText('Annahme von FIT-Connect bestätigt', { exact: true }).waitFor();
+  await queryEventLog(page, fixture, message);
+  console.log(
+    'Real desktop UI: invalid data and schema visible, native cancellation sent nothing, explicit schema override and signed acceptance passed',
+  );
 }

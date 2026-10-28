@@ -330,6 +330,11 @@ public final class SchemaSources {
      * document().
      */
     public boolean validateXml(byte[] data, String identifier) {
+        return xmlProblems(data, identifier).isEmpty();
+    }
+
+    public List<SchemaProblem> xmlProblems(byte[] data, String identifier) {
+        var problems = new ArrayList<SchemaProblem>();
         try {
             var instance = xml(new String(data, StandardCharsets.UTF_8));
             var files = xmlFiles(identifier);
@@ -404,13 +409,39 @@ public final class SchemaSources {
             validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             validator.setResourceResolver(resolver);
-            validator.validate(new javax.xml.transform.dom.DOMSource(instance));
+            validator.setErrorHandler(
+                    new org.xml.sax.helpers.DefaultHandler() {
+                        @Override
+                        public void error(org.xml.sax.SAXParseException failure) {
+                            if (problems.size() < 128)
+                                problems.add(
+                                        new SchemaProblem(
+                                                "",
+                                                "xsd",
+                                                "Die XML-Angabe entspricht nicht dem XSD.",
+                                                failure.getLineNumber(),
+                                                failure.getColumnNumber()));
+                        }
+
+                        @Override
+                        public void fatalError(org.xml.sax.SAXParseException failure)
+                                throws org.xml.sax.SAXException {
+                            error(failure);
+                            throw failure;
+                        }
+                    });
+            // The instance was parsed above with DTD/entities blocked. A stream preserves source
+            // line/column information; both external-access properties remain closed here too.
+            validator.validate(new StreamSource(new ByteArrayInputStream(data)));
             check();
-            return true;
+            return List.copyOf(problems);
         } catch (SessionException failure) {
             throw failure;
         } catch (org.xml.sax.SAXException failure) {
-            return false;
+            if (problems.isEmpty())
+                problems.add(
+                        new SchemaProblem("", "xsd", "Das XML entspricht nicht dem XSD.", 0, 0));
+            return List.copyOf(problems);
         } catch (Exception failure) {
             throw unavailable();
         }

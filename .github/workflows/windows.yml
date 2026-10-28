@@ -55,7 +55,7 @@ jobs:
         run: ./scripts/ci/test-windows-signing.ps1
 
   test-readonly:
-    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/0.2.0')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
+    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/fix/'))) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -87,7 +87,7 @@ jobs:
         run: node scripts/live-readonly.mjs
 
   windows:
-    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/0.2.0')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
+    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/fix/'))) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
     runs-on: windows-2025
     timeout-minutes: 40
     steps:

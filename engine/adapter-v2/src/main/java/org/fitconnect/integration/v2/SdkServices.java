@@ -127,16 +127,10 @@ final class SdkServices {
                         if (!(http instanceof ReceiverTransport receiver))
                             return super.validateJsonSubmissionDataSchema(data, uri);
                         try {
-                            boolean valid = receiver.validation.json(data, uri.toString());
-                            if (!valid)
-                                receiver.failed(
-                                        new org.fitconnect.integration.contract.SessionException(
-                                                "data_schema_invalid"));
-                            return valid
-                                    ? dev.fitko.fitconnect.api.domain.validation.ValidationResult
-                                            .ok()
-                                    : dev.fitko.fitconnect.api.domain.validation.ValidationResult
-                                            .error("Fachdaten entsprechen nicht dem JSON-Schema.");
+                            receiver.validation.json(data, uri.toString());
+                            // Schema deviations are retained separately; the SDK still checks every
+                            // authentication tag, signature, hash, format and attachment normally.
+                            return dev.fitko.fitconnect.api.domain.validation.ValidationResult.ok();
                         } catch (org.fitconnect.integration.contract.SessionException failure) {
                             receiver.failed(failure);
                             return dev.fitko.fitconnect.api.domain.validation.ValidationResult
@@ -150,17 +144,8 @@ final class SdkServices {
                         if (!(http instanceof ReceiverTransport receiver))
                             return super.validateXmlSubmissionDataSchema(data, uri);
                         try {
-                            boolean valid =
-                                    receiver.validation.sources.validateXml(data, uri.toString());
-                            if (!valid)
-                                receiver.failed(
-                                        new org.fitconnect.integration.contract.SessionException(
-                                                "data_schema_invalid"));
-                            return valid
-                                    ? dev.fitko.fitconnect.api.domain.validation.ValidationResult
-                                            .ok()
-                                    : dev.fitko.fitconnect.api.domain.validation.ValidationResult
-                                            .error("Fachdaten entsprechen nicht dem XSD.");
+                            receiver.validation.xml(data, uri.toString());
+                            return dev.fitko.fitconnect.api.domain.validation.ValidationResult.ok();
                         } catch (org.fitconnect.integration.contract.SessionException failure) {
                             receiver.failed(failure);
                             return dev.fitko.fitconnect.api.domain.validation.ValidationResult

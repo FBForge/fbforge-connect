@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { check, cleanEnvironment } from './desktop.mjs';
 import { errorMessage } from '../../frontend/src/diagnostics.js';
 
-export async function nativeFolder(desktop, fixture, operation, cancel = false) {
+export async function nativeFolder(desktop, fixture, operation, cancel = false, schemaReview = false) {
   const folder = join(fixture.directory, 'desktop-ui', 'exports');
   await mkdir(folder, { recursive: true });
   const helper = spawn(
@@ -22,6 +22,7 @@ export async function nativeFolder(desktop, fixture, operation, cancel = false) 
       '-Folder',
       folder,
       ...(cancel ? ['-Cancel'] : []),
+      ...(schemaReview ? ['-SchemaReview'] : []),
     ],
     { env: cleanEnvironment(), stdio: ['ignore', 'pipe', 'ignore'] },
   );
@@ -144,3 +145,6 @@ export async function downloadMessage(desktop, fixture, message, reply = false) 
     .waitFor();
   await verifyDownload(folder, message, reply);
 }
+
+export const nativeSchemaReview = (desktop, fixture, operation, cancel = false) =>
+  nativeFolder(desktop, fixture, operation, cancel, true);

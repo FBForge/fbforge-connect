@@ -46,35 +46,51 @@ const {
           Leistungen laden
         </button>
       </label>
-      <label v-if="recipient && (recipient.services.length || addressing !== 'process')" for="send-service">
-        Verwaltungsleistung
-        <select id="send-service" v-model="service" required :disabled="!recipient?.services.length">
-          <option value="" disabled>Bitte zuerst Empfängerleistungen laden</option>
-          <option v-for="item in recipient?.services || []" :key="item.identifier" :value="item.identifier">
-            {{ serviceLabel(item.identifier, item.name).option }}
-          </option>
-        </select>
-        <small v-if="service">
-          {{
-            serviceLabel(service, selectedService?.name).hasName
-              ? `LeiKa / Leistungskennung: ${serviceLabel(service).code}`
-              : 'Auswahl nach Leistungskennung. Eine Bezeichnung können Sie unter „Weitere Adressierungsoptionen“ ergänzen.'
-          }}
-        </small>
-      </label>
-      <label v-else-if="recipient" for="send-service">
-        Leistung des Vorgangs
-        <input
-          id="send-service"
-          v-model="service"
-          :disabled="!recipient"
-          type="text"
-          required
-          maxlength="1024"
-          placeholder="Leistungs-URN des Vorgangs"
+      <div v-if="recipient" class="send-service-selection">
+        <label v-if="recipient.services.length || addressing !== 'process'" for="send-service">
+          Verwaltungsleistung
+          <select id="send-service" v-model="service" required :disabled="!recipient?.services.length">
+            <option value="" disabled>Bitte zuerst Empfängerleistungen laden</option>
+            <option v-for="item in recipient?.services || []" :key="item.identifier" :value="item.identifier">
+              {{ serviceLabel(item.identifier, item.name).option }}
+            </option>
+          </select>
+          <small v-if="service">
+            {{
+              serviceLabel(service, selectedService?.name).hasName
+                ? `LeiKa / Leistungskennung: ${serviceLabel(service).code}`
+                : 'Auswahl nach Leistungskennung. Eine Bezeichnung können Sie unter „Weitere Adressierungsoptionen“ ergänzen.'
+            }}
+          </small>
+        </label>
+        <label v-else for="send-service">
+          Leistung des Vorgangs
+          <input
+            id="send-service"
+            v-model="service"
+            :disabled="!recipient"
+            type="text"
+            required
+            maxlength="1024"
+            placeholder="Leistungs-URN des Vorgangs"
+          />
+          <small>Diese Prozess-Destination bietet keine eigenen Verwaltungsleistungen an.</small>
+        </label>
+        <ServiceNames
+          v-if="recipient?.services.length"
+          :services="recipient.services"
+          :context-key="`${session?.sessionId}:${target.trim().toLowerCase()}`"
+          :disabled="disabled"
+          @names="
+            (names) => {
+              if (Object.hasOwn(names, service) && (!serviceName || serviceName === service))
+                serviceName = names[service];
+              for (const item of recipient.services)
+                if (Object.hasOwn(names, item.identifier)) item.name = names[item.identifier];
+            }
+          "
         />
-        <small>Diese Prozess-Destination bietet keine eigenen Verwaltungsleistungen an.</small>
-      </label>
+      </div>
       <label v-if="session?.apiVersion === 'v3' && addressing === 'process'" for="send-process">
         Prozessnachricht
         <select id="send-process" v-model="processChoice" :disabled="!recipient?.processes.length">
@@ -93,20 +109,6 @@ const {
         @fatal="emit('fatal', $event)"
       />
     </div>
-    <ServiceNames
-      v-if="recipient?.services.length"
-      :services="recipient.services"
-      :context-key="`${session?.sessionId}:${target.trim().toLowerCase()}`"
-      :disabled="disabled"
-      @names="
-        (names) => {
-          if (Object.hasOwn(names, service) && (!serviceName || serviceName === service))
-            serviceName = names[service];
-          for (const item of recipient.services)
-            if (Object.hasOwn(names, item.identifier)) item.name = names[item.identifier];
-        }
-      "
-    />
     <p v-if="!recipient" class="small-note">
       Geben Sie die Empfänger-Destination ein und laden Sie deren Leistungen.
     </p>

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-acknowledge-send-uncertainty"
+description = "Enables the acknowledge_send_uncertainty command without any pre-configured scope."
+commands.allow = ["acknowledge_send_uncertainty"]
+
+[[permission]]
+identifier = "deny-acknowledge-send-uncertainty"
+description = "Denies the acknowledge_send_uncertainty command without any pre-configured scope."
+commands.deny = ["acknowledge_send_uncertainty"]

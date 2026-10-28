@@ -22,6 +22,8 @@ export function errorMessage(code) {
     batch_selection_limit: 'Bitte höchstens 100 Nachrichten für einen Durchlauf auswählen.',
     export_failed:
       'Die Dateien konnten nicht vollständig gespeichert werden. Bitte Schreibrechte und freien Speicherplatz im Zielordner prüfen.',
+    message_content_missing:
+      'Für diese lokale Kopie sind noch keine entschlüsselten Fachdaten verfügbar. Öffnen Sie die Nachricht im Empfang und entschlüsseln und prüfen Sie die Inhalte zuerst.',
     export_expired:
       'Der Zielordner ist nicht mehr für diesen Durchlauf freigegeben. Bitte den Download erneut starten.',
     batch_review_required:
@@ -94,6 +96,7 @@ export function errorMessage(code) {
 const reportableCodes = new Set([
   'export_failed',
   'export_expired',
+  'message_content_missing',
   'batch_review_required',
   'batch_list_changed',
   'batch_selection_limit',

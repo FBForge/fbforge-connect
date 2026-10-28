@@ -120,6 +120,7 @@ fn main() {
             commands::send::prepare_send,
             commands::send::execute_send,
             commands::send::cancel_send,
+            commands::send::acknowledge_send_uncertainty,
             commands::send::send_state,
             commands::replies::reply_target,
             commands::replies::prepare_reply,

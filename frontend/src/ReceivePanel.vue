@@ -223,8 +223,19 @@ defineExpose({
         <div class="verification-stages" aria-label="Prüfstatus">
           <p><span class="status-badge ok">Entschlüsselung und Integrität geprüft</span></p>
           <p>
-            <span class="status-badge" :class="schemaChecked ? 'ok' : 'info'">
-              {{ schemaChecked ? 'Fachdaten-Schema geprüft' : 'Schemaprüfung nicht bestätigt' }}
+            <span
+              class="status-badge"
+              :class="
+                schemaChecked ? 'ok' : proof.warnings.includes('DATA_SCHEMA_INVALID') ? 'error' : 'info'
+              "
+            >
+              {{
+                schemaChecked
+                  ? 'Fachdaten-Schema geprüft'
+                  : proof.warnings.includes('DATA_SCHEMA_INVALID')
+                    ? 'Fachdaten weichen vom Schema ab'
+                    : 'Schemaprüfung nicht bestätigt'
+              }}
             </span>
           </p>
           <p><span class="status-badge info">Fachliche Prüfung: manuell offen</span></p>

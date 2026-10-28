@@ -137,6 +137,27 @@ pub(crate) async fn cancel_send(
 }
 
 #[tauri::command]
+pub(crate) async fn acknowledge_send_uncertainty(
+    app: tauri::AppHandle,
+    state: State<'_, EngineState>,
+    api_version: ApiVersion,
+    session_id: String,
+    attempt_id: String,
+) -> Result<SessionResource, &'static str> {
+    if !valid_session_id(&attempt_id) {
+        return Err("invalid_input");
+    }
+    resource_action(
+        &app,
+        &state,
+        api_version,
+        &session_id,
+        serde_json::json!({"command":"acknowledge_send_uncertainty","attemptId":attempt_id}),
+    )
+    .await
+}
+
+#[tauri::command]
 pub(crate) async fn send_state(
     app: tauri::AppHandle,
     state: State<'_, EngineState>,

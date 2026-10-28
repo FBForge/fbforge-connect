@@ -3,8 +3,8 @@ package org.fitconnect.integration.contract;
 import java.util.*;
 
 /**
- * Native SDK output, never a renderer response. Content is released only after successful SDK
- * checks.
+ * Native SDK output, never a renderer response. Content is released only after successful
+ * cryptographic SDK checks. Schema deviations remain explicit review issues and diagnostics.
  */
 public record ReceivedContent(
         UUID destinationId,

@@ -100,7 +100,10 @@ final class Engine implements AutoCloseable {
                                             version,
                                             values.get("sessionId"),
                                             values.get("sendDocument"));
-                            case "execute_send", "cancel_send", "send_state" ->
+                            case "execute_send",
+                                    "cancel_send",
+                                    "send_state",
+                                    "acknowledge_send_uncertainty" ->
                                     sessions.send(
                                             version,
                                             values.get("sessionId"),
@@ -154,6 +157,12 @@ final class Engine implements AutoCloseable {
                                         draft.request(),
                                         draft.proofId());
                             }
+                            case "receipt_review", "reply_receipt_review" ->
+                                    sessions.receiptReview(
+                                            version,
+                                            values.get("sessionId"),
+                                            values.get("attemptId"),
+                                            command.equals("reply_receipt_review"));
                             case "execute_receipt", "cancel_receipt", "receipt_state" ->
                                     sessions.receipt(
                                             version,

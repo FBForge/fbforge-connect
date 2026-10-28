@@ -44,7 +44,9 @@ export function useReceivePanel(props, emit) {
       ['application/json', 'application/xml'].includes(
         parts.value.find((part) => part.kind === 'data')?.mimeType,
       ) &&
-      !proof.value.warnings.includes('XML_SCHEMA_NOT_CHECKED'),
+      !proof.value.warnings.some((stage) =>
+        ['XML_SCHEMA_NOT_CHECKED', 'DATA_SCHEMA_INVALID'].includes(stage),
+      ),
   );
   const proof = ref(null),
     parts = ref([]),

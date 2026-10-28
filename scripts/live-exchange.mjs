@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { exerciseDesktopUI } from './live-ui/index.mjs';
+import { probeSenderRestrictions } from './live-sender-restrictions.mjs';
 
 const requireCheck = (value, code = 'acceptance_check_failed') => {
   if (!value) throw new Error(code);
@@ -291,7 +292,19 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
   await checkpoint(sender); // Actual Windows DPAPI, before any reply key is published.
   const sent = await sender.call('execute_send', { attemptId: prepared.attempt.attemptId });
   await checkpoint(sender);
-  requireCheck(sent.status === 'sent', `submission_${sent.status}`);
+  if (sent.status !== 'sent') console.log(`Send failure ${api}: ${JSON.stringify(sent.diagnostics || [])}`);
+  if (sent.status !== 'sent') {
+    const failure = new Error(`submission_${sent.status}`);
+    const last = sent.diagnostics?.at(-1);
+    failure.definiteAuthorizationRejection =
+      sent.status === 'failed' &&
+      !sent.submissionId &&
+      !sent.caseId &&
+      last?.step === 'announce' &&
+      last.method === 'POST' &&
+      [401, 403].includes(last.httpStatus);
+    throw failure;
+  }
   await archivedCopy(sender, sent.submissionId, 'sent', 'submission', data, attachment, 'sent');
   console.log(`${stage}: one native send confirmed; exact local send snapshot verified`);
   const localSchemas = xml ? [{ uri: xmlUri, contentId: await upload(receiver, xmlSchema) }] : [];
@@ -620,6 +633,15 @@ try {
   for (const api of ['v2', 'v3']) for (const format of ['json', 'xml']) await exchange(api, format);
   await exchange('v3', 'json', true);
   await exchange('v3', 'json', false, 'reject');
+  stage = 'sender_destination_restriction';
+  await probeSenderRestrictions({
+    destination,
+    senderDestination: process.env.SENDERDEST,
+    runName,
+    clientId: process.env.SUBSCRIBERID,
+    clientSecret: process.env.SUBSCRIBERSECRET,
+    exchange: (api) => exchange(api, 'json'),
+  });
   stage = 'destination_rotation';
   const replacementKeys = await receiverV3.call('generate_test_keys');
   await checkpoint(receiverV3);
