@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 async function prepare(page, { uncertain = false } = {}) {
   await page.goto('http://127.0.0.1:1420/test-fixtures/sending.html');
@@ -97,6 +98,19 @@ test('uncertain sends unlock only a new draft after explicit risk acknowledgemen
   const begin = dialog.getByRole('button', { name: 'Neuen Entwurf beginnen', exact: true });
   await expect(dialog).toContainText('Dieser Schritt storniert keine Einreichung');
   await expect(begin).toBeDisabled();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme = 'dark';
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .include('dialog[open]')
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
   await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
   expect(
     await page.evaluate(() => window.__cycle.filter((c) => c.command === 'acknowledge_send_uncertainty')),
