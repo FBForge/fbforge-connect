@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { exerciseDesktopUI } from './live-ui/index.mjs';
 
 const requireCheck = (value, code = 'acceptance_check_failed') => {
   if (!value) throw new Error(code);
@@ -16,7 +17,7 @@ for (const secretName of secretNames)
   requireCheck(Boolean(process.env[secretName]), 'actions_secret_missing');
 const root = fileURLToPath(new URL('../', import.meta.url));
 const bridge = join(root, 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe');
-const directory = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), 'fitconnect-live-'));
+const directory = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), 'fbforge-live-'));
 const runName = `FBForge Connect CI ${randomUUID()}`;
 const applicationUri = 'urn:fit-connect:test-client:demo:application:1';
 const replyUri = 'urn:fit-connect:test-client:demo:reply:1';
@@ -227,13 +228,16 @@ async function verifiedLog(engine, command, fields, expectedEvent = null) {
       result.warnings[0] === 'CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED',
     'signed_event_log_failed',
   );
-  if (expectedEvent) {
+  if (expectedEvent || result.scope === 'case') {
     let found = false;
     for (let offset = 0; offset < result.total; offset += 5) {
-      const page = await engine.call('list_event_log', { logId: result.logId, offset });
+      const page = await engine.call(result.scope === 'case' ? 'list_case_event_log' : 'list_event_log', {
+        logId: result.logId,
+        offset,
+      });
       found ||= page.events.some((entry) => entry.eventType === expectedEvent);
     }
-    requireCheck(found, 'receipt_event_missing');
+    if (expectedEvent) requireCheck(found, 'receipt_event_missing');
   }
 }
 async function exchange(api, format, withProcess = false, receiptAction = 'accept') {
@@ -246,10 +250,10 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
     mimeType = xml ? 'application/xml' : 'application/json';
   const data = Buffer.from(
     xml
-      ? '<antrag><vorname>Erika</vorname><anliegen>Fiktiver Alpha-Test</anliegen></antrag>'
+      ? '<antrag><vorname>Erika</vorname><anliegen>Fiktiver TEST-Antrag</anliegen></antrag>'
       : JSON.stringify({
           antragstellendePerson: { vorname: 'Erika', nachname: 'Musterfrau' },
-          anliegen: 'Fiktiver Alpha-Test ohne echte Personendaten',
+          anliegen: 'Fiktiver TEST-Antrag ohne echte Personendaten',
           referenz: stage,
         }),
   );
@@ -262,7 +266,7 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
     destinationId: destination,
     fromDestinationId: api === 'v3' ? process.env.SENDERDEST : null,
     serviceIdentifier: service,
-    serviceName: 'Fiktiver Alpha-Test',
+    serviceName: 'Fiktiver TEST-Antrag',
     region: 'DE',
     schemaUri,
     mimeType,
@@ -405,6 +409,8 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
     'submission_receipt_failed',
   );
   const localStatus = receiptAction === 'accept' ? 'accepted' : 'rejected';
+  await verifiedLog(receiver, 'load_case_event_log', { caseId: sent.caseId });
+  await verifiedLog(sender, 'load_case_event_log', { caseId: sent.caseId });
   await archivedCopy(receiver, sent.submissionId, 'received', 'submission', data, attachment, localStatus);
   await archivedCopy(sender, reply.replyId, 'received', 'reply', replyData, null, localStatus);
   await verifiedLog(
@@ -439,20 +445,6 @@ async function prepareReplySource() {
   try {
     const current = await manager.call('load_managed_destination', { destinationId: process.env.SENDERDEST });
     requireCheck(current.type === 'C' && current.status === 'active', 'source_configuration_invalid');
-    const metadataVersions = [...new Set([...current.metadataVersions, '2.0.0', '3.0.0'])];
-    if (metadataVersions.length !== current.metadataVersions.length) {
-      const preview = await manager.call('prepare_destination_update', {
-        destinationDocument: JSON.stringify({
-          destinationIds: [process.env.SENDERDEST],
-          changes: { metadataVersions },
-        }),
-      });
-      const result = await manager.call('execute_destination_update', { attemptId: preview.attemptId });
-      requireCheck(
-        result.status === 'completed' && result.changes[0]?.status === 'updated',
-        'source_metadata_update_failed',
-      );
-    }
     const configured = JSON.parse(
       (await manager.call('load_send_destination', { destinationId: process.env.SENDERDEST })).detailsJson,
     );
@@ -460,9 +452,7 @@ async function prepareReplySource() {
       configured.metadataVersions.includes('2.0.0') && configured.metadataVersions.includes('3.0.0'),
       'source_metadata_readback_failed',
     );
-    console.log(
-      'TEST source reply metadata versions verified; missing versions added with a field-only native PATCH',
-    );
+    console.log('Existing TEST source reply metadata versions verified without changing that destination');
   } finally {
     manager.native.close();
     engines.delete(manager.native);
@@ -618,6 +608,12 @@ try {
     (await receiverV3.call('load_managed_destination', { destinationId: destination })).status === 'active',
     'activation_failed',
   );
+  const managementPage = await receiverV3.call('list_destinations', { offset: 0 });
+  requireCheck(
+    managementPage.canManageDestinations !== false,
+    'management_hint_contradicts_authorized_write',
+  );
+  console.log('Management capability hint agrees with the server-authorized owned destination update');
   console.log(
     'Native destination creation, exact registration readback, DPAPI checkpoint/restart and separate activation passed',
   );
@@ -646,6 +642,43 @@ try {
   // Exchange again using the newly selected destination key, retaining the old keys.
   await exchange('v3', 'json');
   console.log('Native key rotation and exchange using the replacement key passed');
+  if (process.env.FBFORGE_UI_INSTALLER) {
+    stage = 'desktop_ui';
+    const receiverV2 = await openNativeSession('subscriber', 'v2');
+    await restore(receiverV2, 'subscriber-v3', (item) => Boolean(item.destinationKey));
+    await checkpoint(receiverV2);
+    await checkpoint(receiverV3);
+    const receiverProfiles = ['v2', 'v3'].map((api) => {
+      const id = randomUUID();
+      return {
+        id,
+        api,
+        bridge,
+        document: {
+          version: 1,
+          profileId: id,
+          environment: 'TEST',
+          name: `CI UI receiver ${api}`,
+          apiVersion: api,
+          role: 'administrative-system',
+          clientId: process.env.SUBSCRIBERID,
+          clientSecret: process.env.SUBSCRIBERSECRET,
+          keys: protectedBridge('load', profiles.get(`subscriber-${api}`)),
+        },
+      };
+    });
+    await exerciseDesktopUI({
+      directory,
+      destination,
+      service,
+      replyUri,
+      xmlUri,
+      xmlSchema,
+      signingKid: receiptSigningKid,
+      runName,
+      receiverProfiles,
+    });
+  }
   console.log('Live TEST exchange acceptance completed');
 } catch (error) {
   // Stable diagnostics only. Never echo SDK bodies, credential values or private checkpoint data.

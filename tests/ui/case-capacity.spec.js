@@ -22,9 +22,9 @@ test('full local history blocks before send, keeps the confirmation recoverable 
   await page.locator('#send-data').fill(data);
   await page.getByRole('button', { name: 'Weiter: Anlagen & Antwortkanal', exact: true }).click();
   await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Einreichung an TEST senden?', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole('button', { name: 'Jetzt an TEST senden', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Jetzt an FIT-Connect senden', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('Vorgangsablage ist voll');
   expect(await page.evaluate(() => window.__caseGuardCalls)).toBe(1);
   await expect(dialog).toBeVisible();

@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from './environments.js';
 import { requestResource } from './resources.js';
 
 const uuid = (value) =>
@@ -168,6 +169,7 @@ export async function executeReceipt(invoke, session, prepared) {
     if (!['confirmed', 'failed', 'uncertain'].includes(result.status)) fail();
     return result;
   } catch (error) {
+    if (cancelledProductionAction(error)) throw error;
     const code = typeof error === 'string' ? error : error?.message;
     if (code === 'engine_busy' || code?.startsWith('vault_') || code === 'case_storage_pending') throw error;
     return Object.freeze({

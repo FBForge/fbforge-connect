@@ -1,4 +1,7 @@
 <script setup>
+import { cancelledProductionAction } from './environments.js';
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import { ref, computed, nextTick, watch } from 'vue';
 import { invoke } from './native.js';
 import {
@@ -38,8 +41,9 @@ async function run(action, operation) {
   try {
     await operation(session, () => stamp === generation);
   } catch (cause) {
-    status = 'Fehlgeschlagen';
-    if (stamp === generation) error.value = `${errorMessage(cause)} (${diagnosticCode(cause)})`;
+    status = cancelledProductionAction(cause) ? 'Abgebrochen' : 'Fehlgeschlagen';
+    if (stamp === generation && !cancelledProductionAction(cause))
+      error.value = `${errorMessage(cause)} (${diagnosticCode(cause)})`;
     if (resetsSessions(cause)) emit('fatal', cause);
   } finally {
     pending.value = false;
@@ -48,7 +52,7 @@ async function run(action, operation) {
   }
 }
 function prepare() {
-  return run('TEST-Entwurf prüfen', async (session, current) => {
+  return run('Destination-Entwurf prüfen', async (session, current) => {
     const result = await prepareDestinationCleanup(invoke, session, props.destination.destinationId);
     if (current()) {
       preview.value = result;
@@ -72,7 +76,7 @@ function cancel() {
 function execute() {
   const confirmed = preview.value;
   if (confirmed?.status !== 'prepared') return;
-  return run('TEST-Entwurf entfernen', async (session, current) => {
+  return run('Destination-Entwurf entfernen', async (session, current) => {
     preview.value = { ...confirmed, status: 'running' };
     dialog.value?.close();
     try {
@@ -82,7 +86,9 @@ function execute() {
         emit('changed');
       }
     } catch (cause) {
-      if (current()) preview.value = { ...confirmed, status: 'uncertain' };
+      if (current())
+        preview.value = cancelledProductionAction(cause) ? confirmed : { ...confirmed, status: 'uncertain' };
+      if (cancelledProductionAction(cause) && current()) dialog.value?.showModal();
       throw cause;
     }
   });
@@ -90,14 +96,15 @@ function execute() {
 </script>
 <template>
   <section class="tool-section" aria-labelledby="cleanup-title">
-    <h3 id="cleanup-title">Nicht aktivierten TEST-Entwurf entfernen</h3>
+    <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
+    <h3 id="cleanup-title">Nicht aktivierten Destination-Entwurf entfernen</h3>
     <p>
       Nur eigene Destinations im Status „draft“ oder „created“ können hier entfernt werden. Die privaten
       Schlüssel bleiben im lokalen Profil erhalten.
     </p>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="preview?.status === 'removed'" role="status">
-      Die TEST-Destination wurde entfernt. Laden Sie die Liste neu.
+      Die Destination wurde entfernt. Laden Sie die Liste neu.
     </p>
     <p v-if="preview?.status === 'uncertain'" role="alert">
       Die Entfernung wurde nicht sicher bestätigt. Bitte die Liste neu laden und den Serverzustand klären. Es
@@ -112,23 +119,23 @@ function execute() {
       :disabled="disabled || ['uncertain', 'removed', 'running'].includes(preview?.status)"
       @click="prepare"
     >
-      Entfernung dieses TEST-Entwurfs vorbereiten
+      Entfernung dieses Destination-Entwurfs vorbereiten
     </button>
     <dialog ref="dialog" aria-labelledby="cleanup-confirm-title" @cancel.prevent="cancel">
-      <h3 id="cleanup-confirm-title">Diesen TEST-Entwurf endgültig entfernen?</h3>
+      <h3 id="cleanup-confirm-title">Diesen Destination-Entwurf endgültig entfernen?</h3>
       <p>
         <strong>{{ preview?.name }}</strong>
         <br />
         <code>{{ preview?.destinationId }}</code>
       </p>
       <p>
-        Die Destination wird auf TEST gelöscht. Diese Aktion kann nicht rückgängig gemacht werden. Vorher wird
-        geprüft, ob er seit der Vorschau geändert oder aktiviert wurde.
+        Die Destination wird bei FIT-Connect gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+        Vorher wird geprüft, ob er seit der Vorschau geändert oder aktiviert wurde.
       </p>
       <div class="client-actions">
         <button class="button secondary" autofocus :disabled="disabled" @click="cancel">Abbrechen</button>
         <button class="button" :disabled="disabled" @click="execute">
-          Diesen TEST-Entwurf endgültig entfernen
+          Diesen Destination-Entwurf endgültig entfernen
         </button>
       </div>
     </dialog>

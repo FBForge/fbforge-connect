@@ -29,7 +29,8 @@ final class ProcessDiscovery {
             List<Destination> destinations) {}
 
     private static final String ENDPOINT =
-            "https://test.fit-connect.fitko.dev/submission-api/v3/search-destinations/by-process-message";
+            IntegrationEnvironment.current().submissionApi()
+                    + "/v3/search-destinations/by-process-message";
 
     static Page search(AuthenticatedSession session, String document, ResourceExchange remote) {
         var input = StrictJson.object(document, 12000);

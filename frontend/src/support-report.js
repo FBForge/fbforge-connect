@@ -3,6 +3,12 @@ import { productName } from './product.js';
 
 // Deliberately exclude arguments, response bodies, identifiers, paths and free-form messages.
 export const operationLabels = Object.freeze({
+  begin_message_export: 'Exportordner auswählen',
+  export_message: 'Nachricht vollständig speichern',
+  finish_message_export: 'Dateiexport abschließen',
+  select_environment: 'Umgebung wechseln',
+  import_certified_keys: 'V-PKI-Schlüssel importieren',
+  test_library: 'Lokale Testfallsammlung',
   case_workspace: 'Lokale Vorgangsablage',
   list_key_inventory: 'Schlüsselbestand ansehen',
   remove_key_inventory_item: 'Einzelnen Schlüsselbestand entfernen',
@@ -16,17 +22,18 @@ export const operationLabels = Object.freeze({
   cancel_destination_rotation: 'Schlüsselwechsel verwerfen',
   destination_rotation_state: 'Schlüsselwechsel prüfen',
   prepare_destination_cleanup: 'Entwurfsbereinigung vorbereiten',
-  execute_destination_cleanup: 'TEST-Entwurf entfernen',
+  execute_destination_cleanup: 'Destination-Entwurf entfernen',
   cancel_destination_cleanup: 'Entwurfsbereinigung verwerfen',
   destination_cleanup_state: 'Entwurfsbereinigung prüfen',
   probe_engine: 'Lokalen Kern prüfen',
-  open_session: 'Bei TEST anmelden',
+  open_session: 'Anmelden',
   check_session: 'Sitzung prüfen',
+  open_session_for_api: 'API-Version wechseln',
   close_session: 'Abmelden',
   list_destinations: 'Eigene Destinations laden',
   load_destination: 'Destination prüfen',
-  import_key: 'Testschlüssel laden',
-  discard_keys: 'Testschlüssel verwerfen',
+  import_key: 'Schlüssel laden',
+  discard_keys: 'Schlüssel verwerfen',
   load_managed_destination: 'Verwaltung: Details laden',
   prepare_destination_update: 'Verwaltung: Änderung vorbereiten',
   execute_destination_update: 'Verwaltung: Änderung speichern',
@@ -34,6 +41,7 @@ export const operationLabels = Object.freeze({
   destination_update_state: 'Verwaltung: Ergebnis abrufen',
   load_send_destination: 'Empfängerleistungen laden',
   load_send_schema: 'Versandschema laden',
+  validate_send_data: 'Fachdaten vor Versand prüfen',
   prepare_send: 'Versand vorbereiten',
   execute_send: 'Versand bestätigen',
   cancel_send: 'Versand verwerfen',
@@ -53,9 +61,10 @@ export const operationLabels = Object.freeze({
   cancel_destination_creation: 'Destination-Anlage verwerfen',
   destination_creation_state: 'Anlageergebnis prüfen',
   reconcile_destination_creation: 'Destination zuordnen',
-  use_generated_keys: 'Erzeugte TEST-Schlüssel verwenden',
+  use_generated_keys: 'Lokale Schlüssel verwenden',
   list_profiles: 'Gespeicherte Profile laden',
   open_saved_profile: 'Mit gespeichertem Profil anmelden',
+  copy_profile_for_api: 'Profil für weitere API einrichten',
   forget_profile: 'Gespeichertes Profil entfernen',
   profile_status: 'Speicherstatus prüfen',
   save_profile_state: 'Schlüsselbestand sichern',
@@ -110,6 +119,10 @@ const stateLabels = new Map([
   ['rejected', 'Abgelehnt'],
 ]);
 const codeLabels = new Map([
+  ['content_cancelled', 'Abgebrochen'],
+  ['vpki_certificate_required', 'V-PKI-Zertifikat nicht freigegeben'],
+  ['certificate_status_unknown', 'Zertifikatsstatus nicht feststellbar'],
+  ['environment_mismatch', 'Umgebung passt nicht'],
   ['schema_unavailable', 'Schema nicht verfügbar'],
   ['schema_required', 'Schema fehlt'],
   ['schema_consent_required', 'Schemafreigabe fehlt'],
@@ -123,7 +136,7 @@ const codeLabels = new Map([
   ['key_rejected', 'Schlüssel nicht verwendbar'],
   ['resource_denied', 'Berechtigung fehlt'],
   ['resource_missing', 'Nicht gefunden'],
-  ['resource_unavailable', 'TEST-Dienst nicht verfügbar'],
+  ['resource_unavailable', 'FIT-Connect-Dienst nicht verfügbar'],
   ['authentication_failed', 'Anmeldung fehlgeschlagen'],
   ['session_missing', 'Sitzung nicht verfügbar'],
   ['engine_timeout', 'Zeitlimit überschritten'],
@@ -138,6 +151,8 @@ const codeLabels = new Map([
   ['case_storage_pending', 'Vorgang noch nicht gespeichert'],
   ['case_limit', 'Vorgangsablage voll'],
   ['reply_metadata_required', 'Metadatenversion für Replies fehlt'],
+  ['reply_channel_missing', 'Kein Antwortkanal angeboten'],
+  ['schema_id_mismatch', 'Schema-Kennung passt nicht'],
   ['content_cleanup_failed', 'Lokale Bereinigung fehlgeschlagen'],
 ]);
 export function diagnosticContext(entry) {
@@ -222,7 +237,7 @@ export function observeInvoke(operation, record, clock = () => performance.now()
         record({
           time: new Date().toISOString(),
           command,
-          apiVersion: api(args?.apiVersion),
+          apiVersion: api(command === 'open_session_for_api' ? args?.targetApiVersion : args?.apiVersion),
           result,
           state,
           code,
@@ -234,20 +249,27 @@ export function observeInvoke(operation, record, clock = () => performance.now()
     }
   };
 }
-export function buildSupportReport({ version, selectedApi, probes = {}, entries = [] }) {
+export function buildSupportReport({
+  version,
+  selectedApi,
+  environment = 'TEST',
+  probes = {},
+  entries = [],
+}) {
   if (typeof version !== 'string' || !/^\d+\.\d+\.\d+(?:-[a-z0-9.]+)?$/.test(version))
     throw new Error('invalid_input');
+  if (!['TEST', 'STAGE', 'PROD'].includes(environment)) throw new Error('invalid_input');
   return {
     format: 'fit-connect-support-v1',
     application: productName,
     version,
-    environment: 'TEST',
+    environment,
     selectedApi: api(selectedApi),
     localAdapters: ['v2', 'v3'].map((apiVersion) => ({
       apiVersion,
       verified:
         probes[apiVersion]?.isolated === true &&
-        probes[apiVersion]?.environment === 'TEST' &&
+        probes[apiVersion]?.environment === environment &&
         probes[apiVersion]?.apiVersion === apiVersion,
     })),
     operations: entries.slice(0, 100).map(safeEntry).filter(Boolean),

@@ -2,7 +2,6 @@ package org.fitconnect.integration.v3;
 
 import com.nimbusds.jose.jwk.*;
 import dev.fitko.fitconnect.core.common.concurrent.ConcurrencyLimiter;
-import dev.fitko.fitconnect.rest.client.config.FitConnectEnvironment;
 import dev.fitko.fitconnect.rest.client.services.auth.*;
 import dev.fitko.fitconnect.rest.client.services.submission.impl.*;
 import dev.fitko.fitconnect.sdk.config.credentials.*;
@@ -176,11 +175,11 @@ final class Receiver {
                             dev.fitko.fitconnect.rest.model.event.authtags.AuthenticationTags>
                     observedReplyTags) {
         var http = new ReceiverTransport(read, schemas);
-        var env = FitConnectEnvironment.TEST;
+        var env = SdkEnvironment.current();
         var settings = SdkSettings.withDefaultSettings();
         var headers = new RequestHeaders(auth);
         var limiter = new ConcurrencyLimiter(1);
-        var base = "https://test.fit-connect.fitko.dev/submission-api";
+        var base = IntegrationEnvironment.current().submissionApi();
         var submissions = new SubmissionApiClient(headers, http, limiter, base);
         var replies = new ReplyApiClient(headers, http, limiter, base);
         var cases = new CaseApiClient(headers, http, base);
@@ -247,6 +246,10 @@ final class Receiver {
                                                                                         .decryptedData(),
                                                                                 schema.schemaUri()
                                                                                         .toString());
+                                                if (!valid)
+                                                    http.failed(
+                                                            new SessionException(
+                                                                    "data_schema_invalid"));
                                                 return valid
                                                         ? dev.fitko.fitconnect.core.validation.api
                                                                 .ValidationResult.valid()

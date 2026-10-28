@@ -1,9 +1,12 @@
 <script setup>
+import CopyValue from './CopyValue.vue';
+import InboxSelection from './InboxSelection.vue';
 import { inject, ref, computed, watch, nextTick } from 'vue';
 import ReceivePanel from './ReceivePanel.vue';
 import { invoke } from './native.js';
 import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
+const selection = ref(null);
 import { listReplies, listReplyChannels } from './replies.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
@@ -36,8 +39,8 @@ watch(
   { flush: 'sync' },
 );
 const messages = {
-  resource_denied: 'Diese TEST-Zugangsdaten dürfen die verfügbaren Antworten nicht abrufen.',
-  invalid_resource: 'Die TEST-Antwort ist unvollständig oder enthält widersprüchliche Reply-Kennungen.',
+  resource_denied: 'Diese Zugangsdaten dürfen die verfügbaren Antworten nicht abrufen.',
+  invalid_resource: 'Die API-Antwort ist unvollständig oder enthält widersprüchliche Reply-Kennungen.',
   resource_unavailable: 'Die verfügbaren Antworten konnten nicht geladen werden.',
 };
 function open(
@@ -144,7 +147,7 @@ async function loadChannels() {
         gespeicherten Profil können dessen Schlüssel nach einem Neustart wiederhergestellt werden. Ohne
         Speicherung gehen sie beim Abmelden oder Beenden verloren.
       </p>
-      <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
+      <p v-if="!session">Bitte zuerst eine Sitzung öffnen.</p>
       <form @submit.prevent="open()">
         <div class="client-fields">
           <label for="reply-lookup-case">
@@ -177,10 +180,22 @@ async function loadChannels() {
       <template v-if="page">
         <h3 ref="heading" tabindex="-1">{{ page.totalCount }} verfügbare Antworten</h3>
         <p v-if="!page.replies.length">Keine Antworten zur Abholung vorhanden.</p>
-        <div v-else class="client-table support-table">
+        <InboxSelection
+          ref="selection"
+          :session="session"
+          :items="page.replies"
+          :total="page.totalCount"
+          :busy="disabled"
+          reply
+          :load-page="(offset) => listReplies(invoke, session, offset)"
+          @busy="emit('busy', $event)"
+          @open="open($event)"
+        />
+        <div v-if="page.replies.length" class="client-table support-table">
           <table class="receipt-history-table">
             <thead>
               <tr>
+                <th scope="col">Auswahl</th>
                 <th scope="col">Reply ID</th>
                 <th scope="col">Case ID</th>
                 <th scope="col">Aktion</th>
@@ -188,6 +203,15 @@ async function loadChannels() {
             </thead>
             <tbody>
               <tr v-for="item in page.replies" :key="item.replyId">
+                <td data-label="Auswahl">
+                  <input
+                    type="checkbox"
+                    :aria-label="`Antwort ${item.replyId} auswählen`"
+                    :checked="selection?.has(item) || false"
+                    :disabled="disabled"
+                    @change="selection?.toggle(item, $event.target.checked)"
+                  />
+                </td>
                 <td data-label="Reply ID">
                   <code>{{ item.replyId }}</code>
                 </td>
@@ -316,13 +340,13 @@ async function loadChannels() {
         <div>
           <dt>Reply ID</dt>
           <dd>
-            <code>{{ detail.replyId }}</code>
+            <CopyValue :value="detail.replyId" label="Reply ID" />
           </dd>
         </div>
         <div>
           <dt>Case ID</dt>
           <dd>
-            <code>{{ detail.caseId }}</code>
+            <CopyValue :value="detail.caseId" label="Case ID" />
           </dd>
         </div>
       </dl>

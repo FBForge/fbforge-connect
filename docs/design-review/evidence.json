@@ -1,0 +1,123 @@
+{
+  "source": "369d6f5f1c3df2fe0e9e8f6f013923241d919b11",
+  "capture_date": "2026-10-28",
+  "rendering": "Local Chromium; actual Vue components, synthetic native boundary; no real network exchange",
+  "axe_states": 12,
+  "axe_violations": 0,
+  "profile_action": {
+    "name": "profile-primary-action-position",
+    "rect": {
+      "x": 285,
+      "y": 802.53125,
+      "width": 163.59375,
+      "height": 34.890625
+    }
+  },
+  "system_theme_change": {
+    "name": "system-theme-live-change",
+    "theme": "light",
+    "systemDark": true
+  },
+  "reader_full_shell": [
+    {
+      "width": 1180,
+      "reading": 868,
+      "columns": "868px",
+      "asidePosition": "static",
+      "accept": {
+        "x": 276,
+        "y": 4318.375,
+        "width": 826,
+        "height": 44
+      }
+    },
+    {
+      "width": 1440,
+      "reading": 1128,
+      "columns": "784px 320px",
+      "asidePosition": "sticky",
+      "accept": {
+        "x": 1084,
+        "y": 637.25,
+        "width": 278,
+        "height": 44
+      }
+    }
+  ],
+  "minimum_window": {
+    "name": "audit-05-minimum-window",
+    "viewport": {
+      "width": 420,
+      "height": 500
+    },
+    "theme": "dark",
+    "topbarOverflow": {
+      "client": 420,
+      "scroll": 420
+    },
+    "offscreenControls": [],
+    "axe": []
+  },
+  "images": [
+    {
+      "file": "images/01-start.png",
+      "captured_as": "audit-01-start-default.png"
+    },
+    {
+      "file": "images/02-profile.png",
+      "captured_as": "audit-02-profiles-default.png"
+    },
+    {
+      "file": "images/03-send.png",
+      "captured_as": "send.png"
+    },
+    {
+      "file": "images/04-data.png",
+      "captured_as": "send-data.png"
+    },
+    {
+      "file": "images/05-confirmation.png",
+      "captured_as": "send-confirmation.png"
+    },
+    {
+      "file": "images/06-reader-default.png",
+      "captured_as": "audit-shell-1180-scrolled.png"
+    },
+    {
+      "file": "images/07-reader-wide.png",
+      "captured_as": "audit-shell-1440-scrolled.png"
+    },
+    {
+      "file": "images/08-reader-compact.png",
+      "captured_as": "audit-10-compact-reader-actions.png"
+    },
+    {
+      "file": "images/09-schema-error.png",
+      "captured_as": "problems.png"
+    },
+    {
+      "file": "images/10-batch.png",
+      "captured_as": "receive-batch.png"
+    },
+    {
+      "file": "images/11-prod.png",
+      "captured_as": "environment-switch.png"
+    },
+    {
+      "file": "images/12-dark.png",
+      "captured_as": "audit-04-start-dark.png"
+    },
+    {
+      "file": "images/13-minimum.png",
+      "captured_as": "audit-05-minimum-window.png"
+    },
+    {
+      "file": "images/14-cases.png",
+      "captured_as": "case-list.png"
+    },
+    {
+      "file": "images/15-diagnostics.png",
+      "captured_as": "diagnostics.png"
+    }
+  ]
+}

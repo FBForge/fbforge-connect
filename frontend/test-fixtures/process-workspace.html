@@ -11,9 +11,9 @@
       import { createApp, ref, shallowRef, provide, h } from 'vue';
       import ProcessWorkspace from '../src/ProcessWorkspace.vue';
       import { processWorkspaceKey } from '../src/process-context.js';
-      import '../src/site.css';
-      import '../src/layout.css';
-      import '../src/desktop.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
       const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
       const session = { apiVersion: 'v3', sessionId: id(1), environment: 'TEST', connected: true };
       const fixture = (window.__processFixture = { searches: 0, calls: [], draft: null, context: null });

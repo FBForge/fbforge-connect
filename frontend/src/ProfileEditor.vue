@@ -65,10 +65,10 @@ async function save() {
     @cancel.prevent="close"
     @close="secret = ''"
   >
-    <h3 :id="`profile-edit-${profile.profileId}`">Gespeichertes TEST-Profil bearbeiten</h3>
+    <h3 :id="`profile-edit-${profile.profileId}`">Gespeichertes Profil bearbeiten</h3>
     <p>
       Client-ID, API und gespeicherte Schlüssel bleiben diesem Profil zugeordnet. Ein neues Secret wird zuerst
-      durch eine separate TEST-Anmeldung geprüft. Eine fehlerhafte Eingabe ersetzt die Sicherung nicht.
+      durch eine separate Anmeldung geprüft. Eine fehlerhafte Eingabe ersetzt die Sicherung nicht.
     </p>
     <form autocomplete="off" @submit.prevent="save">
       <label :for="`profile-edit-name-${profile.profileId}`">

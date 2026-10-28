@@ -8,6 +8,22 @@ import org.junit.jupiter.api.Test;
 
 class EngineTest {
     @Test
+    void parsedCredentialsNeverEnterTheFrameDiagnosticString() throws Exception {
+        String marker = "synthetic-private-marker";
+        var request =
+                EngineRequest.parse(
+                        "{\"protocolVersion\":1,\"id\":\"safe-frame\",\"command\":\"open_session\","
+                                + "\"apiVersion\":\"v3\",\"role\":\"online-service\",\"clientId\":\""
+                                + marker
+                                + "\",\"clientSecret\":\""
+                                + marker
+                                + "\"}");
+        assertEquals(marker, request.values().get("clientSecret"));
+        assertFalse(request.toString().contains(marker));
+        assertEquals("EngineRequest[open_session, v3]", request.toString());
+    }
+
+    @Test
     void framingRoundTripsUtf8AndDistinguishesCleanEof() throws Exception {
         var output = new ByteArrayOutputStream();
         FrameCodec.write(output, "{\"message\":\"Schlüssel geprüft\"}");

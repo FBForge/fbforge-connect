@@ -217,7 +217,7 @@ pub async fn case_workspace(
         return Ok(SessionResource {
             api_version,
             session_id,
-            environment: "TEST".into(),
+            environment: state.environment().name().into(),
             data: json!({"persistent":enabled_result.ok().flatten().unwrap_or(false),"storageError":storage_error}),
         });
     }
@@ -262,7 +262,7 @@ pub async fn case_workspace(
         return Ok(SessionResource {
             api_version,
             session_id: session_id.clone(),
-            environment: "TEST".into(),
+            environment: state.environment().name().into(),
             data: json!({"records":live,"persistent":enabled,"canPersist":cfg!(windows) && store.is_some(),"storageError":storage_error}),
         });
     }
@@ -326,7 +326,7 @@ pub async fn case_workspace(
     Ok(SessionResource {
         api_version,
         session_id,
-        environment: "TEST".into(),
+        environment: state.environment().name().into(),
         data,
     })
 }

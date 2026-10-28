@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-import-certified-keys"
+description = "Enables the import_certified_keys command without any pre-configured scope."
+commands.allow = ["import_certified_keys"]
+
+[[permission]]
+identifier = "deny-import-certified-keys"
+description = "Denies the import_certified_keys command without any pre-configured scope."
+commands.deny = ["import_certified_keys"]

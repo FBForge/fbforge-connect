@@ -1,6 +1,6 @@
 //! CI-only checkpoint bridge using the actual product vault. Not part of the desktop bundle.
 //! Private archive JSON travels through pipes; the on-disk representation is always Windows DPAPI.
-use fit_connect_native_contracts::{
+use fbforge_connect_native_contracts::{
     protocol::{ApiVersion, SessionRole},
     vault::{Profile, ProfileDefaults, Vault},
 };
@@ -50,6 +50,7 @@ fn run() -> Result<(), &'static str> {
 }
 fn installation_fixture(id: &str) -> Profile {
     Profile {
+        environment: Default::default(),
         version: 1,
         profile_id: id.to_owned(),
         name: "CI TEST Profil".into(),

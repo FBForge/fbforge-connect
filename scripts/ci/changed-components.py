@@ -13,7 +13,7 @@ def components(paths):
             "package.json", "package-lock.json", ".gitattributes", ".npmrc",
         ):
             return dict.fromkeys(checks, True)
-        if path.startswith(("frontend/", "tests/", "licenses/")) or path.endswith(".config.js") or path in (
+        if path.startswith(("frontend/", "tests/", "licenses/", "docs/guide/")) or path.endswith(".config.js") or path in (
             ".prettierrc.json", ".prettierignore", ".editorconfig", "LICENSE", "THIRD_PARTY_NOTICES.md",
         ):
             checks["frontend"] = True

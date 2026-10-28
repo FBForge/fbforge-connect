@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-open-session-for-api"
+description = "Enables the open_session_for_api command without any pre-configured scope."
+commands.allow = ["open_session_for_api"]
+
+[[permission]]
+identifier = "deny-open-session-for-api"
+description = "Denies the open_session_for_api command without any pre-configured scope."
+commands.deny = ["open_session_for_api"]

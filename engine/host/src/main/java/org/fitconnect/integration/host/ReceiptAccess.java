@@ -189,7 +189,8 @@ final class ReceiptAccess implements ResourceExchange, AutoCloseable {
     }
 
     private String url() {
-        return "https://test.fit-connect.fitko.dev/submission-api/"
+        return IntegrationEnvironment.current().submissionApi()
+                + "/"
                 + api.wireValue()
                 + "/cases/"
                 + receipt.caseId()

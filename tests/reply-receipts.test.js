@@ -201,6 +201,22 @@ test('cancellation and state enforce native protocol and single attempt identity
   );
 });
 
+test('cancelled production confirmation before dispatch never becomes an uncertain remote write', async () => {
+  let calls = 0;
+  await assert.rejects(
+    executeReplyReceipt(
+      async () => {
+        calls++;
+        throw new Error('content_cancelled');
+      },
+      session,
+      attempt,
+    ),
+    /content_cancelled/,
+  );
+  assert.equal(calls, 1);
+});
+
 test('local case guard before dispatch never becomes an uncertain remote write', async () => {
   let calls = 0;
   await assert.rejects(

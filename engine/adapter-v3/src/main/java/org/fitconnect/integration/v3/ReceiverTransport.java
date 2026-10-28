@@ -58,14 +58,18 @@ final class ReceiverTransport implements HttpService {
         try {
             boolean trust =
                     url.equals(
-                                    "https://test.fit-connect.fitko.dev/submission-api/.well-known/jwks.json")
+                                    IntegrationEnvironment.current().submissionApi()
+                                            + "/.well-known/jwks.json")
                             || url.matches(
-                                    "https://test\\.fit-connect\\.fitko\\.dev/submission-api/v[23]/destinations/[0-9a-fA-F-]{36}/keys/[^/?#]+");
+                                    java.util.regex.Pattern.quote(
+                                                    IntegrationEnvironment.current()
+                                                            .submissionApi())
+                                            + "/v[23]/destinations/[0-9a-fA-F-]{36}/keys/[^/?#]+");
             String body;
             if (type == String.class && headers.isEmpty() && schemas.get(url) != null)
                 body = localSchema(url);
             else {
-                if (!url.startsWith("https://test.fit-connect.fitko.dev/submission-api/")) {
+                if (!url.startsWith(IntegrationEnvironment.current().submissionApi() + "/")) {
                     if (type != String.class || !headers.isEmpty())
                         throw new SessionException("endpoint_blocked");
                     try {

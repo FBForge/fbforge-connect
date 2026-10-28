@@ -31,6 +31,8 @@ final class LocalTestKeys {
     private final Map<UUID, Bundle> bundles = new LinkedHashMap<>();
 
     Summary generate(AuthenticatedSession session) {
+        if (IntegrationEnvironment.current().requiresVpki())
+            throw error("vpki_certificate_required");
         if (bundles.size() >= 64) throw error("content_limit");
         var bundle = new Bundle(UUID.randomUUID());
         bundle.encryption = session.generateTestKey("decrypt");
@@ -41,21 +43,45 @@ final class LocalTestKeys {
         return summary(bundle);
     }
 
+    Summary importCertified(AuthenticatedSession session, String document) {
+        if (!IntegrationEnvironment.current().requiresVpki()) throw error("invalid_input");
+        if (bundles.size() >= 64) throw error("content_limit");
+        var source = StrictJson.object(document, 48 * 1024);
+        if (!source.keySet().equals(Set.of("encryption", "signing"))) throw error("invalid_input");
+        var bundle = new Bundle(UUID.randomUUID());
+        bundle.encryption =
+                CertifiedKeyMaterial.parse(source.getAsJsonObject("encryption"), "decrypt");
+        bundle.signing = CertifiedKeyMaterial.parse(source.getAsJsonObject("signing"), "sign");
+        var encryption = validate(session, "decrypt", bundle.encryption);
+        var signing = validate(session, "sign", bundle.signing);
+        if (encryption.publicKey().equals(signing.publicKey())) throw error("key_rejected");
+        bundles.put(bundle.id, bundle);
+        return summary(bundle);
+    }
+
     private static TestCertificatePolicy.ValidatedKey validate(
             AuthenticatedSession session, String purpose, GeneratedTestKey key) {
         try {
             var result =
-                    TestCertificatePolicy.validate(
+                    TestCertificatePolicy.inspect(
                             StrictJson.object(key.publicJwk(), 32768),
                             purpose.equals("decrypt")
                                     ? TestCertificatePolicy.Purpose.ENCRYPTION
                                     : TestCertificatePolicy.Purpose.SIGNING,
                             Instant.now());
+            session.validatePublicKey(key.publicJwk(), purpose);
             session.checkGeneratedTestKey(purpose, key);
             return result;
         } catch (TestCertificatePolicy.Rejected failure) {
-            throw error("test_certificate_required");
+            throw error(failure.getMessage());
         }
+    }
+
+    void validateBundle(AuthenticatedSession session, String id) {
+        if (!IntegrationEnvironment.current().requiresVpki()) return;
+        var bundle = require(id);
+        validate(session, "decrypt", bundle.encryption);
+        validate(session, "sign", bundle.signing);
     }
 
     private Bundle require(String id) {
@@ -131,7 +157,7 @@ final class LocalTestKeys {
     private static KeyInfo info(GeneratedTestKey material, String purpose) {
         try {
             var value =
-                    TestCertificatePolicy.validate(
+                    TestCertificatePolicy.inspect(
                             StrictJson.object(material.publicJwk(), 32768),
                             purpose.equals("decrypt")
                                     ? TestCertificatePolicy.Purpose.ENCRYPTION
@@ -140,7 +166,7 @@ final class LocalTestKeys {
             return new KeyInfo(
                     value.kid(), purpose, value.certificateSha256(), value.expiresAt().toString());
         } catch (TestCertificatePolicy.Rejected failure) {
-            throw error("test_certificate_required");
+            throw error(failure.getMessage());
         }
     }
 

@@ -1,3 +1,4 @@
+import { validEnvironment } from './environments.js';
 /** Public navigation context only. This index is never a native proof or a permission to write. */
 export const caseWorkspaceKey = Symbol('case-workspace');
 const uuid = (value) =>
@@ -7,7 +8,7 @@ export function createCaseWorkspace(changed = () => {}) {
   function remember(session, value) {
     if (
       !session?.connected ||
-      session.environment !== 'TEST' ||
+      !validEnvironment(session.environment) ||
       !['v2', 'v3'].includes(session.apiVersion) ||
       !uuid(session.sessionId) ||
       !uuid(value?.caseId)

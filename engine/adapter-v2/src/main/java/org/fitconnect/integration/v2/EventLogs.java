@@ -42,7 +42,7 @@ final class EventLogs {
                             http,
                             workspace,
                             new dev.fitko.fitconnect.core.crypto.JWECryptoService());
-            int verifiedCount = sdk.service.getEventLogForCase(null, caseId, null).size();
+            int verifiedCount = CaseLogVerification.read(auth, http, sdk, caseId);
             var tokens = source.completeEventTokens();
             if (verifiedCount != tokens.size()) throw new SessionException("verification_failed");
             var entries = new ArrayList<VerifiedCaseEventLog.Entry>();

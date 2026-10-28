@@ -1,0 +1,67 @@
+:is(
+  input:not([type]),
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='url'],
+  input[type='search'],
+  input[type='password'],
+  select,
+  textarea
+):disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.submission-destination-heading .status-badge {
+  white-space: normal;
+}
+.submission-content-table th:first-child {
+  width: 24%;
+}
+.submission-content-table td {
+  overflow-wrap: anywhere;
+}
+.submission-content-table .status-badge {
+  white-space: normal;
+}
+.submission-content-table .content-error {
+  display: block;
+  margin-top: 8px;
+  color: var(--status-error-ink);
+}
+.submission-preview-dialog .tool-section-heading h2 {
+  font-size: 1.4rem;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  :is(.submission-content-table, .submission-result-table),
+  :is(.submission-content-table, .submission-result-table) tbody {
+    display: block;
+  }
+  :is(.submission-content-table, .submission-result-table) thead {
+    display: none;
+  }
+  :is(.submission-content-table, .submission-result-table) tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border-bottom: 1px solid var(--line);
+    padding-block: 12px;
+  }
+  :is(.submission-content-table, .submission-result-table) td {
+    display: block;
+    padding: 8px;
+    border: 0;
+  }
+  :is(.submission-content-table, .submission-result-table) td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  :is(.submission-content-table, .submission-result-table) td:first-child,
+  :is(.submission-content-table, .submission-result-table) td:last-child {
+    grid-column: 1 / -1;
+  }
+}

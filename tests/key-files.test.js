@@ -108,3 +108,64 @@ test('a broken native connection stops the remaining batch instead of treating i
   );
   assert.equal(calls, 1);
 });
+
+test('PKCS12 and textual keys share one sequential import without treating binary content as UTF8', async () => {
+  const binary = new Uint8Array([255, 0, 65, 128]);
+  const pfx = { name: 'synthetic.pfx', size: binary.length, arrayBuffer: async () => binary.buffer };
+  const seen = [];
+  const result = await importKeyFiles(
+    [pfx, file('synthetic.jwk', '{"synthetic":true}')],
+    async (value, selectedFile) => {
+      assert.ok(selectedFile.name === 'synthetic.pfx' || selectedFile.name === 'synthetic.jwk');
+      seen.push(value);
+      return { keys: [] };
+    },
+    () => true,
+    () => 'synthetic-password',
+  );
+  assert.equal(result.imported, 2);
+  assert.deepEqual(JSON.parse(seen[0]), {
+    format: 'pkcs12',
+    content: '/wBBgA==',
+    password: 'synthetic-password',
+  });
+  assert.equal(seen[1], '{"synthetic":true}');
+  assert.ok(binary.every((value) => value === 0));
+});
+
+test('a maximum-sized PKCS12 container fits the bounded transport envelope with its password', async () => {
+  const { importKey } = await import('../frontend/src/resources.js');
+  const bytes = new Uint8Array(24 * 1024);
+  const session = {
+    apiVersion: 'v2',
+    sessionId: '11111111-1111-4111-8111-111111111111',
+    environment: 'TEST',
+    connected: true,
+  };
+  const destinationId = '22222222-2222-4222-8222-222222222222';
+  const result = await importKeyFiles(
+    [{ name: 'synthetic.p12', size: bytes.length, arrayBuffer: async () => bytes.buffer }],
+    (document) =>
+      importKey(
+        async (command, args) => {
+          assert.equal(command, 'import_key');
+          assert.ok(new TextEncoder().encode(args.keyDocument).length > 32768);
+          assert.ok(new TextEncoder().encode(args.keyDocument).length <= 48 * 1024);
+          return {
+            apiVersion: session.apiVersion,
+            sessionId: session.sessionId,
+            environment: session.environment,
+            data: { keys: [{ destinationId, kid: 'synthetic', purpose: 'decrypt' }] },
+          };
+        },
+        session,
+        destinationId,
+        'auto',
+        document,
+      ),
+    () => true,
+    () => 's'.repeat(1024),
+  );
+  assert.equal(result.imported, 1);
+  assert.equal(result.failures.length, 0);
+});

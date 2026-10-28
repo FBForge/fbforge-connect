@@ -4,6 +4,12 @@ import java.util.List;
 
 /** Native SDK state. No method exports credentials, tokens or SDK objects to the renderer. */
 public interface AuthenticatedSession extends AutoCloseable {
+    /** Verify a registered public key with the SDK's V-PKI trust and revocation policy. */
+    default void validatePublicKey(String document, String purpose) {
+        if (IntegrationEnvironment.current().requiresVpki())
+            throw new SessionException("vpki_certificate_required");
+    }
+
     void check();
 
     default String publicSchema(String uri) {
@@ -22,6 +28,11 @@ public interface AuthenticatedSession extends AutoCloseable {
     }
 
     String destinations(int offset, int limit);
+
+    /** UI hint only. Every write still requires the server's authorization. */
+    default Boolean canManageDestinations() {
+        return null;
+    }
 
     String destination(String destinationId);
 
@@ -83,7 +94,7 @@ public interface AuthenticatedSession extends AutoCloseable {
 
     List<KeyReference> loadedKeys();
 
-    /** Remove imported keys no longer matching the freshly checked public TEST registrations. */
+    /** Remove imported keys no longer matching the freshly checked public registrations. */
     void retainKeys(String destinationId, List<String> eligiblePublicJwks);
 
     void discardReceived();

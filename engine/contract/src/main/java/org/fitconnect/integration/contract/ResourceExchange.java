@@ -2,7 +2,7 @@ package org.fitconnect.integration.contract;
 
 import java.util.Map;
 
-/** Native-only TEST transport seam. Mutations require an explicit implementation. */
+/** Native-only environment-bound transport seam. Mutations require an explicit implementation. */
 @FunctionalInterface
 public interface ResourceExchange {
     String get(String endpoint, Map<String, String> headers);

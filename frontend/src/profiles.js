@@ -1,3 +1,4 @@
+import { validEnvironment } from './environments.js';
 /** Public profile operations only. Secrets and private archive items are never returned by native code. */
 const uuid = (value) =>
   typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
@@ -17,7 +18,20 @@ export async function listProfiles(invoke) {
   return Object.freeze(
     value.map((item) => {
       if (
-        !exact(item, ['profileId', 'name', 'apiVersion', 'role', 'keyCount', 'available']) ||
+        !(
+          exact(item, [
+            'profileId',
+            'name',
+            'clientId',
+            'apiVersion',
+            'role',
+            'keyCount',
+            'available',
+            'environment',
+          ]) || exact(item, ['profileId', 'name', 'clientId', 'apiVersion', 'role', 'keyCount', 'available'])
+        ) ||
+        (Object.hasOwn(item, 'environment') &&
+          (item.available ? !validEnvironment(item.environment) : item.environment !== null)) ||
         !uuid(item.profileId) ||
         seen.has(item.profileId) ||
         typeof item.name !== 'string' ||
@@ -29,13 +43,18 @@ export async function listProfiles(invoke) {
         item.keyCount > 176 ||
         typeof item.available !== 'boolean' ||
         (item.available
+          ? typeof item.clientId !== 'string' ||
+            !item.clientId.trim() ||
+            new TextEncoder().encode(item.clientId).length > 512
+          : item.clientId !== null) ||
+        (item.available
           ? !['v2', 'v3'].includes(item.apiVersion) ||
             !['online-service', 'administrative-system'].includes(item.role)
           : item.apiVersion !== null || item.role !== null || item.keyCount !== 0)
       )
         fail();
       seen.add(item.profileId);
-      return Object.freeze({ ...item });
+      return Object.freeze({ ...item, environment: item.environment ?? (item.available ? 'TEST' : null) });
     }),
   );
 }
@@ -48,11 +67,11 @@ export async function openSavedProfile(invoke, profile, restoreKeys = true) {
     !uuid(value.sessionId) ||
     value.apiVersion !== profile.apiVersion ||
     value.role !== profile.role ||
-    value.environment !== 'TEST' ||
+    value.environment !== (profile.environment ?? 'TEST') ||
     value.connected !== true
   )
     fail();
-  return Object.freeze({ ...value });
+  return Object.freeze({ ...value, clientId: profile.clientId });
 }
 export async function forgetProfile(invoke, profileId) {
   if (!uuid(profileId)) throw new Error('invalid_input');
@@ -94,6 +113,7 @@ export async function importProfileBackup(invoke) {
   if (value === null) return null;
   return (await listProfiles(async () => [value]))[0];
 }
+// Keep the persisted v1 marker so existing protected backups remain importable.
 const backupMagic = new TextEncoder().encode('FIT-Connect Test-Client protected profile v1\n');
 const backupLimit = 8 * 1024 * 1024 + backupMagic.length;
 /** The WebView forwards only a bounded encrypted file. DPAPI decryption stays native. */
@@ -131,7 +151,7 @@ function defaultsContext(session) {
   if (
     !uuid(session?.sessionId) ||
     !['v2', 'v3'].includes(session.apiVersion) ||
-    session.environment !== 'TEST' ||
+    !validEnvironment(session.environment) ||
     session.connected !== true
   )
     throw new Error('session_missing');
@@ -157,5 +177,33 @@ export async function saveProfileDefaults(invoke, session, defaults) {
     session.apiVersion,
   );
   if (Object.keys(expected).some((key) => result[key] !== expected[key])) fail();
+  return result;
+}
+
+/** Clone only protected credentials; protocol-bound keys and cases stay with their API profile. */
+export async function copyProfileForApi(invoke, profile, apiVersion, targetProfileId = crypto.randomUUID()) {
+  if (
+    !uuid(profile?.profileId) ||
+    !profile.available ||
+    !['v2', 'v3'].includes(apiVersion) ||
+    apiVersion === profile.apiVersion ||
+    !uuid(targetProfileId) ||
+    targetProfileId === profile.profileId
+  )
+    throw new Error('invalid_input');
+  const value = await invoke('copy_profile_for_api', {
+    profileId: profile.profileId,
+    targetProfileId,
+    apiVersion,
+  });
+  const result = (await listProfiles(async () => [value]))[0];
+  if (
+    result.profileId !== targetProfileId ||
+    result.apiVersion !== apiVersion ||
+    result.clientId !== profile.clientId ||
+    result.role !== profile.role ||
+    result.environment !== profile.environment
+  )
+    fail();
   return result;
 }

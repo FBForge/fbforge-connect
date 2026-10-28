@@ -2,7 +2,6 @@ package org.fitconnect.integration.v3;
 
 import dev.fitko.fitconnect.core.common.concurrent.ConcurrencyLimiter;
 import dev.fitko.fitconnect.core.crypto.impl.JWECryptoService;
-import dev.fitko.fitconnect.rest.client.config.FitConnectEnvironment;
 import dev.fitko.fitconnect.rest.client.services.auth.AuthorizationHeaderProvider;
 import dev.fitko.fitconnect.rest.client.services.auth.RequestHeaders;
 import dev.fitko.fitconnect.rest.client.services.submission.impl.*;
@@ -46,7 +45,7 @@ final class Sender {
      * TEST authorizes the actual announce/finalize requests with the current session token.
      */
     private OutgoingTransferService transfers(UUID destination) {
-        var env = FitConnectEnvironment.TEST;
+        var env = SdkEnvironment.current();
         var settings =
                 SdkSettings.builder()
                         .concurrentAttachmentStreams(1)
@@ -140,7 +139,8 @@ final class Sender {
         // Validate the acting destination before wiring its SDK transfer service.
         var source =
                 http.get(
-                                "https://test.fit-connect.fitko.dev/submission-api/v3/destinations/"
+                                IntegrationEnvironment.current().submissionApi()
+                                        + "/v3/destinations/"
                                         + input.fromDestinationId(),
                                 Map.of(),
                                 dev.fitko.fitconnect.rest.model.destination.PublicDestination.class)
@@ -188,7 +188,7 @@ final class Sender {
                                 .build());
             var source =
                     http.get(
-                                    FitConnectEnvironment.TEST.submissionApiUrl()
+                                    SdkEnvironment.current().submissionApiUrl()
                                             + "/v3/destinations/"
                                             + recipient.destinationId(),
                                     Map.of(),

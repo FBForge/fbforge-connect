@@ -25,7 +25,7 @@ final class ReplyReceiver {
                                     new RequestHeaders(auth),
                                     http,
                                     new ConcurrencyLimiter(1),
-                                    "https://test.fit-connect.fitko.dev/submission-api")
+                                    IntegrationEnvironment.current().submissionApi())
                             .getReply(replyId);
             if (envelope == null
                     || !replyId.equals(envelope.replyId())

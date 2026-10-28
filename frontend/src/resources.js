@@ -1,3 +1,4 @@
+import { validEnvironment } from './environments.js';
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const purposes = new Set(['decrypt', 'sign']);
 const fail = () => {
@@ -34,7 +35,7 @@ function context(session) {
     !session ||
     !['v2', 'v3'].includes(session.apiVersion) ||
     !uuid(session.sessionId) ||
-    session.environment !== 'TEST' ||
+    !validEnvironment(session.environment) ||
     session.connected !== true
   )
     throw new Error('session_missing');
@@ -49,7 +50,7 @@ export async function requestResource(invoke, session, command, args = {}) {
   const result = await invoke(command, { ...expected, ...args });
   if (
     !exact(result, ['apiVersion', 'sessionId', 'environment', 'data']) ||
-    result.environment !== 'TEST' ||
+    result.environment !== session.environment ||
     result.apiVersion !== expected.apiVersion ||
     result.sessionId !== expected.sessionId
   )
@@ -62,7 +63,13 @@ export async function listDestinations(invoke, session, offset = 0) {
     throw new Error('invalid_input');
   const data = await requestResource(invoke, session, 'list_destinations', { offset });
   if (
-    !exact(data, ['destinations', 'offset', 'totalCount']) ||
+    !(
+      exact(data, ['destinations', 'offset', 'totalCount']) ||
+      exact(data, ['destinations', 'offset', 'totalCount', 'canManageDestinations'])
+    ) ||
+    (Object.hasOwn(data, 'canManageDestinations') &&
+      data.canManageDestinations !== null &&
+      typeof data.canManageDestinations !== 'boolean') ||
     data.offset !== offset ||
     !Number.isSafeInteger(data.totalCount) ||
     data.totalCount < 0 ||
@@ -86,7 +93,14 @@ export async function listDestinations(invoke, session, offset = 0) {
     seen.add(item.destinationId.toLowerCase());
     return { destinationId: item.destinationId, name: item.name, status: item.status, type: item.type };
   });
-  return { destinations, offset, totalCount: data.totalCount };
+  return {
+    destinations,
+    offset,
+    totalCount: data.totalCount,
+    ...(Object.hasOwn(data, 'canManageDestinations')
+      ? { canManageDestinations: data.canManageDestinations }
+      : {}),
+  };
 }
 
 export function publicDocument(source, expectedId) {
@@ -206,9 +220,25 @@ export async function importKey(invoke, session, id, purpose, keyDocument) {
     !(purposes.has(purpose) || purpose === 'auto') ||
     typeof keyDocument !== 'string' ||
     !keyDocument.trim() ||
-    new TextEncoder().encode(keyDocument).byteLength > 32768
+    new TextEncoder().encode(keyDocument).byteLength > 48 * 1024
   )
     throw new Error('invalid_input');
+  if (new TextEncoder().encode(keyDocument).byteLength > 32768) {
+    try {
+      const container = JSON.parse(keyDocument);
+      if (
+        !exact(container, ['format', 'content', 'password']) ||
+        container.format !== 'pkcs12' ||
+        typeof container.content !== 'string' ||
+        container.content.length > 32768 ||
+        typeof container.password !== 'string' ||
+        container.password.length > 1024
+      )
+        throw new Error('invalid_input');
+    } catch {
+      throw new Error('invalid_input');
+    }
+  }
   const result = keyState(
     await requestResource(invoke, session, 'import_key', { destinationId: id, purpose, keyDocument }),
   );

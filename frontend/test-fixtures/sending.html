@@ -10,10 +10,11 @@
   <body>
     <div id="app"></div>
     <script type="module">
+      import { testLibraryFixture } from './test-library-fixture.js';
       import { createApp, h, ref } from 'vue';
       import SubmissionSender from '../src/SubmissionSender.vue';
-      import '../src/site.css';
-      import '../src/layout.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
       const api = ref('v3'),
         busy = ref(false),
         uncertain = ref(false),
@@ -21,10 +22,12 @@
       const eventTarget = ref(null);
       const id = '11111111-1111-4111-8111-111111111111';
       const files = new Map();
+      window.__sendFixture = { validationError: null, validations: 0 };
       let current = { attemptId: null, status: 'idle', submissionId: null, caseId: null, error: null };
       const envelope = (data) => ({ apiVersion: api.value, sessionId: id, environment: 'TEST', data });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'test_library') return testLibraryFixture(args.request);
           if (args.apiVersion !== api.value || args.sessionId !== id) throw 'session_missing';
           if (command === 'load_send_destination')
             return envelope({
@@ -91,6 +94,17 @@
           if (command === 'discard_content') {
             files.delete(args.contentId);
             return envelope({ contentId: args.contentId });
+          }
+          if (command === 'validate_send_data') {
+            window.__sendFixture.validations++;
+            if (window.__sendFixture.validationError) throw window.__sendFixture.validationError;
+            const request = JSON.parse(args.schemaDocument);
+            return envelope({
+              schemaUri: request.schemaUri,
+              mimeType: request.mimeType,
+              dataBytes: files.get(request.contentId).total,
+              valid: true,
+            });
           }
           if (command === 'prepare_send') {
             const { contentId, attachments, ...draft } = JSON.parse(args.sendDocument);

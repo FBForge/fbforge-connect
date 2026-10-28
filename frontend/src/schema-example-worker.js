@@ -6,7 +6,12 @@ self.onmessage = (event) => {
     const output = jsonExample(JSON.parse(event.data));
     if (output.length > 2 * 1024 * 1024) throw new Error();
     self.postMessage({ output });
-  } catch {
-    self.postMessage({ error: true });
+  } catch (cause) {
+    self.postMessage({
+      error:
+        cause instanceof SyntaxError || cause?.message === 'schema_unavailable'
+          ? 'schema_unavailable'
+          : 'example_unavailable',
+    });
   }
 };

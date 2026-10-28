@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue';
-const props = defineProps({ node: Object, query: String });
+import { fieldDisplay } from './field-display.js';
+const props = defineProps({ node: Object, query: String, showTechnical: Boolean });
 const expanded = ref(props.node.depth < 2);
+const displayValue = computed(() => fieldDisplay(props.node));
 const fields = computed(() => props.node.children.filter((child) => child.type !== 'whitespace'));
 const whitespace = computed(() => props.node.children.filter((child) => child.type === 'whitespace'));
 const emptyLabel = (type) =>
@@ -31,25 +33,40 @@ const emptyLabel = (type) =>
       <span v-if="node.duplicate" class="application-duplicate">Mehrfaches JSON-Feld</span>
     </summary>
     <div v-if="query || expanded" class="application-group-body">
-      <p v-if="node.schema?.description" class="application-description">{{ node.schema.description }}</p>
+      <details v-if="node.schema?.description" class="application-field-help">
+        <summary :aria-label="`Beschreibung: ${node.label}`">Beschreibung der Gruppe</summary>
+        <p class="application-description">{{ node.schema.description }}</p>
+      </details>
       <p v-if="node.schema?.ambiguous" class="application-duplicate">Schema-Beschriftung nicht eindeutig.</p>
-      <details v-if="node.schema" class="application-origin">
+      <details v-if="showTechnical && node.schema" class="application-origin">
         <summary>Schemaherkunft der Gruppe</summary>
         <p v-for="(entry, index) in node.schema.sources" :key="index" class="application-path">
           {{ entry.uri }} · {{ entry.location || '/' }}
         </p>
       </details>
-      <p class="application-path">
+      <p v-if="showTechnical" class="application-path">
         {{ node.path || '/' }}
         <span v-if="node.namespace">· Namensraum: {{ node.namespace }}</span>
       </p>
       <div class="application-fields">
-        <ApplicationField v-for="child in fields" :key="child.id" :node="child" :query="query" />
+        <ApplicationField
+          v-for="child in fields"
+          :key="child.id"
+          :node="child"
+          :show-technical="showTechnical"
+          :query="query"
+        />
       </div>
       <details v-if="whitespace.length" class="application-xml-spacing" :open="Boolean(query)">
         <summary>XML-Leerraum ({{ whitespace.length }})</summary>
         <div class="application-fields">
-          <ApplicationField v-for="child in whitespace" :key="child.id" :node="child" :query="query" />
+          <ApplicationField
+            v-for="child in whitespace"
+            :key="child.id"
+            :node="child"
+            :show-technical="showTechnical"
+            :query="query"
+          />
         </div>
       </details>
     </div>
@@ -60,7 +77,10 @@ const emptyLabel = (type) =>
       <span v-if="node.schema?.required === true" class="schema-required">Pflichtfeld laut Schema</span>
       <span v-if="node.duplicate" class="application-duplicate">Mehrfaches JSON-Feld</span>
     </div>
-    <p v-if="node.schema?.description" class="application-description">{{ node.schema.description }}</p>
+    <details v-if="node.schema?.description" class="application-field-help">
+      <summary :aria-label="`Feldhinweis: ${node.label}`">Feldhinweis</summary>
+      <p class="application-description">{{ node.schema.description }}</p>
+    </details>
     <div
       class="application-field-value"
       :class="{ 'application-empty': node.value === '' || node.type === 'null' }"
@@ -70,14 +90,11 @@ const emptyLabel = (type) =>
           ? JSON.stringify(node.value)
           : node.value === ''
             ? emptyLabel(node.type)
-            : node.value
+            : displayValue
       }}
     </div>
-    <p v-if="node.schema?.valueLabel" class="application-value-label">
-      {{ node.schema.valueLabel }} · Bezeichnung aus Schema
-    </p>
     <p v-if="node.schema?.ambiguous" class="application-duplicate">Schema-Beschriftung nicht eindeutig.</p>
-    <details class="application-origin">
+    <details v-if="showTechnical" class="application-origin">
       <summary>Feldherkunft</summary>
       <dl>
         <dt>Originalfeld</dt>
@@ -86,11 +103,17 @@ const emptyLabel = (type) =>
         <dd>{{ node.path || '/' }}</dd>
         <dt>Typ</dt>
         <dd>{{ node.type }}</dd>
+        <dt>Originalwert</dt>
+        <dd>{{ node.value }}</dd>
         <template v-if="node.namespace">
           <dt>Namensraum</dt>
           <dd>{{ node.namespace }}</dd>
         </template>
         <template v-if="node.schema">
+          <template v-if="node.schema.valueLabel">
+            <dt>Schema-Bezeichnung</dt>
+            <dd>{{ node.schema.valueLabel }}</dd>
+          </template>
           <dt>Schema-Typ</dt>
           <dd>
             {{ node.schema.type || 'Nicht angegeben'

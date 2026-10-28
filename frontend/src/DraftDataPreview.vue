@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue';
-import ContentPreview from './ContentPreview.vue';
+import { ref, watch, onBeforeUnmount, nextTick } from 'vue';
+import StructuredData from './StructuredData.vue';
 import { createPreview, disposePreview } from './submission-preview.js';
 const props = defineProps({
   text: String,
@@ -11,6 +11,7 @@ const props = defineProps({
   schemaDocument: String,
   schemaUri: String,
 });
+const emit = defineEmits(['request-schema']);
 const preview = ref(null),
   loading = ref(false),
   notice = ref('');
@@ -31,6 +32,10 @@ onBeforeUnmount(() => {
   alive = false;
   close();
 });
+function revealInvalid(event) {
+  close();
+  nextTick(() => event.target.focus());
+}
 async function open() {
   if (loading.value || props.disabled) return;
   close();
@@ -44,6 +49,7 @@ async function open() {
     return;
   }
   loading.value = true;
+  emit('request-schema');
   let bytes;
   try {
     bytes = file ? new Uint8Array(await file.arrayBuffer()) : new TextEncoder().encode(text);
@@ -67,22 +73,32 @@ async function open() {
 }
 </script>
 <template>
-  <div class="draft-data-preview">
-    <button
-      type="button"
-      class="button secondary"
-      :disabled="disabled || loading || (!file && !text)"
-      @click="open"
-    >
-      {{ loading ? 'Vorschau wird geladen …' : 'Fachdaten visuell ansehen' }}
-    </button>
+  <div class="draft-data-preview" @invalid.capture="revealInvalid">
+    <div class="application-modes" role="group" aria-label="Fachdaten bearbeiten oder lesen">
+      <button type="button" class="button secondary" :aria-pressed="!preview" @click="close">
+        Bearbeiten
+      </button>
+      <button
+        type="button"
+        class="button secondary"
+        :aria-pressed="Boolean(preview)"
+        :disabled="disabled || loading || (!file && !text)"
+        @click="open"
+      >
+        {{ loading ? 'Vorschau wird geladen …' : 'Formularansicht' }}
+      </button>
+    </div>
+    <div v-show="!preview" class="draft-data-editor"><slot /></div>
     <p v-if="notice" class="small-note" role="status">{{ notice }}</p>
-    <ContentPreview
-      v-if="preview"
-      :preview="preview"
-      :schema-document="schemaDocument"
-      :schema-uri="schemaUri"
-      @close="close"
-    />
+    <div v-if="preview" class="draft-inline-preview" aria-label="Lokale Fachdatenansicht">
+      <StructuredData
+        v-if="preview.kind === 'text' && preview.format"
+        :text="preview.rawText"
+        :format="preview.format"
+        :schema-document="schemaDocument"
+        :schema-uri="schemaUri"
+      />
+      <p v-else role="status">{{ preview.notice }}</p>
+    </div>
   </div>
 </template>

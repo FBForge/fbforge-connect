@@ -1,273 +1,58 @@
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue';
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import DestinationSetup from './DestinationSetup.vue';
 import DestinationCleanup from './DestinationCleanup.vue';
 import DestinationOffers from './DestinationOffers.vue';
 import DestinationKeyRotation from './DestinationKeyRotation.vue';
-import { invoke } from './native.js';
-import { listDestinations } from './resources.js';
-import {
-  loadManagedDestination,
-  prepareDestinationUpdate,
-  executeDestinationUpdate,
-  cancelDestinationUpdate,
-  destinationUpdateState,
-} from './destination-management.js';
-import { errorMessage, diagnosticCode } from './diagnostics.js';
-import { resetsSessions } from './sessions.js';
+import { useDestinationManager } from './destinations/useDestinationManager.js';
 const props = defineProps({ session: Object, busy: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'changed', 'receive']);
-const setupOpen = ref(false),
-  setupNotice = ref('');
-const page = ref(null),
-  selected = ref([]),
-  detail = ref(null),
-  preview = ref(null),
-  pending = ref(false),
-  error = ref('');
-const offersEnabled = ref(false),
-  offers = ref({ publicServices: [], processMessages: [] });
-const nameEnabled = ref(false),
-  name = ref('{name}'),
-  statusEnabled = ref(false),
-  status = ref('inactive');
-const versionsEnabled = ref(false),
-  versions = ref('2.0.0, 3.0.0');
-const contacts = ref(
-  Object.fromEntries(
-    ['legalName', 'address', 'phone', 'email', 'unit'].map((key) => [key, { enabled: false, value: '' }]),
-  ),
-);
-const disabled = computed(() => props.busy || pending.value || !props.session);
-const canEdit = computed(() => props.session?.apiVersion === 'v3');
-const locked = computed(() => preview.value?.status === 'uncertain');
-const changes = computed(() => ({
-  ...(offersEnabled.value && selected.value.length === 1 ? offers.value : {}),
-  ...(nameEnabled.value ? { name: name.value } : {}),
-  ...(statusEnabled.value ? { status: status.value } : {}),
-  ...(versionsEnabled.value
-    ? {
-        metadataVersions: versions.value
-          .split(',')
-          .map((v) => v.trim())
-          .filter(Boolean),
-      }
-    : {}),
-  ...(Object.values(contacts.value).some((v) => v.enabled)
-    ? {
-        contactInformation: Object.fromEntries(
-          Object.entries(contacts.value)
-            .filter(([, v]) => v.enabled)
-            .map(([key, v]) => [key, v.value || null]),
-        ),
-      }
-    : {}),
-}));
-const labels = {
-  publicServices: 'Leistungen und Antwortschemata',
-  processMessages: 'Prozessnachrichten',
-  name: 'Name',
-  status: 'Status',
-  metadataVersions: 'Metadatenversionen',
-  legalName: 'Organisation',
-  address: 'Anschrift',
-  phone: 'Telefon',
-  email: 'E-Mail',
-  unit: 'Organisationseinheit',
-  cc: 'Kopie an',
-};
-const statuses = {
-  prepared: 'Zur Bestätigung',
-  unchanged: 'Unverändert',
-  updated: 'Gespeichert',
-  failed: 'Fehlgeschlagen',
-  uncertain: 'Ausgang ungewiss',
-  skipped: 'Nicht ausgeführt',
-  completed: 'Abgeschlossen',
-  partial: 'Teilweise abgeschlossen',
-  conflict: 'Zwischenzeitlich geändert',
-  expired: 'Vorschau abgelaufen',
-  cancelled: 'Abgebrochen',
-  running: 'Wird gespeichert',
-  idle: 'Keine Änderung vorbereitet',
-};
-const messages = {
-  destination_conflict:
-    'Mindestens eine Destination wurde seit der Vorschau geändert. Es wurde nichts gespeichert. Bitte neu laden und eine neue Vorschau erstellen.',
-  destination_update_locked:
-    'Diese Änderung kann nicht erneut ausgeführt werden. Bei ungewissem Ausgang bitte zuerst die Destination neu laden und für weitere Änderungen eine neue Sitzung öffnen.',
-  resource_denied:
-    'Die Zugangsdaten dürfen diese eigene Destination nicht verwalten. Bitte die Berechtigungen für die Destination API prüfen.',
-  resource_missing: 'Die Destination ist nicht verfügbar.',
-  invalid_input: 'Bitte Auswahl, Namen, Metadatenversionen und zulässige Statuswechsel prüfen.',
-  confirmation_expired: 'Die Vorschau ist abgelaufen. Bitte neu vorbereiten.',
-  content_limit: 'Die Auswahl oder Vorschau ist zu groß. Bitte weniger Destinations bearbeiten.',
-  resource_unavailable:
-    'Die Destination API ist nicht erreichbar. Bei einem Speicherversuch zuerst das Ergebnis abrufen. Nicht erneut speichern.',
-};
-let generation = 0;
-const context = computed(() => `${props.session?.apiVersion}/${props.session?.sessionId}`);
-watch(context, () => {
-  generation++;
-  page.value = null;
-  selected.value = [];
-  detail.value = null;
-  preview.value = null;
-  error.value = '';
-});
-watch(
-  () => JSON.stringify([selected.value.map((row) => row.destinationId), changes.value]),
-  () => {
-    const previous = preview.value;
-    if (previous?.status === 'prepared') {
-      preview.value = null;
-      void cancelDestinationUpdate(invoke, { ...props.session }, previous.attemptId).catch(() => {});
-    }
-  },
-);
-async function run(action, operation) {
-  if (disabled.value) return;
-  const active = { ...props.session },
-    stamp = generation,
-    started = performance.now();
-  pending.value = true;
-  error.value = '';
-  emit('busy', true);
-  let resultStatus = 'Erfolgreich';
-  try {
-    await operation(active, () => stamp === generation);
-  } catch (cause) {
-    resultStatus = 'Fehlgeschlagen';
-    if (stamp === generation)
-      error.value = `${messages[diagnosticCode(cause)] || errorMessage(cause)} (${diagnosticCode(cause)})`;
-    if (resetsSessions(cause)) emit('fatal', cause);
-  } finally {
-    pending.value = false;
-    emit('busy', false);
-    emit('activity', {
-      api: active.apiVersion,
-      role: 'Destination-Verwaltung',
-      action,
-      status: resultStatus,
-      started,
-    });
-  }
-}
-async function openCreated(id) {
-  setupOpen.value = false;
-  setupNotice.value =
-    'Destination und öffentliche Schlüssel sind angelegt. Prüfen Sie die Konfiguration und bestätigen Sie die Aktivierung separat.';
-  await nextTick();
-  await edit({ destinationId: id });
-  if (detail.value?.destinationId === id && detail.value.possibleNextStatus.includes('active')) {
-    nameEnabled.value = false;
-    statusEnabled.value = true;
-    status.value = 'active';
-  }
-}
-function search(offset = 0) {
-  return run('Eigene Destinations laden', async (active, current) => {
-    const result = await listDestinations(invoke, active, offset);
-    if (current()) page.value = result;
-  });
-}
-function toggle(row, checked) {
-  if (disabled.value || locked.value) return;
-  offersEnabled.value = false;
-  if (checked && selected.value.length < 10) selected.value = [...selected.value, row];
-  if (!checked) selected.value = selected.value.filter((item) => item.destinationId !== row.destinationId);
-}
-function edit(row) {
-  return run('Eigene Destination öffnen', async (active, current) => {
-    const result = await loadManagedDestination(invoke, active, row.destinationId);
-    if (!current()) return;
-    detail.value = result;
-    offersEnabled.value = false;
-    offers.value = result.offers
-      ? structuredClone(result.offers)
-      : { publicServices: [], processMessages: [] };
-    if (locked.value) return;
-    selected.value = [row];
-    preview.value = null;
-    name.value = result.name || '';
-    nameEnabled.value = true;
-    versions.value = result.metadataVersions.join(', ');
-    statusEnabled.value = false;
-    versionsEnabled.value = false;
-    for (const [key, field] of Object.entries(contacts.value)) {
-      field.enabled = false;
-      field.value = result.contact[key] || '';
-    }
-  });
-}
-function prepare() {
-  return run('Destination-Änderung vorbereiten', async (active, current) => {
-    const result = await prepareDestinationUpdate(
-      invoke,
-      active,
-      selected.value.map((row) => row.destinationId),
-      changes.value,
-    );
-    if (current()) preview.value = result;
-  });
-}
-function execute() {
-  const confirmed = preview.value;
-  if (!confirmed || confirmed.status !== 'prepared') return;
-  return run('Destination-Änderung speichern', async (active, current) => {
-    // Remove the execute capability from the UI before the IPC call. Recovery reads state only.
-    preview.value = { ...confirmed, status: 'running' };
-    try {
-      const result = await executeDestinationUpdate(invoke, active, confirmed);
-      if (current()) {
-        preview.value = result;
-        emit('changed');
-      }
-    } catch (cause) {
-      if (current()) {
-        preview.value = { ...confirmed, status: 'uncertain' };
-        emit('changed');
-      }
-      throw cause;
-    }
-  });
-}
-function recover() {
-  return run('Änderungsergebnis abrufen', async (active, current) => {
-    const result = await destinationUpdateState(invoke, active);
-    if (current()) {
-      preview.value = result;
-      emit('changed');
-    }
-  });
-}
-function cancel() {
-  const previous = preview.value;
-  return run('Änderung abbrechen', async (active, current) => {
-    await cancelDestinationUpdate(invoke, active, previous.attemptId);
-    if (current()) preview.value = null;
-  });
-}
-function difference(row) {
-  const result = [],
-    show = (value) =>
-      value == null || value === ''
-        ? 'Nicht gesetzt'
-        : Array.isArray(value)
-          ? value.join(', ')
-          : String(value);
-  for (const [key, value] of Object.entries(row.after)) {
-    if (['publicServices', 'processMessages'].includes(key)) continue;
-    if (key === 'contactInformation')
-      for (const [field, next] of Object.entries(value)) {
-        const old = row.before.contactInformation?.[field];
-        if (JSON.stringify(old ?? null) !== JSON.stringify(next))
-          result.push({ field: labels[field], before: show(old), after: show(next) });
-      }
-    else result.push({ field: labels[key], before: show(row.before[key]), after: show(value) });
-  }
-  return result;
-}
+const controller = useDestinationManager(props, emit);
+const {
+  setupOpen,
+  setupNotice,
+  page,
+  selected,
+  detail,
+  preview,
+  pending,
+  error,
+  view,
+  detailHeading,
+  editHeading,
+  previewHeading,
+  listHeading,
+  offersEnabled,
+  offers,
+  nameEnabled,
+  name,
+  statusEnabled,
+  status,
+  versionsEnabled,
+  versions,
+  contacts,
+  disabled,
+  canEdit,
+  locked,
+  changes,
+  labels,
+  statuses,
+  messages,
+  openCreated,
+  search,
+  toggle,
+
+  back,
+  inspect,
+  edit,
+  editSelection,
+  prepare,
+  execute,
+  recover,
+  cancel,
+  difference,
+} = controller;
 </script>
 
 <template>
@@ -286,10 +71,11 @@ function difference(row) {
         type="button"
         class="button secondary"
         :aria-pressed="setupOpen"
-        :disabled="disabled || !canEdit"
+        v-if="canEdit"
+        :disabled="disabled"
         @click="setupOpen = true"
       >
-        Neue TEST-Destination anlegen
+        Neue Destination anlegen
       </button>
     </div>
     <DestinationSetup
@@ -305,17 +91,22 @@ function difference(row) {
     />
     <section v-show="!setupOpen" class="tool-section" aria-labelledby="manager-title" :aria-busy="pending">
       <p v-if="setupNotice" role="status">{{ setupNotice }}</p>
-      <h2 id="manager-title">Eigene Destinations verwalten</h2>
-      <p>
-        Destinations der angemeldeten TEST-Zugangsdaten laden und einzeln oder gemeinsam bearbeiten. Bis zu
-        zehn Destinations pro Änderung.
+      <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
+      <h2 id="manager-title" ref="listHeading" tabindex="-1">Eigene Destinations verwalten</h2>
+      <p v-if="view === 'list'">
+        Destinations der angemeldeten Zugangsdaten laden und einzeln oder gemeinsam bearbeiten. Bis zu zehn
+        Destinations pro Änderung.
       </p>
-      <p v-if="!session">Bitte zuerst eine TEST-Sitzung öffnen.</p>
-      <p v-else-if="!canEdit">
+      <p v-if="!session">Bitte zuerst eine Sitzung öffnen.</p>
+      <p v-else-if="session.apiVersion === 'v2'">
         Die Bearbeitung steht zunächst über API v3 bereit. Sie können eigene Destinations mit v2 ansehen oder
         oben eine v3-Sitzung öffnen.
       </p>
-      <div class="client-actions">
+      <p v-if="session?.apiVersion === 'v3' && !canEdit" role="status">
+        Diese Verbindung erlaubt nur das Ansehen der Destinations. Für Änderungen wird die Berechtigung
+        manage-destinations benötigt.
+      </p>
+      <div v-show="view === 'list'" class="client-actions">
         <button class="button" :disabled="disabled" @click="search()">Eigene Destinations laden</button>
         <button
           v-if="preview && ['uncertain', 'running'].includes(preview.status)"
@@ -328,13 +119,29 @@ function difference(row) {
       </div>
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="pending" role="status">Aktion wird ausgeführt …</p>
-      <template v-if="page">
-        <p>{{ page.totalCount }} eigene Destinations · {{ selected.length }} von höchstens 10 ausgewählt</p>
+      <template v-if="page && view === 'list'">
+        <p role="status">
+          {{ page.totalCount }} eigene Destinations
+          <span v-if="canEdit">· {{ selected.length }} von höchstens 10 ausgewählt</span>
+        </p>
+        <div
+          v-if="canEdit && selected.length"
+          class="client-actions destination-selection-actions"
+          aria-label="Ausgewählte Destinations"
+        >
+          <button class="button" :disabled="disabled || locked" @click="editSelection">
+            {{ selected.length }}
+            {{ selected.length === 1 ? 'Destination bearbeiten' : 'Destinations gemeinsam bearbeiten' }}
+          </button>
+          <button class="button secondary" :disabled="disabled || locked" @click="selected = []">
+            Auswahl aufheben
+          </button>
+        </div>
         <div class="client-table support-table">
           <table class="submission-result-table destination-manager-table">
             <thead>
               <tr>
-                <th scope="col">Auswahl</th>
+                <th v-if="canEdit" scope="col">Auswahl</th>
                 <th scope="col">Name / Destination</th>
                 <th scope="col">Status</th>
                 <th scope="col">Aktion</th>
@@ -342,7 +149,7 @@ function difference(row) {
             </thead>
             <tbody>
               <tr v-for="row in page.destinations" :key="row.destinationId">
-                <td data-label="Auswahl">
+                <td v-if="canEdit" data-label="Auswahl">
                   <input
                     type="checkbox"
                     :aria-label="`${row.name || row.destinationId} auswählen`"
@@ -363,9 +170,25 @@ function difference(row) {
                 </td>
                 <td data-label="Status">{{ row.status || 'Unbekannt' }}</td>
                 <td data-label="Aktion">
-                  <button class="button secondary" :disabled="disabled" @click="edit(row)">
-                    {{ canEdit && !locked ? 'Bearbeiten' : 'Ansehen' }}
-                  </button>
+                  <div class="client-actions">
+                    <button
+                      class="button secondary"
+                      :data-open-destination="row.destinationId"
+                      :disabled="disabled"
+                      @click="inspect(row)"
+                    >
+                      Ansehen
+                    </button>
+                    <button
+                      v-if="canEdit && !locked && selected.length < 2"
+                      class="button secondary"
+                      :data-edit-destination="row.destinationId"
+                      :disabled="disabled"
+                      @click="edit(row)"
+                    >
+                      Bearbeiten
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -390,8 +213,18 @@ function difference(row) {
           </button>
         </div>
       </template>
-      <details v-if="detail">
-        <summary>Geladene Konfiguration: {{ detail.name || detail.destinationId }}</summary>
+      <div v-if="view !== 'list'" class="client-actions">
+        <button class="button secondary" type="button" :disabled="disabled" @click="back">
+          Zur Destination-Übersicht
+        </button>
+      </div>
+      <section v-if="detail && view === 'detail'" aria-labelledby="manager-detail-title">
+        <h3 id="manager-detail-title" ref="detailHeading" tabindex="-1">
+          {{ detail.name || 'Destination ansehen' }}
+        </h3>
+        <p>
+          <code>{{ detail.destinationId }}</code>
+        </p>
         <dl>
           <dt>Status</dt>
           <dd>{{ detail.status }}</dd>
@@ -404,9 +237,24 @@ function difference(row) {
             </dd>
           </template>
         </dl>
-      </details>
-      <form v-if="selected.length && canEdit" @submit.prevent="prepare">
-        <h3>{{ selected.length === 1 ? 'Destination bearbeiten' : 'Bulk-Edit' }}</h3>
+        <button
+          v-if="canEdit && !locked"
+          class="button"
+          type="button"
+          :disabled="disabled"
+          @click="edit(detail)"
+        >
+          {{ selected.length > 1 ? 'Auswahl gemeinsam bearbeiten' : 'Destination bearbeiten' }}
+        </button>
+      </section>
+      <form v-if="view === 'edit' && selected.length && canEdit" @submit.prevent="prepare">
+        <h3 ref="editHeading" tabindex="-1">
+          {{
+            selected.length === 1
+              ? 'Destination bearbeiten'
+              : `${selected.length} Destinations gemeinsam bearbeiten`
+          }}
+        </h3>
         <p>
           Nur angehakte Felder werden geändert. Ein leeres angehaktes Kontaktfeld entfernt diesen Kontaktwert.
           Andere Einstellungen bleiben erhalten.
@@ -525,6 +373,7 @@ function difference(row) {
       </form>
       <DestinationCleanup
         v-if="
+          view === 'edit' &&
           canEdit &&
           selected.length === 1 &&
           detail?.destinationId === selected[0].destinationId &&
@@ -539,7 +388,7 @@ function difference(row) {
         @changed="emit('changed')"
       />
       <DestinationKeyRotation
-        v-if="canEdit && selected.length"
+        v-if="view === 'edit' && canEdit && selected.length"
         :session="session"
         :selected="selected"
         :busy="busy || pending || locked || preview?.status === 'prepared'"
@@ -550,7 +399,9 @@ function difference(row) {
         @receive="(id) => emit('receive', id)"
       />
       <section v-if="preview" class="tool-section" aria-labelledby="update-preview-title">
-        <h3 id="update-preview-title">{{ statuses[preview.status] || preview.status }}</h3>
+        <h3 id="update-preview-title" ref="previewHeading" tabindex="-1">
+          {{ statuses[preview.status] || preview.status }}
+        </h3>
         <p v-if="preview.status === 'prepared'">
           Noch nichts gespeichert. Prüfen Sie die Werte für jede Destination. Die Vorschau gilt zwei Minuten.
           Vor dem Speichern werden alle ausgewählten Destinations erneut auf zwischenzeitliche Änderungen
@@ -595,7 +446,7 @@ function difference(row) {
             :disabled="disabled || preview.changes.every((row) => row.status === 'unchanged')"
             @click="execute"
           >
-            Diese Änderungen verbindlich auf TEST speichern
+            Diese Änderungen verbindlich in der gewählten Umgebung speichern
           </button>
           <button class="button secondary" :disabled="disabled" @click="cancel">Abbrechen</button>
         </div>

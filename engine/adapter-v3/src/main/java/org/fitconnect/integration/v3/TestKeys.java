@@ -17,6 +17,8 @@ import org.fitconnect.integration.contract.*;
 /** SDK RSA/JWK generation with an explicitly self-signed TEST leaf certificate. Never for PROD. */
 final class TestKeys {
     static GeneratedTestKey generate(String purpose) {
+        if (IntegrationEnvironment.current().requiresVpki())
+            throw new SessionException("vpki_certificate_required");
         if (!Set.of("decrypt", "sign").contains(purpose))
             throw new SessionException("invalid_input");
         try {

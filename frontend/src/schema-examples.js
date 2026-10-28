@@ -1,9 +1,12 @@
+import { fictionalValues } from './fictional-values.js';
+import { assertSchemaAvailable } from './schema-availability.js';
 // Local fictional schema examples. No schema or form content is executed.
 export function jsonExample(schema) {
   const documents = schema?.schemaPackage === 1 ? schema.documents : {};
   const base = schema?.schemaPackage === 1 ? schema.schemaUri : '';
   const root = base ? documents?.[base.split('#')[0]] : schema;
-  if (root === undefined) throw new Error('Das Root-Schema fehlt.');
+  if (root === undefined) throw new Error('schema_unavailable');
+  assertSchemaAvailable(root);
   const selected = base.includes('#') ? jsonReference(root, `#${base.split('#').slice(1).join('#')}`) : root;
   if (selected === undefined) throw new Error('Die gewählte Schema-Referenz fehlt.');
   return JSON.stringify(
@@ -13,6 +16,7 @@ export function jsonExample(schema) {
   );
 }
 function jsonValue(schema, root, context) {
+  assertSchemaAvailable(schema);
   if (--context.budget.remaining < 0 || context.depth > 24)
     throw new Error('Die Grenze für ein Beispiel wurde erreicht. Das Schema ist zu groß oder rekursiv.');
   if (schema === true) return {};
@@ -24,6 +28,7 @@ function jsonValue(schema, root, context) {
     const uri = next.base ? new URL(schema.$ref, next.base).href : schema.$ref;
     const location = uri.split('#')[0];
     const target = location && location !== next.base?.split('#')[0] ? context.documents?.[location] : root;
+    if (target !== undefined) assertSchemaAvailable(target);
     const referenced =
       target === undefined
         ? undefined
@@ -177,43 +182,6 @@ function numberExample(schema, integer = false) {
     throw new Error('Numerische Schema-Grenzen sind nicht erfüllbar.');
   return value;
 }
-function fictionalValues(schema, field = '') {
-  const normalize = (text) =>
-    String(text || '')
-      .slice(0, 512)
-      .replace(/([a-z])([A-Z])/g, '$1 $2')
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/ß/g, 'ss')
-      .toLowerCase();
-  const label = normalize(`${schema.title || ''} ${field}`);
-  const hint = label.trim() || normalize(schema.description);
-  const timestamp = schema.format === 'datetime' || schema.format === 'date-time';
-  if (/geburtsdatum|birth.?date|date.?of.?birth|\bdob\b/.test(hint))
-    return timestamp ? ['1985-04-12T00:00:00Z'] : ['1985-04-12', '12.04.1985'];
-  if (/geburtsname|maiden.?name/.test(hint)) return ['Beispiel'];
-  if (/vorname|first.?name|given.?name/.test(hint)) return ['Erika', 'Anna', 'Li'];
-  if (/familienname|nachname|surname|last.?name/.test(hint)) return ['Mustermann'];
-  if (/e.?mail/.test(hint)) return ['erika.mustermann@example.invalid'];
-  if (/telefon|phone|mobile|mobilnummer|fax/.test(hint))
-    return ['+49 30 00000000', '+493000000000', '03000000000'];
-  if (/postleitzahl|\bplz\b|postal.?code|post.?code|zip.?code/.test(hint)) return ['12345'];
-  if (/hausnummerzusatz|house.?number.?suffix/.test(hint)) return ['a'];
-  if (/hausnummer|house.?number/.test(hint)) return ['12'];
-  if (/strasse|street/.test(hint)) return ['Musterstraße'];
-  if (/geburtsort|wohnort|stadt|city|\bort\b|place.?of.?birth/.test(hint)) return ['Musterstadt'];
-  if (/bundesland|federal.?state/.test(hint)) return ['Berlin'];
-  if (/staatsangehorigkeit|nationality/.test(hint)) return ['deutsch', 'DE'];
-  if (/\bland\b|country/.test(hint)) return ['Deutschland', 'DE'];
-  if (/firma|unternehmen|organisation|organization|einrichtung|company/.test(hint))
-    return ['Musterorganisation'];
-  if (/\btitel\b|salutation/.test(hint)) return ['Dr.'];
-  if (/\bname\b|full.?name/.test(hint)) return ['Erika Mustermann'];
-  if (/datum|\bdate\b|zeitpunkt/.test(hint))
-    return timestamp ? ['2025-06-18T10:30:00Z'] : ['2025-06-18', '18.06.2025'];
-  if (/uhrzeit|\btime\b/.test(hint)) return ['10:30'];
-  return schema.description ? fictionalValues({ title: schema.description, format: schema.format }) : [];
-}
 function stringExample(schema, field = '') {
   const pattern = String(schema.pattern || '');
   const maxLength = Number.isInteger(schema.maxLength) ? schema.maxLength : Infinity;
@@ -295,263 +263,4 @@ function matchesJsonPattern(value, pattern) {
       return false;
     }
   }
-}
-
-export function xmlExample(schemas, schemaLocation, requestedRoot, stringValue) {
-  if (
-    schemas.length > 512 ||
-    schemas.some((entry) => entry.text.length > 2 * 1024 * 1024 || /<!DOCTYPE|<!ENTITY/i.test(entry.text))
-  )
-    throw new Error('XSD ist nicht geeignet.');
-  const parser = new DOMParser();
-  const index = {
-    elements: new Map(),
-    types: new Map(),
-    namespaces: new Map(),
-    roots: [],
-    remaining: 2000,
-    stringValue,
-  };
-  const hasProductionTree = schemas.some((entry) => entry.name.startsWith('xsd/'));
-  const orderedSchemas = schemas
-    .filter((entry) => /\.xsd$/i.test(entry.name) && (!hasProductionTree || entry.name.startsWith('xsd/')))
-    .sort(
-      (left, right) =>
-        Number(left.name.startsWith('xsd_dev/')) - Number(right.name.startsWith('xsd_dev/')) ||
-        left.name.localeCompare(right.name),
-    );
-  for (const entry of orderedSchemas) {
-    const document = parser.parseFromString(entry.text, 'application/xml');
-    if (document.querySelector('parsererror')) throw new Error('XSD ist nicht wohlgeformt.');
-    const schema = document.documentElement;
-    const namespace = schema.getAttribute('targetNamespace') || '';
-    for (const definition of directChildren(schema)) {
-      const name = definition.getAttribute('name');
-      if (!name) continue;
-      if (definition.localName === 'element' && !index.elements.has(xmlKey(namespace, name))) {
-        index.elements.set(xmlKey(namespace, name), definition);
-        index.roots.push({
-          namespace,
-          name,
-          primary: entry.primary !== false,
-          label: namespace ? `${name} · ${namespace}` : name,
-        });
-      }
-      if (
-        (definition.localName === 'complexType' || definition.localName === 'simpleType') &&
-        !index.types.has(xmlKey(namespace, name))
-      )
-        index.types.set(xmlKey(namespace, name), definition);
-      index.namespaces.set(definition, namespace);
-    }
-  }
-  if (!index.roots.length) throw new Error('XSD enthält kein globales Root-Element.');
-  const fragment = String(schemaLocation || '').split('#')[1];
-  const matching = fragment
-    ? index.roots.filter((root) => root.name === fragment || root.name === fragment.split(':').pop())
-    : [];
-  const rootDefinition =
-    requestedRoot ||
-    (matching.length === 1 ? matching[0] : index.roots.find((root) => root.primary) || index.roots[0]);
-  const output = window.document.implementation.createDocument(
-    rootDefinition.namespace || null,
-    rootDefinition.name,
-    null,
-  );
-  const root = output.documentElement;
-  if (rootDefinition.namespace) root.setAttribute('xmlns', rootDefinition.namespace);
-  addSchemaLocation(root, rootDefinition.namespace, schemaLocation);
-  populateXmlElement(
-    output,
-    root,
-    index.elements.get(xmlKey(rootDefinition.namespace, rootDefinition.name)),
-    index,
-    new Set(),
-    0,
-  );
-  return {
-    data: `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(output)}`,
-    roots: index.roots,
-  };
-}
-function directChildren(element) {
-  return [...element.childNodes].filter((node) => node.nodeType === Node.ELEMENT_NODE);
-}
-function xmlKey(namespace, name) {
-  return `${namespace || ''}\u0000${name}`;
-}
-function xmlLocalName(value) {
-  return String(value || '')
-    .split(':')
-    .pop();
-}
-function xmlSchemaNamespace(index, element) {
-  return (
-    index.namespaces.get(element) ||
-    element.ownerDocument.documentElement.getAttribute('targetNamespace') ||
-    ''
-  );
-}
-function xmlResolveKey(index, context, lexicalName) {
-  const [prefix] = String(lexicalName).includes(':') ? String(lexicalName).split(':', 1) : [null];
-  return xmlKey(
-    prefix ? context.lookupNamespaceURI(prefix) || '' : xmlSchemaNamespace(index, context),
-    xmlLocalName(lexicalName),
-  );
-}
-function xmlChild(element, name) {
-  return directChildren(element).find((child) => child.localName === name);
-}
-function populateXmlElement(output, target, definition, index, activeTypes, depth) {
-  if (--index.remaining < 0 || depth >= 16)
-    throw new Error('Die Grenze für ein XML-Beispiel wurde erreicht.');
-  if (!definition) throw new Error('Eine XSD-Referenz fehlt.');
-  const fixed = definition.getAttribute('fixed');
-  const defaultValue = definition.getAttribute('default');
-  if (fixed || defaultValue) {
-    target.textContent = fixed || defaultValue;
-    return;
-  }
-  const ref = definition.getAttribute('ref');
-  const referenced = ref && index.elements.get(xmlResolveKey(index, definition, ref));
-  if (referenced) return populateXmlElement(output, target, referenced, index, activeTypes, depth + 1);
-  let type = xmlChild(definition, 'complexType') || xmlChild(definition, 'simpleType');
-  const namedType = definition.getAttribute('type');
-  if (!type && namedType) type = index.types.get(xmlResolveKey(index, definition, namedType));
-  if (!type) {
-    target.textContent = xmlValue(xmlLocalName(namedType), xmlFieldHint(definition));
-    return;
-  }
-  if (type.localName === 'simpleType') {
-    target.textContent = xmlSimpleValue(type, xmlFieldHint(definition), index.stringValue);
-    return;
-  }
-  const identity = xmlKey(xmlSchemaNamespace(index, type), type.getAttribute('name'));
-  if (type.getAttribute('name') && activeTypes.has(identity)) return;
-  if (type.getAttribute('name')) activeTypes.add(identity);
-  const complexContent = xmlChild(type, 'complexContent');
-  if (complexContent) {
-    const derivation = xmlChild(complexContent, 'extension') || xmlChild(complexContent, 'restriction');
-    const base = derivation?.getAttribute('base');
-    const baseType = base && index.types.get(xmlResolveKey(index, derivation, base));
-    if (baseType) populateXmlType(output, target, baseType, index, activeTypes, depth + 1);
-    if (derivation) populateXmlType(output, target, derivation, index, activeTypes, depth + 1);
-  } else populateXmlType(output, target, type, index, activeTypes, depth + 1);
-  if (type.getAttribute('name')) activeTypes.delete(identity);
-}
-function populateXmlType(output, target, type, index, activeTypes, depth) {
-  if (--index.remaining < 0 || depth >= 16)
-    throw new Error('Die Grenze für ein XML-Beispiel wurde erreicht.');
-  addXmlAttributes(target, type);
-  const container = ['sequence', 'all', 'choice'].map((name) => xmlChild(type, name)).find(Boolean);
-  if (!container) return;
-  for (const child of directChildren(container)) {
-    if (child.localName !== 'element' || child.getAttribute('minOccurs') === '0') continue;
-    const ref = child.getAttribute('ref');
-    const name = child.getAttribute('name') || xmlLocalName(ref);
-    if (!name) continue;
-    const namespace = xmlElementNamespace(index, child, type);
-    const element = namespace ? output.createElementNS(namespace, name) : output.createElement(name);
-    if (!namespace && target.namespaceURI)
-      element.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns', '');
-    target.append(element);
-    populateXmlElement(output, element, child, index, activeTypes, depth + 1);
-    if (container.localName === 'choice') break;
-  }
-}
-function xmlElementNamespace(index, element, type) {
-  const ref = element.getAttribute('ref');
-  if (ref) return xmlResolveKey(index, element, ref).split('\u0000')[0];
-  if (element.getAttribute('form') === 'unqualified') return '';
-  if (element.getAttribute('form') === 'qualified') return xmlSchemaNamespace(index, type);
-  return element.ownerDocument.documentElement.getAttribute('elementFormDefault') === 'qualified'
-    ? xmlSchemaNamespace(index, type)
-    : '';
-}
-function addXmlAttributes(target, type) {
-  for (const attribute of directChildren(type))
-    if (
-      attribute.localName === 'attribute' &&
-      attribute.getAttribute('use') === 'required' &&
-      attribute.getAttribute('name')
-    )
-      target.setAttribute(
-        attribute.getAttribute('name'),
-        attribute.getAttribute('fixed') ||
-          attribute.getAttribute('default') ||
-          xmlValue(xmlLocalName(attribute.getAttribute('type'))),
-      );
-}
-function xmlFieldHint(element) {
-  const annotation = xmlChild(element, 'annotation');
-  return `${element.getAttribute('name') || ''} ${annotation?.textContent || ''}`;
-}
-function xmlSimpleValue(type, field = '', stringValue) {
-  const restriction = xmlChild(type, 'restriction');
-  const enumeration =
-    restriction && directChildren(restriction).find((child) => child.localName === 'enumeration');
-  if (enumeration) return enumeration.getAttribute('value');
-  if (!restriction) return fictionalValues({}, field)[0] || 'Fiktive Testangabe';
-  const constraints = { type: 'string' };
-  for (const facet of directChildren(restriction)) {
-    if (facet.localName === 'pattern') constraints.pattern = facet.getAttribute('value');
-    if (facet.localName === 'minLength') constraints.minLength = Number(facet.getAttribute('value'));
-    if (facet.localName === 'maxLength') constraints.maxLength = Number(facet.getAttribute('value'));
-    if (facet.localName === 'length')
-      constraints.minLength = constraints.maxLength = Number(facet.getAttribute('value'));
-  }
-  if (Object.keys(constraints).length === 1)
-    return xmlValue(xmlLocalName(restriction.getAttribute('base')), field);
-  // Schema patterns are untrusted. The caller evaluates these only in a terminable worker.
-  if (!stringValue) throw new Error('Für XSD-Einschränkungen wird der lokale Beispiel-Worker benötigt.');
-  return stringValue(constraints, field);
-}
-function xmlValue(type, field = '') {
-  const semantic = fictionalValues({ format: type === 'dateTime' ? 'date-time' : type }, field);
-  if (['string', 'normalizedString', 'token', 'date', 'dateTime'].includes(type) && semantic.length)
-    return semantic[0];
-  return (
-    {
-      boolean: 'false',
-      positiveInteger: '1',
-      negativeInteger: '-1',
-      int: '0',
-      integer: '0',
-      long: '0',
-      short: '0',
-      byte: '0',
-      unsignedInt: '0',
-      unsignedLong: '0',
-      unsignedShort: '0',
-      unsignedByte: '0',
-      nonNegativeInteger: '0',
-      nonPositiveInteger: '0',
-      decimal: '0',
-      double: '0',
-      float: '0',
-      date: '2000-01-01',
-      dateTime: '2000-01-01T00:00:00Z',
-      time: '00:00:00Z',
-      duration: 'P0D',
-      dayTimeDuration: 'P0D',
-      yearMonthDuration: 'P0D',
-      gYear: '2000',
-      gYearMonth: '2000-01',
-      gMonth: '--01',
-      gMonthDay: '--01-01',
-      gDay: '---01',
-      anyURI: 'https://example.org/',
-      base64Binary: 'AA==',
-      hexBinary: '00',
-    }[type] ||
-    semantic[0] ||
-    'Fiktive Testangabe'
-  );
-}
-function addSchemaLocation(root, namespace, schemaLocation) {
-  if (!schemaLocation) return;
-  const xsi = 'http://www.w3.org/2001/XMLSchema-instance';
-  root.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xsi', xsi);
-  if (namespace) root.setAttributeNS(xsi, 'xsi:schemaLocation', `${namespace} ${schemaLocation}`);
-  else root.setAttributeNS(xsi, 'xsi:noNamespaceSchemaLocation', schemaLocation);
 }

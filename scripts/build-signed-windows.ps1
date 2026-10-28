@@ -6,7 +6,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT' -or -not [Environment]::UserInteractive) { throw 'signing_interactive_windows_required' }
-if ($env:GITHUB_EVENT_NAME -ne 'workflow_dispatch' -or $env:GITHUB_REPOSITORY -ne 'FBForge/fbforge-connect' -or $env:GITHUB_REF -notin @('refs/heads/main','refs/heads/develop')) { throw 'signing_context_denied' }
+if ($env:GITHUB_EVENT_NAME -ne 'workflow_dispatch' -or $env:GITHUB_REPOSITORY -ne 'FBForge/fbforge-connect' -or $env:GITHUB_REF -ne 'refs/heads/main') { throw 'signing_context_denied' }
 if ($env:GITHUB_SHA -notmatch '^[a-f0-9]{40}$' -or $env:VALIDATION_RUN -notmatch '^[1-9][0-9]{0,18}$') { throw 'signing_provenance_missing' }
 $uri = $null
 if (-not [Uri]::TryCreate($TimestampUrl, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -notin @('https','http') -or -not $uri.Host -or $uri.UserInfo -or $uri.Fragment) { throw 'signing_timestamp_url_invalid' }
@@ -17,7 +17,7 @@ Assert-CodeSigningCertificate $certificate
 $root = Split-Path -Parent $PSScriptRoot
 $temporary = Join-Path $env:RUNNER_TEMP ('fbforge-signing-' + [Guid]::NewGuid().ToString('N') + '.json')
 $output = Join-Path $env:RUNNER_TEMP ('fbforge-signed-' + [Guid]::NewGuid().ToString('N'))
-$binary = Join-Path $output 'fit-connect-integration-client.exe'
+$binary = Join-Path $output 'fbforge-connect.exe'
 $signer = Join-Path $PSScriptRoot 'sign-windows-file.ps1'
 $config = @{ bundle = @{ windows = @{ certificateThumbprint = $Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = $TimestampUrl; tsp = $true; signCommand = @{ cmd = 'powershell.exe'; args = @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',$signer,'-Thumbprint',$Thumbprint,'-TimestampUrl',$TimestampUrl,'-SignedMainBinaryPath',$binary,'-Path','%1') } } } }
 [IO.File]::WriteAllText($temporary, ($config | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))

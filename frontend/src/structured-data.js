@@ -1,3 +1,4 @@
+import { fieldDisplay } from './field-display.js';
 import { nodes as jsonNodes } from './json-viewer.js';
 
 export const STRUCTURED_BYTES = 256 * 1024;
@@ -203,9 +204,14 @@ export function filterStructuredData(root, query = '') {
   if (!root || !needle) return root;
   function visit(node) {
     const children = node.children.map(visit).filter(Boolean);
-    const matches = [node.label, node.key, node.path, node.value, node.namespace || ''].some((value) =>
-      value.toLocaleLowerCase('de-DE').includes(needle),
-    );
+    const matches = [
+      node.label,
+      node.key,
+      node.path,
+      node.value,
+      fieldDisplay(node),
+      node.namespace || '',
+    ].some((value) => value.toLocaleLowerCase('de-DE').includes(needle));
     if (matches) return { ...node, matched: true };
     return children.length ? { ...node, children, matched: false } : null;
   }

@@ -1,6 +1,28 @@
 name: Windows release validation
 
 on:
+  push:
+    branches: ['release/0.2.0']
+    paths:
+      - .github/workflows/windows.yml
+      # Engine and package changes must exercise the bundled Windows runtime.
+      - engine/**
+      - desktop/Cargo.toml
+      - desktop/Cargo.lock
+      - desktop/tauri*.json
+      - package*.json
+      - scripts/stage-engine.mjs
+      - scripts/stage-permissions.mjs
+      - scripts/windows-install-smoke.ps1
+      - scripts/windows-accessibility-smoke.ps1
+      - scripts/ci/prepare-nvda.ps1
+      - scripts/ci/nvda-capture.py
+      # Process UI changes must also exercise the installed native keyboard and NVDA journey.
+      - frontend/src/ProcessWorkspace.vue
+      - frontend/src/process/**
+      - scripts/load-upgrade-baseline.py
+      - tests/nvda-observer.test.js
+      - tests/upgrade-baseline.test.js
   workflow_dispatch:
     inputs:
       upgrade_run:
@@ -33,7 +55,7 @@ jobs:
         run: ./scripts/ci/test-windows-signing.ps1
 
   test-readonly:
-    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/0.2.0')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -65,7 +87,7 @@ jobs:
         run: node scripts/live-readonly.mjs
 
   windows:
-    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/0.2.0')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
     runs-on: windows-2025
     timeout-minutes: 40
     steps:
@@ -92,7 +114,9 @@ jobs:
             desktop/target
             desktop/native-contracts/target
           key: ${{ runner.os }}-rust-1.99.0-${{ hashFiles('desktop/Cargo.lock', 'desktop/native-contracts/Cargo.lock') }}-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-rust-1.99.0-${{ hashFiles('desktop/Cargo.lock', 'desktop/native-contracts/Cargo.lock') }}-
+          restore-keys: |
+            ${{ runner.os }}-rust-1.99.0-${{ hashFiles('desktop/Cargo.lock', 'desktop/native-contracts/Cargo.lock') }}-
+            ${{ runner.os }}-rust-1.99.0-
       - name: Install pinned Rust toolchain
         working-directory: desktop
         run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt
@@ -150,13 +174,14 @@ jobs:
             desktop/native-contracts/target
           key: ${{ steps.rust-cache.outputs.cache-primary-key }}
       - name: Load a verified signed upgrade baseline
-        if: inputs.upgrade_run != ''
+        if: github.event_name == 'push' || inputs.upgrade_run != ''
         env:
           GH_TOKEN: ${{ github.token }}
           UPGRADE_RUN: ${{ inputs.upgrade_run }}
+          UPGRADE_LATEST: ${{ github.event_name == 'push' }}
         run: python scripts/load-upgrade-baseline.py
       - name: Verify baseline signature and timestamp
-        if: inputs.upgrade_run != ''
+        if: github.event_name == 'push' || inputs.upgrade_run != ''
         run: |
           Import-Module './scripts/windows-signing.psm1' -Force
           $tool = Get-WindowsSignTool
@@ -165,8 +190,8 @@ jobs:
         run: |
           $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
           if ($setup.Count -ne 1) { throw 'installer_missing' }
-          $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', './scripts/windows-install-smoke.ps1', '-InstallerPath', $setup[0].FullName, '-CheckpointBridge', 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe', '-ExpectedBinaryPath', 'desktop/target/release/fit-connect-integration-client.exe')
-          if ($env:FITCONNECT_PREVIOUS_INSTALLER) { $arguments += @('-PreviousInstallerPath', $env:FITCONNECT_PREVIOUS_INSTALLER) }
+          $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', './scripts/windows-install-smoke.ps1', '-InstallerPath', $setup[0].FullName, '-CheckpointBridge', 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe', '-ExpectedBinaryPath', 'desktop/target/release/fbforge-connect.exe')
+          if ($env:FITCONNECT_PREVIOUS_INSTALLER) { $arguments += @('-PreviousInstallerPath', $env:FITCONNECT_PREVIOUS_INSTALLER, '-PreviousBinaryName', $env:FITCONNECT_PREVIOUS_BINARY) }
           & powershell.exe @arguments
           if ($LASTEXITCODE -ne 0) { throw 'installed_desktop_validation_failed' }
       - name: Prepare pinned official NVDA for desktop accessibility checks
@@ -175,7 +200,7 @@ jobs:
         run: |
           $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
           if ($setup.Count -ne 1) { throw 'installer_missing' }
-          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/windows-accessibility-smoke.ps1 -InstallerPath $setup[0].FullName -ExpectedBinaryPath 'desktop/target/release/fit-connect-integration-client.exe' -NvdaPath $env:FBFC_NVDA_PATH
+          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/windows-accessibility-smoke.ps1 -InstallerPath $setup[0].FullName -ExpectedBinaryPath 'desktop/target/release/fbforge-connect.exe' -NvdaPath $env:FBFC_NVDA_PATH
           if ($LASTEXITCODE -ne 0) { throw 'installed_accessibility_validation_failed' }
       - name: Retain bounded credential-free accessibility result
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -1,10 +1,16 @@
 <script setup>
+import { cancelledProductionAction } from './environments.js';
+
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import { loadedKeys } from './resources.js';
 import { prepareReceipt, executeReceipt, cancelReceipt, receiptState } from './receipts.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
+import ReceiptDownloadChoice from './ReceiptDownloadChoice.vue';
+import { downloadMessage, exportSource } from './message-export.js';
 
 const props = defineProps({
   session: Object,
@@ -12,8 +18,11 @@ const props = defineProps({
   proof: Object,
   busy: Boolean,
   keyRevision: Number,
+  guided: Boolean,
 });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'outcome', 'invalidate']);
+const started = ref(false);
+const saveBeforeAccept = ref(false);
 const intent = ref('accept'),
   reason = ref('technical-error'),
   description = ref(''),
@@ -53,21 +62,21 @@ const reasons = {
   'data-schema-violation': 'Fachdaten entsprechen nicht dem Schema',
 };
 const messages = {
-  key_missing: 'Bitte oben unter Destination-Schlüssel einen privaten Testschlüssel zum Signieren laden.',
+  key_missing: 'Bitte oben unter Destination-Schlüssel einen privaten Schlüssel zum Signieren laden.',
   signing_selection_required:
     'Mehrere Signaturschlüssel sind geladen. Bitte den gewünschten Schlüssel auswählen.',
   key_rejected:
-    'Bitte einen passenden geladenen Signaturschlüssel auswählen. Er muss weiterhin in TEST registriert sein.',
+    'Bitte einen passenden geladenen Signaturschlüssel auswählen. Er muss weiterhin in der gewählten Umgebung registriert sein.',
   invalid_input: 'Bitte Aktion, Ablehnungsgrund und gegebenenfalls die betroffene Anlage prüfen.',
   invalid_resource: 'Einreichung oder Prüfnachweis haben sich geändert. Bitte erneut abrufen und prüfen.',
   verification_failed:
     'Für die Annahme fehlt ein aktueller vollständiger Inhaltsnachweis. Bitte erneut entschlüsseln und prüfen.',
   confirmation_expired: 'Die Bestätigungsfrist ist abgelaufen. Bitte die Aktion erneut vorbereiten.',
   send_locked: 'Diese Aktion kann nicht erneut gesendet werden. Bitte den bekannten Vorgang prüfen.',
-  resource_denied: 'Die TEST-Zugangsdaten berechtigen nicht zu dieser Empfangsaktion.',
+  resource_denied: 'Die Zugangsdaten berechtigen nicht zu dieser Empfangsaktion.',
   resource_missing: 'Die Einreichung ist nicht mehr abrufbar. Bitte den Vorgang prüfen.',
   resource_unavailable:
-    'Die TEST-Aktion konnte nicht abgeschlossen werden. Bei einem ungewissen Ausgang nicht erneut senden.',
+    'Die Aktion konnte nicht abgeschlossen werden. Bei einem ungewissen Ausgang nicht erneut senden.',
 };
 const warning = (stage) =>
   ({
@@ -94,6 +103,8 @@ function reset() {
   error.value = '';
   keys.value = [];
   selectedKey.value = '';
+  started.value = false;
+  saveBeforeAccept.value = false;
   intent.value = 'accept';
   reason.value = 'technical-error';
   description.value = '';
@@ -132,12 +143,13 @@ async function run(name, operation) {
   try {
     status = (await operation(active, current)) || status;
   } catch (cause) {
-    status = 'Fehlgeschlagen';
-    if (current()) {
+    status = cancelledProductionAction(cause) ? 'Abgebrochen' : 'Fehlgeschlagen';
+    if (current() && !cancelledProductionAction(cause)) {
       error.value = explain(cause);
       if (
-        (typeof cause === 'string' ? cause : cause?.message) !== 'engine_busy' &&
-        (typeof cause === 'string' ? cause : cause?.message) !== 'signing_selection_required'
+        !['engine_busy', 'signing_selection_required', 'export_failed', 'export_expired'].includes(
+          typeof cause === 'string' ? cause : cause?.message,
+        )
       )
         emit('invalidate');
     }
@@ -155,7 +167,12 @@ async function run(name, operation) {
   }
 }
 async function prepare() {
-  if (disabled.value || (intent.value === 'accept' && !props.proof)) return;
+  if (
+    disabled.value ||
+    (intent.value === 'accept' && !props.proof) ||
+    (intent.value === 'reject' && !Object.hasOwn(reasons, reason.value))
+  )
+    return;
   const detail = props.detail,
     proof = props.proof;
   const draft = {
@@ -206,6 +223,18 @@ async function prepare() {
   await nextTick();
   if (alive && prepared.value) dialog.value?.showModal();
 }
+async function begin(action) {
+  if (disabled.value || !['accept', 'reject'].includes(action)) return;
+  const key = context.value;
+  intent.value = action;
+  started.value = true;
+  if (action === 'reject') reason.value = '';
+  else await prepare();
+  await nextTick();
+  if (context.value === key && !prepared.value)
+    document.getElementById(action === 'reject' ? 'receipt-reason' : 'receipt-key')?.focus();
+}
+defineExpose({ begin });
 async function dismiss() {
   if (!prepared.value || working.value) return;
   const value = prepared.value;
@@ -227,6 +256,11 @@ async function confirm() {
   await run(
     value.attempt.action === 'accept' ? 'Einreichung annehmen' : 'Einreichung ablehnen',
     async (_, current) => {
+      if (value.attempt.action === 'accept' && saveBeforeAccept.value) {
+        if (!props.proof || !current()) return 'Abgebrochen';
+        const saved = await downloadMessage(invoke, active, exportSource(props.proof), current);
+        if (!saved || !current()) return 'Abgebrochen';
+      }
       const result = await executeReceipt(invoke, active, value.attempt);
       prepared.value = null;
       dialog.value?.close();
@@ -250,15 +284,30 @@ async function confirm() {
 </script>
 
 <template>
-  <section class="tool-section" aria-labelledby="receipt-title" :aria-busy="working">
+  <section
+    v-show="!guided || started || outcome || error || !proof"
+    class="tool-section"
+    aria-labelledby="receipt-title"
+    :aria-busy="working"
+  >
+    <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
     <h2 id="receipt-title">Empfang abschließen</h2>
     <p>
-      Die Aktion wird mit einem geladenen privaten Testschlüssel lokal signiert. Erst Ihre Bestätigung
-      überträgt sie an FIT-Connect TEST.
+      Die Aktion wird mit einem geladenen privaten Schlüssel lokal signiert. Erst Ihre Bestätigung überträgt
+      sie an FIT-Connect.
     </p>
-    <form v-if="!locked" @submit.prevent="prepare">
+    <button
+      v-if="guided && !started && !proof && !locked"
+      class="button secondary"
+      type="button"
+      :disabled="disabled"
+      @click="begin('reject')"
+    >
+      Ohne Entschlüsselung ablehnen
+    </button>
+    <form v-if="!locked && (!guided || started)" @submit.prevent="prepare">
       <div class="client-fields">
-        <label for="receipt-action">
+        <label v-if="!guided" for="receipt-action">
           Aktion
           <select id="receipt-action" v-model="intent" :disabled="disabled">
             <option value="accept">Einreichung annehmen</option>
@@ -277,7 +326,8 @@ async function confirm() {
         <div class="client-fields">
           <label for="receipt-reason">
             Ablehnungsgrund
-            <select id="receipt-reason" v-model="reason" :disabled="disabled">
+            <select id="receipt-reason" v-model="reason" :disabled="disabled" required>
+              <option value="" disabled>Bitte Ablehnungsgrund auswählen</option>
               <option v-for="(label, code) in reasons" :key="code" :value="code">{{ label }}</option>
             </select>
           </label>
@@ -315,7 +365,13 @@ async function confirm() {
           type="submit"
           :disabled="disabled || (intent === 'accept' && !proof)"
         >
-          Lokal signieren und prüfen
+          {{
+            guided
+              ? intent === 'accept'
+                ? 'Annahme prüfen'
+                : 'Ablehnung prüfen'
+              : 'Lokal signieren und prüfen'
+          }}
         </button>
       </div>
     </form>
@@ -328,8 +384,8 @@ async function confirm() {
           {{
             outcome.status === 'confirmed'
               ? outcome.action === 'accept'
-                ? 'Annahme von TEST bestätigt'
-                : 'Ablehnung von TEST bestätigt'
+                ? 'Annahme von FIT-Connect bestätigt'
+                : 'Ablehnung von FIT-Connect bestätigt'
               : outcome.status === 'uncertain'
                 ? 'Ausgang ungewiss – nicht erneut senden'
                 : 'Aktion nicht abgeschlossen'
@@ -363,15 +419,11 @@ async function confirm() {
     >
       <p v-if="error" role="alert">{{ error }}</p>
       <h2 id="receipt-confirm-title">
-        {{
-          prepared.attempt.action === 'accept'
-            ? 'Einreichung in TEST annehmen?'
-            : 'Einreichung in TEST ablehnen?'
-        }}
+        {{ prepared.attempt.action === 'accept' ? 'Einreichung annehmen?' : 'Einreichung ablehnen?' }}
       </h2>
       <dl class="receipt-dialog-context">
         <dt>Umgebung / API</dt>
-        <dd>TEST / {{ owner.apiVersion }}</dd>
+        <dd>{{ environment }} / {{ owner.apiVersion }}</dd>
         <dt>Einreichung</dt>
         <dd>
           <code>{{ prepared.attempt.submissionId }}</code>
@@ -402,6 +454,11 @@ async function confirm() {
       <ul v-if="prepared.warnings.length">
         <li v-for="stage in prepared.warnings" :key="stage">{{ warning(stage) }}</li>
       </ul>
+      <ReceiptDownloadChoice
+        v-if="prepared.attempt.action === 'accept'"
+        v-model="saveBeforeAccept"
+        :disabled="working"
+      />
       <p>
         Prüfen Sie die Angaben und verbleibenden Prüfhinweise für Ihren Integrationstest. Die signierte Aktion
         wird einmalig gesendet. Die Freigabe gilt höchstens 60 Sekunden.
@@ -411,7 +468,13 @@ async function confirm() {
           Abbrechen
         </button>
         <button class="button" type="button" :disabled="working" @click="confirm">
-          {{ prepared.attempt.action === 'accept' ? 'Jetzt annehmen' : 'Jetzt ablehnen' }}
+          {{
+            prepared.attempt.action === 'accept'
+              ? saveBeforeAccept
+                ? 'Speichern und annehmen'
+                : 'Jetzt annehmen'
+              : 'Jetzt ablehnen'
+          }}
         </button>
       </div>
     </dialog>

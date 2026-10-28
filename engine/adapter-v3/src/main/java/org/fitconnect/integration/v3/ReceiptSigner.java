@@ -2,7 +2,6 @@ package org.fitconnect.integration.v3;
 
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.RSAKey;
-import dev.fitko.fitconnect.rest.client.config.FitConnectEnvironment;
 import dev.fitko.fitconnect.rest.model.event.Event;
 import dev.fitko.fitconnect.rest.model.event.authtags.AuthenticationTags;
 import dev.fitko.fitconnect.rest.model.event.problems.Problem;
@@ -29,7 +28,7 @@ final class ReceiptSigner {
             RSAKey key, ReceiptRequest request, ReceiptEvidence evidence, Path workspace) {
         try {
             var settings = SdkSettings.withDefaultSettings();
-            var env = FitConnectEnvironment.TEST;
+            var env = SdkEnvironment.current();
             var http =
                     new ReceiverTransport(
                             (u, h) -> {

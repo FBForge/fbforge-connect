@@ -75,7 +75,8 @@ final class DestinationCleanup {
                         List.of(
                                 new DestinationWriteAccess.Mutation(
                                         "DELETE",
-                                        "https://test.fit-connect.fitko.dev/destination-api/v3/destinations/"
+                                        IntegrationEnvironment.current().destinationApi()
+                                                + "/v3/destinations/"
                                                 + state.destinationId(),
                                         null)),
                         clock);

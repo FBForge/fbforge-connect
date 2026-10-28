@@ -67,6 +67,21 @@ final class AdapterRegistry implements AutoCloseable {
         }
     }
 
+    void validatePublicKey(ApiVersion version, String document, String purpose) {
+        ClassLoader previous = Thread.currentThread().getContextClassLoader();
+        try {
+            Loaded value = load(version);
+            Thread.currentThread().setContextClassLoader(value.loader());
+            value.adapter().validatePublicKey(document, purpose);
+        } catch (SessionException failure) {
+            throw failure;
+        } catch (Exception | LinkageError failure) {
+            throw new SessionException("vpki_certificate_required");
+        } finally {
+            Thread.currentThread().setContextClassLoader(previous);
+        }
+    }
+
     Class<?> dependencyClass(ApiVersion version) throws ReflectiveOperationException, IOException {
         return load(version).adapter().dependencyClass();
     }

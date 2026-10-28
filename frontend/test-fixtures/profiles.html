@@ -8,12 +8,13 @@
   <body>
     <div id="app"></div>
     <script type="module">
+      import { testLibraryFixture } from './test-library-fixture.js';
       import { createApp } from 'vue';
       import App from '../src/App.vue';
-      import '../src/site.css';
-      import '../src/layout.css';
-      import '../src/desktop.css';
-      import '../src/application-view.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
       const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
       const fixture = (window.__profilesFixture = {
         profiles: [],
@@ -22,14 +23,16 @@
         calls: [],
         active: null,
         binding: null,
+        sessions: {},
+        bindings: {},
         failRestore: false,
         failSave: false,
         backups: 0,
         failSecret: false,
       });
-      const session = () => ({
+      const session = (apiVersion = 'v3') => ({
         sessionId: id(++fixture.sequence),
-        apiVersion: 'v3',
+        apiVersion,
         role: 'online-service',
         environment: 'TEST',
         connected: true,
@@ -37,8 +40,25 @@
       window.isTauri = true;
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args = {}) {
+          if (command === 'test_library') return testLibraryFixture(args.request);
           fixture.calls.push({ command, args });
           if (command === 'list_profiles') return fixture.profiles;
+          if (command === 'copy_profile_for_api') {
+            if (fixture.failApiCopy) throw 'authentication_failed';
+            const source = fixture.profiles.find((p) => p.profileId === args.profileId);
+            let target = fixture.profiles.find((p) => p.profileId === args.targetProfileId);
+            if (!target) {
+              target = {
+                ...source,
+                profileId: args.targetProfileId,
+                apiVersion: args.apiVersion,
+                keyCount: 0,
+              };
+              fixture.profiles.push(target);
+            }
+            return { ...target };
+          }
+
           if (command === 'list_destinations' && new URLSearchParams(location.search).has('destinations'))
             return {
               apiVersion: args.apiVersion,
@@ -52,29 +72,42 @@
                 totalCount: 1,
               },
             };
+          const binding = fixture.bindings[args.sessionId];
           if (command === 'get_profile_defaults')
-            return fixture.binding
-              ? fixture.defaults[fixture.binding] || { sourceDestination: null, receiverDestination: null }
+            return binding
+              ? fixture.defaults[binding] || { sourceDestination: null, receiverDestination: null }
               : null;
           if (command === 'save_profile_defaults') {
-            if (!fixture.binding) throw 'vault_profile_required';
+            if (!binding) throw 'vault_profile_required';
             if (fixture.failSave) throw 'vault_unavailable';
-            fixture.defaults[fixture.binding] = structuredClone(args.defaults);
+            fixture.defaults[binding] = structuredClone(args.defaults);
             return structuredClone(args.defaults);
           }
 
           if (command === 'open_session') {
-            fixture.active = session();
+            fixture.active = session(args.apiVersion);
             fixture.binding = args.profileId || null;
+            fixture.sessions[fixture.active.sessionId] = fixture.active;
+            fixture.bindings[fixture.active.sessionId] = fixture.binding;
             if (args.profileId)
               fixture.profiles.push({
                 profileId: args.profileId,
                 name: args.profileName,
-                apiVersion: 'v3',
+                clientId: args.clientId,
+                apiVersion: args.apiVersion,
                 role: 'online-service',
                 keyCount: 2,
                 available: true,
               });
+            return fixture.active;
+          }
+          if (command === 'open_session_for_api') {
+            if (fixture.failApiSwitch) throw 'authentication_failed';
+            if (!fixture.sessions[args.sessionId]) throw 'session_missing';
+            fixture.active = session(args.targetApiVersion);
+            fixture.binding = null;
+            fixture.sessions[fixture.active.sessionId] = fixture.active;
+            fixture.bindings[fixture.active.sessionId] = null;
             return fixture.active;
           }
           if (command === 'export_profile_backup') {
@@ -85,6 +118,7 @@
             const profile = {
               profileId: id(3),
               name: 'Wiederhergestellt TEST',
+              clientId: 'synthetic-restored-client',
               apiVersion: 'v3',
               role: 'online-service',
               keyCount: 2,
@@ -101,26 +135,34 @@
           }
           if (command === 'profile_status')
             return {
-              profileId: fixture.binding,
-              saved: Boolean(fixture.binding) && !fixture.failSave,
-              error: fixture.binding && fixture.failSave ? 'vault_unavailable' : null,
+              profileId: binding || null,
+              saved: Boolean(binding) && !fixture.failSave,
+              error: binding && fixture.failSave ? 'vault_unavailable' : null,
             };
-          if (command === 'check_session') return fixture.active;
+          if (command === 'check_session') return fixture.sessions[args.sessionId];
           if (command === 'close_session') {
-            const result = { ...fixture.active, connected: false };
-            fixture.active = null;
-            fixture.binding = null;
+            const result = { ...fixture.sessions[args.sessionId], connected: false };
+            delete fixture.sessions[args.sessionId];
+            delete fixture.bindings[args.sessionId];
+            if (fixture.active?.sessionId === args.sessionId) {
+              fixture.active = null;
+              fixture.binding = null;
+            }
             return result;
           }
           if (command === 'open_saved_profile') {
             if (fixture.failRestore && args.restoreKeys) throw 'vault_restore_failed';
-            fixture.active = session();
+            fixture.active = session(fixture.profiles.find((p) => p.profileId === args.profileId).apiVersion);
             fixture.binding = args.restoreKeys ? args.profileId : null;
+            fixture.sessions[fixture.active.sessionId] = fixture.active;
+            fixture.bindings[fixture.active.sessionId] = fixture.binding;
             return fixture.active;
           }
           if (command === 'forget_profile') {
             fixture.profiles = fixture.profiles.filter((item) => item.profileId !== args.profileId);
             fixture.binding = null;
+            for (const id of Object.keys(fixture.bindings))
+              if (fixture.bindings[id] === args.profileId) fixture.bindings[id] = null;
             return null;
           }
           if (command === 'save_profile_state') {

@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from './environments.js';
 import { requestResource } from './resources.js';
 import { uncertainOperationError } from './diagnostics.js';
 
@@ -111,6 +112,7 @@ export async function executeReplyReceipt(invoke, session, attempt) {
     if (!['confirmed', 'failed', 'uncertain'].includes(result.status)) fail();
     return result;
   } catch (cause) {
+    if (cancelledProductionAction(cause)) throw cause;
     const code = typeof cause === 'string' ? cause : cause?.message;
     if (code === 'engine_busy' || code?.startsWith('vault_') || code === 'case_storage_pending') throw cause;
     return Object.freeze({ ...expected, status: 'uncertain', error: uncertainOperationError(cause) });

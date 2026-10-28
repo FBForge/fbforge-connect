@@ -38,7 +38,7 @@ final class DestinationRotation {
     private long expires;
     private boolean marked;
     private static final String ROOT =
-            "https://test.fit-connect.fitko.dev/destination-api/v3/destinations/";
+            IntegrationEnvironment.current().destinationApi() + "/v3/destinations/";
 
     DestinationRotation(LocalTestKeys keys, ResourceExchange remote) {
         this(keys, remote, () -> System.nanoTime() / 1_000_000);
@@ -96,6 +96,7 @@ final class DestinationRotation {
             if (!fresh
                     && !(bundle.status().equals("unresolved") && id.equals(bundle.destinationId())))
                 throw error("destination_update_locked");
+            keys.validateBundle(session, bundleId);
             var current = DestinationRegistration.read(session, id);
             var detail = current.details();
             if (detail.has("type") && "C".equals(detail.get("type").getAsString()))
@@ -197,6 +198,7 @@ final class DestinationRotation {
         long deadline = clock.getAsLong() + 180000;
         try {
             for (var item : work) {
+                keys.validateBundle(session, item.row().bundleId());
                 if (clock.getAsLong() >= deadline) throw error("resource_unavailable");
                 if (!DestinationRegistration.read(session, item.row().destinationId())
                         .details()

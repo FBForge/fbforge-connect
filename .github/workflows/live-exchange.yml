@@ -8,9 +8,18 @@ on:
         type: boolean
         required: true
         default: false
+      validation_run:
+        description: Optional successful Windows validation run whose installer is tested through its real UI
+        type: string
+        required: false
+      ui_probe:
+        description: Diagnose validated installed UI startup without credentials or TEST writes
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
 
 # Never interrupt a live write because another test was queued.
 concurrency:
@@ -19,9 +28,9 @@ concurrency:
 
 jobs:
   live:
-    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && inputs.confirm_test_writes == true && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && inputs.confirm_test_writes == true && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/0.2.0')
     runs-on: windows-2025
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -31,21 +40,36 @@ jobs:
           node-version: 24.20.0
           package-manager-cache: false
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        if: inputs.ui_probe != true
         with:
           distribution: temurin
           java-version: '25'
       - name: Install pinned Rust toolchain
+        if: inputs.ui_probe != true
         run: rustup toolchain install 1.99.0 --profile minimal
       - name: Resolve locked dependencies
         run: npm ci --ignore-scripts
       - name: Build isolated SDK adapters and native protocol host
+        if: inputs.ui_probe != true
         working-directory: engine
         run: .\mvnw.cmd --batch-mode -DskipTests package
       - name: Stage the actual Java runtime and adapters
+        if: inputs.ui_probe != true
         run: npm run stage:engine
       - name: Build CI-only checkpoint bridge using the product DPAPI vault
+        if: inputs.ui_probe != true
         run: cargo +1.99.0 build --manifest-path desktop/native-contracts/Cargo.toml --locked --target-dir desktop/native-contracts/target --example profile-checkpoint
+      - name: Load independently validated installer for real desktop UI acceptance
+        if: inputs.validation_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UI_VALIDATION_RUN: ${{ inputs.validation_run }}
+        run: node scripts/load-live-ui-candidate.mjs
+      - name: Diagnose installed desktop UI bootstrap without TEST credentials
+        if: inputs.ui_probe == true
+        run: node scripts/live-ui/probe.mjs
       - name: Exercise real TEST exchange with fictitious data
+        if: inputs.ui_probe != true
         env:
           SENDERID: ${{ secrets.SENDERID }}
           SENDERSECRET: ${{ secrets.SENDERSECRET }}

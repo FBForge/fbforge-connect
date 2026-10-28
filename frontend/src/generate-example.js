@@ -1,32 +1,55 @@
-import { xmlExample } from './schema-examples.js';
+import { xmlExample, xmlMessages } from './xml-examples.js';
+import { assertSchemaAvailable } from './schema-availability.js';
 
-export async function generateExample(source, mimeType, uri) {
-  let bundle;
+function exampleSource(source) {
+  let bundle, parsed;
   try {
-    const value = JSON.parse(source);
-    if (value?.schemaPackage === 1) bundle = value;
+    parsed = JSON.parse(source);
+    if (parsed?.schemaPackage === 1) bundle = parsed;
   } catch {
     /* A raw XML schema is handled below. */
   }
+  if (parsed !== undefined && !bundle) assertSchemaAvailable(parsed);
+  return bundle;
+}
+
+export function exampleMessages(source, mimeType, uri) {
+  const bundle = exampleSource(source);
+  if (mimeType === 'application/xml')
+    return xmlMessages(bundle?.schemas || [{ name: 'schema.xsd', text: source }], uri);
+  if (bundle) {
+    const root = bundle.documents?.[bundle.schemaUri?.split('#')[0]];
+    if (root === undefined) throw new Error('schema_unavailable');
+    assertSchemaAvailable(root);
+  }
+  return { roots: [], selected: null };
+}
+
+export async function generateExample(source, mimeType, uri, requestedRoot) {
+  const bundle = exampleSource(source);
   if (mimeType === 'application/xml') {
     try {
       const schemas = bundle?.schemas || [{ name: 'schema.xsd', text: source }],
         properties = Object.create(null);
       let count = 0;
       // Collect only string constraints, then evaluate them off the renderer thread.
-      xmlExample(schemas, uri, undefined, (constraints, field) => {
+      xmlExample(schemas, uri, requestedRoot, (constraints, field) => {
         properties[`field${count++}`] = { ...constraints, title: field };
         return '';
       });
       const values = count ? JSON.parse(await jsonDraft(JSON.stringify({ type: 'object', properties }))) : {};
       let index = 0;
-      return xmlExample(schemas, uri, undefined, () => {
+      return xmlExample(schemas, uri, requestedRoot, () => {
         const value = values[`field${index++}`];
         if (typeof value !== 'string') throw new Error();
         return value;
       }).data;
-    } catch {
-      throw new Error('example_unavailable');
+    } catch (cause) {
+      throw new Error(
+        ['schema_unavailable', 'xml_message_required'].includes(cause?.message)
+          ? cause.message
+          : 'example_unavailable',
+      );
     }
   }
   return jsonDraft(source);
@@ -44,7 +67,9 @@ function jsonDraft(source) {
     worker.onmessage = ({ data }) =>
       typeof data?.output === 'string' && data.output.length <= 2 * 1024 * 1024
         ? done(null, data.output)
-        : done(new Error('example_unavailable'));
+        : done(
+            new Error(data?.error === 'schema_unavailable' ? 'schema_unavailable' : 'example_unavailable'),
+          );
     worker.onerror = () => done(new Error('example_unavailable'));
     try {
       worker.postMessage(source);

@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from './environments.js';
 import { requestResource } from './resources.js';
 import { uncertainOperationError } from './diagnostics.js';
 
@@ -151,6 +152,7 @@ export async function executeDestinationRotation(invoke, session, preview) {
       fail();
     return result;
   } catch (cause) {
+    if (cancelledProductionAction(cause)) throw cause;
     throw new Error(uncertainOperationError(cause));
   }
 }

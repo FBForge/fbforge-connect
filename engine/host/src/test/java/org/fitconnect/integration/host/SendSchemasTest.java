@@ -131,4 +131,53 @@ class SendSchemasTest {
         assertEquals("schema_consent_required", error.code());
         assertEquals(1, calls.get());
     }
+
+    @Test
+    void anUnresolvedReplyUrnDoesNotBecomeAnInvalidInputError() throws Exception {
+        String uri = "urn:efast-digital:fjd:standard:process_1.0";
+        var recipient =
+                new ReplyRecipient(
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        null,
+                        "{}",
+                        List.of(new ReplyRecipient.Schema(java.net.URI.create(uri), null)));
+        String request =
+                "{\"schemaUri\":\""
+                        + uri
+                        + "\",\"mimeType\":\"application/json\",\"allowExternalSchemas\":true,\"schemaContentId\":null}";
+        try (var adapters = DestinationManagementTest.registry()) {
+            for (var api : ApiVersion.values())
+                try (var session =
+                        adapters.openSession(
+                                api,
+                                "id",
+                                "secret",
+                                (u, b) ->
+                                        "{\"access_token\":\"synthetic-token\",\"expires_in\":3600}",
+                                (u, h) -> {
+                                    fail("A URN without a resolver must not fetch");
+                                    return null;
+                                })) {
+                    var error =
+                            assertThrows(
+                                    SessionException.class,
+                                    () ->
+                                            adapters.withSession(
+                                                    api,
+                                                    session,
+                                                    value ->
+                                                            new SendSchemas()
+                                                                    .loadReply(
+                                                                            value,
+                                                                            recipient,
+                                                                            UUID.randomUUID()
+                                                                                    .toString(),
+                                                                            request,
+                                                                            Map.of())));
+                    assertEquals("schema_unavailable", error.code());
+                }
+        }
+    }
 }

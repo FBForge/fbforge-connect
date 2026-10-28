@@ -1,5 +1,30 @@
 # Versionshinweise
 
+## 0.2.0
+
+- Transitive Bouncy-Castle-Kryptografiebibliotheken beider SDK-Adapter auf 1.86 aktualisiert.
+- TEST, STAGE und PROD auswählbar. Getrennte Profile, erneute Anmeldung beim Wechsel und zusätzliche native Bestätigung für produktive Schreibaktionen.
+- V-PKI-Schlüssel mit Zertifikatsketten als PKCS#12 oder private JWK importieren. STAGE und PROD prüfen Vertrauenskette und Sperrstatus mit dem SDK.
+- Geführte Aufgaben für Senden und Abruf auch im Produktivbetrieb. Einheitliche SSP-Umgebungsfarben für TEST, STAGE und PROD.
+- Gespeicherte Profile direkt verbinden; neue Zugangsdaten bleiben separat aufklappbar. System, Hell und Dunkel mit automatischer Anpassung während der Sitzung wählen.
+- Anlagen und Empfangsaktionen bereits im Standardfenster neben dem Formular; in schmalen Ansichten stehen Aktionen vor langen Anlagenlisten. Kompaktere Fachdaten-Hinweise.
+- Lesende Formularansicht mit Anlagen und zusammenhängenden Vorgängen.
+- Metadaten, Fachdaten und Anlagen gemeinsam herunterladen. Mehrfachauswahl mit Prüfung, Dateiablage und anschließender Annahme. Fehlerhafte Einreichungen bleiben manuell bearbeitbar.
+- Bei der Einzelannahme optional alle Dateien vorher speichern. Abgebrochene oder fehlgeschlagene Downloads senden keine Annahme.
+- Kompakte Profilauswahl mit Client-ID und eingeklappter Verwaltung. Aktuelle oder gespeicherte Zugangsdaten über den API-Schalter für v2 und v3 wiederverwenden, mit getrennten Schlüsseln und Vorgängen.
+- Beim Profil- oder API-Wechsel beginnt der erhaltene Versandentwurf wieder bei der Adressierung. Empfängerangebote werden erneut geladen.
+- Einheitlicher Import privater Schlüssel als JWK, JWKS, PEM oder PKCS#12. Korrekte Zuordnung lokaler Schlüsselkennungen und Unterstützung registrierter V-PKI-Zertifikatsketten.
+- Programmdatei `fbforge-connect.exe` und einheitliche Paketnamen. Bestehende Installationen und Profile bleiben erhalten.
+- Sichtbare Destination-Details, gemeinsame Bearbeitung und erreichbare PDF-Seitensteuerung.
+- Unbekannte OAuth-Scope-Angaben werden nicht als bekannte Lesebeschränkung für die Destination-Verwaltung gewertet. Jede Änderung bleibt serverseitig autorisiert.
+- JSON/XML vor dem Versand gegen das Schema prüfen. Nachfrage beim Abruf öffentlicher Schemaquellen.
+- Benannte Testfälle geschützt speichern, direkt laden und als Testpaket austauschen. Lokale JSON-Schemata oder XSDs vergleichen.
+- Leistungsnamen aus dem FIM-Portal ergänzen und das Schema vor der Beispielerzeugung auswählen.
+- Verständliche Schemahinweise und gezielte XML-Nachrichtenauswahl bei Beispieldaten.
+- Beim Empfang nachgewiesene JSON- und XML-Schemaabweichungen gezielt anzeigen. Fehlerhafte Inhalte bleiben gesperrt.
+- Vollständige Case-Event-Logs einschließlich signierter Empfangsquittungen verschiedener Destinations über API v2 und v3 prüfen.
+- Zentral gepflegte Web-Anleitung mit aktuellen Bildern und Beispielen.
+
 ## 0.1.0-alpha.1
 
 Erste Alpha für Windows x64 und FIT-Connect TEST.

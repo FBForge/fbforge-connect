@@ -15,7 +15,7 @@ from candidate import api, download_candidate, gh, require
 
 def check_draft(release, commit, version):
     require(release["draft"] is True, "release_is_not_a_draft")
-    require(release["prerelease"] is True, "release_is_not_a_prerelease")
+    require(release["prerelease"] is ("-" in version), "release_channel_mismatch")
     require(release["published_at"] is None, "release_is_published")
     require(release["target_commitish"] == commit, "draft_source_mismatch")
     require(release["tag_name"] == "v" + version, "draft_version_mismatch")

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Umgebungen · fiktive Testdaten</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp, ref, h } from 'vue';
+      import App from '../src/App.vue';
+      import CertifiedKeyImport from '../src/destinations/CertifiedKeyImport.vue';
+      import { environmentKey } from '../src/environments.js';
+      import '../src/styles/index.css';
+      const id = '11111111-1111-4111-8111-111111111111';
+      const fixture = (window.__environmentsFixture = {
+        environment: 'TEST',
+        connected: false,
+        calls: [],
+        profileReads: 0,
+      });
+      window.isTauri = true;
+      const snapshot = (connected = fixture.connected) => ({
+        apiVersion: 'v3',
+        sessionId: id,
+        role: 'online-service',
+        environment: fixture.environment,
+        connected,
+      });
+      const envelope = (data) => ({
+        apiVersion: 'v3',
+        sessionId: id,
+        environment: fixture.environment,
+        data,
+      });
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args) {
+          fixture.calls.push({ command, environment: fixture.environment });
+          if (command === 'select_environment') {
+            fixture.environment = args.environment;
+            fixture.connected = false;
+            return fixture.environment;
+          }
+          if (command === 'list_profiles') {
+            fixture.profileReads++;
+            return ['TEST', 'STAGE', 'PROD'].map((environment, index) => ({
+              profileId: id.slice(0, -1) + index,
+              name: `Fiktives Profil ${environment}`,
+              clientId: `fiktiver-zugang-${environment}`,
+              apiVersion: 'v3',
+              role: 'online-service',
+              environment,
+              keyCount: 0,
+              available: true,
+            }));
+          }
+          if (command === 'open_session' || command === 'open_saved_profile') {
+            fixture.connected = true;
+            return snapshot(true);
+          }
+          if (command === 'check_session') return snapshot();
+          if (command === 'close_session') {
+            const previous = snapshot(false);
+            fixture.connected = false;
+            return previous;
+          }
+          if (command === 'profile_status') return { profileId: null, saved: false, error: null };
+          if (command === 'list_destinations')
+            return envelope({ destinations: [], offset: 0, totalCount: 0, canManageDestinations: true });
+          if (command === 'loaded_keys') return envelope({ keys: [] });
+          if (command === 'list_generated_keys') return envelope({ bundles: [] });
+          if (command === 'case_workspace')
+            return envelope(
+              args.operation === 'status'
+                ? { persistent: false, storageError: null }
+                : { records: [], offset: 0, total: 0 },
+            );
+          if (command === 'load_destination')
+            return envelope({
+              destinationId: id,
+              detailsJson: JSON.stringify({ destinationId: id, name: 'Fiktives Fachverfahren' }),
+              keys: [
+                {
+                  kid: id,
+                  purpose: 'decrypt',
+                  eligible: false,
+                  reason: 'certificate_status_unknown',
+                  certificateSha256: null,
+                  expiresAt: null,
+                },
+              ],
+            });
+          if (command === 'import_certified_keys') throw 'vpki_certificate_required';
+          throw 'session_missing';
+        },
+      };
+      if (new URLSearchParams(location.search).has('certificates')) {
+        const app = createApp({
+          render: () =>
+            h(
+              'main',
+              { style: 'max-width:960px;margin:32px auto;padding:24px', 'aria-label': 'Zertifikatsimport' },
+              [
+                h('h1', 'V-PKI-Zertifikate für STAGE'),
+                h(CertifiedKeyImport, { session: { ...snapshot(true), environment: 'STAGE' } }),
+              ],
+            ),
+        });
+        app.provide(environmentKey, ref('STAGE'));
+        app.mount('#app');
+      } else createApp(App).mount('#app');
+    </script>
+  </body>
+</html>

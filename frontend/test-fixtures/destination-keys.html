@@ -12,24 +12,28 @@
     <script type="module">
       import { createApp, h, ref } from 'vue';
       import DestinationKeys from '../src/DestinationKeys.vue';
-      import '../src/site.css';
-      import '../src/layout.css';
+      import { environmentKey } from '../src/environments.js';
+      const query = new URLSearchParams(location.search);
+      const environment = query.has('stage') ? 'STAGE' : 'TEST';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
 
       const session = Object.freeze({
         apiVersion: 'v3',
         sessionId: '00000000-0000-4000-8000-000000000001',
-        environment: 'TEST',
+        environment,
         role: 'administrative-system',
         connected: true,
       });
       const destinationId = '00000000-0000-4000-8000-000000000002';
       const decryptId = 'synthetic-test-key-registered-decryption';
       const signId = 'synthetic-test-key-registered-signature';
-      let references = [{ destinationId, kid: decryptId, purpose: 'decrypt' }];
+      let references = query.has('fresh') ? [] : [{ destinationId, kid: decryptId, purpose: 'decrypt' }];
+      window.__keyImports = [];
       const envelope = (data) => ({
         apiVersion: session.apiVersion,
         sessionId: session.sessionId,
-        environment: 'TEST',
+        environment,
         data,
       });
       const registration = (kid, purpose, eligible = true) => ({
@@ -83,14 +87,16 @@
             case 'loaded_keys':
               return envelope({ keys: references.map((key) => ({ ...key })) });
             case 'import_key':
-              if (args.destinationId !== destinationId || !['decrypt', 'sign'].includes(args.purpose))
+              if (args.destinationId !== destinationId || !['auto', 'decrypt', 'sign'].includes(args.purpose))
                 throw 'key_rejected';
               // The fixture never parses or retains a key document. This simulates only the public UI result.
-              references = references.filter((key) => key.purpose !== args.purpose);
+              window.__keyImports.push({ ...args });
+              const purpose = args.purpose === 'auto' ? 'decrypt' : args.purpose;
+              references = references.filter((key) => key.purpose !== purpose);
               references.push({
                 destinationId,
-                kid: args.purpose === 'decrypt' ? decryptId : signId,
-                purpose: args.purpose,
+                kid: purpose === 'decrypt' ? decryptId : signId,
+                purpose,
               });
               return envelope({ keys: references.map((key) => ({ ...key })) });
             case 'discard_keys':
@@ -147,7 +153,9 @@
               h('p', { role: 'status' }, activity.value),
             ]);
         },
-      }).mount('#app');
+      })
+        .provide(environmentKey, ref(environment))
+        .mount('#app');
     </script>
   </body>
 </html>

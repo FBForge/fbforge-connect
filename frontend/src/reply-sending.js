@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from './environments.js';
 import { isDemoSchema } from './demo-identifiers.js';
 import { readSchemaPackage } from './sender-options.js';
 import { requestResource, sameJsonValue } from './resources.js';
@@ -320,6 +321,7 @@ export async function executeReply(invoke, session, prepared) {
     if (!['sent', 'failed', 'uncertain'].includes(result.status)) fail();
     return result;
   } catch (error) {
+    if (cancelledProductionAction(error)) throw error;
     const code = typeof error === 'string' ? error : error?.message;
     if (code === 'engine_busy' || code === 'case_limit') throw error;
     return Object.freeze({

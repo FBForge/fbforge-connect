@@ -57,7 +57,7 @@ final class ReplyReceipts {
                             new RequestHeaders(auth),
                             http,
                             new ConcurrencyLimiter(1),
-                            "https://test.fit-connect.fitko.dev/submission-api");
+                            IntegrationEnvironment.current().submissionApi());
             var current = client.getReply(request.replyId());
             if (current == null
                     || !request.replyId().equals(current.replyId())
@@ -73,7 +73,7 @@ final class ReplyReceipts {
                             : client.rejectReply(
                                     request.replyId(), ((RejectReply) body).problems());
             var token = checkedToken(request, acknowledgement);
-            var env = dev.fitko.fitconnect.rest.client.config.FitConnectEnvironment.TEST;
+            var env = SdkEnvironment.current();
             var settings =
                     dev.fitko.fitconnect.sdk.config.settings.SdkSettings.withDefaultSettings();
             var validation =

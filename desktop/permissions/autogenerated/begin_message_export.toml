@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-begin-message-export"
+description = "Enables the begin_message_export command without any pre-configured scope."
+commands.allow = ["begin_message_export"]
+
+[[permission]]
+identifier = "deny-begin-message-export"
+description = "Denies the begin_message_export command without any pre-configured scope."
+commands.deny = ["begin_message_export"]

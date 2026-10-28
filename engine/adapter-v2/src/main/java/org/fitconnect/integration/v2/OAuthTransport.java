@@ -9,7 +9,10 @@ import java.util.Map;
 import java.util.Set;
 import org.fitconnect.integration.contract.*;
 
-/** SDK serialization stays in this adapter, while the shared transport enforces TEST-only HTTP. */
+/**
+ * SDK serialization stays in this adapter, while the shared transport enforces the selected
+ * environment.
+ */
 final class OAuthTransport implements HttpClient {
     private final TokenExchange exchange;
     private final ResourceExchange resources;

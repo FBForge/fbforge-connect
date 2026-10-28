@@ -1,7 +1,20 @@
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dropFiles } from './drop-files.js';
+
+test('BPMN loading restores visible keyboard focus', async ({ page }) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/process-workspace.html');
+  await page.getByRole('button', { name: 'Fiktiven Demo-Prozess öffnen', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  const heading = page.getByRole('heading', { name: 'Fiktiver TEST-Antragsprozess', exact: true });
+  await expect(heading).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Modell einpassen', exact: true })).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(page.getByText('Anderes BPMN-Modell öffnen', { exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Modell einpassen', exact: true })).toBeFocused();
+});
 
 test('process-workspace with synthetic native fixtures', async ({ browser }) => {
   const page = await browser.newPage({ viewport: { width: 1180, height: 900 } }),
@@ -27,7 +40,7 @@ test('process-workspace with synthetic native fixtures', async ({ browser }) => 
     .waitFor();
   assert.equal(await page.locator('#bpmn-message-id').inputValue(), 'request-more');
   await page.getByRole('button', { name: 'Passende Prozess-Destinations suchen', exact: true }).click();
-  await page.getByRole('heading', { name: 'Passende TEST-Destinations (1)', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Passende Destinations (1)', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__processFixture.searches), 1);
   await page.getByRole('button', { name: 'Als Prozess-Einreichung vorbereiten', exact: true }).click();
   const draft = await page.evaluate(() => window.__processFixture.draft);

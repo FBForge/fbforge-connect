@@ -354,12 +354,20 @@ class NativeResourceTest {
                             List.of(registration("decrypt")));
                     JsonObject wrongKid = privateJwk();
                     wrongKid.addProperty("kid", "different-key");
-                    reject(
-                            registry,
-                            version,
-                            session,
-                            wrongKid.toString(),
-                            List.of(registration("decrypt")));
+                    // A local export label is not the authenticated registration identity.
+                    assertEquals(
+                            "decrypt-key",
+                            call(
+                                            registry,
+                                            version,
+                                            session,
+                                            value ->
+                                                    value.importKey(
+                                                            DESTINATION,
+                                                            "decrypt",
+                                                            wrongKid.toString(),
+                                                            List.of(registration("decrypt"))))
+                                    .kid());
                     JsonObject wrongPurpose = privateJwk();
                     var ops = new JsonArray();
                     ops.add("sign");
