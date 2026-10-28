@@ -15,6 +15,7 @@ Nach Updates der Frontend-Abhängigkeiten `npm run licenses:update` ausführen. 
 
 - Logik im zuständigen Modul halten. SDK-Unterschiede gehören in die Adapter.
 - Verhalten mit passenden Tests prüfen, einschließlich Abbruch und Fehlerfällen bei Schreibaktionen.
+- Jeder Fehlerfix erhält einen automatisierten Regressionstest, der das gemeldete Fehlverhalten reproduziert und mit der Korrektur besteht. Betroffene API-Versionen sowie relevante Fehler-, Abbruch- und Grenzfälle berücksichtigen. Falls eine automatische Reproduktion technisch nicht möglich ist, die konkrete Grenze und die manuelle Prüfung dokumentieren.
 - Tastaturbedienung, Fokus und verständliche Fehlermeldungen berücksichtigen. Oberfläche und Hilfe verwenden die Sie-Anrede.
 - Keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten einchecken oder in Logs und Screenshots übernehmen.
 - README, PRs, Releases und Commit-Meldungen kurz und sachlich halten: Änderung, Grund, relevante Tests. Keine Arbeitsprotokolle, Wiederholungen oder Werbetexte. Commit-Beispiel: `fix: authenticate process search`.
@@ -24,6 +25,8 @@ Neue Module nach einer Aufgabe benennen. Etwa 150 bis 350 Zeilen sind ein guter 
 Die Frontend-Typisierung wird schrittweise erweitert. Öffentliche Typen stehen in `frontend/src/contracts.ts`. `npm run lint` umfasst ESLint, die strenge Typprüfung der TypeScript-Module und die Größenprüfung aller Produktionsquellen. Bestehende JavaScript-Module werden nicht pauschal als typgeprüft behandelt. Laufzeitprüfungen für native Antworten und Dateien bleiben erforderlich.
 
 Die SDK-Integrationstests sind nach Versand, Empfang, Replies, Empfangsbestätigungen und Event Logs gegliedert. Gemeinsame fiktive Schlüssel und HTTP-Fixtures liegen in `SenderTestSupport`, `ReceiverTestSupport` und den zugehörigen Fixture-Klassen. Der Speichergrenzentest startet weiterhin eine eigene JVM mit dem tatsächlich konfigurierten Desktop-Limit.
+
+Ziel ist eine möglichst vollständige Abdeckung der Anwendungslogik und ihrer Entscheidungszweige. Testanzahl und erfolgreiche Läufe belegen keine hundertprozentige Codeabdeckung. Prozentangaben benötigen einen gemessenen Bericht mit Angabe der erfassten Module und der Zeilen- beziehungsweise Zweigabdeckung. Tests prüfen beobachtbares Verhalten und Sicherheitsbedingungen; sie sollen nicht lediglich die Implementierung wiederholen.
 
 ## Anleitung
 
