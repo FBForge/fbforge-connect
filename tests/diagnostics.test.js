@@ -8,7 +8,7 @@ test('both API versions invoke the native command without changing the requested
     calls.push([command, args]);
     return {
       apiVersion: args.apiVersion,
-      sdkVersion: args.apiVersion === 'v2' ? '3.5.2' : '4.0.0-rc.2',
+      sdkVersion: args.apiVersion === 'v2' ? '3.5.2' : '4.0.0',
       environment: 'TEST',
       isolated: true,
       entrypoint: 'public.sdk.Client',

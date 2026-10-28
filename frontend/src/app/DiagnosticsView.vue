@@ -25,7 +25,7 @@ const emit = defineEmits(['probe', 'export', 'clear']);
       <div class="adapter-cards">
         <div v-for="api in ['v3', 'v2']" :key="api" class="adapter-card">
           <strong>API {{ api }}</strong>
-          <span>Java-SDK {{ api === 'v3' ? '4.0.0-rc.2' : '3.5.2' }}</span>
+          <span>Java-SDK {{ api === 'v3' ? '4.0.0' : '3.5.2' }}</span>
           <span class="status-badge" :class="results[api] ? 'ok' : 'info'">
             {{ results[api] ? 'Lokal bereit' : 'Noch nicht geprüft' }}
           </span>

@@ -167,7 +167,7 @@ impl ProbeResult {
     pub fn validate(&self, version: ApiVersion) -> bool {
         let expected = match version {
             ApiVersion::V2 => "3.5.2",
-            ApiVersion::V3 => "4.0.0-rc.2",
+            ApiVersion::V3 => "4.0.0",
         };
         self.api_version == version
             && crate::environments::valid_environment(&self.environment)

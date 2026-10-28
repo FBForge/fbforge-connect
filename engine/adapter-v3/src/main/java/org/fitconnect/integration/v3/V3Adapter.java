@@ -27,7 +27,7 @@ public final class V3Adapter implements SdkAdapter {
                         && dependencyClass().getClassLoader() == getClass().getClassLoader();
         return new ProbeResult(
                 "v3",
-                "4.0.0-rc.2",
+                "4.0.0",
                 IntegrationEnvironment.current().name(),
                 FitConnectSdk.class.getName(),
                 isolated);
