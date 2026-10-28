@@ -5,7 +5,7 @@ import { probeSenderRestrictions } from '../scripts/live-sender-restrictions.mjs
 const destination = '11111111-1111-4111-8111-111111111111';
 const senderDestination = '22222222-2222-4222-8222-222222222222';
 const runName = 'FBForge Connect CI synthetic-test-only';
-function fixture({ wrongOwner = false, failV2 = false } = {}) {
+function fixture({ wrongOwner = false, failV2 = false, definite = false } = {}) {
   const calls = [],
     reports = [],
     apis = [];
@@ -19,7 +19,11 @@ function fixture({ wrongOwner = false, failV2 = false } = {}) {
     report: (line) => reports.push(line),
     exchange: async (api) => {
       apis.push(api);
-      if (api === 'v2' && failV2) throw new Error('not logged: sensitive response');
+      if (api === 'v2' && failV2) {
+        const error = new Error('not logged: sensitive response');
+        error.definiteAuthorizationRejection = definite;
+        throw error;
+      }
     },
     request: async (url, request) => {
       calls.push({ url, method: request.method, body: request.body });
@@ -69,4 +73,11 @@ test('a destination outside the isolated fixture cannot be modified', async () =
     false,
   );
   assert.deepEqual(f.apis, []);
+});
+
+test('only a definite initial authorization rejection permits a fresh v2 comparison after v3', async () => {
+  const f = fixture({ failV2: true, definite: true });
+  await assert.rejects(probeSenderRestrictions(f.options), /restriction_v2_failed/);
+  assert.deepEqual(f.apis, ['v2', 'v3', 'v2']);
+  assert.equal(JSON.parse(f.calls.at(-1).body).senderAccessRestricted.enabled, false);
 });

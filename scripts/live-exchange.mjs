@@ -293,7 +293,18 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
   const sent = await sender.call('execute_send', { attemptId: prepared.attempt.attemptId });
   await checkpoint(sender);
   if (sent.status !== 'sent') console.log(`Send failure ${api}: ${JSON.stringify(sent.diagnostics || [])}`);
-  requireCheck(sent.status === 'sent', `submission_${sent.status}`);
+  if (sent.status !== 'sent') {
+    const failure = new Error(`submission_${sent.status}`);
+    const last = sent.diagnostics?.at(-1);
+    failure.definiteAuthorizationRejection =
+      sent.status === 'failed' &&
+      !sent.submissionId &&
+      !sent.caseId &&
+      last?.step === 'announce' &&
+      last.method === 'POST' &&
+      [401, 403].includes(last.httpStatus);
+    throw failure;
+  }
   await archivedCopy(sender, sent.submissionId, 'sent', 'submission', data, attachment, 'sent');
   console.log(`${stage}: one native send confirmed; exact local send snapshot verified`);
   const localSchemas = xml ? [{ uri: xmlUri, contentId: await upload(receiver, xmlSchema) }] : [];
