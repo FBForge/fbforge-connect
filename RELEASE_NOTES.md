@@ -2,6 +2,7 @@
 
 ## 0.2.1 (in Vorbereitung)
 
+- Java-SDK für API v3 von 4.0.0-rc.2 auf die finale Version 4.0.0 aktualisiert. Der getrennte v2-Adapter verwendet weiterhin die aktuelle 3.x-Version 3.5.2.
 - Schemaabweichungen beim Empfang über API v2 und v3 getrennt von Entschlüsselung und Integrität anzeigen. Fachdaten, Anlagen und verwendetes Schema bleiben lesbar; JSON-Felder werden mit konkreten Abweichungen markiert, XML meldet Zeile und Spalte.
 - Eine Einzelannahme trotz Schemaabweichung benötigt eine zusätzliche native Bestätigung. Die Sammelannahme bleibt für solche Nachrichten gesperrt. Signatur-, Hash- und Entschlüsselungsfehler bleiben blockierend.
 - „Alle Dateien herunterladen“ bei lokalen Vorgängen ohne entschlüsselte Fachdaten sperren und zum Empfang führen. Der native Export meldet diesen Zustand verständlich und legt keine scheinbar vollständigen Dateien an.

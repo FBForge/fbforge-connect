@@ -69,26 +69,13 @@ export async function probeSenderRestrictions({
       'restriction_readback_failed',
     );
     const failed = [];
-    let repeatV2 = false,
-      v3Passed = false;
     for (const api of ['v2', 'v3']) {
       try {
         await exchange(api);
-        if (api === 'v3') v3Passed = true;
         report(`Sender restriction with destination allowlist only: ${api} passed`);
-      } catch (error) {
-        if (api === 'v2' && error.definiteAuthorizationRejection === true) repeatV2 = true;
+      } catch {
         failed.push(api);
         report(`Sender restriction with destination allowlist only: ${api} failed`);
-      }
-    }
-    // A fresh comparison after v3 tests propagation delay. Never repeat an uncertain write.
-    if (repeatV2 && v3Passed) {
-      try {
-        await exchange('v2');
-        report('Sender restriction: fresh v2 session after successful v3 passed');
-      } catch {
-        report('Sender restriction: fresh v2 session after successful v3 still failed');
       }
     }
     check(failed.length === 0, `restriction_${failed.join('_')}_failed`);

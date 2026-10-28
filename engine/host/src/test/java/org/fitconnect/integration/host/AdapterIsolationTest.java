@@ -19,7 +19,7 @@ class AdapterIsolationTest {
             assertEquals("v2", v2.apiVersion());
             assertEquals("3.5.2", v2.sdkVersion());
             assertEquals("v3", v3.apiVersion());
-            assertEquals("4.0.0-rc.2", v3.sdkVersion());
+            assertEquals("4.0.0", v3.sdkVersion());
             assertEquals("TEST", v2.environment());
             assertEquals("TEST", v3.environment());
             assertTrue(v2.isolated());

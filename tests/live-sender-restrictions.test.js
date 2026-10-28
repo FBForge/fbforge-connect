@@ -75,9 +75,9 @@ test('a destination outside the isolated fixture cannot be modified', async () =
   assert.deepEqual(f.apis, []);
 });
 
-test('only a definite initial authorization rejection permits a fresh v2 comparison after v3', async () => {
+test('even a definite authorization rejection is not retried after successful v3', async () => {
   const f = fixture({ failV2: true, definite: true });
   await assert.rejects(probeSenderRestrictions(f.options), /restriction_v2_failed/);
-  assert.deepEqual(f.apis, ['v2', 'v3', 'v2']);
+  assert.deepEqual(f.apis, ['v2', 'v3']);
   assert.equal(JSON.parse(f.calls.at(-1).body).senderAccessRestricted.enabled, false);
 });

@@ -1,4 +1,4 @@
-const sdkVersions = Object.freeze({ v2: '3.5.2', v3: '4.0.0-rc.2' });
+const sdkVersions = Object.freeze({ v2: '3.5.2', v3: '4.0.0' });
 
 export async function probeAdapter(invoke, apiVersion, environment = 'TEST') {
   if (!Object.hasOwn(sdkVersions, apiVersion)) throw new Error('unsupported_api');
