@@ -5,6 +5,7 @@
 - Schemaabweichungen beim Empfang über API v2 und v3 getrennt von Entschlüsselung und Integrität anzeigen. Fachdaten, Anlagen und verwendetes Schema bleiben lesbar; JSON-Felder werden mit konkreten Abweichungen markiert, XML meldet Zeile und Spalte.
 - Eine Einzelannahme trotz Schemaabweichung benötigt eine zusätzliche native Bestätigung. Die Sammelannahme bleibt für solche Nachrichten gesperrt. Signatur-, Hash- und Entschlüsselungsfehler bleiben blockierend.
 - „Alle Dateien herunterladen“ bei lokalen Vorgängen ohne entschlüsselte Fachdaten sperren und zum Empfang führen. Der native Export meldet diesen Zustand verständlich und legt keine scheinbar vollständigen Dateien an.
+- „Leistungsnamen aus FIM laden“ direkt bei der Verwaltungsleistung anzeigen, vor der Prozessnachricht und der Absender-Destination. Tastaturreihenfolge und Rückmeldungen bleiben bei der zugehörigen Auswahl.
 
 ## 0.2.0
 
