@@ -295,3 +295,16 @@ export async function executeSend(invoke, session, prepared) {
 export async function sendState(invoke, session) {
   return state(await requestResource(invoke, session, 'send_state'));
 }
+
+export async function acknowledgeSendUncertainty(invoke, session, attempt) {
+  if (!attempt || attempt.status !== 'uncertain' || !uuid(attempt.attemptId))
+    throw new Error('invalid_input');
+  const result = state(
+    await requestResource(invoke, session, 'acknowledge_send_uncertainty', {
+      attemptId: attempt.attemptId,
+    }),
+    attempt.attemptId,
+  );
+  if (!sameJsonValue(result, attempt)) fail();
+  return result;
+}

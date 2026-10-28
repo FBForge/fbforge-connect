@@ -42,6 +42,7 @@
     "allow-prepare-send",
     "allow-execute-send",
     "allow-cancel-send",
+    "allow-acknowledge-send-uncertainty",
     "allow-send-state",
     "allow-reply-target",
     "allow-prepare-reply",

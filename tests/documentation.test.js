@@ -81,6 +81,8 @@ test('LeiKa labels preserve supplied names and never invent an administrative se
   const id = 'urn:de:fim:leika:leistung:99003002022000';
   assert.equal(serviceLabel(id, 'Fiktive Leistung').option, 'Fiktive Leistung · 99003002022000');
   assert.equal(serviceLabel(id, id).hasName, false);
+  assert.equal(serviceLabel(id).option, id);
+  assert.equal(serviceLabel(id, id).option, id);
   assert.equal(serviceLabel(id).title, 'Leistung 99003002022000');
   assert.equal(serviceLabel('urn:test:service', 'Testleistung').identifier, 'urn:test:service');
   assert.equal(serviceLabel(null).title, 'Leistung nicht angegeben');

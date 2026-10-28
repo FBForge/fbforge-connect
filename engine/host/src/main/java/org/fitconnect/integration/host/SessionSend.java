@@ -98,6 +98,8 @@ final class SessionSend {
         } else if (command.equals("cancel_send")) {
             entry.sender().cancel(attemptId);
             discardPendingChannel(entry, attemptId);
+        } else if (command.equals("acknowledge_send_uncertainty")) {
+            entry.sender().acknowledgeUncertainty(attemptId);
         } else if (!command.equals("send_state")) throw new SessionException("invalid_input");
         if (Set.of("failed", "cancelled").contains(entry.sender().state().status()))
             discardPendingChannel(entry, entry.sender().state().attemptId());

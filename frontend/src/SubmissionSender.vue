@@ -31,6 +31,7 @@ const {
   nextDialog,
   keepData,
   keepAttachments,
+  acknowledgeRisk,
   draftRevision,
   progress,
   history,
@@ -246,18 +247,19 @@ const {
         Lokalen Versandstatus laden
       </button>
     </div>
-    <div v-if="outcome?.status === 'sent'" class="client-actions next-actions">
+    <div v-if="['sent', 'uncertain'].includes(outcome?.status)" class="client-actions next-actions">
       <button
         type="button"
         class="button"
-        :disabled="disabled"
+        :disabled="busy || working || outcome.error === 'content_cleanup_failed'"
         @click="
           keepData = true;
           keepAttachments = false;
+          acknowledgeRisk = false;
           nextDialog.showModal();
         "
       >
-        Nächsten Test vorbereiten
+        {{ outcome.status === 'uncertain' ? 'Neuen Entwurf vorbereiten' : 'Nächsten Test vorbereiten' }}
       </button>
       <button type="button" class="button secondary" :disabled="busy || working" @click="emit('cases')">
         Vorgänge öffnen
@@ -328,7 +330,18 @@ const {
       </template>
     </dialog>
     <dialog ref="nextDialog" class="tool-dialog" aria-labelledby="next-test-title">
-      <h2 id="next-test-title">Nächsten Test vorbereiten?</h2>
+      <h2 id="next-test-title">
+        {{
+          outcome?.status === 'uncertain'
+            ? 'Neuen Entwurf trotz ungewissem Versand beginnen?'
+            : 'Nächsten Test vorbereiten?'
+        }}
+      </h2>
+      <p v-if="outcome?.status === 'uncertain'" class="action-notice">
+        Der bisherige Versandausgang bleibt ungewiss. Prüfen Sie Einreichung und Event Log, bevor Sie einen
+        neuen Versand beginnen. Dieser Schritt storniert keine Einreichung. Ein erneuter Versand derselben
+        Daten kann zu einem Doppelversand führen.
+      </p>
       <p>
         Der bisherige Versand bleibt unter „Vorgänge“ verfügbar. Wählen Sie, welche Inhalte Sie für einen
         neuen Entwurf übernehmen möchten.
@@ -345,14 +358,31 @@ const {
         Die Case ID wird geleert. Empfängerleistungen und Schema müssen erneut geladen werden. Es wird erst
         nach Ihrer erneuten Bestätigung gesendet.
       </p>
+      <label v-if="outcome?.status === 'uncertain'" class="checkbox-label">
+        <input v-model="acknowledgeRisk" type="checkbox" :disabled="working" />
+        Ich habe den bisherigen Versand geprüft und berücksichtige einen möglichen Doppelversand.
+      </label>
+      <p v-if="error" role="alert">{{ error }}</p>
       <div class="client-actions">
-        <button type="button" class="button secondary" autofocus @click="nextDialog.close()">
+        <button
+          type="button"
+          class="button secondary"
+          autofocus
+          :disabled="working"
+          @click="nextDialog.close()"
+        >
           Abbrechen
         </button>
         <button
           type="button"
           class="button"
-          :disabled="disabled || outcome?.status !== 'sent'"
+          :disabled="
+            busy ||
+            working ||
+            outcome?.error === 'content_cleanup_failed' ||
+            !['sent', 'uncertain'].includes(outcome?.status) ||
+            (outcome?.status === 'uncertain' && !acknowledgeRisk)
+          "
           @click="nextTest"
         >
           Neuen Entwurf beginnen

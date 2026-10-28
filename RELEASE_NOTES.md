@@ -6,6 +6,9 @@
 - Eine Einzelannahme trotz Schemaabweichung benötigt eine zusätzliche native Bestätigung. Die Sammelannahme bleibt für solche Nachrichten gesperrt. Signatur-, Hash- und Entschlüsselungsfehler bleiben blockierend.
 - „Alle Dateien herunterladen“ bei lokalen Vorgängen ohne entschlüsselte Fachdaten sperren und zum Empfang führen. Der native Export meldet diesen Zustand verständlich und legt keine scheinbar vollständigen Dateien an.
 - „Leistungsnamen aus FIM laden“ direkt bei der Verwaltungsleistung anzeigen, vor der Prozessnachricht und der Absender-Destination. Tastaturreihenfolge und Rückmeldungen bleiben bei der zugehörigen Auswahl.
+- Leistungskennungen ohne Namen in der Auswahl vollständig anzeigen, einschließlich URN-Präfix. Ein erfolgloser FIM-Abruf verändert die Kennung nicht.
+- Eine eindeutige HTTP-401/403-Ablehnung beim erstmaligen Ankündigen einer Einreichung als fehlgeschlagen anzeigen. Unklare Antworten und Fehler nach einer möglichen Anlage bleiben ungewiss.
+- Nach einem ungewissen Versand einen neuen Entwurf ohne erneute Profilanmeldung ermöglichen. Vorher sind Prüfung und ausdrückliche Bestätigung des Doppelversandrisikos erforderlich. Der ursprüngliche Versuch und seine Kennungen bleiben erhalten; es gibt keine automatische Wiederholung.
 
 ## 0.2.0
 

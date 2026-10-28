@@ -77,11 +77,13 @@ test('schema selection is visible before example generation and FIM lookup only 
   await button(page, 'Leistungen laden').click();
   expect(requests).toBe(0);
   const service = page.locator('#send-service');
+  await expect(service.locator('option').nth(1)).toHaveText(`urn:de:fim:leika:leistung:${codes[0]}`);
+  await expect(service.locator('option').nth(2)).toHaveText(`urn:de:fim:leika:leistung:${codes[1]}`);
   await service.selectOption('__proto__');
   const previous = await service.inputValue();
   await button(page, 'Leistungsnamen aus FIM laden').click();
   await expect(service.locator('option').nth(1)).toHaveText(`Fiktive Beihilfe · ${codes[0]}`);
-  await expect(service.locator('option').nth(2)).toHaveText(`LeiKa ${codes[1]}`);
+  await expect(service.locator('option').nth(2)).toHaveText(`urn:de:fim:leika:leistung:${codes[1]}`);
   await expect(service).toHaveValue(previous);
   await expect(page.locator('#send-service-name')).toHaveValue('__proto__');
   await button(page, 'Weiter: Fachdaten').click();

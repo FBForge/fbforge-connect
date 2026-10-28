@@ -80,12 +80,67 @@ test('canceling a prepared send restores keyboard focus without transmitting', a
   expect(calls.some((call) => call.command === 'execute_send')).toBe(false);
 });
 
-test('uncertain sends remain locked and offer no new-test reset', async ({ page }) => {
+test('uncertain sends unlock only a new draft after explicit risk acknowledgement without retrying', async ({
+  page,
+}) => {
   await prepare(page, { uncertain: true });
   await page.getByRole('button', { name: 'Jetzt an FIT-Connect senden', exact: true }).click();
   await expect(page.getByText('Versandausgang ungewiss', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Nächsten Test vorbereiten', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Versand vorbereiten', exact: true })).toBeDisabled();
+  const next = page.getByRole('button', { name: 'Neuen Entwurf vorbereiten', exact: true });
+  await next.click();
+  const dialog = page.getByRole('dialog', {
+    name: 'Neuen Entwurf trotz ungewissem Versand beginnen?',
+    exact: true,
+  });
+  const begin = dialog.getByRole('button', { name: 'Neuen Entwurf beginnen', exact: true });
+  await expect(dialog).toContainText('Dieser Schritt storniert keine Einreichung');
+  await expect(begin).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+  expect(
+    await page.evaluate(() => window.__cycle.filter((c) => c.command === 'acknowledge_send_uncertainty')),
+  ).toEqual([]);
+  await expect(page.getByRole('button', { name: 'Versand vorbereiten', exact: true })).toBeDisabled();
+  await next.click();
+  await dialog.getByRole('checkbox', { name: /Ich habe den bisherigen Versand geprüft/ }).check();
+  await begin.click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Leistungen laden', exact: true })).toBeEnabled();
+  await expect(page.locator('.send-history-list')).toContainText('Ausgang ungewiss');
+  const calls = await page.evaluate(() => window.__cycle);
+  expect(calls.filter((c) => c.command === 'acknowledge_send_uncertainty')).toHaveLength(1);
+  expect(calls.filter((c) => c.command === 'execute_send')).toHaveLength(1);
+  expect(calls.filter((c) => c.command === 'prepare_send')).toHaveLength(1);
+  expect(calls.some((c) => c.command === 'open_session' || c.command === 'close_session')).toBe(false);
+  await page.getByRole('button', { name: 'Leistungen laden', exact: true }).click();
+  await page.getByRole('button', { name: 'Weiter: Fachdaten', exact: true }).click();
+  await expect(page.locator('#send-data')).toHaveValue('{"test":"neuer Entwurf"}');
+});
+
+test('a failed uncertainty acknowledgement leaves the old send locked and visible', async ({ page }) => {
+  await prepare(page, { uncertain: true });
+  await page.getByRole('button', { name: 'Jetzt an FIT-Connect senden', exact: true }).click();
+  await page.evaluate(() => {
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    window.__TAURI_INTERNALS__.invoke = (command, args) => {
+      if (command === 'acknowledge_send_uncertainty') return Promise.reject('send_locked');
+      return invoke(command, args);
+    };
+  });
+  await page.getByRole('button', { name: 'Neuen Entwurf vorbereiten', exact: true }).click();
+  const dialog = page.getByRole('dialog', {
+    name: 'Neuen Entwurf trotz ungewissem Versand beginnen?',
+    exact: true,
+  });
+  await dialog.getByRole('checkbox', { name: /Ich habe den bisherigen Versand geprüft/ }).check();
+  await dialog.getByRole('button', { name: 'Neuen Entwurf beginnen', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toBeVisible();
+  await expect(page.getByText('Versandausgang ungewiss', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Versand vorbereiten', exact: true })).toBeDisabled();
+  expect(await page.evaluate(() => window.__cycle.filter((c) => c.command === 'execute_send').length)).toBe(
+    1,
+  );
 });
 
 test('receiver setup collapses only for a matching loaded decryption key', async ({ page }) => {

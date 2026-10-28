@@ -143,6 +143,7 @@
             return envelope(current);
           }
           if (command === 'send_state') return envelope(current);
+          if (command === 'acknowledge_send_uncertainty') return envelope(current);
           throw 'engine_protocol_error';
         },
       };

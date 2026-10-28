@@ -100,7 +100,10 @@ final class Engine implements AutoCloseable {
                                             version,
                                             values.get("sessionId"),
                                             values.get("sendDocument"));
-                            case "execute_send", "cancel_send", "send_state" ->
+                            case "execute_send",
+                                    "cancel_send",
+                                    "send_state",
+                                    "acknowledge_send_uncertainty" ->
                                     sessions.send(
                                             version,
                                             values.get("sessionId"),

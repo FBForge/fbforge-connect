@@ -110,7 +110,8 @@ record EngineRequest(
                     expected.addAll(Set.of("sessionId", "contentId", "byteOffset", "chunk"));
             case "discard_content" -> expected.addAll(Set.of("sessionId", "contentId"));
             case "prepare_send" -> expected.addAll(Set.of("sessionId", "sendDocument"));
-            case "execute_send", "cancel_send" -> expected.addAll(Set.of("sessionId", "attemptId"));
+            case "execute_send", "cancel_send", "acknowledge_send_uncertainty" ->
+                    expected.addAll(Set.of("sessionId", "attemptId"));
             case "send_state" -> expected.add("sessionId");
             case "load_reply_schema" ->
                     expected.addAll(Set.of("sessionId", "proofId", "schemaDocument"));

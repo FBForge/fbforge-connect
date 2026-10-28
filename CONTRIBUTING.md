@@ -48,6 +48,8 @@ Mit `ui_probe` und einem `validation_run` lässt sich ausschließlich der Startz
 
 Der Test schreibt fiktive Nachrichten und deaktiviert seine temporäre Destination anschließend. `canBeDecommissionedAt` im Laufprotokoll nennt die früheste Löschung. Vor dem Löschen Eigentümer und Zustand erneut prüfen.
 
+Die Probe zur Absenderbeschränkung aktiviert ausschließlich an der neu angelegten, eindeutig benannten TEST-Destination die Freigabe für die konfigurierte Sender-Destination. Sie prüft v2 und v3 mit leeren Client-Freigaben und nimmt die Beschränkung anschließend zurück. Vorhandene Destinations werden dabei nicht verändert. Protokolliert werden nur Ergebnis und begrenzte technische Versanddiagnosen, keine Bearer oder Antwortinhalte.
+
 ## CI
 
 `Checks` prüft bei Änderungen die betroffenen Bereiche: Frontend mit Browsertests, Java-Engine und native Verträge. Reine Dokumentationsänderungen benötigen keinen Installer-Build. Diese Jobs verwenden keine TEST-Secrets und keinen Signier-Runner.

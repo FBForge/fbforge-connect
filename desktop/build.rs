@@ -69,6 +69,7 @@ fn main() {
             "prepare_send",
             "execute_send",
             "cancel_send",
+            "acknowledge_send_uncertainty",
             "send_state",
             "reply_target",
             "prepare_reply",
