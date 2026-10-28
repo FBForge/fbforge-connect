@@ -1,0 +1,202 @@
+/* A diagram has its own bounded canvas; controls and message list remain keyboard accessible. */
+.bpmn-diagram {
+  height: clamp(240px, 44vh, 480px);
+  min-width: 0;
+  background: #fff;
+  color: #172b4d;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+.bpmn-diagram .bpmn-message-selected .djs-visual > :first-child {
+  stroke: #174cc0 !important;
+  stroke-width: 4px !important;
+}
+.bpmn-diagram .bpmn-message-received .djs-visual > :first-child {
+  stroke: #17704b !important;
+  stroke-width: 4px !important;
+}
+.bpmn-diagram .bjs-powered-by {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+}
+.bpmn-message-list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+.bpmn-message-list button {
+  text-align: start;
+  width: 100%;
+}
+.bpmn-message-list button[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+:is(.workspace-content, .connection-dialog, .tool-dialog) label.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.checkbox-label input[type='checkbox'] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+}
+.profile-backup {
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.profile-backup summary,
+.process-model-picker summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.process-model-picker {
+  margin: 16px 0;
+}
+.process-model-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+.process-model-header h3 {
+  margin: 0;
+}
+.process-model-picker:not([open]) {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.process-model-picker[open] {
+  flex-basis: 100%;
+}
+.process-model-picker .client-fields {
+  align-items: end;
+}
+.process-model-picker .button {
+  justify-self: start;
+  margin-bottom: 20px;
+}
+.process-message-search {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.case-list,
+.case-attachments {
+  list-style: none;
+  padding: 0;
+}
+.case-list > li,
+.case-attachments > li {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.case-list h3 {
+  margin: 0.35rem 0 0.65rem;
+}
+.case-list > li > div {
+  min-width: 0;
+}
+.case-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.case-list .case-identifier {
+  margin: 0.5rem 0 0;
+}
+.case-open {
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 0.2rem 0;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.case-identifier,
+.case-detail dd {
+  overflow-wrap: anywhere;
+}
+.case-filters {
+  margin: 1rem 0;
+}
+.case-detail {
+  scroll-margin-top: 1rem;
+}
+.pdf-preview canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem auto;
+  background: white;
+}
+.pdf-page-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .case-list > li,
+  .case-attachments > li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.case-open {
+  min-height: 32px;
+}
+.case-list .status-badge {
+  margin-inline-end: 0.5rem;
+}
+
+@media (forced-colors: active) {
+  :root,
+  :root[data-theme='dark'] {
+    color-scheme: light dark;
+    --bg: Canvas;
+    --surface: Canvas;
+    --surface-soft: Canvas;
+    --field-bg: Canvas;
+    --input-bg: Canvas;
+    --result-bg: Canvas;
+    --code-bg: Canvas;
+    --ink: CanvasText;
+    --muted: CanvasText;
+    --line: ButtonText;
+    --accent: LinkText;
+    --brand: LinkText;
+    --brand-strong: LinkText;
+    --button-bg: ButtonFace;
+    --button-hover: ButtonFace;
+    --button-ink: ButtonText;
+    --status-ok-ink: CanvasText;
+    --status-info-ink: CanvasText;
+    --status-warn-ink: CanvasText;
+    --status-error-ink: CanvasText;
+  }
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}

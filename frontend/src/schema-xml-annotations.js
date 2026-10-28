@@ -1,3 +1,4 @@
+import { readAnnotationSchemas } from './xml-schema-files.js';
 import { cleanText, resolveUri, budget, source, mergeHints } from './schema-hints.js';
 const XSD = 'http://www.w3.org/2001/XMLSchema',
   XMLNS = 'http://www.w3.org/2000/xmlns/',
@@ -6,41 +7,8 @@ const children = (node, name) =>
   [...node.children].filter((child) => child.namespaceURI === XSD && (!name || child.localName === name));
 const key = (namespace, local) => JSON.stringify([namespace || '', local]);
 export function annotateXmlSchema(root, packet, Parser) {
-  if (typeof Parser !== 'function' || !packet.schemas.length || packet.schemas.length > 512)
-    throw new Error('unsupported_xsd');
   const tick = budget(),
-    files = new Map();
-  let tags = 0;
-  for (const row of packet.schemas) {
-    tick();
-    if (
-      !row ||
-      typeof row.name !== 'string' ||
-      typeof row.text !== 'string' ||
-      /<!\s*(?:DOCTYPE|ENTITY)\b/i.test(row.text)
-    )
-      throw new Error('invalid_xsd');
-    for (const character of row.text)
-      if (character === '<' && ++tags > 40000) throw new Error('schema_view_limit');
-    const uri = resolveUri(row.name, packet.schemaUri);
-    if (!uri || files.has(uri)) throw new Error('ambiguous_xsd');
-    const doc = new Parser().parseFromString(row.text, 'application/xml');
-    if (
-      !doc.documentElement ||
-      ['http://www.mozilla.org/newlayout/xml/parsererror.xml', 'http://www.w3.org/1999/xhtml'].some(
-        (ns) => doc.getElementsByTagNameNS(ns, 'parsererror').length,
-      ) ||
-      doc.documentElement.namespaceURI !== XSD ||
-      doc.documentElement.localName !== 'schema'
-    )
-      throw new Error('invalid_xsd');
-    files.set(uri, {
-      uri,
-      root: doc.documentElement,
-      namespace: doc.documentElement.getAttribute('targetNamespace') || '',
-      primary: row.primary !== false,
-    });
-  }
+    files = readAnnotationSchemas(packet, Parser, tick);
   function context(node, file, namespace = file.namespace) {
     const parts = [];
     let current = node;
@@ -381,6 +349,37 @@ export function annotateXmlSchema(root, packet, Parser) {
     labelCount = 0,
     ambiguousCount = 0,
     unmatched = 0;
+  function valueType(declared, seen = new Set()) {
+    if (declared.builtin) {
+      switch (declared.builtin) {
+        case 'boolean':
+          return 'boolean';
+        case 'date':
+          return 'date';
+        case 'dateTime':
+          return 'date-time';
+        default:
+          return null;
+      }
+    }
+    const ctx = declared.context;
+    if (!ctx || seen.has(ctx.node)) return null;
+    tick();
+    seen = new Set(seen).add(ctx.node);
+    const content = children(ctx.node).find((node) => node.localName === 'simpleContent');
+    const derivation = children(content || ctx.node).find((node) =>
+      ['restriction', 'extension'].includes(node.localName),
+    );
+    if (!derivation) return null;
+    const name = schemaName(context(derivation, ctx.file, ctx.namespace), derivation.getAttribute('base'));
+    if (!name) return null;
+    return valueType(
+      name.namespace === XSD
+        ? { builtin: name.local }
+        : { context: lookup('simpleType', name) || lookup('complexType', name) },
+      seen,
+    );
+  }
   function visit(data, offered, inheritedBindings = new Map(), textHint = null) {
     tick();
     const bindings = new Map(inheritedBindings);
@@ -424,6 +423,7 @@ export function annotateXmlSchema(root, packet, Parser) {
         );
       const labels = declared.context && validType ? enumLabels(declared.context, data.value) : [];
       if (labels.length === 1) rows[0] = { ...rows[0], valueLabel: labels[0] };
+      if (validType) rows[0] = { ...rows[0], valueType: valueType(declared) };
       alternatives.push(rows);
       contentModels.push(
         validType && declared.context

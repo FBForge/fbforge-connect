@@ -97,10 +97,26 @@ class PublicSchemaBoundaryTest {
                 String valid =
                         "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$defs\":{\"x\":{\"type\":\"string\"}},\"$ref\":\"#/$defs/x\"}";
                 assertEquals(valid, call(loader, type, "check", String.class, valid));
+                for (String simple :
+                        List.of(
+                                "true",
+                                "false",
+                                "{}",
+                                "{\"title\":\"Only an annotation\"}",
+                                "{\"type\":\"object\",\"properties\":{\"error\":{\"type\":\"string\"},\"result\":{\"type\":\"string\"}}}",
+                                "{\"const\":{\"result\":\"error\",\"error\":{\"code\":404}}}"))
+                    assertEquals(simple, call(loader, type, "check", String.class, simple));
+
                 for (String invalid :
                         List.of(
                                 "{\"$schema\":\"https://example.invalid/dialect\"}",
-                                "<!DOCTYPE x><x/>"))
+                                "<!DOCTYPE x><x/>",
+                                "<html><body>Not Found</body></html>",
+                                "{\"result\":\"error\",\"error\":{\"msg\":\"Not"
+                                        + " Found\",\"code\":404}}",
+                                "{\"error\":{\"message\":\"Not Found\",\"code\":404}}",
+                                "{\"type\":\"about:blank\",\"title\":\"Not"
+                                        + " Found\",\"status\":404}"))
                     assertThrows(
                             SessionException.class,
                             () -> call(loader, type, "check", String.class, invalid));

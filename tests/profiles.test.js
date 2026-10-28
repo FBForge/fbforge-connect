@@ -14,6 +14,7 @@ const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
 const profile = {
   profileId: id(1),
   name: 'Bauamt TEST',
+  clientId: 'synthetic-profile-client',
   apiVersion: 'v3',
   role: 'online-service',
   keyCount: 2,
@@ -33,7 +34,14 @@ test('profile list accepts public metadata only and rejects unexpected secrets a
       listProfiles(async () => bad),
       /engine_protocol_error/,
     );
-  const unavailable = { ...profile, apiVersion: null, role: null, keyCount: 0, available: false };
+  const unavailable = {
+    ...profile,
+    clientId: null,
+    apiVersion: null,
+    role: null,
+    keyCount: 0,
+    available: false,
+  };
   assert.equal((await listProfiles(async () => [unavailable]))[0].available, false);
 });
 
@@ -150,7 +158,7 @@ test('backup commands expose only native-dialog outcomes and public imported pro
     /engine_protocol_error/,
   );
   assert.equal(await importProfileBackup(async () => null), null);
-  assert.deepEqual(await importProfileBackup(async () => profile), profile);
+  assert.deepEqual(await importProfileBackup(async () => profile), { ...profile, environment: 'TEST' });
   await assert.rejects(
     importProfileBackup(async () => ({ ...profile, clientSecret: 'forbidden' })),
     /engine_protocol_error/,
@@ -187,5 +195,43 @@ test('profile editing binds name/id, never echoes a new secret and preserves nat
       'wrong',
     ),
     /authentication_failed/,
+  );
+});
+
+test('API profile reuse exposes no secret and rejects cross-identity native results', async () => {
+  const { copyProfileForApi } = await import('../frontend/src/profiles.js');
+  const source = { ...profile, environment: 'TEST', apiVersion: 'v2' };
+  const target = { ...source, profileId: id(99), apiVersion: 'v3', keyCount: 0 };
+  let calls = 0;
+  const result = await copyProfileForApi(
+    async (command, args) => {
+      calls++;
+      assert.equal(command, 'copy_profile_for_api');
+      assert.deepEqual(args, {
+        profileId: source.profileId,
+        targetProfileId: target.profileId,
+        apiVersion: 'v3',
+      });
+      return target;
+    },
+    source,
+    'v3',
+    target.profileId,
+  );
+  assert.equal(result.profileId, target.profileId);
+  assert.equal(calls, 1);
+  for (const patch of [
+    { clientSecret: 'forbidden' },
+    { clientId: 'other-client' },
+    { environment: 'PROD' },
+    { apiVersion: 'v2' },
+  ])
+    await assert.rejects(
+      copyProfileForApi(async () => ({ ...target, ...patch }), source, 'v3', target.profileId),
+      /engine_protocol_error/,
+    );
+  await assert.rejects(
+    copyProfileForApi(() => assert.fail('same API'), source, 'v2', target.profileId),
+    /invalid_input/,
   );
 });

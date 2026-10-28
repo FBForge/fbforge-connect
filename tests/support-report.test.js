@@ -20,6 +20,14 @@ const sample = {
 const marker = 'SENSITIVE_TEST_MARKER';
 
 test('diagnostic presentation distinguishes local calls, states and schema failures', () => {
+  assert.deepEqual(diagnosticResult({ ...sample, code: 'reply_channel_missing' }), {
+    label: 'Kein Antwortkanal angeboten',
+    tone: 'warn',
+  });
+  assert.deepEqual(diagnosticResult({ ...sample, code: 'schema_id_mismatch' }), {
+    label: 'Schema-Kennung passt nicht',
+    tone: 'warn',
+  });
   assert.equal(diagnosticContext({ apiVersion: null }), 'Lokal');
   assert.equal(diagnosticContext({ apiVersion: marker }), 'Lokal');
   assert.equal(diagnosticContext({ apiVersion: 'v3' }), 'API v3');
@@ -48,6 +56,14 @@ test('local storage failures are recorded without retaining profile data', async
   await invoke('profile_status', { sessionId: marker });
   assert.equal(log.snapshot()[0].code, 'vault_unavailable');
   assert.equal(log.snapshot()[0].apiVersion, null);
+  assert.equal(JSON.stringify(log.snapshot()).includes(marker), false);
+});
+
+test('API switch diagnostics use the target version without retaining the source identity', async () => {
+  const log = createDiagnosticLog();
+  const invoke = observeInvoke(async () => ({}), log.record);
+  await invoke('open_session_for_api', { apiVersion: 'v2', targetApiVersion: 'v3', sessionId: marker });
+  assert.equal(log.snapshot()[0].apiVersion, 'v3');
   assert.equal(JSON.stringify(log.snapshot()).includes(marker), false);
 });
 

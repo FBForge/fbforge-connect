@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { openSession, updateSession, resetsSessions } from '../frontend/src/sessions.js';
+import { openSession, openSessionForApi, updateSession, resetsSessions } from '../frontend/src/sessions.js';
 
 const id = '00000000-0000-4000-8000-000000000001';
 const snapshot = {
@@ -28,6 +28,9 @@ test('opening a session returns public state and keeps API and role explicit', a
   assert.equal(calls[0][1].apiVersion, 'v2');
   assert.equal(calls[0][1].role, 'online-service');
   assert.equal(result.clientSecret, undefined);
+  assert.equal(result.clientId, 'synthetic-client');
+  const checked = await updateSession(async () => snapshot, result, true);
+  assert.equal(checked.clientId, 'synthetic-client');
 });
 
 test('unsupported role or API and empty credentials never reach native code', async () => {
@@ -87,4 +90,31 @@ test('transport failures invalidate every cached native session, rejected creden
   assert.equal(resetsSessions('engine_timeout'), true);
   assert.equal(resetsSessions(new Error('engine_protocol_error')), true);
   assert.equal(resetsSessions('authentication_failed'), false);
+});
+
+test('API switching sends only the source identity and validates the new public session', async () => {
+  const source = { ...snapshot, clientId: 'synthetic-client' };
+  const target = { ...snapshot, apiVersion: 'v3', sessionId: '00000000-0000-4000-8000-000000000002' };
+  const result = await openSessionForApi(
+    async (command, args) => {
+      assert.equal(command, 'open_session_for_api');
+      assert.deepEqual(args, { apiVersion: 'v2', sessionId: id, targetApiVersion: 'v3' });
+      return { ...target, clientSecret: 'never-retain' };
+    },
+    source,
+    'v3',
+  );
+  assert.deepEqual(result, { ...target, clientId: source.clientId });
+  for (const patch of [
+    { apiVersion: 'v2' },
+    { environment: 'PROD' },
+    { role: 'administrative-system' },
+    { connected: false },
+    { sessionId: source.sessionId },
+  ])
+    await assert.rejects(openSessionForApi(async () => ({ ...target, ...patch }), source, 'v3'));
+  for (const api of ['v2', 'v4'])
+    await assert.rejects(
+      openSessionForApi(async () => assert.fail('invalid switch reached native'), source, api),
+    );
 });

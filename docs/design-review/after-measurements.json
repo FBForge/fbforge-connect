@@ -1,0 +1,26 @@
+[
+  {
+    "width": 1180,
+    "reading": 868,
+    "columns": "524px 320px",
+    "asidePosition": "sticky",
+    "accept": {
+      "x": 824,
+      "y": 401.1875,
+      "width": 278,
+      "height": 44
+    }
+  },
+  {
+    "width": 1440,
+    "reading": 1128,
+    "columns": "784px 320px",
+    "asidePosition": "sticky",
+    "accept": {
+      "x": 1084,
+      "y": 401.4375,
+      "width": 278,
+      "height": 44
+    }
+  }
+]

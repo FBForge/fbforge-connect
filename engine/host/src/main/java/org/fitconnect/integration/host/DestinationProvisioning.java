@@ -6,8 +6,7 @@ import java.util.function.LongSupplier;
 import org.fitconnect.integration.contract.*;
 
 /**
- * Create one owned TEST destination from a durable local bundle, then verify the actual
- * registration.
+ * Create one owned destination from a durable local bundle, then verify the actual registration.
  */
 final class DestinationProvisioning {
     record State(
@@ -26,7 +25,7 @@ final class DestinationProvisioning {
     private long expires;
     private boolean marked;
     private static final String ROOT =
-            "https://test.fit-connect.fitko.dev/destination-api/v3/destinations";
+            IntegrationEnvironment.current().destinationApi() + "/v3/destinations";
 
     DestinationProvisioning(LocalTestKeys keys, ResourceExchange remote) {
         this(keys, remote, () -> System.nanoTime() / 1_000_000);
@@ -61,6 +60,7 @@ final class DestinationProvisioning {
                         : DestinationAccess.id(
                                 DestinationConfiguration.text(value.get("bundleId"), 36));
         if (unkeyed && !value.get("bundleId").isJsonNull()) throw error("invalid_input");
+        if (bundleId != null) keys.validateBundle(session, bundleId);
         var generated =
                 DestinationConfiguration.create(
                         configuration,
@@ -128,6 +128,7 @@ final class DestinationProvisioning {
         finish("running", null, null);
         String knownId = null;
         try {
+            if (state.bundleId() != null) keys.validateBundle(session, state.bundleId());
             String response = session.createOwnDestination(state.configurationJson(), gate);
             gate.complete();
             var created = StrictJson.object(response, 65536);

@@ -12,9 +12,10 @@ test('desktop command registration, generated permissions and main-window grants
   const registered = main
     .match(/generate_handler!\[([\s\S]*?)\]/)?.[1]
     .split(',')
-    .map((name) => name.trim())
+    .map((name) => name.trim().split('::').at(-1))
     .filter(Boolean)
     .sort();
+  assert.equal(new Set(registered).size, registered.length, 'command names must be unique across modules');
   const declared = [...build.matchAll(/"([a-z][a-z0-9_]+)"/g)].map((match) => match[1]).sort();
   const grants = JSON.parse(capability);
   assert.deepEqual(grants.windows, ['main']);

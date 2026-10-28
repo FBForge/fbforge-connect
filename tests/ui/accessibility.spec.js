@@ -19,6 +19,7 @@ test('main workspaces support keyboard navigation, reflow and automated accessib
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
   for (const name of [
+    'Start',
     'Vorgänge',
     'Hilfe',
     'Senden',
@@ -42,7 +43,8 @@ test('main workspaces support keyboard navigation, reflow and automated accessib
     ).toEqual([]);
   }
   await page.setViewportSize({ width: 420, height: 800 });
-  await page.getByRole('button', { name: 'Dunkles Design verwenden', exact: true }).click();
+  await page.getByRole('button', { name: 'Darstellung wählen', exact: true }).click();
+  await page.getByRole('button', { name: 'Dunkel', exact: true }).click();
   await page.getByRole('button', { name: 'Prozesse', exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const dark = await new AxeBuilder({ page })
@@ -61,17 +63,23 @@ test('connected sender keeps labels and keyboard focus in high contrast', async 
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await expect(page.getByRole('button', { name: 'Sitzung prüfen', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Abmelden', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
+  await page.getByRole('button', { name: 'Senden', exact: true }).click();
   const source = page.getByRole('textbox', { name: 'Absender-Destination', exact: true });
   const target = page.getByRole('textbox', { name: 'Empfänger-Destination', exact: true });
   await expect(source).toHaveAccessibleDescription(/Zugangsdaten/);
+  await target.focus();
+  expect(await target.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+  await page.keyboard.press('Tab');
+  await expect(source).toBeFocused();
   await source.focus();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Liste aktualisieren', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(target).toBeFocused();
-  expect(await target.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+  await expect(page.getByText('Voraussetzungen für Antworten', { exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByText('Weitere Adressierungsoptionen', { exact: true })).toBeFocused();
   for (const [theme, forcedColors] of [
     ['light', 'none'],
     ['dark', 'none'],

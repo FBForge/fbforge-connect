@@ -1,13 +1,16 @@
+import { certificateMaterial } from './certified-keys.js';
 const fileErrors = new Set([
   'invalid_input',
   'file_invalid',
   'key_rejected',
   'test_certificate_required',
+  'vpki_certificate_required',
+  'certificate_status_unknown',
   'content_limit',
 ]);
 
 /** Sequential imports keep the native command channel idle between files. */
-export async function importKeyFiles(files, importDocument, isCurrent) {
+export async function importKeyFiles(files, importDocument, isCurrent, passwordFor = () => '') {
   if (!files.length || files.length > 16) throw new Error('invalid_input');
   const result = { state: null, imported: 0, failures: [] };
   for (const file of files) {
@@ -15,19 +18,24 @@ export async function importKeyFiles(files, importDocument, isCurrent) {
     let bytes, document;
     try {
       if (file.size > 32768) throw new Error('invalid_input');
-      try {
-        bytes = new Uint8Array(await file.arrayBuffer());
-      } catch {
-        throw new Error('file_invalid');
+      if (/\.(?:p12|pfx)$/i.test(file.name)) {
+        document = JSON.stringify(await certificateMaterial(file, passwordFor(file)));
+      } else {
+        try {
+          bytes = new Uint8Array(await file.arrayBuffer());
+        } catch {
+          throw new Error('file_invalid');
+        }
+        if (!isCurrent()) return null;
+        if (bytes.byteLength > 32768) throw new Error('invalid_input');
+        try {
+          document = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        } catch {
+          throw new Error('file_invalid');
+        }
       }
       if (!isCurrent()) return null;
-      if (bytes.byteLength > 32768) throw new Error('invalid_input');
-      try {
-        document = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-      } catch {
-        throw new Error('file_invalid');
-      }
-      result.state = await importDocument(document);
+      result.state = await importDocument(document, file);
       if (!isCurrent()) return null;
       result.imported++;
     } catch (cause) {

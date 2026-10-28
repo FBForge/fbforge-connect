@@ -10,9 +10,9 @@ test('profile defaults survive reconnect, preserve edited fields and clear witho
   await page.getByRole('button', { name: 'Verbindung herstellen', exact: true }).click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret');
-  await page.getByRole('checkbox', { name: /Zugangsdaten und Testschlüssel/ }).check();
+  await page.getByRole('checkbox', { name: /Zugangsdaten und Schlüssel/ }).check();
   await page.locator('#profile-name').fill('Voreinstellungen TEST');
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   const connection = page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true });
   await expect(connection).toBeHidden();
   await page
@@ -29,6 +29,7 @@ test('profile defaults survive reconnect, preserve edited fields and clear witho
   await page.getByRole('button', { name: 'Abmelden', exact: true }).click();
   await page.getByRole('button', { name: 'Mit Profil verbinden', exact: true }).click();
   await expect(connection).toBeHidden();
+  await page.getByRole('button', { name: 'Senden', exact: true }).click();
   await expect(page.locator('#send-source')).toHaveValue(source);
   await expect(
     page.getByRole('textbox', { name: 'Absender-Destination', exact: true }),

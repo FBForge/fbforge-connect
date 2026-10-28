@@ -36,7 +36,7 @@ test('destination-setup with synthetic native fixtures', async ({ browser }) => 
       await page.close();
       continue;
     }
-    await page.getByRole('dialog', { name: 'Diese Destination in TEST anlegen?', exact: true }).waitFor();
+    await page.getByRole('dialog', { name: 'Diese Destination anlegen?', exact: true }).waitFor();
     assert.equal(await page.evaluate(() => window.__creationFixture.writes), 0);
     await page.keyboard.press('Escape');
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
@@ -47,7 +47,7 @@ test('destination-setup with synthetic native fixtures', async ({ browser }) => 
       await page.evaluate(() => window.__creationFixture.generated),
       scenario === 'type-c' ? 0 : 1,
     );
-    await page.getByRole('button', { name: 'Destination jetzt auf TEST anlegen', exact: true }).click();
+    await page.getByRole('button', { name: 'Destination jetzt anlegen', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
     assert.equal(await page.evaluate(() => window.__creationFixture.writes), 1);
     if (scenario === 'uncertain') {

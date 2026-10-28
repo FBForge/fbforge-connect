@@ -1,4 +1,8 @@
 <script setup>
+import { cancelledProductionAction } from './environments.js';
+import CertifiedKeyImport from './destinations/CertifiedKeyImport.vue';
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import { computed, ref, watch } from 'vue';
 import { invoke } from './native.js';
 import { generateTestKeys, listGeneratedKeys, useGeneratedKeys } from './destination-setup.js';
@@ -63,8 +67,9 @@ async function run(action, operation) {
   try {
     await operation(session, () => stamp === generation);
   } catch (cause) {
-    status = 'Fehlgeschlagen';
-    if (stamp === generation) error.value = `${errorMessage(cause)} (${diagnosticCode(cause)})`;
+    status = cancelledProductionAction(cause) ? 'Abgebrochen' : 'Fehlgeschlagen';
+    if (stamp === generation && !cancelledProductionAction(cause))
+      error.value = `${errorMessage(cause)} (${diagnosticCode(cause)})`;
     if (resetsSessions(cause)) emit('fatal', cause);
   } finally {
     pending.value = false;
@@ -90,7 +95,8 @@ function prepare() {
         (item) => item.status === 'unresolved' && item.destinationId === row.destinationId,
       );
       if (!bundle) bundle = available.find((item) => item.status === 'ready' && !used.has(item.bundleId));
-      if (!bundle) bundle = await generateTestKeys(invoke, session);
+      if (!bundle && session.environment === 'TEST') bundle = await generateTestKeys(invoke, session);
+      if (!bundle) throw new Error('vpki_certificate_required');
       used.add(bundle.bundleId);
       targets.push({
         destinationId: row.destinationId,
@@ -119,7 +125,7 @@ function execute() {
       }
     } catch (cause) {
       if (current()) {
-        preview.value = { ...confirmed, status: 'uncertain' };
+        preview.value = cancelledProductionAction(cause) ? confirmed : { ...confirmed, status: 'uncertain' };
         emit('changed');
       }
       throw cause;
@@ -152,13 +158,24 @@ function use(row) {
 <template>
   <section class="tool-section" aria-labelledby="rotation-title" :aria-busy="pending">
     <h3 id="rotation-title">Schlüssel wechseln</h3>
-    <p>
-      Für die ausgewählten Destinations neue TEST-Schlüssel mit Testzertifikaten erzeugen. Der Client
-      registriert beide öffentlichen Schlüssel und schaltet anschließend den Verschlüsselungsschlüssel um.
-      Alte Schlüssel bleiben für frühere Nachrichten erhalten.
+    <CertifiedKeyImport
+      v-if="environment !== 'TEST'"
+      :session="session"
+      :busy="disabled"
+      @busy="emit('busy', $event)"
+      @fatal="emit('fatal', $event)"
+    />
+    <p v-if="environment !== 'TEST'">
+      Importieren Sie je ausgewählter Destination ein eigenes V-PKI-Schlüsselpaar. Bereits verwendete
+      Schlüssel werden nicht erneut zugewiesen.
     </p>
     <p>
-      Die privaten Schlüssel werden im gespeicherten TEST-Profil geschützt auf diesem Windows-Benutzerkonto
+      Für die ausgewählten Destinations neue Schlüssel verwenden. In TEST können diese automatisch mit
+      Testzertifikaten erzeugt werden. Der Client registriert beide öffentlichen Schlüssel und schaltet
+      anschließend den Verschlüsselungsschlüssel um. Alte Schlüssel bleiben für frühere Nachrichten erhalten.
+    </p>
+    <p>
+      Die privaten Schlüssel werden im gespeicherten Profil geschützt auf diesem Windows-Benutzerkonto
       aufbewahrt. Eine gespeicherte Sitzung ist erforderlich.
     </p>
     <p v-if="selected.some((row) => row.type === 'C')" role="status">
@@ -228,7 +245,7 @@ function use(row) {
       </article>
       <div v-if="preview.status === 'prepared'" class="client-actions">
         <button class="button" :disabled="disabled" @click="execute">
-          Schlüssel dieser Destinations auf TEST wechseln
+          Schlüssel dieser Destinations in der gewählten Umgebung wechseln
         </button>
         <button class="button secondary" :disabled="disabled" @click="cancel">Abbrechen</button>
       </div>

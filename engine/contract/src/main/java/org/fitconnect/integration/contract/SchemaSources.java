@@ -152,6 +152,9 @@ public final class SchemaSources {
             String source = document(uri);
             result.put(uri, source);
             var root = xml(source);
+            if (!XSD.equals(root.getDocumentElement().getNamespaceURI())
+                    || !"schema".equals(root.getDocumentElement().getLocalName()))
+                throw unavailable();
             for (String kind : List.of("include", "import", "redefine")) {
                 var refs = root.getElementsByTagNameNS(XSD, kind);
                 for (int index = 0; index < refs.getLength(); index++) {
@@ -411,6 +414,13 @@ public final class SchemaSources {
         } catch (Exception failure) {
             throw unavailable();
         }
+    }
+
+    /** Error pages and arbitrary XML documents are not schema resources. */
+    public static void requireXmlSchema(String source) {
+        var root = xml(source).getDocumentElement();
+        if (!XSD.equals(root.getNamespaceURI()) || !"schema".equals(root.getLocalName()))
+            throw unavailable();
     }
 
     private static Document xml(String source) {

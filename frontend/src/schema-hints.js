@@ -51,7 +51,8 @@ export function mergeHints(candidates, required = null) {
     description = choice('description'),
     type = choice('type'),
     format = choice('format'),
-    valueLabel = choice('valueLabel');
+    valueLabel = choice('valueLabel'),
+    valueType = choice('valueType');
   const sources = [];
   const seen = new Set();
   for (const candidate of candidates)
@@ -68,6 +69,7 @@ export function mergeHints(candidates, required = null) {
     type,
     format,
     valueLabel,
+    valueType,
     required,
     ambiguous,
     sources: sources.slice(0, 8),

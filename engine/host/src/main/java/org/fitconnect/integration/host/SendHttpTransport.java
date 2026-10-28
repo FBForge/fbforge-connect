@@ -10,7 +10,8 @@ import java.util.concurrent.*;
 import org.fitconnect.integration.contract.*;
 
 /**
- * Separate fixed TEST sender and receipt profiles. Host gates bind calls to one approved attempt.
+ * Separate fixed environment-bound sender and receipt profiles. Host gates bind calls to one
+ * approved attempt.
  */
 final class SendHttpTransport implements AutoCloseable {
     private static final String UUID =
@@ -39,7 +40,7 @@ final class SendHttpTransport implements AutoCloseable {
         try {
             URI uri = URI.create(endpoint);
             if (!"https".equals(uri.getScheme())
-                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || !IntegrationEnvironment.current().gatewayHost().equals(uri.getRawAuthority())
                     || uri.getRawFragment() != null) throw new IllegalArgumentException();
             String path = uri.getRawPath(), prefix = "/submission-api/" + version.wireValue();
             boolean accepted =
@@ -88,7 +89,7 @@ final class SendHttpTransport implements AutoCloseable {
             URI uri = URI.create(endpoint);
             if (!"POST".equals(method)
                     || !"https".equals(uri.getScheme())
-                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || !IntegrationEnvironment.current().gatewayHost().equals(uri.getRawAuthority())
                     || uri.getRawQuery() != null
                     || uri.getRawFragment() != null
                     || !uri.getRawPath()
@@ -149,7 +150,7 @@ final class SendHttpTransport implements AutoCloseable {
             URI uri = URI.create(endpoint);
             String path = uri.getRawPath(), prefix = "/submission-api/" + version.wireValue();
             if (!"https".equals(uri.getScheme())
-                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || !IntegrationEnvironment.current().gatewayHost().equals(uri.getRawAuthority())
                     || uri.getRawFragment() != null
                     || path.contains("%")) throw new IllegalArgumentException();
             boolean accepted =
@@ -211,7 +212,7 @@ final class SendHttpTransport implements AutoCloseable {
             if (version != ApiVersion.V3
                     || !"PATCH".equals(method)
                     || !"https".equals(uri.getScheme())
-                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || !IntegrationEnvironment.current().gatewayHost().equals(uri.getRawAuthority())
                     || uri.getRawQuery() != null
                     || uri.getRawFragment() != null
                     || !uri.getRawPath().matches("/destination-api/v3/destinations/" + UUID))
@@ -241,7 +242,7 @@ final class SendHttpTransport implements AutoCloseable {
             var uri = URI.create(endpoint);
             if (!"PUT".equals(method)
                     || !"https".equals(uri.getScheme())
-                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || !IntegrationEnvironment.current().gatewayHost().equals(uri.getRawAuthority())
                     || uri.getRawQuery() != null
                     || uri.getRawFragment() != null
                     || !uri.getRawPath()
@@ -278,7 +279,7 @@ final class SendHttpTransport implements AutoCloseable {
             var uri = URI.create(endpoint);
             if (api != ApiVersion.V3
                     || !"https".equals(uri.getScheme())
-                    || !"test.fit-connect.fitko.dev".equals(uri.getRawAuthority())
+                    || !IntegrationEnvironment.current().gatewayHost().equals(uri.getRawAuthority())
                     || uri.getRawQuery() != null
                     || uri.getRawFragment() != null) throw new IllegalArgumentException();
             String root = "/destination-api/v3/destinations", path = uri.getRawPath();

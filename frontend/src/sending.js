@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from './environments.js';
 import { requestResource, sameJsonValue } from './resources.js';
 import { uploadContent, discardContent, CONTENT_FILE_BYTES } from './content.js';
 
@@ -271,6 +272,7 @@ export async function executeSend(invoke, session, prepared) {
     if (!['sent', 'failed', 'uncertain'].includes(result.status)) fail();
     return result;
   } catch (error) {
+    if (cancelledProductionAction(error)) throw error;
     const code = typeof error === 'string' ? error : error?.message;
     if (code === 'engine_busy' || code === 'case_limit') throw error; // Native mutex rejected the operation before dispatch.
     return Object.freeze({

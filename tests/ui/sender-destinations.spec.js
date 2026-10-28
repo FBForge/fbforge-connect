@@ -11,10 +11,11 @@ test('own senders load automatically, paginate and preserve manual selection', a
   await expect(source).toBeVisible();
   await expect(source).toHaveValue('');
   await expect(source.locator('option')).toHaveCount(21);
-  await expect(source).toContainText(`Test-Onlinedienst 1 — ${id(1)}`);
+  await expect(source).toContainText('Test-Onlinedienst 1');
   await source.focus();
   await page.keyboard.press('ArrowDown');
   await expect(source).toHaveValue(id(1));
+  await expect(page.locator('.sender-destination .copy-value code')).toHaveText(id(1));
   await page.getByRole('button', { name: 'Weitere Destinations laden', exact: true }).click();
   await expect(source.locator('option')).toHaveCount(26);
   await expect(page.getByRole('button', { name: 'Weitere Destinations laden' })).toHaveCount(0);
@@ -83,7 +84,22 @@ test('old session results cannot populate the next session sender list', async (
 
 test('v2 does not request or require a sender destination', async ({ page }) => {
   await open(page, 'v2');
-  await expect(page.getByRole('heading', { name: 'Einreichung senden', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Neue Einreichung', exact: true })).toBeVisible();
   await expect(page.locator('#send-source')).toHaveCount(0);
   expect(await page.evaluate(() => window.__senderFixture.requests)).toEqual([]);
+});
+
+test('identical destination names remain distinguishable even when UUID prefixes match', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => {
+    const rows = window.__senderFixture.rows;
+    rows[0].name = 'Testdienst';
+    rows[1].name = 'Testdienst';
+  });
+  await page.getByRole('button', { name: 'Liste aktualisieren', exact: true }).click();
+  const source = page.getByRole('combobox', { name: 'Absender-Destination', exact: true });
+  await expect(source.locator('option', { hasText: `Testdienst — ${id(1)}` })).toHaveCount(1);
+  await expect(source.locator('option', { hasText: `Testdienst — ${id(2)}` })).toHaveCount(1);
+  await source.selectOption(id(2));
+  await expect(page.locator('.sender-destination .copy-value code')).toHaveText(id(2));
 });

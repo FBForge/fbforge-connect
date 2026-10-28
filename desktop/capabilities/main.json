@@ -1,10 +1,9 @@
 {
   "identifier": "main",
-  "description": "Only the bundled main window may run diagnostics or manage local TEST sessions.",
-  "windows": [
-    "main"
-  ],
+  "description": "Only the bundled main window may run diagnostics or manage sessions in the selected FIT-Connect environment.",
+  "windows": ["main"],
   "permissions": [
+    "allow-import-certified-keys",
     "allow-generate-test-keys",
     "allow-list-generated-keys",
     "allow-prepare-destination-creation",
@@ -16,14 +15,17 @@
     "allow-list-profiles",
     "allow-forget-profile",
     "allow-open-saved-profile",
+    "allow-copy-profile-for-api",
     "allow-profile-status",
     "allow-save-profile-state",
     "allow-probe-engine",
     "allow-open-session",
+    "allow-open-session-for-api",
     "allow-check-session",
     "allow-close-session",
     "allow-load-send-destination",
     "allow-load-send-schema",
+    "allow-validate-send-data",
     "allow-load-reply-schema",
     "allow-read-reply-schema",
     "allow-read-send-schema",
@@ -95,6 +97,12 @@
     "allow-list-key-inventory",
     "allow-remove-key-inventory-item",
     "allow-update-profile",
-    "allow-case-workspace"
+    "allow-case-workspace",
+    "allow-open-documentation",
+    "allow-select-environment",
+    "allow-test-library",
+    "allow-begin-message-export",
+    "allow-export-message",
+    "allow-finish-message-export"
   ]
 }

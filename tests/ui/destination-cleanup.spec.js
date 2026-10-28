@@ -10,7 +10,7 @@ test('destination-cleanup with synthetic native fixtures', async ({ browser }) =
   await page.getByRole('button', { name: 'Eigene Destinations laden', exact: true }).click();
   await page.getByRole('button', { name: 'Bearbeiten', exact: true }).first().click();
   await page
-    .getByRole('button', { name: 'Entfernung dieses TEST-Entwurfs vorbereiten', exact: true })
+    .getByRole('button', { name: 'Entfernung dieses Destination-Entwurfs vorbereiten', exact: true })
     .click();
   await page.getByRole('dialog').waitFor();
   assert.equal(await page.evaluate(() => window.__destinationFixture.writes), 0);
@@ -18,13 +18,13 @@ test('destination-cleanup with synthetic native fixtures', async ({ browser }) =
   await page.getByRole('dialog').waitFor({ state: 'hidden' });
   assert.equal(await page.evaluate(() => window.__destinationFixture.writes), 0);
   await page
-    .getByRole('button', { name: 'Entfernung dieses TEST-Entwurfs vorbereiten', exact: true })
+    .getByRole('button', { name: 'Entfernung dieses Destination-Entwurfs vorbereiten', exact: true })
     .click();
   await page.getByRole('dialog').waitFor();
-  await page.getByRole('button', { name: 'Diesen TEST-Entwurf endgültig entfernen', exact: true }).click();
   await page
-    .getByText('Die TEST-Destination wurde entfernt. Laden Sie die Liste neu.', { exact: true })
-    .waitFor();
+    .getByRole('button', { name: 'Diesen Destination-Entwurf endgültig entfernen', exact: true })
+    .click();
+  await page.getByText('Die Destination wurde entfernt. Laden Sie die Liste neu.', { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__destinationFixture.writes), 1);
   assert.deepEqual(errors, []);
   console.log(

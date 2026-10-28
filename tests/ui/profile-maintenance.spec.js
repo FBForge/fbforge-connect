@@ -9,16 +9,17 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
   await page.getByRole('button', { name: 'Verbindung herstellen', exact: true }).click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret');
-  await page.getByRole('checkbox', { name: /Zugangsdaten und Testschlüssel/ }).check();
+  await page.getByRole('checkbox', { name: /Zugangsdaten und Schlüssel/ }).check();
   await page.locator('#profile-name').fill('Bauamt TEST');
-  await page.getByRole('button', { name: 'Bei TEST anmelden', exact: true }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true }).waitFor({ state: 'hidden' });
   await page
     .getByRole('button', { name: /Verbinden|Verbindung|Verbunden/ })
     .first()
     .click();
+  await page.getByText('Profil verwalten', { exact: true }).click();
   await page.getByRole('button', { name: 'Profilname oder Secret ändern', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Gespeichertes TEST-Profil bearbeiten', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Gespeichertes Profil bearbeiten', exact: true });
   await dialog.waitFor();
   await dialog.getByLabel('Profilname', { exact: true }).fill('Bauamt TEST neu');
   await dialog.locator('input[type=password]').fill('synthetic-new-secret');
@@ -38,7 +39,10 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
   assert.equal(await page.evaluate(() => window.__profilesFixture.backups), 1);
   await page.getByText('Geschützte Profilsicherung importieren', { exact: true }).click();
   await page.getByRole('button', { name: 'Geschützte Sicherung importieren', exact: true }).click();
-  await page.getByText('Wiederhergestellt TEST', { exact: true }).waitFor();
+  await page
+    .locator('#saved-profile-choice')
+    .selectOption({ label: 'Wiederhergestellt TEST · v3 · synthetic-restored-client' });
+  await page.locator('.selected-profile').getByText('Wiederhergestellt TEST', { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__profilesFixture.profiles.length), 2);
   assert.deepEqual(errors, []);
   console.log(

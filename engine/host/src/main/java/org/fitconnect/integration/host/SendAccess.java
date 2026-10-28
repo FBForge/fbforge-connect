@@ -11,6 +11,16 @@ import org.fitconnect.integration.contract.*;
 
 /** One native confirmation and write attempt. It is not a general-purpose renderer HTTP proxy. */
 final class SendAccess implements ResourceExchange {
+    private java.util.function.BiConsumer<String, String> certificateVerifier =
+            (key, purpose) -> {
+                if (IntegrationEnvironment.current().requiresVpki())
+                    throw error("vpki_certificate_required");
+            };
+
+    void certificateVerifier(java.util.function.BiConsumer<String, String> verifier) {
+        certificateVerifier = verifier;
+    }
+
     record Diagnostic(
             String step,
             String method,
@@ -53,7 +63,7 @@ final class SendAccess implements ResourceExchange {
         this.version = Objects.requireNonNull(version);
         this.remote = Objects.requireNonNull(remote);
         this.clock = Objects.requireNonNull(clock);
-        base = "https://test.fit-connect.fitko.dev/submission-api/" + version.wireValue();
+        base = IntegrationEnvironment.current().submissionApi() + "/" + version.wireValue();
     }
 
     State state() {
@@ -134,6 +144,8 @@ final class SendAccess implements ResourceExchange {
             String code =
                     Set.of(
                                             "test_certificate_required",
+                                            "vpki_certificate_required",
+                                            "certificate_status_unknown",
                                             "invalid_submission",
                                             "data_format_invalid",
                                             "reply_metadata_required",
@@ -315,9 +327,12 @@ final class SendAccess implements ResourceExchange {
             if (!encryptionKid.equals(text(document, "kid"))) throw error("invalid_resource");
             try {
                 TestCertificatePolicy.validate(
-                        document, TestCertificatePolicy.Purpose.ENCRYPTION, Instant.now());
+                        document,
+                        TestCertificatePolicy.Purpose.ENCRYPTION,
+                        Instant.now(),
+                        certificateVerifier);
             } catch (TestCertificatePolicy.Rejected rejected) {
-                throw error("test_certificate_required");
+                throw error(rejected.getMessage());
             }
             keyVerified = true;
         }
@@ -337,7 +352,8 @@ final class SendAccess implements ResourceExchange {
         Response response =
                 dispatch(
                         "GET",
-                        "https://test.fit-connect.fitko.dev/destination-api/v3/destinations/"
+                        IntegrationEnvironment.current().destinationApi()
+                                + "/v3/destinations/"
                                 + input.fromDestinationId(),
                         headers,
                         null);
@@ -400,7 +416,7 @@ final class SendAccess implements ResourceExchange {
     }
 
     private String step(String method, String endpoint) {
-        if (endpoint.startsWith("https://test.fit-connect.fitko.dev/destination-api/"))
+        if (endpoint.startsWith(IntegrationEnvironment.current().destinationApi() + "/"))
             return "source_access";
         if (endpoint.contains("/keys/")) return "recipient_key";
         if (endpoint.contains("/limits")) return "limits";

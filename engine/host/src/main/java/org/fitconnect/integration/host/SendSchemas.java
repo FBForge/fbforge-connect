@@ -25,24 +25,35 @@ final class SendSchemas {
     }
 
     Page load(AuthenticatedSession session, String destinationId, String document) {
+        return load(session, destinationId, document, Map.of());
+    }
+
+    Page load(
+            AuthenticatedSession session,
+            String destinationId,
+            String document,
+            Map<String, String> local) {
         clear();
         try {
             var request = StrictJson.object(document, 24 * 1024);
-            if (!request.keySet()
-                    .equals(
-                            Set.of(
-                                    "serviceIdentifier",
-                                    "schemaUri",
-                                    "processModelId",
-                                    "messageId",
-                                    "allowExternalSchemas"))) throw invalid();
+            var fields =
+                    Set.of(
+                            "serviceIdentifier",
+                            "schemaUri",
+                            "processModelId",
+                            "messageId",
+                            "allowExternalSchemas");
+            var withMime = new HashSet<>(fields);
+            withMime.add("mimeType");
+            if (!request.keySet().equals(fields) && !request.keySet().equals(withMime))
+                throw invalid();
             if (!request.get("allowExternalSchemas").isJsonPrimitive()
                     || !request.get("allowExternalSchemas").getAsJsonPrimitive().isBoolean())
                 throw new SessionException("invalid_input");
             String selected = string(request, "schemaUri"),
                     service = string(request, "serviceIdentifier");
             boolean external = request.get("allowExternalSchemas").getAsBoolean();
-            if (!external && !DemoSchemas.contains(selected))
+            if (!external && !DemoSchemas.contains(selected) && local.isEmpty())
                 throw new SessionException("schema_consent_required");
             String model = string(request, "processModelId"),
                     message = string(request, "messageId");
@@ -62,14 +73,17 @@ final class SendSchemas {
                         for (var schema :
                                 offer.getAsJsonArray(
                                         model.isEmpty() ? "submissionSchemas" : "schemas"))
-                            if (selected.equals(string(schema.getAsJsonObject(), "schemaUri")))
-                                allowed = true;
+                            if (selected.equals(string(schema.getAsJsonObject(), "schemaUri"))
+                                    && (!request.has("mimeType")
+                                            || string(request, "mimeType")
+                                                    .equals(
+                                                            string(
+                                                                    schema.getAsJsonObject(),
+                                                                    "mimeType")))) allowed = true;
                 }
             if (!allowed) throw invalid();
             byte[] loaded =
-                    (DemoSchemas.contains(selected)
-                                    ? session.publicSchema(selected, Map.of(), false)
-                                    : session.publicSchema(selected))
+                    session.publicSchema(selected, local, external)
                             .getBytes(StandardCharsets.UTF_8);
             if (loaded.length == 0 || loaded.length > 24 * 1024 * 1024)
                 throw new SessionException("content_limit");
@@ -150,6 +164,11 @@ final class SendSchemas {
                 new SchemaSnapshot(uri, new String(bytes, StandardCharsets.UTF_8)),
                 mimeType,
                 input.data())) throw new SessionException("data_schema_invalid");
+    }
+
+    SchemaSnapshot snapshot() {
+        if (bytes == null) throw new SessionException("schema_required");
+        return new SchemaSnapshot(uri, new String(bytes, StandardCharsets.UTF_8));
     }
 
     Page read(String schemaId, int offset) {

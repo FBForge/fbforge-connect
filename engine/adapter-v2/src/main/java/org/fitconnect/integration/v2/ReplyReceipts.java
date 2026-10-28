@@ -54,7 +54,7 @@ final class ReplyReceipts {
             var http = new ReplyReceiptTransport(authorized);
             var client =
                     new ReplyApiService(
-                            auth, http, "https://test.fit-connect.fitko.dev/submission-api");
+                            auth, http, IntegrationEnvironment.current().submissionApi());
             var current = client.getReply(request.replyId());
             if (current == null
                     || !request.replyId().equals(current.getReplyId())

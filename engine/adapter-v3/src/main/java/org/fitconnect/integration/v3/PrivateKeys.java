@@ -43,13 +43,25 @@ final class PrivateKeys {
                     matches.add(registered);
                 }
             }
+            if (matches.size() > 1 && supplied.getKeyID() != null) {
+                var identified =
+                        matches.stream()
+                                .filter(key -> supplied.getKeyID().equals(key.getKeyID()))
+                                .toList();
+                if (identified.size() == 1) matches = new ArrayList<>(identified);
+            }
             if (matches.size() != 1) throw rejected();
             RSAKey registered = matches.getFirst();
             String kid = registered.getKeyID();
             if (kid == null || kid.isBlank() || kid.length() > 512) throw rejected();
-            if (supplied.getKeyID() != null && !kid.equals(supplied.getKeyID())) throw rejected();
+            // The authenticated registration supplies the trusted chain. A local export
+            // may omit issuer certificates, but may not substitute another leaf.
             if (supplied.getX509CertChain() != null
-                    && !supplied.getX509CertChain().equals(registered.getX509CertChain()))
+                    && (supplied.getX509CertChain().isEmpty()
+                            || registered.getX509CertChain() == null
+                            || !supplied.getX509CertChain()
+                                    .getFirst()
+                                    .equals(registered.getX509CertChain().getFirst())))
                 throw rejected();
             prove(supplied, registered, decrypt);
             RSAKey stored =
@@ -225,8 +237,7 @@ final class PrivateKeys {
         try {
             for (var key : selected) {
                 var chain = key.getParsedX509CertChain();
-                if (chain == null || chain.size() != 1) throw rejected();
-                chain.getFirst().checkValidity();
+                validateChain(chain);
             }
             return selected;
         } catch (Exception failure) {
@@ -256,12 +267,21 @@ final class PrivateKeys {
         if (selected.size() != 1) throw rejected();
         try {
             var chain = selected.getFirst().getParsedX509CertChain();
-            if (chain == null || chain.size() != 1) throw rejected();
-            chain.getFirst().checkValidity();
+            validateChain(chain);
             return selected.getFirst();
         } catch (Exception failure) {
             throw rejected();
         }
+    }
+
+    private static void validateChain(java.util.List<java.security.cert.X509Certificate> chain)
+            throws Exception {
+        int maximum =
+                org.fitconnect.integration.contract.IntegrationEnvironment.current().requiresVpki()
+                        ? 8
+                        : 1;
+        if (chain == null || chain.isEmpty() || chain.size() > maximum) throw rejected();
+        for (var certificate : chain) certificate.checkValidity();
     }
 
     private static SessionException rejected() {

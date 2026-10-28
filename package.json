@@ -1,6 +1,6 @@
 {
-  "name": "fit-connect-integration-client",
-  "version": "0.1.0-alpha.1",
+  "name": "fbforge-connect",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "license": "EUPL-1.2",
@@ -10,23 +10,26 @@
   "scripts": {
     "dev": "vite --config frontend/vite.config.js",
     "build:frontend": "vite build --config frontend/vite.config.js",
-    "test": "node --test tests/*.test.js",
+    "test": "node --experimental-strip-types --test tests/*.test.js",
     "test:engine": "node --test tests/engine-smoke.integration.js",
     "stage:engine": "node scripts/stage-engine.mjs",
     "desktop:dev": "node scripts/desktop.mjs dev",
     "desktop:build": "node scripts/desktop.mjs build",
     "desktop:build:offline": "node scripts/desktop.mjs build --config tauri.offline.conf.json",
     "test:ui": "playwright test",
-    "lint": "eslint frontend/src tests scripts *.config.js frontend/vite.config.js",
+    "lint": "eslint frontend/src docs/guide tests scripts *.config.js frontend/vite.config.js && npm run typecheck && npm run quality:check",
     "licenses:check": "node scripts/frontend-licenses.mjs --check",
     "licenses:update": "node scripts/frontend-licenses.mjs",
-    "format:check": "prettier --check frontend/src frontend/test-fixtures tests scripts *.config.js package.json .prettierrc.json .github/workflows",
-    "format": "prettier --write frontend/src frontend/test-fixtures tests scripts *.config.js package.json .prettierrc.json .github/workflows"
+    "format:check": "prettier --check frontend/src frontend/test-fixtures docs/guide tests scripts *.config.js package.json tsconfig.json .prettierrc.json .github/workflows",
+    "format": "prettier --write frontend/src frontend/test-fixtures docs/guide tests scripts *.config.js package.json tsconfig.json .prettierrc.json .github/workflows",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "quality:check": "node scripts/check-source-size.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",
     "bpmn-js": "18.31.0",
     "pdfjs-dist": "6.4.299",
+    "saxen": "11.2.0",
     "vue": "3.5.43"
   },
   "devDependencies": {
@@ -39,6 +42,9 @@
     "eslint-plugin-vue": "10.11.1",
     "globals": "17.13.0",
     "prettier": "3.9.10",
-    "vite": "8.3.4"
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0",
+    "vite": "8.3.4",
+    "vue-tsc": "3.3.13"
   }
 }

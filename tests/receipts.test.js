@@ -141,7 +141,7 @@ test('foreign identities, wrong environment and private fields cannot report a s
   for (const value of [
     envelope({ ...attempt, status: 'confirmed', caseId: id(9) }),
     envelope({ ...attempt, status: 'confirmed', jwt: 'private' }),
-    { ...envelope({ ...attempt, status: 'confirmed' }), environment: 'PROD' },
+    { ...envelope({ ...attempt, status: 'confirmed' }), environment: 'LOCAL' },
     { ...envelope({ ...attempt, status: 'confirmed' }), apiVersion: 'v3' },
   ]) {
     const result = await executeReceipt(async () => value, session, attempt);
@@ -150,7 +150,7 @@ test('foreign identities, wrong environment and private fields cannot report a s
     assert.equal(result.caseId, draft.caseId);
   }
   await assert.rejects(
-    prepareReceipt(() => assert.fail('No native call'), { ...session, environment: 'PROD' }, draft),
+    prepareReceipt(() => assert.fail('No native call'), { ...session, environment: 'LOCAL' }, draft),
     /session_missing/,
   );
   await assert.rejects(
@@ -188,6 +188,22 @@ test('cancel and status accept only coherent native receipt states', async () =>
     ),
     /engine_protocol_error/,
   );
+});
+
+test('cancelled production confirmation before dispatch never becomes an uncertain remote write', async () => {
+  let calls = 0;
+  await assert.rejects(
+    executeReceipt(
+      async () => {
+        calls++;
+        throw new Error('content_cancelled');
+      },
+      session,
+      attempt,
+    ),
+    /content_cancelled/,
+  );
+  assert.equal(calls, 1);
 });
 
 test('local case guard before dispatch never becomes an uncertain remote write', async () => {

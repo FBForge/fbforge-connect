@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-copy-profile-for-api"
+description = "Enables the copy_profile_for_api command without any pre-configured scope."
+commands.allow = ["copy_profile_for_api"]
+
+[[permission]]
+identifier = "deny-copy-profile-for-api"
+description = "Denies the copy_profile_for_api command without any pre-configured scope."
+commands.deny = ["copy_profile_for_api"]

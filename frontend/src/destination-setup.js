@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from './environments.js';
 import { requestResource } from './resources.js';
 import { uncertainOperationError } from './diagnostics.js';
 
@@ -57,10 +58,20 @@ function bundle(value) {
   });
 }
 export async function generateTestKeys(invoke, session) {
-  if (session?.apiVersion !== 'v3') throw new Error('invalid_input');
+  if (session?.apiVersion !== 'v3' || session.environment !== 'TEST') throw new Error('invalid_input');
   const value = bundle(await requestResource(invoke, session, 'generate_test_keys'));
   if (value.status !== 'ready') fail();
   return value;
+}
+export async function importCertifiedKeys(invoke, session, keyDocument) {
+  if (
+    !['STAGE', 'PROD'].includes(session?.environment) ||
+    session.apiVersion !== 'v3' ||
+    typeof keyDocument !== 'string' ||
+    new TextEncoder().encode(keyDocument).length > 48 * 1024
+  )
+    throw new Error('invalid_input');
+  return bundle(await requestResource(invoke, session, 'import_certified_keys', { keyDocument }));
 }
 export async function listGeneratedKeys(invoke, session) {
   const value = await requestResource(invoke, session, 'list_generated_keys');
@@ -106,10 +117,14 @@ function publicConfiguration(document) {
       !Array.isArray(key.key_ops) ||
       key.key_ops.length !== 1 ||
       !Array.isArray(key.x5c) ||
-      key.x5c.length !== 1 ||
-      typeof key.x5c[0] !== 'string' ||
-      key.x5c[0].length > 24000 ||
-      !/^[A-Za-z0-9+/]+={0,2}$/.test(key.x5c[0]) ||
+      key.x5c.length < 1 ||
+      key.x5c.length > 8 ||
+      key.x5c.some(
+        (certificate) =>
+          typeof certificate !== 'string' ||
+          certificate.length > 24000 ||
+          !/^[A-Za-z0-9+/]+={0,2}$/.test(certificate),
+      ) ||
       (field === 'encryptionPublicKey'
         ? key.alg !== 'RSA-OAEP-256' || key.key_ops[0] !== 'wrapKey'
         : key.alg !== 'PS512' || key.key_ops[0] !== 'verify')
@@ -246,6 +261,7 @@ export async function executeDestinationCreation(invoke, session, attempt) {
     if (!['confirmed', 'failed', 'uncertain', 'expired'].includes(result.status)) fail();
     return result;
   } catch (cause) {
+    if (cancelledProductionAction(cause)) throw cause;
     if (
       ['engine_busy', 'vault_pending', 'vault_profile_required'].includes(
         typeof cause === 'string' ? cause : cause?.message,

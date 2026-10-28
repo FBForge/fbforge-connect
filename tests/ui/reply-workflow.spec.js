@@ -23,14 +23,13 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
       1,
     );
     await page.getByText('Fachliche Prüfung: manuell offen', { exact: true }).waitFor();
-    await page.getByRole('button', { name: 'Antwortmöglichkeiten laden', exact: true }).click();
+    await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
     const prepare = page.getByRole('button', { name: 'Antwort prüfen und vorbereiten', exact: true });
-    assert.equal(await prepare.isDisabled(), true);
-    await page.locator('#reply-schema-sources').check();
-    await page.getByRole('button', { name: 'Antwortschema laden', exact: true }).click();
+    assert.equal(await prepare.isDisabled(), false);
     await prepare.waitFor();
-    await page.waitForFunction(() => window.__applicationFixture.calls.includes('load_reply_schema'));
     await page.getByRole('button', { name: 'Fiktiven Antwortentwurf erzeugen', exact: true }).click();
+    await page.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
+    await page.getByRole('button', { name: 'Beispieldaten übernehmen', exact: true }).click();
     await page.getByText(/Fiktiver Antwortentwurf erzeugt/).waitFor();
     assert.equal(JSON.parse(await page.locator('#reply-data').inputValue()).status, 'erhalten');
     await page.locator('#reply-data').fill('{"status":"falsch"}');
@@ -40,17 +39,17 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     assert.equal(await page.evaluate(() => window.__applicationFixture.replyWrites), 0);
     const valid = '{\n "status":"erhalten"\n}';
     await page.locator('#reply-data').fill(valid);
-    await page.getByRole('button', { name: 'Fachdaten visuell ansehen', exact: true }).click();
-    await page.getByRole('dialog').getByText('erhalten', { exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Formularansicht', exact: true }).click();
+    await page.locator('.draft-inline-preview').getByText('erhalten', { exact: true }).waitFor();
     await page
-      .getByRole('dialog')
+      .locator('.draft-inline-preview')
       .locator('.application-field-label')
       .filter({ hasText: 'Bearbeitungsstatus' })
       .waitFor();
-    await page.getByRole('button', { name: 'Vorschau schließen' }).click();
+    await page.getByRole('button', { name: 'Bearbeiten', exact: true }).click();
     assert.equal(await page.locator('#reply-data').inputValue(), valid);
     await prepare.click();
-    await page.getByRole('dialog', { name: 'Antwort an TEST senden?', exact: true }).waitFor();
+    await page.getByRole('dialog', { name: 'Antwort an FIT-Connect senden?', exact: true }).waitFor();
     await page.getByText('Antwortschema geprüft', { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => window.__applicationFixture.replyWrites), 0);
     await page.keyboard.press('Escape');
@@ -60,7 +59,7 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     await page.getByRole('button', { name: 'Antwort jetzt senden', exact: true }).click();
     await page
       .getByRole('heading', {
-        name: uncertain ? 'Reply-Versandausgang ungewiss' : 'Antwort an TEST übergeben',
+        name: uncertain ? 'Reply-Versandausgang ungewiss' : 'Antwort an FIT-Connect übergeben',
         exact: true,
       })
       .waitFor();

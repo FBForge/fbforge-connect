@@ -1,3 +1,4 @@
+import { cancelledProductionAction } from './environments.js';
 import { requestResource } from './resources.js';
 import { uncertainOperationError } from './diagnostics.js';
 const uuid = (value) =>
@@ -53,6 +54,7 @@ export async function executeDestinationCleanup(invoke, session, preview) {
       throw new Error('engine_protocol_error');
     return result;
   } catch (cause) {
+    if (cancelledProductionAction(cause)) throw cause;
     throw new Error(uncertainOperationError(cause));
   }
 }

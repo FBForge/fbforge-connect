@@ -138,9 +138,11 @@ final class ReplyReceiptAccess implements ResourceExchange, AutoCloseable {
             boolean read = method.equals("GET"),
                     trust =
                             endpoint.equals(
-                                    "https://test.fit-connect.fitko.dev/submission-api/.well-known/jwks.json");
+                                    IntegrationEnvironment.current().submissionApi()
+                                            + "/.well-known/jwks.json");
             String detail =
-                    "https://test.fit-connect.fitko.dev/submission-api/"
+                    IntegrationEnvironment.current().submissionApi()
+                            + "/"
                             + api.wireValue()
                             + "/replies/"
                             + prepared.request().replyId();

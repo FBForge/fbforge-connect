@@ -1,33 +1,11 @@
 # Mitwirken
 
-Beiträge per Pull Request nach `develop`. Vor größeren Änderungen bitte ein Issue öffnen. Die [Architektur](ARCHITECTURE.md) beschreibt die Modulgrenzen.
+Beiträge auf eigenen Arbeitsbranches vorbereiten und per Pull Request nach `main` einreichen. Vor größeren Änderungen bitte ein Issue öffnen. Die [Architektur](ARCHITECTURE.md) beschreibt die Modulgrenzen.
 
 ## Entwicklung
 
-Benötigt: Node.js ab 22.13.0, JDK 25 und Rust gemäß `desktop/rust-toolchain.toml`. Für Windows gelten die [Tauri-Buildvoraussetzungen](https://v2.tauri.app/start/prerequisites/). `JAVA_HOME` muss auf JDK 25 zeigen.
-
-Unter Windows:
-
-```powershell
-.\scripts\verify-windows.cmd
-npm run desktop:dev
-```
-
-Auf anderen Entwicklungssystemen lassen sich Engine, Frontend und isolierte native Module prüfen:
-
-```sh
-npm ci --ignore-scripts
-(cd engine && ./mvnw verify)
-npm run stage:engine
-npm run lint
-npm run format:check
-npm test
-npm run test:engine
-npm run build:frontend
-cargo test --manifest-path desktop/native-contracts/Cargo.toml --locked
-```
-
-Browsertests: `npx playwright install chromium`, danach `npm run test:ui`. Öffentliche FIM-Beispiele bei Bedarf mit `node scripts/fetch-public-schemas.mjs` laden. Ohne Cache werden diese Integrationstests übersprungen.
+Die [Buildanleitung](BUILDING.md) beschreibt Voraussetzungen, Entwicklungsstart, lokale Tests und Windows-Installer. Die [Architektur](ARCHITECTURE.md) zeigt die zuständigen Module.
+Der [Release-Ablauf](RELEASING.md) beschreibt Abnahme, Branch-Übernahme, Signierung, Tag und Veröffentlichung.
 
 Formatieren: `npm run format`, `./mvnw spotless:apply` im Engine-Verzeichnis und `cargo fmt --manifest-path desktop/Cargo.toml --all`.
 
@@ -41,17 +19,29 @@ Nach Updates der Frontend-Abhängigkeiten `npm run licenses:update` ausführen. 
 - Keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten einchecken oder in Logs und Screenshots übernehmen.
 - README, PRs, Releases und Commit-Meldungen kurz und sachlich halten: Änderung, Grund, relevante Tests. Keine Arbeitsprotokolle, Wiederholungen oder Werbetexte. Commit-Beispiel: `fix: authenticate process search`.
 
-## Hilfe und Wiki
+Neue Module nach einer Aufgabe benennen. Etwa 150 bis 350 Zeilen sind ein guter Ausgangspunkt. Ab 500 Zeilen verlangt `npm run quality:check` eine Aufteilung oder eine begründete Ausnahme im Prüfsystem. Kommentare erklären Entscheidungen, Sicherheitsbedingungen und Ressourcenbesitz. Offensichtliche Abläufe benötigen keine Nacherzählung.
 
-Texte: `frontend/src/help/topics.js`. Screenshots mit fiktiven Daten: `frontend/src/help/screenshots/`.
+Die Frontend-Typisierung wird schrittweise erweitert. Öffentliche Typen stehen in `frontend/src/contracts.ts`. `npm run lint` umfasst ESLint, die strenge Typprüfung der TypeScript-Module und die Größenprüfung aller Produktionsquellen. Bestehende JavaScript-Module werden nicht pauschal als typgeprüft behandelt. Laufzeitprüfungen für native Antworten und Dateien bleiben erforderlich.
 
-`npm run dev` starten. `node scripts/capture-help.mjs <neues-Verzeichnis>` erstellt Abbildungen mit fiktiven Daten. Bilder vor der Übernahme nach `frontend/src/help/screenshots/` prüfen.
+Die SDK-Integrationstests sind nach Versand, Empfang, Replies, Empfangsbestätigungen und Event Logs gegliedert. Gemeinsame fiktive Schlüssel und HTTP-Fixtures liegen in `SenderTestSupport`, `ReceiverTestSupport` und den zugehörigen Fixture-Klassen. Der Speichergrenzentest startet weiterhin eine eigene JVM mit dem tatsächlich konfigurierten Desktop-Limit.
 
-`node scripts/export-wiki.mjs <neues-Verzeichnis>` exportiert die Hilfe. Seiten und `images/` in einen separaten Checkout von `https://github.com/FBForge/fbforge-connect.wiki.git` übernehmen, Diff prüfen und pushen. Manuell gepflegte Seiten erhalten. Generierte Inhalte nur an der Quelle bearbeiten.
+## Anleitung
+
+Quelle: `docs/guide/topics.js`, Abbildungen: `docs/guide/images/`. Die Anwendung enthält nur kurze Hinweise und Links.
+
+`node scripts/capture-help.mjs <neues-Verzeichnis>` erstellt Abbildungen mit fiktiven Daten bei laufendem Entwicklungsserver. Bilder vor der Übernahme prüfen.
+
+`node scripts/export-guide.mjs <neues-Verzeichnis>` erzeugt die Web-Anleitung. Den Export im Website-Repository unter `nginx/connect/hilfe/0.2/` übernehmen. Generierte Seiten nicht von Hand bearbeiten.
+
+`node scripts/export-wiki.mjs <neues-Verzeichnis>` erzeugt die versionierten Wiki-Kapitel samt Bildern aus derselben Quelle. Die vorhandenen Kapitel für 0.1 bleiben erhalten.
 
 ## Live-Tests
 
-`live-exchange.yml` läuft manuell auf `main` oder `develop` mit `confirm_test_writes`. Benötigte Actions-Secrets: `SENDERID`, `SENDERSECRET`, `SENDERDEST`, `SUBSCRIBERID`, `SUBSCRIBERSECRET`. Der Sender braucht eine aktive Typ-C-Destination samt Verwaltungsrechten. Der Subscriber Rechte zur Destination-Verwaltung und zum Empfang.
+`live-exchange.yml` läuft ausschließlich manuell auf `main` oder `release/0.2.0` mit `confirm_test_writes`. Benötigte Actions-Secrets: `SENDERID`, `SENDERSECRET`, `SENDERDEST`, `SUBSCRIBERID`, `SUBSCRIBERSECRET`. Der Sender braucht eine aktive Typ-C-Destination samt Verwaltungsrechten und bereits freigegebenen Metadatenversionen 2.0.0 und 3.0.0. Der Test ändert diese vorhandene Destination nicht. Der Subscriber braucht Rechte zur Destination-Verwaltung und zum Empfang.
+
+Optional startet die Eingabe `validation_run` die echte Oberflächenabnahme eines erfolgreich geprüften Windows-Installers. Die Abnahme prüft Herkunft, Commit und SHA-256 des ausgewählten Pakets und protokolliert dessen Quell-Commit. Sie bedient die installierte Anwendung mit echten TEST-Zugängen. Der lokale Debugging-Zugang besteht ausschließlich im eigenen CI-Prozess auf Loopback. Traces, Screenshots und Zugangsdaten werden nicht hochgeladen. Diese Skripte sind interne Tests und werden nicht mit dem Desktop-Client ausgeliefert. Die offizielle Signierung verlangt weiterhin eine Windows-Abnahme des exakten Main-Commits.
+
+Mit `ui_probe` und einem `validation_run` lässt sich ausschließlich der Startzugang des installierten WebViews untersuchen. Dieser Diagnosemodus übergibt keine TEST-Zugangsdaten und erzeugt keine Nachrichten oder Destinations. Ein erfolgreicher Starttest ersetzt keine Funktionsabnahme. Auf einem administrativ gestarteten Hosted-Runner ignoriert WebView2 Umgebungsvariablen; der Test setzt dann vorübergehend die von Microsoft dokumentierten HKLM-Overrides ausschließlich für die beiden Client-Kennungen. Vorhandene Overrides werden nicht überschrieben. Die gesetzten Werte werden beim Beenden wieder entfernt. Diese Einstellung gehört ausschließlich zur Testumgebung.
 
 Der Test schreibt fiktive Nachrichten und deaktiviert seine temporäre Destination anschließend. `canBeDecommissionedAt` im Laufprotokoll nennt die früheste Löschung. Vor dem Löschen Eigentümer und Zustand erneut prüfen.
 
@@ -59,7 +49,7 @@ Der Test schreibt fiktive Nachrichten und deaktiviert seine temporäre Destinati
 
 `Checks` prüft bei Änderungen die betroffenen Bereiche: Frontend mit Browsertests, Java-Engine und native Verträge. Reine Dokumentationsänderungen benötigen keinen Installer-Build. Diese Jobs verwenden keine TEST-Secrets und keinen Signier-Runner.
 
-`Windows release validation` wird vor einem Release manuell gestartet. Sie prüft zusätzlich das vollständige Desktop-Paket, Installation, Profilerhalt, NVDA und die schreibgeschützten TEST-Aufrufe. `upgrade_run` kann die Lauf-ID eines früheren erfolgreichen Signierlaufs enthalten. Dessen noch verfügbares signiertes Paket wird vor dem Upgrade anhand von Herkunft, Prüfsumme, Signatur und Zeitstempel geprüft. Ohne Angabe werden Neuinstallation und erneute Installation derselben Version geprüft.
+`Windows release validation` wird vor einem Release manuell gestartet. Auf `release/0.2.0` starten relevante Änderungen an Engine, Paketkonfiguration, Windows-Abnahme und Prozessoberfläche außerdem eine Cloud-Abnahme. Die vollständigen Auslöser stehen in `.github/workflows/windows.yml`. Ein automatischer Branchlauf prüft das Upgrade vom letzten erfolgreich signierten Paket. Der Workflow prüft das vollständige Desktop-Paket, Installation, Profilerhalt, NVDA und die schreibgeschützten TEST-Aufrufe; er veröffentlicht nichts. Beim manuellen Start kann `upgrade_run` die Lauf-ID eines früheren erfolgreichen Signierlaufs enthalten. Dessen noch verfügbares signiertes Paket wird vor dem Upgrade anhand von Herkunft, Prüfsumme, Signatur und Zeitstempel geprüft. Beim manuellen Start ohne diese Angabe werden Neuinstallation und erneute Installation derselben Version geprüft.
 
 ## Windows-Pakete
 
@@ -67,7 +57,9 @@ Installer: `npm run desktop:build -- -- --locked`. Ausgabe: `desktop/target/rele
 
 Vor einem Release Funktionen, Neuinstallation, Upgrade mit Profilerhalt, Tastatur, Screenreader und Monitor-Skalierung prüfen. Automatisierte CI-Prüfungen ersetzen die manuelle Zielgeräteabnahme nicht.
 
-Das finale Setup signieren und mit `signtool verify /pa /all /v` prüfen. Prüfsumme und `build-info.json` aktualisieren. Installation und Upgrade am signierten Paket wiederholen.
+Die offizielle Signierung und Veröffentlichung folgen [RELEASING.md](RELEASING.md). Der Workflow
+erzeugt Prüfsumme, `build-info.json` und `signature-info.json`; diese Herkunftsnachweise nicht von Hand
+ändern. Installation und Upgrade werden am signierten Paket unabhängig wiederholt.
 
 ### Signierung über Actions
 
@@ -75,7 +67,7 @@ Das finale Setup signieren und mit `signtool verify /pa /all /v` prüfen. Prüfs
 2. Das GitHub-Environment `windows-signing` anlegen. Als einzigen Required Reviewer `FBForge` eintragen. „Prevent self-review“ ausschalten, damit der Eigentümer seinen eigenen Lauf freigeben kann.
 3. Repository-Variablen `WINDOWS_SIGNING_THUMBPRINT` und `WINDOWS_TIMESTAMP_URL` setzen. Gemeint sind der öffentliche Zertifikatsfingerabdruck ohne Leerzeichen und der RFC-3161-Zeitstempelserver des Anbieters. Keine Zugangsdaten oder TOTP-Geheimnisse in GitHub speichern.
 4. Bei diesem öffentlichen Repository müssen alle externen Fork-PRs auf manuelle Workflow-Freigabe warten. Fork-PR-Workflows niemals auf dem Signier-Runner freigeben. Den Signier-Runner ausschließlich für den manuellen Signierjob verwenden und außerhalb der Signierung anhalten.
-5. Für den aktuellen Commit `Windows release validation` manuell auf `develop` oder `main` starten und vollständig erfolgreich abschließen. `Sign Windows candidate` auf derselben Branch-Version mit dessen Lauf-ID starten und den Signierjob freigeben.
+5. Für den aktuellen Commit `Windows release validation` manuell auf `main` starten und vollständig erfolgreich abschließen. `Sign Windows candidate` auf derselben Branch-Version mit dessen Lauf-ID starten und den Signierjob freigeben.
 
 Der Job signiert Anwendung, Deinstallationsprogramm und Setup. Ein separater GitHub-Runner prüft Signaturen, Zeitstempel, Installation und Upgrade vom unsigned Prüfpaket. Erst danach entsteht das Artefakt `windows-alpha-signed-setup`. Es wird nichts veröffentlicht.
 

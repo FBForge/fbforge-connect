@@ -15,11 +15,11 @@ test('local cases reopen exact content after receipt, preview inert PDFs, isolat
   });
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
   await page.getByRole('button', { name: 'Fiktiver Antrag auf Testleistung', exact: true }).click();
   await expect(page.locator('.case-detail').getByText('Erika', { exact: true })).toBeVisible();
   await expect(page.locator('.case-detail').getByText('Vorname', { exact: true })).toBeVisible();
-  const rows = page.locator('.case-attachments > li');
+  const rows = page.locator('.document-attachments li');
   await expect(rows.nth(1).getByRole('button', { name: 'Ansehen' })).toHaveCount(0);
   await rows.first().getByRole('button', { name: 'Ansehen', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Lokale Vorschau' });
@@ -40,20 +40,25 @@ test('local cases reopen exact content after receipt, preview inert PDFs, isolat
   const actual = await fs.readFile(await download.path());
   const original = await fs.readFile('frontend/test-fixtures/assets/fictional-attachment.pdf');
   expect(actual.equals(original)).toBe(true);
+  await page.getByRole('button', { name: 'Zur Vorgangsübersicht', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Fiktiver Antrag auf Testleistung', exact: true }),
+  ).toBeFocused();
   await page.getByLabel('Vorgänge durchsuchen').fill('00000005');
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(1);
   await page.getByLabel('Vorgänge durchsuchen').fill('');
   await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
   await expect(page.getByRole('list', { name: 'Lokale Vorgänge' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
+  await page.getByText('Einzelne lokale Kopien verwalten', { exact: true }).last().click();
   await page
     .getByRole('button', { name: 'Lokale Kopie löschen: Antwort zum Testantrag', exact: true })
     .click();
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
   await page.getByRole('button', { name: 'Verlauf leeren', exact: true }).click();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
   await page.getByRole('button', { name: 'Verlauf leeren', exact: true }).click();
   await page.getByRole('button', { name: 'Lokalen Verlauf löschen', exact: true }).click();
   await expect(page.getByRole('list', { name: 'Lokale Vorgänge' })).toHaveCount(0);
@@ -68,6 +73,13 @@ test('case workspace is keyboard reachable, accessible and reflows at 200 percen
   await expect(
     page.getByRole('heading', { name: 'Fiktiver Antrag auf Testleistung', exact: true, level: 2 }),
   ).toBeFocused();
+  // Content must remain readable from the first frame, including during its entry animation.
+  await page.locator('.case-detail').evaluate((element) => {
+    for (const animation of element.getAnimations({ subtree: true })) {
+      animation.pause();
+      animation.currentTime = 0;
+    }
+  });
   await page.setViewportSize({ width: 640, height: 540 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const result = await new AxeBuilder({ page })
@@ -80,8 +92,9 @@ test('failed durable opt-in keeps session copies and reflects the native prefere
   page,
 }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
   await page.evaluate(() => (window.__caseFixture.failStorage = true));
+  await page.getByText('Aufbewahrung: aktuelle Sitzung', { exact: true }).click();
   const choice = page.getByRole('checkbox', {
     name: 'Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren',
     exact: true,
@@ -91,7 +104,7 @@ test('failed durable opt-in keeps session copies and reflects the native prefere
     'Vorgangsablage hat ihre Größen- oder Datensatzgrenze erreicht',
   );
   await expect(choice).not.toBeChecked();
-  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
   await page.evaluate(() => (window.__caseFixture.failStorage = false));
   await choice.click();
   await expect(choice).toBeChecked();

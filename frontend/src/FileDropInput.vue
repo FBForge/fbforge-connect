@@ -61,15 +61,21 @@ function leave() {
       {{ multiple ? 'Dateien hierher ziehen oder auswählen.' : 'Datei hierher ziehen oder auswählen.' }}
       <slot />
     </p>
-    <input
-      :id="id"
-      type="file"
-      :accept="accept"
-      :multiple="multiple"
-      :disabled="disabled"
-      :aria-describedby="`${id}-help`"
-      @change="change"
-    />
-    <p v-if="error" role="alert">{{ error }}</p>
+    <div class="file-drop-picker">
+      <input
+        :id="id"
+        type="file"
+        :accept="accept"
+        :multiple="multiple"
+        :disabled="disabled"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="error ? `${id}-help ${id}-error` : `${id}-help`"
+        @change="change"
+      />
+      <span class="button secondary" aria-hidden="true">
+        {{ multiple ? 'Dateien auswählen' : 'Datei auswählen' }}
+      </span>
+    </div>
+    <p v-if="error" :id="`${id}-error`" role="alert">{{ error }}</p>
   </div>
 </template>

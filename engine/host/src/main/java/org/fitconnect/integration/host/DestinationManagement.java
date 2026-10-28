@@ -6,9 +6,7 @@ import java.util.*;
 import java.util.function.LongSupplier;
 import org.fitconnect.integration.contract.*;
 
-/**
- * Session-local previews for existing owned TEST destinations. No live write occurs during prepare.
- */
+/** Session-local previews for existing owned destinations. No live write occurs during prepare. */
 final class DestinationManagement {
     record Detail(
             String destinationId,

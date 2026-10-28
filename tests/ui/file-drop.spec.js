@@ -14,11 +14,13 @@ test('file drops support one/many files, cancellation, disabled controls and key
   ];
   await dropFiles(page, one, files);
   await expect(one.getByRole('alert')).toHaveText('Bitte hier genau eine Datei auswählen oder ablegen.');
+  await expect(page.locator('#single-file')).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByRole('status')).toHaveText('0');
   await dropFiles(page, one, []);
   await expect(one.getByRole('alert')).toContainText('lokale Datei');
   await dropFiles(page, one, [files[0]]);
   await expect(page.getByTestId('file-names')).toHaveText('eins.json');
+  await expect(page.locator('#single-file')).not.toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByRole('status')).toHaveText('1');
   await page.getByRole('button', { name: 'Dateiablage sperren oder freigeben', exact: true }).click();
   await dropFiles(page, one, [files[1]]);
@@ -35,6 +37,15 @@ test('file drops support one/many files, cancellation, disabled controls and key
       .locator('#single-file')
       .setInputFiles({ name: 'gleich.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
   await expect(page.getByRole('status')).toHaveText('4');
+  const input = page.locator('#single-file');
+  await input.focus();
+  const [picker] = await Promise.all([page.waitForEvent('filechooser'), input.press('Enter')]);
+  await picker.setFiles({ name: 'tastatur.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
+  await expect(page.getByTestId('file-names')).toHaveText('tastatur.json');
+  await expect(page.getByRole('status')).toHaveText('5');
+  const [cancelled] = await Promise.all([page.waitForEvent('filechooser'), input.press('Enter')]);
+  await cancelled.setFiles([]);
+  await expect(page.getByRole('status')).toHaveText('5');
   expect(
     (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze())
       .violations,

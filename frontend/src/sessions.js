@@ -1,13 +1,15 @@
+import { validEnvironment } from './environments.js';
 const roles = new Set(['online-service', 'administrative-system']);
 const versions = new Set(['v2', 'v3']);
 const sessionIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function validate(result, apiVersion, role, connected, sessionId) {
+function validate(result, apiVersion, role, connected, sessionId, environment = 'TEST') {
   if (
     !result ||
     result.apiVersion !== apiVersion ||
     result.role !== role ||
-    result.environment !== 'TEST' ||
+    !validEnvironment(environment) ||
+    result.environment !== environment ||
     result.connected !== connected ||
     typeof result.sessionId !== 'string' ||
     !sessionIdPattern.test(result.sessionId) ||
@@ -15,10 +17,18 @@ function validate(result, apiVersion, role, connected, sessionId) {
   )
     throw new Error('engine_protocol_error');
   // Pick public fields explicitly rather than retaining an arbitrary native response object.
-  return { sessionId: result.sessionId, apiVersion, role, environment: 'TEST', connected };
+  return { sessionId: result.sessionId, apiVersion, role, environment, connected };
 }
 
-export async function openSession(invoke, apiVersion, role, clientId, clientSecret, profile = null) {
+export async function openSession(
+  invoke,
+  apiVersion,
+  role,
+  clientId,
+  clientSecret,
+  profile = null,
+  environment = 'TEST',
+) {
   if (
     !versions.has(apiVersion) ||
     !roles.has(role) ||
@@ -39,7 +49,7 @@ export async function openSession(invoke, apiVersion, role, clientId, clientSecr
       /[\x00-\x1f\x7f]/.test(profile.name))
   )
     throw new Error('invalid_input');
-  return validate(
+  const result = validate(
     await invoke('open_session', {
       apiVersion,
       role,
@@ -50,7 +60,10 @@ export async function openSession(invoke, apiVersion, role, clientId, clientSecr
     apiVersion,
     role,
     true,
+    undefined,
+    environment,
   );
+  return { ...result, clientId };
 }
 
 export async function updateSession(invoke, session, connected) {
@@ -61,7 +74,7 @@ export async function updateSession(invoke, session, connected) {
     !sessionIdPattern.test(session.sessionId)
   )
     throw new Error('session_missing');
-  return validate(
+  const result = validate(
     await invoke(connected ? 'check_session' : 'close_session', {
       apiVersion: session.apiVersion,
       sessionId: session.sessionId,
@@ -70,7 +83,39 @@ export async function updateSession(invoke, session, connected) {
     session.role,
     connected,
     session.sessionId,
+    session.environment,
   );
+  return connected && typeof session.clientId === 'string'
+    ? { ...result, clientId: session.clientId }
+    : result;
+}
+
+export async function openSessionForApi(invoke, source, targetApiVersion) {
+  if (
+    !source?.connected ||
+    !versions.has(source.apiVersion) ||
+    !roles.has(source.role) ||
+    !sessionIdPattern.test(source.sessionId) ||
+    !versions.has(targetApiVersion) ||
+    source.apiVersion === targetApiVersion ||
+    typeof source.clientId !== 'string' ||
+    !source.clientId
+  )
+    throw new Error('invalid_input');
+  const result = validate(
+    await invoke('open_session_for_api', {
+      apiVersion: source.apiVersion,
+      sessionId: source.sessionId,
+      targetApiVersion,
+    }),
+    targetApiVersion,
+    source.role,
+    true,
+    undefined,
+    source.environment,
+  );
+  if (result.sessionId === source.sessionId) throw new Error('engine_protocol_error');
+  return { ...result, clientId: source.clientId };
 }
 
 export function resetsSessions(cause) {

@@ -16,7 +16,7 @@ def require(value, reason):
 
 def validate(run, jobs, environment, commit, branch):
     require(bool(re.fullmatch(r"[a-f0-9]{40}", commit)), "signing_commit_invalid")
-    require(branch in ("main", "develop"), "signing_branch_denied")
+    require(branch == "main", "signing_branch_denied")
     require(run.get("head_sha") == commit, "signing_build_commit_mismatch")
     require(run.get("head_branch") == branch, "signing_build_branch_mismatch")
     require(run.get("head_repository", {}).get("full_name") == REPOSITORY, "signing_build_repository_mismatch")

@@ -1,6 +1,6 @@
 # Architektur
 
-Vue → Tauri/Rust → Java-Host → FIT-Connect SDK v2/v3 → TEST
+Vue → Tauri/Rust → Java-Host → FIT-Connect SDK v2/v3 → TEST, STAGE oder PROD
 
 | Modul                             | Aufgabe                                                          |
 | --------------------------------- | ---------------------------------------------------------------- |
@@ -11,15 +11,31 @@ Vue → Tauri/Rust → Java-Host → FIT-Connect SDK v2/v3 → TEST
 | `engine/adapter-v2`, `adapter-v3` | SDK-Aufrufe, Serialisierung und Kryptografie                     |
 
 Die SDK-Versionen laufen in getrennten Classloadern. Gemeinsame Verträge enthalten keine SDK-Typen.
+Die Umgebung ist je Engine-Prozess fest. Ein Umgebungswechsel beendet die bisherigen Verbindungen.
+Der API-Wechsel innerhalb derselben Umgebung kann die aktuelle Anmeldung wiederverwenden;
+Schlüssel, Profile und Vorgänge bleiben nach API getrennt.
+
+## Zuständigkeiten
+
+`App.vue` verbindet die Arbeitsbereiche. Verbindung, Profile und Diagnose liegen unter `frontend/src/app`. Die Fachansichten verwenden ihre Ablaufsteuerung unter `send`, `receive`, `reply`, `cases`, `destinations`, `events` und `process`. Beim Senden gehören Entwurf, Anzeigezustand und bestätigter Versandversuch zu getrennten Zuständen. Styles beginnen bei `styles/index.css`, gemeinsame Farben und Schriften bei `styles/theme.css`.
+
+Rust trennt Befehle unter `commands`, Prozesskommunikation in `engine.rs` und die zentrale Schreibabsicherung in `write_policy.rs`. Der Java-Host prüft Frames in `EngineRequest` und delegiert über `SessionManager` an fachliche Koordinatoren. `SessionState` besitzt die SDK-Sitzungen und räumt deren Ressourcen auf. SDK-spezifische Sitzungen und Destination-Aufrufe bleiben in ihrem Adapter.
 
 ## Sicherheitsgrenzen
 
 - Der Renderer hat keine allgemeinen HTTP-, Shell- oder Dateisystemrechte. Private Archivbefehle (`export_session_item`, `restore_session_item`) sind nur aus Rust erreichbar.
 - Schreibaktionen sind an Inhalt, Sitzung, API und Ziel gebunden und benötigen eine Bestätigung. Nach einem ungewissen Übertragungsausgang erfolgt kein automatischer Neuversand.
-- Annahme und Ablehnung benötigen aktuelle native Inhaltsnachweise. Historische Kopien und Event-Logs ersetzen diese nicht. Case-Logs können mehrere Nachrichten enthalten. Jedes Ereignis wird per SDK geprüft und zugeordnet.
+- Annahme und Ablehnung benötigen aktuelle native Inhaltsnachweise. Historische Kopien und Event-Logs ersetzen diese nicht. Case-Logs können mehrere Nachrichten und quittierende Destinations enthalten. Jeder Aussteller wird anhand seines registrierten Schlüssels per SDK verifiziert; jedes Ereignis bleibt an die angefragte Case-ID gebunden.
 - Profile, private Schlüssel und Vorgangskopien werden getrennt und benutzergebunden mit Windows-DPAPI gespeichert. Vorgänge sind nach Profil und API isoliert. Tokens und alte Prüfnachweise werden nicht wiederhergestellt. Andere Plattformen haben keinen Klartext-Fallback.
 - Profilsicherungen werden nativ entschlüsselt. Drag-and-drop reicht nur größenbegrenzte, verschlüsselte `.fctest-profile`-Dateien weiter und gibt Profilmetadaten zurück. Eine Profil-Sicherung enthält keine Vorgänge.
 - Antwortschlüssel werden vor dem Versand gesichert. Bei aktivierter Vorgangsaufbewahrung muss die Sicherung vor der Empfangsbestätigung gelingen. Ein Speicherfehler nach erfolgtem Versand darf keinen erneuten Versand auslösen.
+- Öffentliche Schemaquellen benötigen eine ausdrückliche Freigabe für die aktive Verbindung. Die Freigabe wird weder im Profil gespeichert noch auf eine andere Verbindung übertragen. Lokale Schemata benötigen sie nicht.
+- Leistungsnamen können gezielt aus dem öffentlichen FIM-Portal geladen werden. Der Renderer darf dafür ausschließlich die festgelegte HTTPS-Quelle verwenden; übertragen werden LeiKa-Kennungen, keine Zugangsdaten oder Fachdaten.
+- Gemeinsame Nachrichtendownloads benötigen eine native Ordnerfreigabe. Exportiert werden erfolgreich geprüfte Originalinhalte oder ausdrücklich gekennzeichnete historische Vorgangskopien. Downloads liegen unverschlüsselt außerhalb der DPAPI-Ablage. Annahmen mit gewähltem Download werden erst nach erfolgreichem Export gesendet. Technische Fehler im Sammeldurchlauf bleiben manuell; es gibt keine automatische Ablehnung.
+
+JSON/XML-Fachdaten werden im nativen Kern gegen JSON Schema beziehungsweise XSD geprüft. Vor dem Versand ist die Prüfung standardmäßig aktiv. Bewusste Negativtests lassen sich ausdrücklich ohne Fachdatenprüfung vorbereiten. Die Bestätigung weist darauf hin.
+
+Testpakete und Schema-Vergleich arbeiten lokal im Renderer. Pakete enthalten fiktive Nutzdaten, Anlagen, lokale Schemata und manuelle Erwartungen. Verbindungsdaten und private Schlüssel werden nicht übernommen. Erst die Übernahme in den normalen Versandablauf ermöglicht einen separat bestätigten Versand.
 
 ## BPMN
 

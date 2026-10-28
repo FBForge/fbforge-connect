@@ -1,4 +1,5 @@
 //! User-bound encrypted Windows profiles. No plaintext fallback and no renderer access to payloads.
+use crate::environments::Environment;
 use crate::protocol::{valid_session_id, ApiVersion, SessionRole};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -9,6 +10,7 @@ use std::{
 
 const MAX_FILE: usize = 8 * 1024 * 1024;
 const MAX_PROFILES: usize = 32;
+// Persisted v1 format, shared with the renderer. Keep existing backups readable.
 const BACKUP_MAGIC: &[u8] = b"FIT-Connect Test-Client protected profile v1\n";
 pub const MAX_BACKUP_BYTES: usize = MAX_FILE + BACKUP_MAGIC.len();
 
@@ -36,6 +38,8 @@ impl ProfileDefaults {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Profile {
     pub version: u8,
+    #[serde(default)]
+    pub environment: Environment,
     pub profile_id: String,
     pub name: String,
     pub api_version: ApiVersion,
@@ -70,8 +74,10 @@ fn wipe(value: &mut serde_json::Value) {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileSummary {
+    pub environment: Option<Environment>,
     pub profile_id: String,
     pub name: String,
+    pub client_id: Option<String>,
     pub api_version: Option<ApiVersion>,
     pub role: Option<SessionRole>,
     pub key_count: usize,
@@ -100,8 +106,10 @@ impl Profile {
     }
     pub fn summary(&self) -> ProfileSummary {
         ProfileSummary {
+            environment: Some(self.environment),
             profile_id: self.profile_id.clone(),
             name: self.name.clone(),
+            client_id: Some(self.client_id.clone()),
             api_version: Some(self.api_version),
             role: Some(self.role),
             key_count: self.keys.len(),
@@ -234,8 +242,10 @@ impl Vault {
             summaries.push(match self.load(id) {
                 Ok(profile) => profile.summary(),
                 Err(_) => ProfileSummary {
+                    environment: None,
                     profile_id: id.to_string(),
                     name: "Nicht lesbares Profil".into(),
+                    client_id: None,
                     api_version: None,
                     role: None,
                     key_count: 0,
@@ -313,144 +323,15 @@ pub(crate) fn write_protected(path: &Path, bytes: &[u8]) -> Result<(), &'static 
     result
 }
 
-#[cfg(not(windows))]
-pub(crate) mod protection {
-    use super::*;
-    pub fn transform_with_purpose(_: &[u8], _: bool, _: &[u8]) -> Result<Vec<u8>, &'static str> {
-        Err("vault_unsupported")
-    }
-    pub fn encrypt(_: &[u8]) -> Result<Vec<u8>, &'static str> {
-        Err("vault_unsupported")
-    }
-    pub fn decrypt(_: &[u8]) -> Result<Vec<u8>, &'static str> {
-        Err("vault_unsupported")
-    }
-    pub fn replace(_: &Path, _: &Path) -> Result<(), &'static str> {
-        Err("vault_unsupported")
-    }
-}
-#[cfg(windows)]
-pub(crate) mod protection {
-    use super::*;
-    use std::{ffi::c_void, os::windows::ffi::OsStrExt, ptr};
-    #[repr(C)]
-    struct Blob {
-        size: u32,
-        data: *mut u8,
-    }
-    #[link(name = "crypt32")]
-    extern "system" {
-        fn CryptProtectData(
-            input: *const Blob,
-            description: *const u16,
-            entropy: *const Blob,
-            reserved: *mut c_void,
-            prompt: *mut c_void,
-            flags: u32,
-            output: *mut Blob,
-        ) -> i32;
-        fn CryptUnprotectData(
-            input: *const Blob,
-            description: *mut *mut u16,
-            entropy: *const Blob,
-            reserved: *mut c_void,
-            prompt: *mut c_void,
-            flags: u32,
-            output: *mut Blob,
-        ) -> i32;
-    }
-    #[link(name = "kernel32")]
-    extern "system" {
-        fn LocalFree(memory: *mut c_void) -> *mut c_void;
-        fn MoveFileExW(source: *const u16, destination: *const u16, flags: u32) -> i32;
-    }
-    pub fn transform_with_purpose(
-        bytes: &[u8],
-        encrypt: bool,
-        purpose: &[u8],
-    ) -> Result<Vec<u8>, &'static str> {
-        if bytes.is_empty() || bytes.len() > MAX_FILE {
-            return Err("vault_invalid");
-        }
-        let input = Blob {
-            size: bytes.len() as u32,
-            data: bytes.as_ptr() as *mut u8,
-        };
-        let entropy = Blob {
-            size: purpose.len() as u32,
-            data: purpose.as_ptr() as *mut u8,
-        };
-        let mut output = Blob {
-            size: 0,
-            data: ptr::null_mut(),
-        };
-        // UI forbidden; absence of LOCAL_MACHINE keeps the vault bound to this Windows user.
-        let success = unsafe {
-            if encrypt {
-                CryptProtectData(
-                    &input,
-                    ptr::null(),
-                    &entropy,
-                    ptr::null_mut(),
-                    ptr::null_mut(),
-                    1,
-                    &mut output,
-                )
-            } else {
-                CryptUnprotectData(
-                    &input,
-                    ptr::null_mut(),
-                    &entropy,
-                    ptr::null_mut(),
-                    ptr::null_mut(),
-                    1,
-                    &mut output,
-                )
-            }
-        };
-        if success == 0 {
-            return Err("vault_unavailable");
-        }
-        let result = if output.data.is_null() || output.size as usize > MAX_FILE {
-            Err("vault_invalid")
-        } else {
-            Ok(unsafe { std::slice::from_raw_parts(output.data, output.size as usize) }.to_vec())
-        };
-        if !output.data.is_null() {
-            unsafe {
-                std::slice::from_raw_parts_mut(output.data, output.size as usize).fill(0);
-                LocalFree(output.data.cast());
-            }
-        }
-        result
-    }
-    pub fn encrypt(bytes: &[u8]) -> Result<Vec<u8>, &'static str> {
-        transform_with_purpose(bytes, true, b"FIT-Connect Test-Client / user profile / v1")
-    }
-    pub fn decrypt(bytes: &[u8]) -> Result<Vec<u8>, &'static str> {
-        transform_with_purpose(bytes, false, b"FIT-Connect Test-Client / user profile / v1")
-    }
-    pub fn replace(source: &Path, destination: &Path) -> Result<(), &'static str> {
-        let from: Vec<u16> = source.as_os_str().encode_wide().chain(Some(0)).collect();
-        let to: Vec<u16> = destination
-            .as_os_str()
-            .encode_wide()
-            .chain(Some(0))
-            .collect();
-        // REPLACE_EXISTING | WRITE_THROUGH, source and destination reside in the same directory.
-        if unsafe { MoveFileExW(from.as_ptr(), to.as_ptr(), 1 | 8) } == 0 {
-            Err("vault_unavailable")
-        } else {
-            Ok(())
-        }
-    }
-}
+#[path = "vault/protection.rs"]
+pub(crate) mod protection;
 
 #[cfg(test)]
 mod tests {
     use super::*;
     fn sample() -> Profile {
         Profile {
+            environment: Environment::TEST,
             defaults: ProfileDefaults::default(),
             version: 1,
             profile_id: "11111111-1111-4111-8111-111111111111".into(),
@@ -498,8 +379,27 @@ mod tests {
         profile.name = "bad\nname".into();
         assert!(profile.validate().is_err());
         let summary = serde_json::to_string(&sample().summary()).unwrap();
-        assert!(!summary.contains("synthetic-client"));
+        assert!(summary.contains("synthetic-client"));
         assert!(!summary.contains("synthetic-secret-marker"));
+    }
+    #[test]
+    fn profile_environment_is_persisted_and_missing_legacy_environment_defaults_to_test() {
+        let mut original = sample();
+        for environment in [Environment::TEST, Environment::STAGE, Environment::PROD] {
+            original.environment = environment;
+            let encoded = serde_json::to_value(&original).unwrap();
+            let restored: Profile = serde_json::from_value(encoded.clone()).unwrap();
+            assert_eq!(restored.environment, environment);
+            assert_eq!(restored.summary().environment, Some(environment));
+            let mut legacy = encoded;
+            legacy.as_object_mut().unwrap().remove("environment");
+            assert_eq!(
+                serde_json::from_value::<Profile>(legacy)
+                    .unwrap()
+                    .environment,
+                Environment::TEST
+            );
+        }
     }
     #[test]
     fn malformed_backup_never_becomes_a_profile() {

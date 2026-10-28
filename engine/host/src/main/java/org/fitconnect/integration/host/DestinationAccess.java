@@ -10,7 +10,11 @@ import org.fitconnect.integration.contract.*;
 final class DestinationAccess {
     record Summary(String destinationId, String name, String status, String type) {}
 
-    record Page(List<Summary> destinations, int offset, int totalCount) {}
+    record Page(
+            List<Summary> destinations,
+            int offset,
+            int totalCount,
+            Boolean canManageDestinations) {}
 
     record Eligibility(
             String kid,
@@ -49,7 +53,7 @@ final class DestinationAccess {
                             text(value, "status", 64, true),
                             text(value, "type", 64, true)));
         }
-        return new Page(List.copyOf(result), offset, total);
+        return new Page(List.copyOf(result), offset, total, session.canManageDestinations());
     }
 
     Context load(AuthenticatedSession session, String destinationId) {
@@ -105,7 +109,8 @@ final class DestinationAccess {
                                     purpose.equals("decrypt")
                                             ? TestCertificatePolicy.Purpose.ENCRYPTION
                                             : TestCertificatePolicy.Purpose.SIGNING,
-                                    Instant.now());
+                                    Instant.now(),
+                                    session::validatePublicKey);
                     String encoded = key.toString();
                     bytes += encoded.getBytes(StandardCharsets.UTF_8).length;
                     if (bytes > 512 * 1024) throw new SessionException("invalid_resource");
@@ -118,10 +123,24 @@ final class DestinationAccess {
                                     null,
                                     accepted.certificateSha256(),
                                     accepted.expiresAt().toString()));
-                } catch (TestCertificatePolicy.Rejected | IllegalArgumentException rejected) {
+                } catch (TestCertificatePolicy.Rejected
+                        | IllegalArgumentException
+                        | SessionException rejected) {
+                    if (rejected instanceof SessionException failure
+                            && !Set.of("vpki_certificate_required", "certificate_status_unknown")
+                                    .contains(failure.code())) throw failure;
                     summaries.add(
                             new Eligibility(
-                                    kid, purpose, false, "test_certificate_required", null, null));
+                                    kid,
+                                    purpose,
+                                    false,
+                                    (rejected instanceof SessionException failure
+                                            ? failure.code()
+                                            : IntegrationEnvironment.current().requiresVpki()
+                                                    ? "vpki_certificate_required"
+                                                    : "test_certificate_required"),
+                                    null,
+                                    null));
                 }
             }
             offset += keys.size();
@@ -140,13 +159,23 @@ final class DestinationAccess {
         String id = id(destinationId);
         if (!Set.of("decrypt", "sign", "auto").contains(purpose)
                 || document == null
-                || document.getBytes(StandardCharsets.UTF_8).length > 32768)
+                || document.getBytes(StandardCharsets.UTF_8).length > 48 * 1024)
+            throw new SessionException("key_rejected");
+        if (document.stripLeading().startsWith("{")
+                && StrictJson.object(document, 48 * 1024).has("format"))
+            document = CertifiedKeyMaterial.normalizeRegistered(document, purpose);
+        // The encoded container has a larger envelope, not a larger normalized key.
+        if (document.getBytes(StandardCharsets.UTF_8).length > 32768)
             throw new SessionException("key_rejected");
         Registration registration = registrations.get(id);
         if (registration == null) throw new SessionException("key_missing");
         if ("auto".equals(purpose)) purpose = keyPurpose(document, registration);
         List<String> keys = registration.eligible().getOrDefault(purpose, List.of());
-        if (keys.isEmpty()) throw new SessionException("test_certificate_required");
+        if (keys.isEmpty())
+            throw new SessionException(
+                    IntegrationEnvironment.current().requiresVpki()
+                            ? "vpki_certificate_required"
+                            : "test_certificate_required");
         try {
             for (String key : keys)
                 TestCertificatePolicy.validate(
@@ -154,9 +183,13 @@ final class DestinationAccess {
                         purpose.equals("decrypt")
                                 ? TestCertificatePolicy.Purpose.ENCRYPTION
                                 : TestCertificatePolicy.Purpose.SIGNING,
-                        Instant.now());
+                        Instant.now(),
+                        session::validatePublicKey);
         } catch (TestCertificatePolicy.Rejected e) {
-            throw new SessionException("test_certificate_required");
+            throw new SessionException(
+                    IntegrationEnvironment.current().requiresVpki()
+                            ? "vpki_certificate_required"
+                            : "test_certificate_required");
         }
         if (!document.stripLeading().startsWith("-----BEGIN PRIVATE KEY-----")) {
             try {
@@ -170,7 +203,9 @@ final class DestinationAccess {
                 }
                 if (parsed.has("x5c")) {
                     var chain = array(parsed, "x5c");
-                    if (chain.size() != 1
+                    if (chain.isEmpty()
+                            || chain.size()
+                                    > (IntegrationEnvironment.current().requiresVpki() ? 8 : 1)
                             || !chain.get(0).isJsonPrimitive()
                             || !chain.get(0).getAsJsonPrimitive().isString())
                         throw new IllegalArgumentException();
@@ -239,7 +274,7 @@ final class DestinationAccess {
                     else hinted.clear();
                 }
             }
-            var matches = new ArrayList<String>();
+            var matches = new LinkedHashSet<String>();
             for (String purpose : hinted)
                 for (String encoded : registration.eligible().getOrDefault(purpose, List.of())) {
                     var registered = StrictJson.object(encoded, 65536);
@@ -248,7 +283,7 @@ final class DestinationAccess {
                         matches.add(purpose);
                 }
             if (matches.size() != 1) throw new IllegalArgumentException();
-            return matches.getFirst();
+            return matches.iterator().next();
         } catch (Exception failure) {
             throw new SessionException("key_rejected");
         }

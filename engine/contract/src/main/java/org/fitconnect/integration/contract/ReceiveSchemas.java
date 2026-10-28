@@ -23,7 +23,12 @@ public final class ReceiveSchemas {
                 var uri = URI.create(item.getKey());
                 if (!uri.isAbsolute()
                         || item.getKey().length() > 4096
-                        || "test.fit-connect.fitko.dev".equalsIgnoreCase(uri.getHost())
+                        || Arrays.stream(IntegrationEnvironment.values())
+                                .anyMatch(
+                                        environment ->
+                                                environment
+                                                        .gatewayHost()
+                                                        .equalsIgnoreCase(uri.getHost()))
                         || item.getValue() == null
                         || item.getValue().length() > 2 * 1024 * 1024)
                     throw new IllegalArgumentException();

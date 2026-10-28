@@ -7,9 +7,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.*;
 
-/** Fixed TEST OAuth transport. It cannot fetch schemas, destinations or caller-selected URLs. */
+/**
+ * Fixed OAuth transport for the process-owned environment. It cannot fetch schemas, destinations or
+ * caller-selected URLs.
+ */
 public final class TestTokenTransport implements TokenExchange, AutoCloseable {
-    public static final String ENDPOINT = "https://auth-testing.fit-connect.fitko.dev/token";
+    public static final String ENDPOINT = IntegrationEnvironment.current().tokenEndpoint();
     private static final int MAX_BYTES = 65536;
     private HttpClient http;
     private final ScheduledExecutorService deadlines =

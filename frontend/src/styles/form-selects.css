@@ -1,0 +1,26 @@
+/* One field rhythm for native selects; the compact application toolbar stays separate. */
+:is(.workspace-content, .tool-dialog, .tool-section) label:has(> select) {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  align-content: start;
+}
+:is(.workspace-content, .tool-dialog, .tool-section) label > select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding-inline-end: 32px;
+}
+/* A short API choice belongs beside its caption, with a real gap and safe wrapping. */
+:is(.workspace-content, .tool-dialog, .tool-section) label.profile-api-choice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-block: 12px;
+}
+:is(.workspace-content, .tool-dialog, .tool-section) label.profile-api-choice > select {
+  width: auto;
+  flex: 0 0 auto;
+}

@@ -1,4 +1,8 @@
 <script setup>
+import { cancelledProductionAction } from './environments.js';
+
+import { useEnvironment } from './environments.js';
+const environment = useEnvironment();
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from './native.js';
 import {
@@ -98,8 +102,8 @@ async function run(action, operation) {
   try {
     status = (await operation(active, current)) || status;
   } catch (cause) {
-    status = 'Fehlgeschlagen';
-    if (current()) error.value = explain(cause);
+    status = cancelledProductionAction(cause) ? 'Abgebrochen' : 'Fehlgeschlagen';
+    if (current() && !cancelledProductionAction(cause)) error.value = explain(cause);
     if (resetsSessions(cause)) emit('fatal', cause);
   } finally {
     working.value = false;
@@ -204,10 +208,11 @@ function openEvents() {
 
 <template>
   <section class="tool-section" aria-labelledby="reply-receipt-title" :aria-busy="working">
+    <p class="workspace-eyebrow">FIT-Connect {{ environment }}</p>
     <h2 id="reply-receipt-title">Antwortempfang abschließen</h2>
     <p>
       Mit einer Annahme bestätigen Sie den Empfang dieser Antwort. Das ist keine fachliche Antwort an den
-      Absender. Erst die Bestätigung im nächsten Schritt überträgt die Aktion an TEST.
+      Absender. Erst die Bestätigung im nächsten Schritt überträgt die Aktion an die gewählte Umgebung.
     </p>
     <form v-if="!locked" @submit.prevent="prepare">
       <div class="client-fields">
@@ -276,8 +281,8 @@ function openEvents() {
         {{
           outcome.status === 'confirmed'
             ? outcome.action === 'accept'
-              ? 'TEST hat die Annahme bestätigt.'
-              : 'TEST hat die Ablehnung bestätigt.'
+              ? 'FIT-Connect hat die Annahme bestätigt.'
+              : 'FIT-Connect hat die Ablehnung bestätigt.'
             : outcome.status === 'uncertain'
               ? 'Ausgang ungewiss. Bitte nicht erneut senden. Die Aktion kann bereits erfolgt sein.'
               : explain(outcome.error)
@@ -300,11 +305,11 @@ function openEvents() {
     >
       <p v-if="error" role="alert">{{ error }}</p>
       <h2 id="reply-receipt-confirm-title">
-        {{ prepared.attempt.action === 'accept' ? 'Antwort in TEST annehmen?' : 'Antwort in TEST ablehnen?' }}
+        {{ prepared.attempt.action === 'accept' ? 'Antwort annehmen?' : 'Antwort ablehnen?' }}
       </h2>
       <dl class="receipt-dialog-context">
         <dt>Umgebung / API</dt>
-        <dd>TEST / {{ owner.apiVersion }}</dd>
+        <dd>{{ environment }} / {{ owner.apiVersion }}</dd>
         <dt>Antwort</dt>
         <dd>
           <code>{{ prepared.attempt.replyId }}</code>

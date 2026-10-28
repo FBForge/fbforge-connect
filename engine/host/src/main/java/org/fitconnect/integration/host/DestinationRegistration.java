@@ -16,7 +16,7 @@ record DestinationRegistration(DestinationAccess.Context context, JsonObject det
 
     boolean contains(GeneratedTestKey material, String purpose) {
         var expected =
-                TestCertificatePolicy.validate(
+                TestCertificatePolicy.inspect(
                         StrictJson.object(material.publicJwk(), 32768),
                         purpose.equals("decrypt")
                                 ? TestCertificatePolicy.Purpose.ENCRYPTION

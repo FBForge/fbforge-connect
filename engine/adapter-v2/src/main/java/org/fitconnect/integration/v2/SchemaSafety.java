@@ -15,11 +15,13 @@ final class SchemaSafety {
                                 "<!DOCTYPE|<!ENTITY", java.util.regex.Pattern.CASE_INSENSITIVE)
                         .matcher(text)
                         .find()) throw new IllegalArgumentException();
+                org.fitconnect.integration.contract.SchemaSources.requireXmlSchema(text);
                 return text;
             }
             JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(text);
             if (root == null || !(root.isObject() || root.isBoolean()))
                 throw new IllegalArgumentException();
+            if (errorResponse(root)) throw new IllegalArgumentException();
             var pending = new ArrayDeque<JsonNode>();
             pending.add(root);
             int remaining = 20000;
@@ -46,5 +48,78 @@ final class SchemaSafety {
         } catch (Exception failure) {
             throw new SessionException("schema_unavailable");
         }
+    }
+
+    private static boolean errorResponse(JsonNode root) {
+        if (!root.isObject()) return false;
+        for (String key :
+                List.of(
+                        "type",
+                        "$ref",
+                        "$dynamicRef",
+                        "$recursiveRef",
+                        "properties",
+                        "patternProperties",
+                        "additionalProperties",
+                        "unevaluatedProperties",
+                        "propertyNames",
+                        "required",
+                        "dependencies",
+                        "dependentRequired",
+                        "dependentSchemas",
+                        "items",
+                        "prefixItems",
+                        "additionalItems",
+                        "unevaluatedItems",
+                        "contains",
+                        "minContains",
+                        "maxContains",
+                        "minItems",
+                        "maxItems",
+                        "uniqueItems",
+                        "minProperties",
+                        "maxProperties",
+                        "minLength",
+                        "maxLength",
+                        "pattern",
+                        "format",
+                        "minimum",
+                        "maximum",
+                        "exclusiveMinimum",
+                        "exclusiveMaximum",
+                        "multipleOf",
+                        "enum",
+                        "const",
+                        "allOf",
+                        "anyOf",
+                        "oneOf",
+                        "not",
+                        "if",
+                        "then",
+                        "else")) {
+            if (root.has(key)) {
+                if (!key.equals("type")) return false;
+                var type = root.get(key);
+                if (type.isTextual()
+                        && Set.of(
+                                        "object", "array", "string", "integer", "number", "boolean",
+                                        "null")
+                                .contains(type.asText())) return false;
+                if (type.isArray()) return false;
+            }
+        }
+        var error = root.path("error");
+        int status = root.path("status").asInt(0), code = error.path("code").asInt(0);
+        return "error".equals(root.path("result").asText())
+                        && !error.isMissingNode()
+                        && !error.isNull()
+                || status >= 400
+                        && status <= 599
+                        && (root.path("title").isTextual()
+                                || root.path("message").isTextual()
+                                || !error.isMissingNode() && !error.isNull())
+                || code >= 400
+                        && code <= 599
+                        && (error.path("msg").isTextual() || error.path("message").isTextual());
     }
 }

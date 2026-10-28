@@ -1,0 +1,211 @@
+/* Task guidance and reusable information controls. */
+.copy-value {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.copy-value code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.copy-button {
+  min-height: 32px;
+  padding: 4px 9px;
+  font-size: 0.8125rem;
+}
+.copy-notice:empty {
+  display: none;
+}
+.service-label,
+.receiver-summary {
+  display: grid;
+  gap: 8px;
+}
+.service-label > small,
+.receiver-summary > small {
+  color: var(--muted);
+}
+.receiver-summary {
+  margin: 12px 0;
+  justify-items: start;
+}
+.documentation-link {
+  position: relative;
+  font-size: 0.875rem;
+}
+.documentation-link a {
+  text-underline-offset: 3px;
+}
+.documentation-failure {
+  display: block;
+  margin-top: 8px;
+}
+.documentation-topics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 28px;
+  padding-left: 20px;
+  margin-top: 24px;
+}
+.documentation-topics a {
+  display: inline-block;
+  padding: 5px 0;
+}
+.workspace-heading .documentation-link {
+  position: relative;
+  display: inline-block;
+  margin-top: 6px;
+}
+.address-options {
+  margin: 16px 0 0;
+}
+.address-options > .client-fields {
+  margin-top: 16px;
+}
+.submission-information {
+  margin-top: 20px;
+}
+.submission-information > summary {
+  font-weight: 600;
+}
+.next-actions {
+  padding: 16px 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .button,
+  .start-task,
+  .sidebar-link {
+    /* Apply theme colors together to preserve text contrast. */
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .start-task:hover {
+    box-shadow: var(--soft-shadow);
+  }
+  .received-application,
+  .case-detail,
+  .receiver-summary,
+  .documentation-failure {
+    animation: content-appear 160ms ease-out;
+  }
+  .copy-notice:not(:empty) {
+    animation: content-appear 120ms ease-out;
+  }
+  @keyframes content-appear {
+    from {
+      transform: translateY(2px);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (max-width: 650px) {
+  .documentation-topics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.documentation-link .app-icon {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-inline-start: 4px;
+  vertical-align: -0.1em;
+}
+.workspace-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  padding-block: 18px;
+}
+.workspace-heading .documentation-link {
+  flex-shrink: 0;
+  padding-top: 6px;
+}
+.workspace-heading p:last-child {
+  font-size: 14px;
+  max-width: 72ch;
+}
+.workspace-content .button,
+.document-aside .button {
+  min-height: 44px;
+}
+.workspace-content .send-address-fields {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 760px;
+}
+.send-address-fields .sender-destination {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.receive-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+}
+.receive-tabs button {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+.receive-tabs button[aria-selected='true'] {
+  border-color: var(--status-info-line);
+  background: var(--status-info-bg);
+  color: var(--status-info-ink);
+  font-weight: 600;
+}
+.reply-schema-options,
+.data-schema-options {
+  margin: 18px 0;
+}
+.submission-document-heading {
+  margin-bottom: 12px;
+}
+@media (max-width: 760px) {
+  .workspace-heading {
+    flex-wrap: wrap;
+  }
+  .workspace-heading .documentation-link {
+    padding-top: 0;
+  }
+}
+
+.connection-identity {
+  margin-block: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+.connection-identity h3,
+.connection-identity p {
+  margin-block: 0 8px;
+}
+.connection-identity p:last-child {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 0;
+}

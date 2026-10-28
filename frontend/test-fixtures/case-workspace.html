@@ -12,10 +12,10 @@
     <script type="module">
       import { createApp, h, ref } from 'vue';
       import CaseWorkspace from '../src/CaseWorkspace.vue';
-      import '../src/site.css';
-      import '../src/layout.css';
-      import '../src/desktop.css';
-      import '../src/application-view.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
+      import '../src/styles/index.css';
       const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
       const session = ref({
         apiVersion: 'v3',
@@ -145,6 +145,7 @@
         },
       ];
       const state = (window.__caseFixture = {
+        parts,
         records: [...records],
         calls: [],
         persistent: false,

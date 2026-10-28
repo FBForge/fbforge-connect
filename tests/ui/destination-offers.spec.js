@@ -23,7 +23,10 @@ test('destination-offers with synthetic native fixtures', async ({ browser }) =>
   await page.getByRole('heading', { name: 'Angebote nach der Änderung', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__destinationFixture.writes), 0);
   await page
-    .getByRole('button', { name: 'Diese Änderungen verbindlich auf TEST speichern', exact: true })
+    .getByRole('button', {
+      name: 'Diese Änderungen verbindlich in der gewählten Umgebung speichern',
+      exact: true,
+    })
     .click();
   await page.getByRole('heading', { name: 'Abgeschlossen', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__destinationFixture.writes), 1);

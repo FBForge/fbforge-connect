@@ -1,0 +1,111 @@
+<script setup>
+import FileDropInput from '../FileDropInput.vue';
+const props = defineProps({ controller: Object, session: Object, visible: Boolean });
+const {
+  processWorkspace,
+  offeredProcessMessages,
+  offerReplies,
+  replySchema,
+  replyMime,
+  attachments,
+  sendStep,
+  replyOptions,
+  addReplyMessage,
+  disabled,
+  addFiles,
+} = props.controller;
+</script>
+<template>
+  <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
+    <legend tabindex="-1">Antwortkanal</legend>
+    <label class="checkbox-label">
+      <input v-model="offerReplies" type="checkbox" :disabled="!replyOptions.length" />
+      Antworten über FIT-Connect anbieten
+    </label>
+    <p v-if="!replyOptions.length" class="small-note">
+      Für die gewählte Leistung ist kein unterstütztes Antwortschema hinterlegt.
+    </p>
+    <div v-if="offerReplies && session?.apiVersion === 'v3'">
+      <h4>Angebotene Prozessantworten (optional)</h4>
+      <p>
+        Nur ausdrücklich angebotene Nachrichten dürfen als Prozess-Reply zurückkommen. Im Prozessbereich
+        zuerst die gewünschte Antwort auswählen. Für mehrere Nachrichten nacheinander übernehmen. Dafür wird
+        Metadatenversion 3 benötigt.
+      </p>
+      <button
+        class="button secondary"
+        type="button"
+        :disabled="!processWorkspace?.selection.value || offeredProcessMessages.length >= 16"
+        @click="addReplyMessage"
+      >
+        BPMN-Auswahl als erlaubte Antwort hinzufügen
+      </button>
+      <ul>
+        <li v-for="(item, index) in offeredProcessMessages" :key="`${item.processModelId}/${item.messageId}`">
+          {{ item.processModelId }} · {{ item.messageId }}
+          <button
+            type="button"
+            class="button secondary"
+            @click="offeredProcessMessages = offeredProcessMessages.filter((_, i) => i !== index)"
+          >
+            Antwortnachricht {{ index + 1 }} entfernen
+          </button>
+        </li>
+      </ul>
+    </div>
+    <div v-if="offerReplies" class="client-fields">
+      <label for="send-reply-schema">
+        Antwortschema
+        <select id="send-reply-schema" v-model="replySchema" required>
+          <option v-for="item in replyOptions" :key="item.schemaUri" :value="item.schemaUri">
+            {{ item.schemaUri }}
+          </option>
+        </select>
+      </label>
+      <label for="send-reply-mime">
+        Antwortformat
+        <select id="send-reply-mime" v-model="replyMime">
+          <option value="application/json">JSON</option>
+          <option value="application/xml">XML</option>
+        </select>
+      </label>
+    </div>
+    <p v-if="offerReplies" class="small-note">
+      Das SDK erzeugt einen eigenen Antwortschlüssel. Bei aktiviertem Profil wird er vor dem Versand geschützt
+      gesichert und kann nach einem Neustart wiederhergestellt werden. Ohne Profil gilt er nur für diese
+      Sitzung. Die Leistung muss den Antwortkanal unterstützen.
+    </p>
+  </fieldset>
+  <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
+    <legend>Anlagen</legend>
+    <FileDropInput
+      id="send-attachments"
+      label="Anlagen hinzufügen"
+      multiple
+      :disabled="disabled"
+      @files="addFiles"
+    />
+    <div v-for="item in attachments" :key="item.id" class="client-fields">
+      <div>
+        <strong>{{ item.file.name }}</strong>
+        <p>{{ (item.file.size / 1024).toFixed(1) }} KiB · {{ item.mimeType }}</p>
+      </div>
+      <label :for="`description-${item.id}`">
+        Beschreibung
+        <input :id="`description-${item.id}`" type="text" v-model="item.description" maxlength="1000" />
+      </label>
+      <button
+        class="button secondary"
+        type="button"
+        @click="attachments = attachments.filter((row) => row.id !== item.id)"
+      >
+        Anlage entfernen
+      </button>
+    </div>
+    <p v-if="!attachments.length">Keine zusätzlichen Anlagen ausgewählt.</p>
+    <p>
+      Höchstens 32 MiB je Datei, 64 MiB insgesamt und 39 zusätzliche Anlagen. Die Grenzen der Destination
+      werden zusätzlich vom SDK geprüft.
+    </p>
+  </fieldset>
+</template>
