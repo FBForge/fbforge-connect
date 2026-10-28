@@ -13,6 +13,37 @@ final class SessionReceipts {
         this.state = state;
     }
 
+    /** Native confirmation reads the current attempt, never renderer-supplied warnings. */
+    Data<?> review(ApiVersion version, String id, String attemptId, boolean reply) {
+        var entry = this.state.find(version, id);
+        List<String> warnings = List.of();
+        if (reply) {
+            var attempt = entry.replyReceipts().state();
+            var draft = this.state.pendingReplyReceipts.get(id);
+            if (draft == null
+                    || !Objects.equals(attempt.attemptId(), attemptId)
+                    || !attempt.status().equals("prepared"))
+                throw new SessionException("send_locked");
+            if (draft.request().action().equals("accept"))
+                warnings =
+                        this.state.receivedReplies.state(version, id, draft.proofId()).warnings();
+        } else {
+            var attempt = entry.receipts().state();
+            var draft = this.state.pendingReceipts.get(id);
+            if (draft == null
+                    || !Objects.equals(attempt.attemptId(), attemptId)
+                    || !attempt.status().equals("prepared"))
+                throw new SessionException("send_locked");
+            if (draft.request().action().equals("accept"))
+                warnings = this.state.received.state(version, id, draft.proofId()).warnings();
+        }
+        return new Data<>(
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                Map.of("requiresConfirmation", warnings.contains("DATA_SCHEMA_INVALID")));
+    }
+
     void entryReplyReceiptInvalidate(ApiVersion version, String id) {
         this.state.find(version, id).replyReceipts().invalidate();
         this.state.pendingReplyReceipts.remove(id);

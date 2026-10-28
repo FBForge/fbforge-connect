@@ -36,6 +36,7 @@ export function useCaseWorkspace(props, emit) {
   );
   const disabled = computed(() => pending.value || props.busy || !props.session);
   const attachments = computed(() => parts.value.filter((p) => p.kind === 'attachment'));
+  const hasPlaintext = computed(() => parts.value.some((part) => part.kind === 'data'));
   let generation = 0,
     controller,
     downloadUrl,
@@ -302,6 +303,7 @@ export function useCaseWorkspace(props, emit) {
     selectedGroup,
     disabled,
     attachments,
+    hasPlaintext,
     bytesLabel,
     when,
     resetFilters,

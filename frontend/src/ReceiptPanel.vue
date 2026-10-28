@@ -82,6 +82,8 @@ const warning = (stage) =>
   ({
     MALWARE_SCAN_NOT_CONFIGURED: 'Kein Malwarescan durchgeführt.',
     XML_SCHEMA_NOT_CHECKED: 'Keine XSD-Prüfung durchgeführt.',
+    DATA_SCHEMA_INVALID:
+      'Die Fachdaten weichen vom Schema ab. Eine Annahme erfordert Ihre ausdrückliche Bestätigung.',
   })[stage] || `SDK-Prüfhinweis: ${stage}`;
 const explain = (cause) =>
   messages[typeof cause === 'string' ? cause : cause?.message] || errorMessage(cause);

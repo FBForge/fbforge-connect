@@ -127,6 +127,7 @@ const codeLabels = new Map([
   ['schema_required', 'Schema fehlt'],
   ['schema_consent_required', 'Schemafreigabe fehlt'],
   ['data_schema_invalid', 'Fachdaten passen nicht zum Schema'],
+  ['message_content_missing', 'Noch keine entschlüsselten Fachdaten verfügbar'],
   ['data_format_invalid', 'Datenformat ungültig'],
   ['schema_tls_error', 'Schema-Verbindung nicht sicher'],
   ['schema_network_error', 'Schemaquelle nicht erreichbar'],

@@ -1,6 +1,6 @@
 import { navigate } from './exchange.mjs';
 import { check, until } from './desktop.mjs';
-import { writeFile } from 'node:fs/promises';
+import { writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -92,7 +92,8 @@ export async function localTools(page) {
     'live_ui_sdk_probe_incomplete',
   );
   await navigate(page, 'Info');
-  await page.getByText('Version 0.2.0', { exact: false }).first().waitFor();
+  const { version } = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));
+  await page.getByText(`Version ${version}`, { exact: false }).first().waitFor();
   check((await page.getByText('Alpha 1', { exact: false }).count()) === 0, 'live_ui_stale_alpha_label');
   console.log(
     'Real installed desktop UI: local test packs, schema comparison, BPMN, both SDK probes and release information passed',

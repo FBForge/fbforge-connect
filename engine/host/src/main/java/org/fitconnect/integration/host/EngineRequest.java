@@ -124,6 +124,8 @@ record EngineRequest(
             case "prepare_receipt", "prepare_reply_receipt" ->
                     expected.addAll(Set.of("sessionId", "receiptDocument"));
             case "execute_receipt",
+                    "receipt_review",
+                    "reply_receipt_review",
                     "cancel_receipt",
                     "execute_reply_receipt",
                     "cancel_reply_receipt" ->

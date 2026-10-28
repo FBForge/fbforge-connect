@@ -92,7 +92,7 @@ test('Info shows the regular version without an obsolete release qualifier', asy
   await page.goto(url);
   await page.getByRole('button', { name: 'Info', exact: true }).click();
   const info = page.locator('.info-view');
-  await expect(info.getByText('Version 0.2.0', { exact: true })).toBeVisible();
+  await expect(info.getByText('Version 0.2.1', { exact: true })).toBeVisible();
   await expect(info).not.toContainText(/Alpha|Beta|Release Candidate|Entwicklungsstand/);
   await expect(info.getByText('FIT-Connect TEST, STAGE und PROD', { exact: true })).toBeVisible();
 });

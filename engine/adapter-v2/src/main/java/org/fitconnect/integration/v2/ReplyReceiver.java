@@ -68,6 +68,7 @@ final class ReplyReceiver {
                 }
             var issues = new ArrayList<ReceivedContent.Issue>();
             issues.add(new ReceivedContent.Issue("MALWARE_SCAN_NOT_CONFIGURED", false));
+            issues.addAll(0, transport.validation.reviewIssues());
             var content =
                     new ReceivedReplyContent(
                             replyId,

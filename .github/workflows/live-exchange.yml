@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   live:
-    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && inputs.confirm_test_writes == true && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/0.2.0')
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch' && inputs.confirm_test_writes == true && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/fix/'))
     runs-on: windows-2025
     timeout-minutes: 40
     steps:

@@ -82,6 +82,7 @@ final class ReplyReceiver {
             for (var issue : result.report().issues())
                 issues.add(new ReceivedContent.Issue(issue.stage().name(), issue.isError()));
             issues.add(new ReceivedContent.Issue("MALWARE_SCAN_NOT_CONFIGURED", false));
+            issues.addAll(0, services.http().validation.reviewIssues());
             var content =
                     new ReceivedReplyContent(
                             replyId,

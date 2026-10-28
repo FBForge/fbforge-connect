@@ -1,7 +1,18 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { fieldDisplay } from './field-display.js';
-const props = defineProps({ node: Object, query: String, showTechnical: Boolean });
+const props = defineProps({
+  node: Object,
+  query: String,
+  showTechnical: Boolean,
+  validationErrors: { type: Array, default: () => [] },
+});
+const fieldErrors = computed(() => props.validationErrors.filter((error) => error.path === props.node.path));
+const hasErrors = computed(() =>
+  props.validationErrors.some(
+    (error) => error.path === props.node.path || error.path.startsWith(`${props.node.path}/`),
+  ),
+);
 const expanded = ref(props.node.depth < 2);
 const displayValue = computed(() => fieldDisplay(props.node));
 const fields = computed(() => props.node.children.filter((child) => child.type !== 'whitespace'));
@@ -20,7 +31,10 @@ const emptyLabel = (type) =>
   <details
     v-if="node.children.length"
     class="application-group"
-    :open="Boolean(query) || expanded"
+    :class="{ 'application-invalid': fieldErrors.length }"
+    :data-field-path="node.path"
+    tabindex="-1"
+    :open="Boolean(query) || expanded || hasErrors"
     @toggle="
       (event) => {
         if (!query) expanded = event.target.open;
@@ -32,7 +46,10 @@ const emptyLabel = (type) =>
       <span>{{ node.children.length }} {{ node.children.length === 1 ? 'Eintrag' : 'Einträge' }}</span>
       <span v-if="node.duplicate" class="application-duplicate">Mehrfaches JSON-Feld</span>
     </summary>
-    <div v-if="query || expanded" class="application-group-body">
+    <div v-if="query || expanded || hasErrors" class="application-group-body">
+      <p v-for="(error, index) in fieldErrors" :key="index" class="application-field-error">
+        {{ error.message }}
+      </p>
       <details v-if="node.schema?.description" class="application-field-help">
         <summary :aria-label="`Beschreibung: ${node.label}`">Beschreibung der Gruppe</summary>
         <p class="application-description">{{ node.schema.description }}</p>
@@ -53,6 +70,7 @@ const emptyLabel = (type) =>
           v-for="child in fields"
           :key="child.id"
           :node="child"
+          :validation-errors="validationErrors"
           :show-technical="showTechnical"
           :query="query"
         />
@@ -64,6 +82,7 @@ const emptyLabel = (type) =>
             v-for="child in whitespace"
             :key="child.id"
             :node="child"
+            :validation-errors="validationErrors"
             :show-technical="showTechnical"
             :query="query"
           />
@@ -71,7 +90,13 @@ const emptyLabel = (type) =>
       </details>
     </div>
   </details>
-  <div v-else class="application-field" :class="{ 'application-match': query && node.matched }">
+  <div
+    v-else
+    class="application-field"
+    :class="{ 'application-match': query && node.matched, 'application-invalid': fieldErrors.length }"
+    :data-field-path="node.path"
+    tabindex="-1"
+  >
     <div class="application-field-label">
       {{ node.label }}
       <span v-if="node.schema?.required === true" class="schema-required">Pflichtfeld laut Schema</span>
@@ -93,6 +118,9 @@ const emptyLabel = (type) =>
             : displayValue
       }}
     </div>
+    <p v-for="(error, index) in fieldErrors" :key="index" class="application-field-error">
+      {{ error.message }}
+    </p>
     <p v-if="node.schema?.ambiguous" class="application-duplicate">Schema-Beschriftung nicht eindeutig.</p>
     <details v-if="showTechnical" class="application-origin">
       <summary>Feldherkunft</summary>

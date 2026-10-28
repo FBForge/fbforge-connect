@@ -54,7 +54,7 @@ where
         || parts.len() > 41
         || parts.iter().filter(|p| p["kind"] == "metadata").count() > 1
         || (!local && parts.iter().filter(|p| p["kind"] == "metadata").count() != 1)
-        || parts.iter().filter(|p| p["kind"] == "data").count() != 1
+        || parts.iter().filter(|p| p["kind"] == "data").count() > 1
     {
         return Err("engine_protocol_error");
     }
@@ -81,6 +81,15 @@ where
         if bytes > store::MESSAGE_LIMIT {
             return Err("content_limit");
         }
+    }
+    // Validate the complete native page above before classifying a transport-only record.
+    // Missing plaintext is a normal local state; malformed parts remain protocol errors.
+    if !parts.iter().any(|part| part["kind"] == "data") {
+        return Err(if local {
+            "message_content_missing"
+        } else {
+            "engine_protocol_error"
+        });
     }
     let mut directory = ExportDirectory::new(parent, &format!("{prefix}-{}", message_id))?;
     let mut files = vec![];
@@ -246,6 +255,23 @@ mod tests {
             serde_json::from_slice(&fs::read(path.join("export.json")).unwrap()).unwrap();
         assert_eq!(manifest["source"], "local-copy");
         assert_eq!(manifest["environment"], "STAGE");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn transport_only_case_is_not_a_protocol_error_and_creates_no_files() {
+        let root = store::reserve(&std::env::temp_dir(), "fbforge-transport-only").unwrap();
+        let parts = vec![parts()[0].clone()];
+        let result = ready(export(
+            &root,
+            "Einreichung",
+            &id(7),
+            true,
+            "TEST",
+            |content, offset| std::future::ready(Ok(response(&parts, content, offset))),
+        ));
+        assert_eq!(result.unwrap_err(), "message_content_missing");
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 0);
         fs::remove_dir_all(root).unwrap();
     }
 }

@@ -199,6 +199,8 @@ test('only expressly allowed absence of a malware scan can pass, other warnings 
     [['MALWARE_SCAN_NOT_CONFIGURED'], false, false],
     [['MALWARE_SCAN_NOT_CONFIGURED'], true, true],
     [['XML_SCHEMA_NOT_CHECKED'], true, false],
+    [['DATA_SCHEMA_INVALID'], true, false],
+    [['MALWARE_SCAN_NOT_CONFIGURED', 'DATA_SCHEMA_INVALID'], true, false],
     [['OTHER_CHECK_OPEN'], true, false],
   ]) {
     const f = fixture({ warnings });

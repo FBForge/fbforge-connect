@@ -36,6 +36,7 @@ const {
   selectedGroup,
   disabled,
   attachments,
+  hasPlaintext,
   bytesLabel,
   when,
   resetFilters,
@@ -267,9 +268,11 @@ const {
         {{
           warning === 'MALWARE_SCAN_NOT_CONFIGURED'
             ? 'Kein Malwarescanner eingerichtet.'
-            : warning === 'XML_SCHEMA_NOT_CHECKED'
-              ? 'XML-Syntax geprüft. Keine XSD-Prüfung durchgeführt.'
-              : warning
+            : warning === 'DATA_SCHEMA_INVALID'
+              ? 'Die Fachdaten weichen vom Schema ab. Bitte die angezeigten Fehler prüfen.'
+              : warning === 'XML_SCHEMA_NOT_CHECKED'
+                ? 'XML-Syntax geprüft. Keine XSD-Prüfung durchgeführt.'
+                : warning
         }}
       </p>
       <DocumentLayout>
@@ -287,7 +290,7 @@ const {
             :schema-document="application.schemaDocument"
             :schema-uri="application.schemaUri"
           />
-          <p v-else-if="!parts.some((part) => part.kind === 'data')">
+          <p v-else-if="!hasPlaintext">
             Für diese Kopie wurden noch keine entschlüsselten Fachdaten gespeichert. Die
             Transportinformationen stehen unter „Technische Inhalte und Kennungen“. Prüfen Sie die Nachricht
             im Empfang, wenn sie noch auf dem Server verfügbar ist.
@@ -301,9 +304,21 @@ const {
           <MessageDownload
             :session="session"
             :source="exportSource(selected, selected.kind === 'reply')"
-            :disabled="disabled"
+            :disabled="disabled || !hasPlaintext"
             @busy="emit('busy', $event)"
           />
+          <div v-if="!hasPlaintext" class="small-note" role="status">
+            <p>Für diese lokale Kopie sind noch keine entschlüsselten Fachdaten verfügbar.</p>
+            <button
+              v-if="selected.direction === 'received' && selected.kind === 'submission'"
+              class="button secondary"
+              type="button"
+              :disabled="disabled"
+              @click="emit('receive', selected)"
+            >
+              Im Empfang entschlüsseln und prüfen
+            </button>
+          </div>
           <AttachmentList
             :parts="attachments"
             :disabled="disabled"
@@ -329,7 +344,7 @@ const {
           Vorgangs-Event-Log öffnen
         </button>
         <button
-          v-if="selected.direction === 'received' && selected.kind === 'submission'"
+          v-if="hasPlaintext && selected.direction === 'received' && selected.kind === 'submission'"
           class="button secondary"
           type="button"
           :disabled="disabled"

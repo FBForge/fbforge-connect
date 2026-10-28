@@ -154,6 +154,12 @@ final class Engine implements AutoCloseable {
                                         draft.request(),
                                         draft.proofId());
                             }
+                            case "receipt_review", "reply_receipt_review" ->
+                                    sessions.receiptReview(
+                                            version,
+                                            values.get("sessionId"),
+                                            values.get("attemptId"),
+                                            command.equals("reply_receipt_review"));
                             case "execute_receipt", "cancel_receipt", "receipt_state" ->
                                     sessions.receipt(
                                             version,

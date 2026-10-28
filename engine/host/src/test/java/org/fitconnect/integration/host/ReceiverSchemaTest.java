@@ -107,21 +107,25 @@ class ReceiverSchemaTest extends ReceiverTestSupport {
                         assertArrayEquals(fixture.data, result.data());
                     }
                     try (var scope = new ReceiveAccess(api, DEST, SUB, remote)) {
-                        assertThrows(
-                                SessionException.class,
-                                () ->
-                                        registry.withSession(
-                                                api,
-                                                session,
-                                                s ->
-                                                        s.receive(
-                                                                DEST,
-                                                                SUB,
-                                                                scope,
-                                                                workspace,
-                                                                Map.of(
-                                                                        urn,
-                                                                        "{\"type\":\"string\"}"))));
+                        var result =
+                                registry.withSession(
+                                        api,
+                                        session,
+                                        nativeSession ->
+                                                nativeSession.receive(
+                                                        DEST,
+                                                        SUB,
+                                                        scope,
+                                                        workspace,
+                                                        Map.of(urn, "{\"type\":\"string\"}")));
+                        assertArrayEquals(fixture.data, result.data());
+                        assertTrue(
+                                result.issues().stream()
+                                        .anyMatch(
+                                                issue ->
+                                                        issue.stage()
+                                                                .equals("DATA_SCHEMA_INVALID")));
+                        assertEquals(urn, result.schemaSnapshot().schemaUri());
                     }
                 }
         }

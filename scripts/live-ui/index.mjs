@@ -10,7 +10,14 @@ import {
   otherAreas,
   switchApi,
 } from './exchange.mjs';
-import { receiveReply, rejectInvalid, caseWorkspace, bulkReceive, previewPdf } from './readback.mjs';
+import {
+  receiveReply,
+  rejectInvalid,
+  acceptInvalid,
+  caseWorkspace,
+  bulkReceive,
+  previewPdf,
+} from './readback.mjs';
 import { localTools, ownDestination, keySetup, auditScreen } from './local-tools.mjs';
 import { downloadMessage } from './downloads.mjs';
 import { diagnosticCode } from '../../frontend/src/diagnostics.js';
@@ -64,9 +71,12 @@ export async function exerciseDesktopUI(fixture) {
     await connectProfile(page, senders.v3);
     const valid = await sendSubmission(page, fixture);
     const invalid = await sendSubmission(page, fixture, 'v3', false, true);
+    const manual = await sendSubmission(page, fixture, 'v3', false, true);
     await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
     stage = 'bulk_schema_safety';
     await bulkReceive(desktop, fixture, valid, invalid);
+    stage = 'schema_failure_manual_acceptance';
+    await acceptInvalid(desktop, fixture, manual);
     stage = 'schema_failure_manual_rejection';
     await rejectInvalid(page, fixture, invalid);
     stage = 'destination_management';

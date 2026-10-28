@@ -92,6 +92,21 @@ pub(crate) async fn resource_action(
         operation.as_str(),
         "execute_receipt" | "execute_reply_receipt"
     ) {
+        // The host binds review status to this exact attempt and current proof. A renderer cannot
+        // suppress the native confirmation by omitting a warning or altering UI state.
+        let review: SessionResource = request(app, state, serde_json::json!({
+            "command": if operation == "execute_receipt" { "receipt_review" } else { "reply_receipt_review" },
+            "apiVersion": version, "sessionId": id, "attemptId": command["attemptId"]
+        })).await?;
+        if !review.validate(version, id) || review.data.as_object().map(|o| o.len()) != Some(1) {
+            return Err("engine_protocol_error");
+        }
+        if review.data["requiresConfirmation"]
+            .as_bool()
+            .ok_or("engine_protocol_error")?
+        {
+            crate::environment_commands::confirm_schema_review(app).await?;
+        }
         cases::checkpoint(app, state, version, id)
             .await
             .map_err(|_| "case_storage_pending")?;

@@ -12,6 +12,19 @@ import org.fitconnect.integration.contract.*;
 /** Uses the installed validator's resolver API. No default file/HTTP resolver is enabled. */
 final class SchemaValidation {
     final SchemaSources sources;
+    private List<SchemaProblem> problems = List.of();
+
+    List<ReceivedContent.Issue> reviewIssues() {
+        return problems.isEmpty()
+                ? List.of()
+                : List.of(new ReceivedContent.Issue("DATA_SCHEMA_INVALID", false));
+    }
+
+    boolean xml(byte[] data, String uri) {
+        problems = sources.xmlProblems(data, uri);
+        return problems.isEmpty();
+    }
+
     private final com.fasterxml.jackson.databind.ObjectMapper json =
             new com.fasterxml.jackson.databind.ObjectMapper();
 
@@ -100,7 +113,33 @@ final class SchemaValidation {
                                                             .build()));
             var schema = registry.getSchema(SchemaLocation.of(uri));
             schema.initializeValidators();
-            return schema.validate(json.readTree(data)).isEmpty();
+            var failures = schema.validate(json.readTree(data));
+            var diagnostics = new ArrayList<SchemaProblem>();
+            for (var failure : failures) {
+                if (diagnostics.size() == 128) break;
+                var location = failure.getInstanceLocation();
+                var path = new StringBuilder();
+                for (int i = 0; i < location.getNameCount(); i++)
+                    path.append('/')
+                            .append(
+                                    String.valueOf(location.getElement(i))
+                                            .replace("~", "~0")
+                                            .replace("/", "~1"));
+                var constraint = failure.getSchemaNode();
+                var expected =
+                        constraint == null
+                                ? null
+                                : constraint.isObject()
+                                        ? constraint.get(failure.getKeyword())
+                                        : constraint;
+                diagnostics.add(
+                        SchemaProblem.json(
+                                path.toString(),
+                                failure.getKeyword(),
+                                expected == null ? null : expected.toString()));
+            }
+            problems = List.copyOf(diagnostics);
+            return failures.isEmpty();
         } catch (SessionException failure) {
             throw failure;
         } catch (Exception failure) {
@@ -180,6 +219,17 @@ final class SchemaValidation {
                     documents.set(key, value);
                     collect(value, URI.create(key), pending, 0, new int[] {20000});
                 }
+            }
+            var review = root.putObject("validation");
+            review.put("status", problems.isEmpty() ? "valid" : "invalid");
+            var errors = review.putArray("errors");
+            for (var problem : problems) {
+                var row = errors.addObject();
+                row.put("path", problem.path());
+                row.put("keyword", problem.keyword());
+                row.put("message", problem.message());
+                row.put("line", problem.line());
+                row.put("column", problem.column());
             }
             return new SchemaSnapshot(uri, root.toString());
         } catch (RuntimeException failure) {
