@@ -3,6 +3,12 @@ import { productName } from './product.js';
 
 // Deliberately exclude arguments, response bodies, identifiers, paths and free-form messages.
 export const operationLabels = Object.freeze({
+  install_local_scanner: 'Lokalen Scanner installieren',
+  update_local_scanner_database: 'Virensignaturen aktualisieren',
+  local_scanner_preferences: 'Scanner-Updateeinstellung ändern',
+  stop_local_scanner: 'Lokalen Scanner beenden',
+  cancel_local_scanner_operation: 'Scanner-Einrichtung abbrechen',
+  configure_malware_scanner: 'Virenscan einrichten',
   begin_message_export: 'Exportordner auswählen',
   export_message: 'Nachricht vollständig speichern',
   finish_message_export: 'Dateiexport abschließen',

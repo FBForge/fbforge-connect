@@ -1,7 +1,9 @@
 {
   "identifier": "main",
   "description": "Only the bundled main window may run diagnostics or manage sessions in the selected FIT-Connect environment.",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "allow-application-update-status",
     "allow-open-update-download",
@@ -113,6 +115,12 @@
     "allow-finish-message-export",
     "allow-profile-workspace",
     "allow-configure-malware-scanner",
-    "allow-malware-scanner-state"
+    "allow-malware-scanner-state",
+    "allow-local-scanner-status",
+    "allow-install-local-scanner",
+    "allow-update-local-scanner-database",
+    "allow-local-scanner-preferences",
+    "allow-cancel-local-scanner-operation",
+    "allow-stop-local-scanner"
   ]
 }

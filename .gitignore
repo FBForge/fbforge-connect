@@ -3,6 +3,8 @@ frontend/dist/
 desktop/target/
 desktop/gen/
 desktop/resources/engine/
+desktop/resources/scanner/*
+!desktop/resources/scanner/.keep
 desktop/resources/.stage-*/
 **/target/
 .idea/
@@ -44,3 +46,5 @@ __pycache__/
 
 # Downloaded immutable public schema fixtures are test-only and never distributed.
 /frontend/test-fixtures/.public-schema-cache/
+
+/.cache/

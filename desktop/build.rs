@@ -1,4 +1,11 @@
 fn main() {
+    println!("cargo:rerun-if-changed=scanner-component.json");
+    println!("cargo:rerun-if-changed=resources/scanner/component.zip");
+    if std::env::var("PROFILE").as_deref() == Ok("release")
+        && !std::path::Path::new("resources/scanner/component.zip").is_file()
+    {
+        panic!("Scanner component missing. Run npm run stage:scanner before building the release installer.");
+    }
     println!("cargo:rerun-if-changed=update-public-key.txt");
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
@@ -13,6 +20,12 @@ fn main() {
             "finish_message_export",
             "test_library",
             "profile_workspace",
+            "local_scanner_status",
+            "install_local_scanner",
+            "update_local_scanner_database",
+            "local_scanner_preferences",
+            "cancel_local_scanner_operation",
+            "stop_local_scanner",
             "configure_malware_scanner",
             "malware_scanner_state",
             "select_environment",

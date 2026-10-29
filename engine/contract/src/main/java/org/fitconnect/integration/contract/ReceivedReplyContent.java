@@ -93,6 +93,14 @@ public record ReceivedReplyContent(
             if (item == null || !ids.add(item.id())) invalid();
             total += item.byteLength();
         }
+        var blocked =
+                issues.stream()
+                        .flatMap(issue -> issue.blockedAttachments().stream())
+                        .map(BlockedAttachment::attachmentId)
+                        .toList();
+        if (blocked.size() + attachments.size() > 39
+                || blocked.stream().distinct().count() != blocked.size()
+                || blocked.stream().anyMatch(ids::contains)) invalid();
         if (total > 64L * 1024 * 1024) invalid();
         metadata = metadata.clone();
         data = data.clone();

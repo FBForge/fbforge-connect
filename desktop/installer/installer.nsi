@@ -76,6 +76,11 @@ Var UpdateMode
 Var NoShortcutMode
 Var WixMode
 Var OldMainBinaryName
+; FBForge scanner begin: variables
+Var ScannerChoice
+Var ScannerCheckbox
+Var ScannerDialog
+; FBForge scanner end: variables
 
 Name "${PRODUCTNAME}"
 BrandingText "${COPYRIGHT}"
@@ -394,6 +399,35 @@ Function PageLeaveReinstall
   reinst_done:
 FunctionEnd
 
+; FBForge scanner begin: component page
+; Optional scanner setup is identical for both WebView2 installer variants.
+Page custom ScannerPage ScannerPageLeave
+Function ScannerPage
+  ${If} ${Silent}
+  ${OrIf} $PassiveMode = 1
+  ${OrIf} $UpdateMode = 1
+    Abort
+  ${EndIf}
+  !insertmacro MUI_HEADER_TEXT "Optionaler lokaler Virenscan" "ClamAV für FBForge Connect einrichten"
+  nsDialogs::Create 1018
+  Pop $ScannerDialog
+  ${If} $ScannerDialog == error
+    Abort
+  ${EndIf}
+  ${NSD_CreateLabel} 0 0 100% 36u "ClamAV prüft Dateien lokal auf Ihrem Rechner. Engine und ein datierter offizieller Signaturbestand sind enthalten; für die Einrichtung ist kein Download erforderlich."
+  Pop $0
+  ${NSD_CreateCheckbox} 0 46u 100% 20u "Lokalen Virenscan mit ClamAV einrichten (optional)"
+  Pop $ScannerCheckbox
+  ${NSD_SetState} $ScannerCheckbox $ScannerChoice
+  ${NSD_CreateLabel} 0 80u 100% 55u "Der Scanner benötigt zusätzlichen Speicher und Arbeitsspeicher. Signaturstand und Aktualisierung können Sie in der Anwendung verwalten. Automatische Signaturdownloads werden erst nach Ihrer Freigabe aktiviert. Vorhandene Scanner-Einstellungen bleiben bei Updates erhalten."
+  Pop $0
+  nsDialogs::Show
+FunctionEnd
+Function ScannerPageLeave
+  ${NSD_GetState} $ScannerCheckbox $ScannerChoice
+FunctionEnd
+
+; FBForge scanner end: component page
 ; 5. Choose install directory page
 !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfPassive
 !insertmacro MUI_PAGE_DIRECTORY
@@ -505,6 +539,26 @@ Function .onInit
   !endif
 
   !insertmacro SetContext
+; FBForge scanner begin: preserve selection and explicit silent override
+  StrCpy $ScannerChoice 0
+  ReadRegDWORD $ScannerChoice SHCTX "${UNINSTKEY}" "ScannerComponent"
+  ${If} ${Errors}
+    StrCpy $ScannerChoice 0
+  ${EndIf}
+  ClearErrors
+  ${GetOptions} $CMDLINE "/SCANNER=" $R0
+  ${IfNot} ${Errors}
+    ${If} $R0 == "1"
+      StrCpy $ScannerChoice 1
+    ${ElseIf} $R0 == "0"
+      StrCpy $ScannerChoice 0
+    ${Else}
+      SetErrorLevel 2
+      Abort
+    ${EndIf}
+  ${EndIf}
+  ClearErrors
+; FBForge scanner end: preserve selection and explicit silent override
 
   ${If} $INSTDIR == "${PLACEHOLDER_INSTALL_DIR}"
     ; Set default install location
@@ -668,7 +722,22 @@ Section Install
     CreateDirectory "$INSTDIR\\{{this}}"
   {{/each}}
   {{#each resources}}
+; FBForge scanner begin: resource filter
+    ; Keep the large optional component out of unchecked installations.
+    StrCpy $R8 "{{this.[1]}}" 18
+    StrCpy $R9 1
+    ${If} $R8 == "resources\scanner\"
+    ${OrIf} $R8 == "resources/scanner/"
+      StrCpy $R9 $ScannerChoice
+    ${EndIf}
+    ${If} $R9 = 1
+; FBForge scanner end: resource filter
     File /a "/oname={{this.[1]}}" "{{no-escape @key}}"
+; FBForge scanner begin: resource filter close
+    ${Else}
+      Delete "$INSTDIR\{{this.[1]}}"
+    ${EndIf}
+; FBForge scanner end: resource filter close
   {{/each}}
 
   ; Copy external binaries
@@ -712,6 +781,9 @@ Section Install
 
   ; Save current MAINBINARYNAME for future updates
   WriteRegStr SHCTX "${UNINSTKEY}" "MainBinaryName" "${MAINBINARYNAME}.exe"
+; FBForge scanner begin: store choice
+  WriteRegDWORD SHCTX "${UNINSTKEY}" "ScannerComponent" $ScannerChoice
+; FBForge scanner end: store choice
 
   ; Registry information for add/remove programs
   WriteRegStr SHCTX "${UNINSTKEY}" "DisplayName" "${PRODUCTNAME}"

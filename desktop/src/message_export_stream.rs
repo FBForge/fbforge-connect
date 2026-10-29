@@ -29,6 +29,12 @@ where
     let mut expected_total = None;
     for offset in (0..42).step_by(2) {
         let data = read(None, offset).await?;
+        if data
+            .get("blockedAttachmentCount")
+            .is_some_and(|count| count.as_u64().is_none_or(|n| n > 0))
+        {
+            return Err("message_content_blocked");
+        }
         let total = data["total"]
             .as_u64()
             .filter(|n| *n >= minimum && *n <= 42)
@@ -45,6 +51,9 @@ where
         if parts.len() == total {
             break;
         }
+    }
+    if parts.iter().any(|part| part["kind"] == "scan-report") {
+        return Err("message_content_blocked");
     }
     let parts: Vec<_> = parts
         .into_iter()

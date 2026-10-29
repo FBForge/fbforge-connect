@@ -132,8 +132,9 @@ final class CaseRepository implements AutoCloseable {
 
     String receive(String scope, ReceivedContent data) {
         String existing = find(scope, "submission", "received", id(data.submissionId()));
-        if (existing != null && !records.get(existing).summary().status().equals("unverified"))
-            return existing;
+        if (existing != null
+                && !records.get(existing).summary().status().equals("unverified")
+                && ScanFindings.blocked(data.issues()).isEmpty()) return existing;
         capacity(
                 data.partLength(0)
                         + (long) data.partLength(1)
@@ -153,6 +154,11 @@ final class CaseRepository implements AutoCloseable {
         for (var a : data.attachments())
             files.add(file("attachment", a.fileName(), a.mimeType(), a.description(), a.bytes()));
         schema(files, data.schemaSnapshot());
+        var scanReport = ScanFindings.document(data.issues());
+        if (scanReport != null)
+            files.add(
+                    file("scan-report", "scan-report.json", "application/json", null, scanReport));
+        capacity(files.stream().mapToLong(item -> item.bytes().length).sum(), existing);
         return add(
                 scope,
                 "submission",
@@ -177,8 +183,9 @@ final class CaseRepository implements AutoCloseable {
 
     String receive(String scope, ReceivedReplyContent data) {
         String existing = find(scope, "reply", "received", id(data.replyId()));
-        if (existing != null && !records.get(existing).summary().status().equals("unverified"))
-            return existing;
+        if (existing != null
+                && !records.get(existing).summary().status().equals("unverified")
+                && ScanFindings.blocked(data.issues()).isEmpty()) return existing;
         capacity(
                 data.partLength(0)
                         + (long) data.partLength(1)
@@ -198,6 +205,11 @@ final class CaseRepository implements AutoCloseable {
         for (var a : data.attachments())
             files.add(file("attachment", a.fileName(), a.mimeType(), a.description(), a.bytes()));
         schema(files, data.schemaSnapshot());
+        var scanReport = ScanFindings.document(data.issues());
+        if (scanReport != null)
+            files.add(
+                    file("scan-report", "scan-report.json", "application/json", null, scanReport));
+        capacity(files.stream().mapToLong(item -> item.bytes().length).sum(), existing);
         return add(
                 scope,
                 "reply",

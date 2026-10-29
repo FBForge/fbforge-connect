@@ -3,6 +3,7 @@ import { defaultCaseMessage } from './case-groups.js';
 import DocumentLayout from './DocumentLayout.vue';
 import AttachmentList from './AttachmentList.vue';
 import MessageDownload from './MessageDownload.vue';
+import BlockedAttachments from './BlockedAttachments.vue';
 import { exportSource } from './message-export.js';
 import CopyValue from './CopyValue.vue';
 import DocumentationLink from './DocumentationLink.vue';
@@ -37,6 +38,7 @@ const {
   disabled,
   attachments,
   hasPlaintext,
+  blockedAttachments,
   bytesLabel,
   when,
   resetFilters,
@@ -275,6 +277,7 @@ const {
                 : warning
         }}
       </p>
+      <BlockedAttachments :items="blockedAttachments" />
       <DocumentLayout>
         <template #data>
           <div class="tool-section-heading">
@@ -304,6 +307,7 @@ const {
           <MessageDownload
             :session="session"
             :source="exportSource(selected, selected.kind === 'reply')"
+            :blocked="selected.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')"
             :disabled="disabled || !hasPlaintext"
             @busy="emit('busy', $event)"
           />

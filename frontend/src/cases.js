@@ -85,7 +85,7 @@ export async function caseParts(invoke, session, recordId) {
       if (
         !uuid(part.contentId) ||
         parts.some((p) => p.contentId === part.contentId) ||
-        !['metadata', 'data', 'attachment', 'schema'].includes(part.kind) ||
+        !['metadata', 'data', 'attachment', 'schema', 'scan-report'].includes(part.kind) ||
         !Number.isSafeInteger(part.totalBytes) ||
         part.totalBytes < 0 ||
         part.totalBytes > 32 * 1024 * 1024 ||

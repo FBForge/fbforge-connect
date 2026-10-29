@@ -41,7 +41,36 @@ final class SessionReceipts {
                 version.wireValue(),
                 id,
                 IntegrationEnvironment.current().name(),
-                Map.of("requiresConfirmation", warnings.contains("DATA_SCHEMA_INVALID")));
+                Map.of(
+                        "requiresConfirmation",
+                        warnings.contains("DATA_SCHEMA_INVALID")
+                                || warnings.contains("MALWARE_ATTACHMENT_BLOCKED"),
+                        "attachmentProblemCount",
+                        warnings.contains("MALWARE_ATTACHMENT_BLOCKED")
+                                ? (reply
+                                        ? this.state
+                                                .receivedReplies
+                                                .state(
+                                                        version,
+                                                        id,
+                                                        this.state
+                                                                .pendingReplyReceipts
+                                                                .get(id)
+                                                                .proofId())
+                                                .blockedAttachments()
+                                                .size()
+                                        : this.state
+                                                .received
+                                                .state(
+                                                        version,
+                                                        id,
+                                                        this.state
+                                                                .pendingReceipts
+                                                                .get(id)
+                                                                .proofId())
+                                                .blockedAttachments()
+                                                .size())
+                                : 0));
     }
 
     void entryReplyReceiptInvalidate(ApiVersion version, String id) {
@@ -52,14 +81,28 @@ final class SessionReceipts {
     Data<?> prepareReplyReceipt(ApiVersion version, String id, ReplyReceiptDraft draft) {
         var entry = this.state.find(version, id);
         entryReplyReceiptInvalidate(version, id);
-        var evidence = replyReceiptEvidence(entry, draft);
+        var bound =
+                draft.request().action().equals("accept")
+                        ? new ReplyReceiptDraft(
+                                draft.request()
+                                        .withBlockedAttachments(
+                                                this.state
+                                                        .receivedReplies
+                                                        .state(version, id, draft.proofId())
+                                                        .blockedAttachments()
+                                                        .stream()
+                                                        .map(BlockedAttachment::attachmentId)
+                                                        .toList()),
+                                draft.proofId())
+                        : draft;
+        var evidence = replyReceiptEvidence(entry, bound);
         var prepared =
                 this.state.registry.withSession(
                         version,
                         entry.session(),
-                        session -> session.prepareReplyReceipt(draft.request(), evidence));
+                        session -> session.prepareReplyReceipt(bound.request(), evidence));
         var state = entry.replyReceipts().prepare(prepared);
-        this.state.pendingReplyReceipts.put(id, draft);
+        this.state.pendingReplyReceipts.put(id, bound);
         var request = draft.request();
         this.state.cases.noticeReply(
                 this.state.caseScopes.get(id), request.caseId(), request.replyId());
@@ -83,6 +126,15 @@ final class SessionReceipts {
         if (this.state.receiveCleanupFailed.contains(entry.id()))
             throw new SessionException("resource_unavailable");
         if (draft.request().action().equals("reject")) return null;
+        var proof =
+                this.state.receivedReplies.state(
+                        entry.key().version(), entry.id(), draft.proofId());
+        if (!draft.request()
+                .blockedAttachments()
+                .equals(
+                        proof.blockedAttachments().stream()
+                                .map(BlockedAttachment::attachmentId)
+                                .toList())) throw new SessionException("verification_failed");
         var evidence =
                 this.state.receivedReplies.evidence(
                         entry.key().version(), entry.id(), draft.proofId());
@@ -139,15 +191,26 @@ final class SessionReceipts {
         this.state.receiveFlow.invalidateReceipt(entry);
         if (request == null || this.state.receiveCleanupFailed.contains(id))
             throw new SessionException("invalid_input");
+        var bound =
+                request.action().equals("accept")
+                        ? request.withBlockedAttachments(
+                                this.state
+                                        .received
+                                        .state(version, id, proofId)
+                                        .blockedAttachments()
+                                        .stream()
+                                        .map(BlockedAttachment::attachmentId)
+                                        .toList())
+                        : request;
         SignedReceipt signed;
-        List<String> warnings = validateReceipt(entry, request, proofId);
+        List<String> warnings = validateReceipt(entry, bound, proofId);
         try {
             signed =
                     this.state.registry.withSession(
                             version,
                             entry.session(),
                             session ->
-                                    session.signReceipt(request, this.state.content.workspace(id)));
+                                    session.signReceipt(bound, this.state.content.workspace(id)));
         } catch (RuntimeException | LinkageError failure) {
             this.state.receiveFlow.invalidateReceived(entry);
             throw failure;
@@ -162,7 +225,7 @@ final class SessionReceipts {
             }
         }
         var state = entry.receipts().prepare(signed);
-        this.state.pendingReceipts.put(id, new PendingReceipt(request, proofId));
+        this.state.pendingReceipts.put(id, new PendingReceipt(bound, proofId));
         return new Data<>(
                 version.wireValue(),
                 id,
@@ -203,6 +266,12 @@ final class SessionReceipts {
                                     || !proof.submissionId().equals(submission)
                                     || !proof.caseId().equals(request.caseId().toString())
                                     || !evidence.caseId().equals(request.caseId()))
+                                throw new SessionException("verification_failed");
+                            if (!request.blockedAttachments()
+                                    .equals(
+                                            proof.blockedAttachments().stream()
+                                                    .map(BlockedAttachment::attachmentId)
+                                                    .toList()))
                                 throw new SessionException("verification_failed");
                             return proof.warnings();
                         }

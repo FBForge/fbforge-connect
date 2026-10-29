@@ -1,3 +1,4 @@
+import { readScannerReport } from '../scanner-report.js';
 import { caseGroups, filterCaseGroups, defaultCaseMessage } from '../case-groups.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from '../native.js';
@@ -13,7 +14,8 @@ export function useCaseWorkspace(props, emit) {
     selected = shallowRef(null),
     parts = shallowRef([]),
     application = shallowRef(null),
-    preview = shallowRef(null);
+    preview = shallowRef(null),
+    blockedAttachments = shallowRef([]);
   const search = ref(''),
     direction = ref('all'),
     attentionOnly = ref(false),
@@ -63,6 +65,7 @@ export function useCaseWorkspace(props, emit) {
     selected.value = null;
     parts.value = [];
     application.value = null;
+    blockedAttachments.value = [];
   }
   async function run(operation) {
     if (disabled.value) return;
@@ -171,7 +174,12 @@ export function useCaseWorkspace(props, emit) {
           schemaUri: schema?.fileName || null,
         };
       }
+      const report = rows.find((part) => part.kind === 'scan-report');
+      const blocked = report ? readScannerReport(await textFile(session, record, report)) : [];
+      if (record.warnings.includes('MALWARE_ATTACHMENT_BLOCKED') && !blocked.length)
+        throw new Error('engine_protocol_error');
       if (!current()) return;
+      blockedAttachments.value = blocked;
       selected.value = record;
       parts.value = rows;
       application.value = view;
@@ -304,6 +312,7 @@ export function useCaseWorkspace(props, emit) {
     disabled,
     attachments,
     hasPlaintext,
+    blockedAttachments,
     bytesLabel,
     when,
     resetFilters,

@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "FBForge Connect \u00b7 FIT-Connect TEST",
+        "title": "FBForge Connect · FIT-Connect TEST",
         "width": 1180,
         "height": 800,
         "minWidth": 420,
@@ -31,7 +31,9 @@
     "updater": {
       "pubkey": "",
       "requireSignedVersion": true,
-      "windows": { "installMode": "passive" }
+      "windows": {
+        "installMode": "passive"
+      }
     }
   },
   "bundle": {
@@ -39,8 +41,8 @@
     "active": true,
     "targets": ["nsis"],
     "icon": ["icons/app.png", "icons/app.ico"],
-    "resources": ["resources/engine/"],
-    "shortDescription": "Unabh\u00e4ngiges Testwerkzeug f\u00fcr FIT-Connect API v2 und v3 von FBForge",
+    "resources": ["resources/engine/", "resources/scanner/"],
+    "shortDescription": "Unabhängiges Testwerkzeug für FIT-Connect API v2 und v3 von FBForge",
     "license": "EUPL-1.2",
     "windows": {
       "webviewInstallMode": {

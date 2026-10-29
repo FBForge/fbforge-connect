@@ -14,6 +14,7 @@ mod message_export_stream;
 mod message_exports;
 mod profile_backup;
 use cases::case_workspace;
+mod local_scanner;
 mod malware_scanner;
 mod profile_version_commands;
 mod profile_versions;
@@ -21,6 +22,9 @@ mod profile_workspace;
 mod profile_workspace_store;
 mod profiles;
 mod protocol;
+mod scanner_package;
+mod scanner_process;
+mod scanner_runtime;
 mod vault;
 use profile_backup::{export_profile_backup, import_profile_backup, import_profile_backup_file};
 use profiles::{
@@ -55,6 +59,7 @@ fn main() {
         )
         .manage(application_updates::ApplicationUpdates::default())
         .manage(EngineState::default())
+        .manage(local_scanner::LocalScanner::default())
         .manage(message_exports::MessageExports::default())
         .invoke_handler(tauri::generate_handler![
             application_updates::application_update_status,
@@ -95,6 +100,12 @@ fn main() {
             commands::destination_creation::reconcile_destination_creation,
             commands::keys::use_generated_keys,
             profile_workspace::profile_workspace,
+            local_scanner::local_scanner_status,
+            local_scanner::install_local_scanner,
+            local_scanner::update_local_scanner_database,
+            local_scanner::local_scanner_preferences,
+            local_scanner::cancel_local_scanner_operation,
+            local_scanner::stop_local_scanner,
             malware_scanner::configure_malware_scanner,
             malware_scanner::malware_scanner_state,
             list_profiles,
@@ -182,10 +193,18 @@ fn main() {
                 })
                 .build(),
         )
+        .setup(|app| {
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let _ = local_scanner::initialize(handle).await;
+            });
+            Ok(())
+        })
         .build(tauri::generate_context!())
         .expect("Desktop startup failed");
     app.run(|app, event| {
         if matches!(event, tauri::RunEvent::Exit) {
+            local_scanner::shutdown(app);
             let state = app.state::<EngineState>();
             tauri::async_runtime::block_on(async {
                 if let Ok(mut process) =
@@ -199,3 +218,5 @@ fn main() {
         }
     });
 }
+
+mod scanner_install;

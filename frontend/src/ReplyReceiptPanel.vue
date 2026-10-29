@@ -336,13 +336,23 @@ function openEvents() {
       <p v-if="prepared.warnings.length">
         Die technischen Prüfhinweise bleiben bestehen. Bitte auch den Inhalt fachlich prüfen.
       </p>
+      <p v-if="prepared.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')" class="action-notice warning">
+        Gesperrte Anlagen bleiben unzugänglich. Die Annahme bestätigt die gesamte Antwort und meldet die
+        betroffenen Anlagen als Problem an FIT-Connect. Eine zusätzliche Bestätigung ist erforderlich.
+      </p>
       <p>Die Aktion wird einmalig gesendet. Die Freigabe gilt höchstens 60 Sekunden.</p>
       <div class="client-actions">
         <button class="button secondary" type="button" autofocus :disabled="working" @click="dismiss">
           Abbrechen
         </button>
         <button class="button" type="button" :disabled="working" @click="confirm">
-          {{ prepared.attempt.action === 'accept' ? 'Jetzt annehmen' : 'Jetzt ablehnen' }}
+          {{
+            prepared.attempt.action === 'accept'
+              ? prepared.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')
+                ? 'Mit Anlagenproblemen annehmen'
+                : 'Jetzt annehmen'
+              : 'Jetzt ablehnen'
+          }}
         </button>
       </div>
     </dialog>

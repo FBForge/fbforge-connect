@@ -74,3 +74,23 @@ pub async fn confirm_schema_review(app: &tauri::AppHandle) -> Result<(), &'stati
         Err("content_cancelled")
     }
 }
+
+pub async fn confirm_attachment_review(
+    app: &tauri::AppHandle,
+    count: u64,
+) -> Result<(), &'static str> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or("resource_unavailable")?;
+    let app = app.clone();
+    let confirmed = tauri::async_runtime::spawn_blocking(move || {
+        app.dialog().message(format!("Der Virenscan hat {count} Anlage(n) gesperrt. Diese Dateien werden nicht geöffnet, exportiert oder als nutzbare Vorgangskopie gespeichert. Eventuelle Schemaabweichungen bleiben ebenfalls bestehen.\n\nSie nehmen die Nachricht insgesamt an. FIT-Connect erhält Problemhinweise mit den betroffenen Anlagenkennungen. Benötigte Anlagen müssen Sie gegebenenfalls erneut anfordern.\n\nNachricht mit diesen Anlagenproblemen ausdrücklich annehmen?"))
+            .parent(&window).title("Mit gesperrten Anlagen annehmen?").kind(MessageDialogKind::Warning)
+            .buttons(MessageDialogButtons::OkCancelCustom("Mit Anlagenproblemen annehmen".into(), "Abbrechen".into())).blocking_show()
+    }).await.map_err(|_| "resource_unavailable")?;
+    if confirmed {
+        Ok(())
+    } else {
+        Err("content_cancelled")
+    }
+}

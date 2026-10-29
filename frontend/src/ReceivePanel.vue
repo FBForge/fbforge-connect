@@ -14,6 +14,7 @@ import ReplySender from './ReplySender.vue';
 import DocumentLayout from './DocumentLayout.vue';
 import AttachmentList from './AttachmentList.vue';
 import MessageDownload from './MessageDownload.vue';
+import BlockedAttachments from './BlockedAttachments.vue';
 import { exportSource } from './message-export.js';
 import StructuredData from './StructuredData.vue';
 import { useReceivePanel } from './receive/useReceivePanel.js';
@@ -284,6 +285,7 @@ defineExpose({
             Geprüften Nachrichtenbezug im BPMN-Modell zeigen
           </button>
         </p>
+        <BlockedAttachments :items="proof.blockedAttachments || []" />
         <DocumentLayout>
           <template #data>
             <section class="received-application" :aria-labelledby="`${panelId}-application-title`">
@@ -311,6 +313,7 @@ defineExpose({
               <MessageDownload
                 :session="session"
                 :source="exportSource(proof, reply)"
+                :blocked="Boolean(proof.blockedAttachments?.length)"
                 :disabled="disabled"
                 @busy="emit('busy', $event)"
               />

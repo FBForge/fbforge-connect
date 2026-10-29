@@ -45,6 +45,11 @@ export async function runMessageBatch(options) {
         current,
       );
       check(current);
+      if (proof.blockedAttachments?.length || proof.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')) {
+        row.status = 'manual';
+        row.error = 'message_content_blocked';
+        continue;
+      }
       const parts = [];
       for (let offset = 0; offset < proof.partCount; offset += 2) {
         parts.push(...(await listReceivedContents(invoke, session, proof, offset, reply)).parts);

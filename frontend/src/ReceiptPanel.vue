@@ -80,6 +80,8 @@ const messages = {
 };
 const warning = (stage) =>
   ({
+    MALWARE_ATTACHMENT_BLOCKED:
+      'Anlagen wurden vom Virenscan gesperrt. Eine Annahme meldet diese Anlagen als Problem an FIT-Connect.',
     MALWARE_SCAN_NOT_CONFIGURED: 'Kein Malwarescan durchgeführt.',
     XML_SCHEMA_NOT_CHECKED: 'Keine XSD-Prüfung durchgeführt.',
     DATA_SCHEMA_INVALID:
@@ -220,6 +222,7 @@ async function prepare() {
     }
     owner.value = active;
     prepared.value = result;
+    if (result.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')) saveBeforeAccept.value = false;
     outcome.value = null;
   });
   await nextTick();
@@ -457,7 +460,9 @@ async function confirm() {
         <li v-for="stage in prepared.warnings" :key="stage">{{ warning(stage) }}</li>
       </ul>
       <ReceiptDownloadChoice
-        v-if="prepared.attempt.action === 'accept'"
+        v-if="
+          prepared.attempt.action === 'accept' && !prepared.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')
+        "
         v-model="saveBeforeAccept"
         :disabled="working"
       />
@@ -472,9 +477,11 @@ async function confirm() {
         <button class="button" type="button" :disabled="working" @click="confirm">
           {{
             prepared.attempt.action === 'accept'
-              ? saveBeforeAccept
-                ? 'Speichern und annehmen'
-                : 'Jetzt annehmen'
+              ? prepared.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')
+                ? 'Mit Anlagenproblemen annehmen'
+                : saveBeforeAccept
+                  ? 'Speichern und annehmen'
+                  : 'Jetzt annehmen'
               : 'Jetzt ablehnen'
           }}
         </button>

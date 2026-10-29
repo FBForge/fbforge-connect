@@ -11,7 +11,7 @@ REPOSITORY = 'FBForge/fbforge-connect'
 def source(env):
     ref, commit = env.get('GITHUB_REF', ''), env.get('GITHUB_SHA', '')
     if (env.get('GITHUB_REPOSITORY') != REPOSITORY
-            or not re.fullmatch(r'refs/heads/(main|(?:release|fix)/[A-Za-z0-9][A-Za-z0-9._/-]*)', ref)
+            or not re.fullmatch(r'refs/heads/(main|feature/local-scanner-0[.]3[.]0|(?:release|fix)/[A-Za-z0-9][A-Za-z0-9._/-]*)', ref)
             or not re.fullmatch(r'[a-f0-9]{40}', commit)):
         raise RuntimeError('release_check_source_denied')
     return ref.removeprefix('refs/heads/'), commit

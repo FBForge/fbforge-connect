@@ -45,7 +45,7 @@ final class ReceiptSigner {
                 payload.metadataAuthTag(evidence.metadata())
                         .dataAuthTag(evidence.data())
                         .attachmentAuthTags(evidence.attachments())
-                        .problems(List.of());
+                        .problems(attachmentProblems(request.blockedAttachments()));
             } else payload.problems(List.of(problem(request)));
             var signer = new SecurityEventTokenService(sdk.config, sdk.validation, key);
             var token =
@@ -107,8 +107,21 @@ final class ReceiptSigner {
         if (evidence == null
                 || !evidence.destinationId().equals(request.destinationId())
                 || !evidence.submissionId().equals(request.submissionId())
-                || !evidence.caseId().equals(request.caseId()))
+                || !evidence.caseId().equals(request.caseId())
+                || !evidence.attachments().keySet().containsAll(request.blockedAttachments()))
             throw new SessionException("verification_failed");
+    }
+
+    static List<Problem> attachmentProblems(List<UUID> ids) {
+        return ids.stream()
+                .map(
+                        id ->
+                                new Problem(
+                                        "https://schema.fitko.de/fit-connect/events/problems/invalid-content",
+                                        "Attachment blocked by malware scan",
+                                        "The attachment was withheld and is not available for processing.",
+                                        "attachment:" + id))
+                .toList();
     }
 
     private static Problem problem(ReceiptRequest request) {

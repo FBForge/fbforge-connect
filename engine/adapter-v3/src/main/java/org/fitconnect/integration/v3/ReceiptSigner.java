@@ -50,7 +50,10 @@ final class ReceiptSigner {
                 if (evidence == null
                         || !evidence.destinationId().equals(request.destinationId())
                         || !evidence.submissionId().equals(request.submissionId())
-                        || !evidence.caseId().equals(request.caseId()))
+                        || !evidence.caseId().equals(request.caseId())
+                        || !evidence.attachments()
+                                .keySet()
+                                .containsAll(request.blockedAttachments()))
                     throw new SessionException("verification_failed");
                 tags =
                         new AuthenticationTags(
@@ -62,7 +65,9 @@ final class ReceiptSigner {
                             request.destinationId(),
                             request.caseId(),
                             tags,
-                            accept ? List.of() : List.of(problem(request)));
+                            accept
+                                    ? attachmentProblems(request.blockedAttachments())
+                                    : List.of(problem(request)));
             var factory =
                     JwtTokenFactory.builder()
                             .rsaKey(key)
@@ -125,6 +130,18 @@ final class ReceiptSigner {
         } catch (Exception failure) {
             throw new SessionException("verification_failed");
         }
+    }
+
+    static List<Problem> attachmentProblems(List<UUID> ids) {
+        return ids.stream()
+                .map(
+                        id ->
+                                new Problem(
+                                        "https://schema.fitko.de/fit-connect/events/problems/invalid-content",
+                                        "Attachment blocked by malware scan",
+                                        "The attachment was withheld and is not available for processing.",
+                                        "attachment:" + id))
+                .toList();
     }
 
     private static Problem problem(ReceiptRequest request) {

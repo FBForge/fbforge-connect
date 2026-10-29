@@ -18,7 +18,8 @@ final class ReceiveStore {
             int partCount,
             int warningCount,
             List<String> warnings,
-            SubmissionInput.ProcessMessage processMessage) {
+            SubmissionInput.ProcessMessage processMessage,
+            List<BlockedAttachment> blockedAttachments) {
         Summary(
                 String proofId,
                 String destinationId,
@@ -35,7 +36,8 @@ final class ReceiveStore {
                     partCount,
                     warningCount,
                     warnings,
-                    null);
+                    null,
+                    List.of());
         }
     }
 
@@ -48,7 +50,8 @@ final class ReceiveStore {
             String description,
             int totalBytes) {}
 
-    record Page(String proofId, int offset, int total, List<Part> parts) {}
+    record Page(
+            String proofId, int offset, int total, List<Part> parts, int blockedAttachmentCount) {}
 
     record Chunk(
             String proofId,
@@ -112,7 +115,8 @@ final class ReceiveStore {
                                 .distinct()
                                 .limit(16)
                                 .toList(),
-                        content.processMessage());
+                        content.processMessage(),
+                        ScanFindings.blocked(content.issues()));
         current =
                 new Stored(
                         api,
@@ -144,7 +148,8 @@ final class ReceiveStore {
                         value.parts()
                                 .subList(
                                         offset,
-                                        Math.min(offset + PAGE_SIZE, value.parts().size()))));
+                                        Math.min(offset + PAGE_SIZE, value.parts().size()))),
+                value.summary().blockedAttachments().size());
     }
 
     synchronized Chunk read(
