@@ -2,6 +2,9 @@
 
 ## 0.2.1 (in Vorbereitung)
 
+- „Zurück zum Eingang“ beim Empfang in einer beim Scrollen sichtbaren unteren Navigationsleiste anzeigen, auch nach Annahme oder Ablehnung. Lange Anlagenlisten berücksichtigen deren Höhe.
+- Nach fehlgeschlagener Inhaltsprüfung mit `invalid_resource` oder `verification_failed` die manuelle Ablehnung direkt an der Fehlermeldung anbieten. Ein Ablehnungsgrund und eine ausdrückliche Versandbestätigung bleiben erforderlich.
+
 - Java-SDK für API v3 von 4.0.0-rc.2 auf die finale Version 4.0.0 aktualisiert. Der getrennte v2-Adapter verwendet weiterhin die aktuelle 3.x-Version 3.5.2.
 - Schemaabweichungen beim Empfang über API v2 und v3 getrennt von Entschlüsselung und Integrität anzeigen. Fachdaten, Anlagen und verwendetes Schema bleiben lesbar; JSON-Felder werden mit konkreten Abweichungen markiert, XML meldet Zeile und Spalte.
 - Eine Einzelannahme trotz Schemaabweichung benötigt eine zusätzliche native Bestätigung. Die Sammelannahme bleibt für solche Nachrichten gesperrt. Signatur-, Hash- und Entschlüsselungsfehler bleiben blockierend.

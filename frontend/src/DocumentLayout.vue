@@ -8,13 +8,20 @@ let updateHeight;
 onMounted(() => {
   // The workspace header can wrap at larger text sizes. Use the actual reading viewport.
   const viewport = layout.value.closest('.workspace-scroll');
+  const navigation = layout.value.closest('.submission-workspace')?.querySelector('.submission-return');
   updateHeight = () => {
     const bounds = viewport?.getBoundingClientRect();
     const height = bounds ? Math.min(innerHeight, bounds.bottom) - Math.max(0, bounds.top) : innerHeight;
-    layout.value.style.setProperty('--document-aside-height', `${Math.max(0, height - 32)}px`);
+    // Leave room for the receive navigation so it cannot cover attachment actions.
+    const navigationHeight = navigation?.getBoundingClientRect().height || 0;
+    layout.value.style.setProperty(
+      '--document-aside-height',
+      `${Math.max(0, height - navigationHeight - 32)}px`,
+    );
   };
   observer = new ResizeObserver(updateHeight);
   observer.observe(viewport || document.documentElement);
+  if (navigation) observer.observe(navigation);
   window.addEventListener('resize', updateHeight);
   updateHeight();
 });

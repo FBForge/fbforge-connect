@@ -25,8 +25,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'receive-start', 'setup']);
 const information = ref(null),
-  receivePanel = ref(null),
-  backButton = ref(null);
+  receivePanel = ref(null);
 let opener;
 
 const destination = ref(props.destinationId || ''),
@@ -365,9 +364,6 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
           <h2>{{ detail.serviceName || 'Einreichung' }}</h2>
           <p>Prüfen Sie Fachdaten und Anlagen vor der Empfangsbestätigung.</p>
         </div>
-        <button ref="backButton" class="button secondary" type="button" :disabled="disabled" @click="back">
-          Zurück zum Eingang
-        </button>
       </div>
       <details v-if="detail" ref="information" class="submission-information">
         <summary>Einreichungsinformationen und Kennungen</summary>
@@ -478,5 +474,10 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
       @outcome="recordReceipt"
     />
     <ReceiptHistory :history="receiptHistory" :busy="busy || pending" @event-log="openEventLog" />
+    <nav v-if="detail" class="submission-return" aria-label="Empfangsnavigation">
+      <button class="button secondary" type="button" :disabled="disabled" @click="back">
+        Zurück zum Eingang
+      </button>
+    </nav>
   </div>
 </template>
