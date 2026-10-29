@@ -12,6 +12,10 @@ on:
         description: Optional successful Windows validation run whose installer is tested through its real UI
         type: string
         required: false
+      local_scanner:
+        description: Install optional local ClamAV and scan the real desktop TEST exchange
+        type: boolean
+        default: true
       ui_probe:
         description: Diagnose validated installed UI startup without credentials or TEST writes
         type: boolean
@@ -76,5 +80,6 @@ jobs:
           SENDERDEST: ${{ secrets.SENDERDEST }}
           SUBSCRIBERID: ${{ secrets.SUBSCRIBERID }}
           SUBSCRIBERSECRET: ${{ secrets.SUBSCRIBERSECRET }}
+          FBFORGE_UI_SCANNER: ${{ inputs.local_scanner }}
         run: node scripts/live-exchange.mjs
       # No artifact upload: protected checkpoint files stay in RUNNER_TEMP and are removed by the harness.

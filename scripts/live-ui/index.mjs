@@ -18,7 +18,7 @@ import {
   bulkReceive,
   previewPdf,
 } from './readback.mjs';
-import { localTools, ownDestination, keySetup, auditScreen } from './local-tools.mjs';
+import { localTools, ownDestination, keySetup, auditScreen, localScannerReady } from './local-tools.mjs';
 import { downloadMessage } from './downloads.mjs';
 import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 
@@ -31,6 +31,8 @@ export async function exerciseDesktopUI(fixture) {
     stage = 'sender_login';
     await loginSender(page);
     const senders = { v3: await senderProfileId(page) };
+    stage = 'optional_local_scanner';
+    await localScannerReady(page);
     stage = 'sender_api_switch';
     await switchApi(page, 'v2');
     senders.v2 = await senderProfileId(page, 'v2');

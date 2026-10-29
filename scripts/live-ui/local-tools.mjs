@@ -16,6 +16,21 @@ export async function auditScreen(page) {
   console.log('Real desktop UI: automated WCAG 2.2 A/AA screen check passed');
 }
 
+export async function localScannerReady(page) {
+  if (process.env.FBFORGE_UI_SCANNER !== 'true') return;
+  await navigate(page, 'Testwerkzeuge');
+  await page.getByRole('button', { name: 'Malwarescanner', exact: true }).click();
+  await until(
+    async () => (await page.getByText('Aktiv: Lokaler ClamAV', { exact: true }).count()) === 1,
+    'live_ui_local_scanner_not_selected',
+    90000,
+  );
+  await page.getByText('Scanner läuft lokal', { exact: true }).waitFor();
+  console.log(
+    'Real installed desktop: optional local ClamAV adopted offline, ready and active before TEST sends and receives',
+  );
+}
+
 export async function keySetup(page, fixture, api) {
   await navigate(page, 'Empfangen');
   await page.getByRole('tab', { name: 'Einreichungen', exact: true }).click();
