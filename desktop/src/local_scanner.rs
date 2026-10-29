@@ -129,11 +129,9 @@ pub async fn initialize(app: tauri::AppHandle) -> Result<(), &'static str> {
             .map_err(|_| "scanner_install_failed")?
             .join("resources/scanner");
         runtime.adopt_bundled(&resource)?;
-        if runtime.preferences.automatic_updates
-            && runtime
-                .preferences
-                .last_update
-                .is_none_or(|time| crate::scanner_runtime::now().saturating_sub(time) >= 86400)
+        if runtime
+            .preferences
+            .automatic_update_due(crate::scanner_runtime::now())
         {
             phase(state, "updating-database");
             let _ = runtime.refresh();

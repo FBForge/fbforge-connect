@@ -144,6 +144,10 @@ impl Runtime {
         let current = self.current();
         let engine = current.join("engine");
         package::verify_engine(&engine)?;
+        // Persist the attempt before network I/O: a failed update or forced app exit must not
+        // trigger automatic retries on every restart. Manual updates remain explicitly available.
+        self.preferences.last_update_attempt = Some(now());
+        self.save()?;
         let database = unique(&self.root, "database");
         fs::create_dir(&database).map_err(failure)?;
         let result = (|| {

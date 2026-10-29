@@ -19,7 +19,18 @@ pub struct Preferences {
     pub enabled: bool,
     pub automatic_updates: bool,
     pub last_update: Option<u64>,
+    #[serde(default)]
+    pub last_update_attempt: Option<u64>,
     pub update_failed: bool,
+}
+impl Preferences {
+    pub fn automatic_update_due(&self, time: u64) -> bool {
+        self.automatic_updates
+            && self
+                .last_update_attempt
+                .or(self.last_update)
+                .is_none_or(|previous| time.saturating_sub(previous) >= 86400)
+    }
 }
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -312,6 +323,22 @@ pub fn freshclam_configuration(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn automatic_update_limit_includes_failed_attempts_and_retains_old_preferences() {
+        let mut preferences: Preferences = serde_json::from_str(
+            r#"{"enabled":true,"automaticUpdates":true,"lastUpdate":100,"updateFailed":false}"#,
+        )
+        .unwrap();
+        assert!(!preferences.automatic_update_due(101));
+        assert!(preferences.automatic_update_due(86500));
+        preferences.last_update_attempt = Some(86500);
+        preferences.update_failed = true;
+        assert!(!preferences.automatic_update_due(86501));
+        assert!(!preferences.automatic_update_due(1)); // Clock moved backwards.
+        assert!(preferences.automatic_update_due(172900));
+        preferences.automatic_updates = false;
+        assert!(!preferences.automatic_update_due(172900));
+    }
     #[test]
     fn local_configuration_is_bounded_loopback_only_and_has_no_execution_hooks() {
         let text = clamd_configuration(
