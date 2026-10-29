@@ -1,5 +1,9 @@
 export function receiveMessages(reply) {
   const messages = {
+    malware_detected:
+      'Der eingerichtete Scanner meldet einen Fund. Inhalte werden nicht zur Vorschau, Annahme oder zum Export freigegeben. Es wurde nichts automatisch angenommen oder abgelehnt.',
+    malware_scan_failed:
+      'Der eingerichtete Scanner konnte die Inhalte nicht eindeutig freigeben. Prüfen Sie Erreichbarkeit und Konfiguration des Scanners. Inhalte bleiben gesperrt; kein automatischer Empfangsabschluss.',
     key_missing:
       'Zum Öffnen fehlt der passende private Schlüssel. Öffnen Sie die Empfangseinrichtung und laden Sie ihn dort.',
     key_rejected: reply

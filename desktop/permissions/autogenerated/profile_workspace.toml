@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-profile-workspace"
+description = "Enables the profile_workspace command without any pre-configured scope."
+commands.allow = ["profile_workspace"]
+
+[[permission]]
+identifier = "deny-profile-workspace"
+description = "Denies the profile_workspace command without any pre-configured scope."
+commands.deny = ["profile_workspace"]

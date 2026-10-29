@@ -1,5 +1,6 @@
 <script setup>
 import ServiceNames from './ServiceNames.vue';
+import DestinationShortcuts from '../integration/DestinationShortcuts.vue';
 import SenderDestination from '../SenderDestination.vue';
 import { serviceLabel } from '../service-label.js';
 const props = defineProps({ controller: Object, session: Object, visible: Boolean });
@@ -46,6 +47,12 @@ const {
           Leistungen laden
         </button>
       </label>
+      <DestinationShortcuts
+        v-model="target"
+        :session="session"
+        :disabled="disabled"
+        :loaded="recipient?.destinationId"
+      />
       <div v-if="recipient" class="send-service-selection">
         <label v-if="recipient.services.length || addressing !== 'process'" for="send-service">
           Verwaltungsleistung

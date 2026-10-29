@@ -79,7 +79,9 @@ export async function runMessageBatch(options) {
       const blocked =
         !['application/json', 'application/xml'].includes(data?.mimeType) ||
         proof.warnings.some(
-          (warning) => warning !== 'MALWARE_SCAN_NOT_CONFIGURED' || !options.allowNoScanner,
+          (warning) =>
+            warning !== 'MALWARE_SCAN_PASSED' &&
+            (warning !== 'MALWARE_SCAN_NOT_CONFIGURED' || !options.allowNoScanner),
         );
       if (blocked) {
         row.status = 'manual';

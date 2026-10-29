@@ -50,11 +50,8 @@ function reopenCase(record) {
 }
 import ReplyBrowser from './ReplyBrowser.vue';
 import { createCaseWorkspace, caseWorkspaceKey } from './case-context.js';
-
 const caseRecords = shallowRef([]);
-const caseWorkspace = createCaseWorkspace((records) => {
-  caseRecords.value = records;
-});
+const caseWorkspace = createCaseWorkspace((records) => (caseRecords.value = records));
 provide(caseWorkspaceKey, caseWorkspace);
 const processDraft = shallowRef(null),
   processContext = shallowRef(null),
@@ -112,7 +109,6 @@ function fatal(cause) {
   caseWorkspace.clear();
   error.value = errorMessage(cause);
 }
-
 function resourceBusy(value) {
   busy.value = value;
   pendingAction.value = value ? 'resource' : '';
@@ -133,7 +129,6 @@ const diagnostics = useDiagnostics({
   refreshStorageStatus,
 });
 const { results, events, trace, reportJson, addEvent, probe, exportReport, clearHistory } = diagnostics;
-
 const currentView = computed(() => navigation.find((item) => item.name === section.value));
 const receiveBrowser = ref(null);
 const { receiveTab, selectReceiveTab, receiveTabKey } = useReceiveTabs({
@@ -199,7 +194,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('drop', preventFileNavigation);
 });
 </script>
-
 <template>
   <a class="skip-link" href="#main">Zum Arbeitsbereich</a>
   <div class="desktop-shell" :inert="updates.installing.value" @dragover.prevent @drop.prevent>
@@ -415,6 +409,12 @@ onBeforeUnmount(() => {
           />
           <ApplicationHelp v-if="section === 'Hilfe'" />
           <TestTools
+            @scanner-changed="
+              submissionRevision++;
+              replyRevision++;
+            "
+            :session="activeSession"
+            @busy="resourceBusy"
             v-if="toolsOpened"
             v-show="section === 'Testwerkzeuge'"
             :busy="busy"

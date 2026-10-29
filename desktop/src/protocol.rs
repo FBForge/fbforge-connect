@@ -88,6 +88,8 @@ impl<T> EngineResponse<T> {
                 Some("endpoint_blocked") => EngineFailure::Remote("endpoint_blocked"),
                 Some("invalid_credentials") => EngineFailure::Remote("invalid_credentials"),
                 Some("session_missing") => EngineFailure::Remote("session_missing"),
+                Some("malware_detected") => EngineFailure::Remote("malware_detected"),
+                Some("malware_scan_failed") => EngineFailure::Remote("malware_scan_failed"),
                 Some("invalid_resource") => EngineFailure::Remote("invalid_resource"),
                 Some("destination_conflict") => EngineFailure::Remote("destination_conflict"),
                 Some("destination_update_locked") => {

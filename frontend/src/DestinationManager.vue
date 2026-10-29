@@ -2,6 +2,9 @@
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import DestinationSetup from './DestinationSetup.vue';
+import DestinationTemplates from './integration/DestinationTemplates.vue';
+import DestinationHistory from './integration/DestinationHistory.vue';
+import DestinationComparison from './integration/DestinationComparison.vue';
 import DestinationCleanup from './DestinationCleanup.vue';
 import DestinationOffers from './DestinationOffers.vue';
 import DestinationKeyRotation from './DestinationKeyRotation.vue';
@@ -52,6 +55,7 @@ const {
   recover,
   cancel,
   difference,
+  applyTemplate,
 } = controller;
 </script>
 
@@ -247,6 +251,7 @@ const {
           {{ selected.length > 1 ? 'Auswahl gemeinsam bearbeiten' : 'Destination bearbeiten' }}
         </button>
       </section>
+      <DestinationHistory :session="session" :busy="disabled" />
       <form v-if="view === 'edit' && selected.length && canEdit" @submit.prevent="prepare">
         <h3 ref="editHeading" tabindex="-1">
           {{
@@ -262,6 +267,12 @@ const {
         <ul>
           <li v-for="row in selected" :key="row.destinationId">{{ row.name || row.destinationId }}</li>
         </ul>
+        <DestinationTemplates
+          :session="session"
+          :changes="changes"
+          :disabled="disabled || locked"
+          @apply="applyTemplate"
+        />
         <fieldset :disabled="disabled || locked">
           <legend>Gemeinsame Änderungen</legend>
           <div class="client-fields">
@@ -421,6 +432,7 @@ const {
           <p v-if="row.error" role="status">
             {{ messages[row.error] || 'Änderung nicht bestätigt. Bitte die Destination neu laden.' }}
           </p>
+          <DestinationComparison :before="row.before" :after="row.after" />
           <template v-if="row.after.publicServices || row.after.processMessages">
             <h5>Angebote nach der Änderung</h5>
             <DestinationOffers

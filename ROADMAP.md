@@ -13,7 +13,7 @@ Die Version bündelt die vereinfachten Abläufe für Windows x64:
 
 Die Freigabe benötigt die v2/v3-Regression, Tastatur-/NVDA- und Skalierungsprüfungen sowie ein unabhängig geprüftes signiertes Windows-Upgrade. Details stehen in [RELEASING.md](RELEASING.md).
 
-## 0.3.0: Aktualisierungen aus der Anwendung
+## Goal 0.3.0: Wiederholbare Integrationsabläufe und sicherer Betrieb
 
 Auf `release/0.3.0` wird ein integrierter Updater für veröffentlichte GitHub-Releases umgesetzt. Das ist
 eine neue Funktion; der vollständige Ablauf ist für 0.3.0 vorgesehen und gehört
@@ -57,20 +57,24 @@ Technische Grundlage: [Tauri-Updater](https://v2.tauri.app/plugin/updater/).
 Die Einrichtung des Update-Signaturschlüssels und die Paketabnahme sind vor der
 Freigabe erforderlich; dieser Roadmap-Eintrag aktiviert keine Updates.
 
-## Vorschläge für weitere Komfortverbesserungen
+### Vereinbarter Umfang auf `release/0.3.0`
 
-Diese Punkte sind Ideen aus dem bisherigen Einsatz, noch keine zugesagten Funktionen:
+- Empfang: Alter aus geprüften Bereitstellungsereignissen, Filter ab drei/neun Tagen, älteste zuerst und nächste Einreichung. Unbekannte Zeitpunkte nicht aus dem lokalen Abrufdatum ableiten; technische Abhol- und Löschfristen von fachlichen Fristen unterscheiden.
+- Ungewissen Versand anhand bekannter Case-/Submission-ID lesend mit signierten Serverereignissen abgleichen. Fehlende Ereignisse nicht als Beweis für einen fehlenden Versand ausgeben; keine automatische Wiederholung.
+- Zertifikatswarnungen bei abgelaufenen Zertifikaten sowie 30/90 Tagen Vorlauf. Keine automatische Schlüsselrotation.
+- Destination-Konfigurationsvorlagen importieren, exportieren, geschützt speichern und vor Anwendung mit aktuellen Serverwerten vergleichen. Konfigurationsänderungen mit Vorher-/Nachher-Werten profil-, umgebungs- und API-gebunden mit Windows-DPAPI protokollieren. Keine vollständige serverseitige Änderungshistorie behaupten.
+- Häufige und zuletzt geladene Empfänger-Destinations im geschützten Profil wiederfinden; deren aktuelles Leistungsangebot weiterhin laden.
+- Testabläufe ergänzen vorhandene Testfälle. Versand, Eingang, Fachdaten-/Anlagenvergleich, erwartete Empfangsbestätigung und Antworten anhand lokaler Nachrichtenergebnisse prüfen; Durchläufe neu starten und Definition/Ergebnis exportieren. Schreibaktionen bleiben einzeln bestätigt.
+- Eigene ClamAV-/ICAP-Gegenstelle optional und nur nach nativer Bestätigung für eine Verbindung einrichten. Metadaten, Fachdaten und Anlagen nach Entschlüsselung scannen; Fund und unklare/fehlende Freigaben blockieren. Kein FBForge-Relay und keine automatische Meldung an einen externen Dienst.
+- Regressionen über API v2/v3, Fehlereingaben, Kontextwechsel, Speicherfehler, Zeitlimits und Wiederholungen; vollständige Java-, native und UI-Prüfungen sowie aktualisierte Anleitung und Versionshinweise.
 
-- Globale Suche nach Vorgangs-, Einreichungs- und Antwort-ID, mit direktem Sprung zur passenden Ansicht.
-- Favoriten für häufige Destinations und Testfälle, ohne Schlüssel oder Zugangsdaten in Testpakete zu kopieren.
-- Kompakter Verbindungscheck mit getrennten Ergebnissen für Anmeldung, Berechtigung, Destination und Schemaquelle.
-- Hinweise auf ablaufende Zertifikate mit ausreichendem Vorlauf; keine automatische Änderung registrierter Schlüssel.
-- Gezieltes Wiederherstellen lokal gesicherter Entwürfe nach Neustart, ausdrücklich getrennt von Versandversuchen; ungewisse Übertragungen niemals automatisch erneut senden.
+Nicht enthalten: Callback-/Webhook-Werkzeug, neue Anlage-ID-Funktionen, große XSD-Bibliothek und nicht exportierbare Schlüssel/HSM. Netzwerk-Vorabprüfung (DNS, TLS, Proxy, Firewall sowie V-PKI-OCSP/CRL) und Routing-Debugger gehören zu **FBForge Inspect**.
+
+Die Implementierung auf dem Feature-Branch ist keine Release-Freigabe. Vor Veröffentlichung bleiben Update-Schlüsseleinrichtung, signierter Windows-Upgrade-Test und die Abnahme mit echten TEST-Zugängen erforderlich. Keine PR- oder Tag-Erstellung ohne gesonderten Release-Auftrag.
 
 ## Weitere Planung
 
 - macOS und Linux: Paketierung, Installation, Plattform-Schlüsselspeicher und Abhängigkeiten pro Zielplattform prüfen. Es gibt keinen unverschlüsselten Ersatz für die geschützte Speicherung.
-- Optionale Malwareprüfung über einen klar abgegrenzten Adapter, einschließlich ICAP oder plattformspezifischer Scanner. Fehlender oder nicht erreichbarer Scanner muss erkennbar bleiben.
 - Weitere Vereinfachungen aus Rückmeldungen zum tatsächlichen Einsatz und Beiträge anderer Entwickler.
 
 Diese Punkte sind Planungen ohne zugesagten Veröffentlichungstermin. Neue Funktionen erhalten bei Bedarf eine weitere 0.x-Version; Fehlerkorrekturen eine Patch-Version. Für 1.0.0 ist eine stabile, dokumentierte und auf den zugesagten Plattformen abgenommene Funktionalität maßgeblich. Vorgeschriebene Zwischenversionen gibt es nicht.

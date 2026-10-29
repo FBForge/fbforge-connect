@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>0.3 · ausschließlich synthetische Testdaten</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp } from 'vue/dist/vue.esm-bundler.js';
+      import { ref, provide } from 'vue';
+      import TestTools from '../src/TestTools.vue';
+      import DestinationTemplates from '../src/integration/DestinationTemplates.vue';
+      import InboxAges from '../src/integration/InboxAges.vue';
+      import CertificateResults from '../src/destinations/CertificateResults.vue';
+      import SendReconciliation from '../src/integration/SendReconciliation.vue';
+      import { environmentKey } from '../src/environments.js';
+      import pack from '../src/examples/integration.fctest.json';
+      import '../src/styles/index.css';
+      const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
+      const fixture = (window.__integration = {
+        calls: [],
+        workspace: { templates: [], history: [], favorites: [], recent: [] },
+        records: [],
+        data: '{}',
+        scanner: { kind: 'off', host: '', port: 0, service: '' },
+        applied: null,
+        emitted: null,
+        wrong: false,
+        failScanConfig: false,
+      });
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args) {
+          fixture.calls.push({ command, args });
+          if (command === 'profile_workspace') {
+            const request = args.request;
+            if (request.action === 'save_template') fixture.workspace.templates.push(request.template);
+            if (request.action === 'delete_template')
+              fixture.workspace.templates = fixture.workspace.templates.filter(
+                (row) => row.id !== request.id,
+              );
+            return structuredClone(fixture.workspace);
+          }
+          if (command === 'test_library')
+            return args.request.action === 'list'
+              ? [{ id: id(7), name: pack.name, cases: pack.cases.map(({ id, name }) => ({ id, name })) }]
+              : structuredClone(pack);
+          const envelope = (data) => ({
+            apiVersion: args.apiVersion,
+            sessionId: args.sessionId,
+            environment: 'TEST',
+            data,
+          });
+          if (command === 'malware_scanner_state') return envelope(fixture.scanner);
+          if (command === 'configure_malware_scanner') {
+            if (fixture.failScanConfig) throw 'content_cancelled';
+            fixture.scanner = args.configuration;
+            return envelope({ kind: fixture.scanner.kind });
+          }
+          if (command === 'load_case_event_log')
+            return envelope({
+              logId: id(80),
+              caseId: args.caseId,
+              scope: 'case',
+              total: 1,
+              warnings: ['CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED'],
+            });
+          if (command === 'list_case_event_log') {
+            const target = fixture.calls.findLast((call) => call.command === 'load_case_event_log').args
+              .caseId;
+            const second = target === id(4);
+            return envelope({
+              logId: id(80),
+              offset: 0,
+              total: 1,
+              events: [
+                {
+                  eventId: id(90),
+                  eventType: 'https://schema.fitko.de/fit-connect/events/submit-submission',
+                  issuer: 'https://issuer.example',
+                  issuedAt: new Date(Date.now() - (second ? 1 : 10) * 86400000).toISOString(),
+                  headerBytes: 10,
+                  claimsBytes: 20,
+                  subjectType: 'submission',
+                  subjectId: second ? id(3) : id(2),
+                },
+              ],
+            });
+          }
+          if (command === 'discard_event_log') return envelope({ logId: id(80) });
+          if (command === 'case_workspace') {
+            if (args.operation === 'list')
+              return envelope({ records: fixture.records, persistent: true, canPersist: true });
+            const bytes = new TextEncoder().encode(fixture.wrong ? '{}' : fixture.data);
+            if (args.operation === 'parts')
+              return envelope({
+                recordId: args.recordId,
+                offset: 0,
+                total: 2,
+                parts: [
+                  {
+                    contentId: id(82),
+                    kind: 'metadata',
+                    fileName: 'metadata.json',
+                    mimeType: 'application/json',
+                    totalBytes: 2,
+                  },
+                  {
+                    contentId: id(83),
+                    kind: 'data',
+                    fileName: 'data.json',
+                    mimeType: 'application/json',
+                    totalBytes: bytes.length,
+                  },
+                ],
+              });
+            if (args.operation === 'read')
+              return envelope({
+                recordId: args.recordId,
+                contentId: args.contentId,
+                byteOffset: 0,
+                totalBytes: bytes.length,
+                chunk: btoa(String.fromCharCode(...bytes)),
+                complete: true,
+              });
+          }
+          throw new Error('Unexpected fixture call ' + command);
+        },
+      };
+      createApp({
+        components: { TestTools, DestinationTemplates, InboxAges, CertificateResults, SendReconciliation },
+        setup() {
+          const environment = ref('TEST');
+          provide(environmentKey, environment);
+          const session = ref({
+              sessionId: id(1),
+              apiVersion: new URLSearchParams(location.search).get('api') || 'v2',
+              environment: 'TEST',
+              connected: true,
+            }),
+            mode = ref('tools'),
+            busy = ref(false),
+            rows = ref([]);
+          return {
+            session,
+            mode,
+            busy,
+            rows,
+            fixture,
+            items: [
+              { submissionId: id(2), caseId: id(5) },
+              { submissionId: id(3), caseId: id(4) },
+            ],
+            outcome: { status: 'uncertain', attemptId: id(6), submissionId: id(2), caseId: id(5) },
+            expiry: [
+              {
+                kid: 'synthetic-expiring',
+                eligible: true,
+                expiresAt: new Date(Date.now() + 10 * 86400000).toISOString(),
+              },
+            ],
+            changeSession() {
+              session.value = { ...session.value, sessionId: id(10) };
+            },
+          };
+        },
+        template: `<main class="tool-section"><h1>Integrationstests 0.3</h1><nav class="client-actions"><button @click="mode='tools'">Werkzeuge</button><button @click="mode='templates'">Vorlagen</button><button @click="mode='ages'">Eingang</button><button @click="mode='certificates'">Zertifikate</button><button @click="mode='send'">Versand</button><button @click="changeSession">Anderes Profil</button></nav><TestTools v-show="mode==='tools'" :session="session" :busy="busy" @busy="busy=$event" @send="fixture.emitted=$event"/><DestinationTemplates v-if="mode==='templates'" :session="session" :changes="{name:'Vorlage'}" @apply="fixture.applied=$event"/><InboxAges v-if="mode==='ages'" :session="session" :items="items" @rows="rows=$event" @busy="busy=$event"/><p v-if="mode==='ages'" data-testid="age-result">{{rows.map(row=>row.submissionId+':'+row.collection?.ageDays).join(' | ')}}</p><CertificateResults v-if="mode==='certificates'" :keys="expiry"/><SendReconciliation v-if="mode==='send'" :session="session" :outcome="outcome" :busy="busy" @busy="busy=$event"/></main>`,
+      }).mount('#app');
+    </script>
+  </body>
+</html>

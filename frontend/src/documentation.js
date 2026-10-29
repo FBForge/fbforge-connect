@@ -1,4 +1,4 @@
-export const documentationRoot = 'https://fbforge.de/connect/hilfe/0.2';
+export const documentationRoot = 'https://fbforge.de/connect/hilfe/0.3';
 export const documentationTopics = Object.freeze([
   { id: 'start', title: 'Schnellstart' },
   { id: 'connection', title: 'Verbinden und Profile' },

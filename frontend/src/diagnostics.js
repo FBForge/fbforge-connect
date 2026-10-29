@@ -19,6 +19,10 @@ export async function probeAdapter(invoke, apiVersion, environment = 'TEST') {
 
 export function errorMessage(code) {
   const messages = {
+    malware_detected:
+      'Der eingerichtete Scanner meldet einen Fund. Die Inhalte bleiben gesperrt; kein automatischer Empfangsabschluss.',
+    malware_scan_failed:
+      'Der eingerichtete Scanner konnte die Inhalte nicht eindeutig freigeben. Prüfen Sie die Scanner-Gegenstelle. Die Inhalte bleiben gesperrt.',
     batch_selection_limit: 'Bitte höchstens 100 Nachrichten für einen Durchlauf auswählen.',
     export_failed:
       'Die Dateien konnten nicht vollständig gespeichert werden. Bitte Schreibrechte und freien Speicherplatz im Zielordner prüfen.',

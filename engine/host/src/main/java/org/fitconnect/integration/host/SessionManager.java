@@ -321,6 +321,43 @@ final class SessionManager implements AutoCloseable {
         return state.sendFlow.send(version, id, command, attemptId);
     }
 
+    Data<?> scannerState(ApiVersion version, String id) {
+        state.find(version, id);
+        return new Data<>(
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                state.scanners.containsKey(id)
+                        ? state.scanners.get(id).config
+                        : new MalwareScanner.Config("off", "", 0, ""));
+    }
+
+    Data<?> configureScanner(ApiVersion version, String id, String document) {
+        state.find(version, id);
+        var json = StrictJson.object(document, 4096);
+        if (!json.keySet().equals(Set.of("kind", "host", "port", "service")))
+            throw new SessionException("invalid_input");
+        MalwareScanner.Config config;
+        try {
+            config =
+                    new MalwareScanner.Config(
+                            json.get("kind").getAsString(),
+                            json.get("host").getAsString(),
+                            json.get("port").getAsInt(),
+                            json.get("service").getAsString());
+        } catch (RuntimeException failure) {
+            throw new SessionException("invalid_input");
+        }
+        state.receiveFlow.clearReceiveSnapshots();
+        if (config.kind().equals("off")) state.scanners.remove(id);
+        else state.scanners.put(id, new MalwareScanner(config));
+        return new Data<>(
+                version.wireValue(),
+                id,
+                IntegrationEnvironment.current().name(),
+                Map.of("kind", config.kind()));
+    }
+
     public void close() {
         state.close();
     }

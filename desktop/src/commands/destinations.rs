@@ -57,8 +57,9 @@ pub(crate) async fn prepare_destination_update(
     if destination_document.is_empty() || destination_document.len() > 24 * 1024 {
         return Err("invalid_input");
     }
-    resource_action(&app, &state, api_version, &session_id,
-        serde_json::json!({"command":"prepare_destination_update","destinationDocument":destination_document})).await
+    let result = resource_action(&app, &state, api_version, &session_id,
+        serde_json::json!({"command":"prepare_destination_update","destinationDocument":destination_document})).await?;
+    Ok(result)
 }
 
 #[tauri::command]
@@ -72,14 +73,15 @@ pub(crate) async fn execute_destination_update(
     if !valid_session_id(&attempt_id) {
         return Err("invalid_input");
     }
-    resource_action(
+    let result = resource_action(
         &app,
         &state,
         api_version,
         &session_id,
         serde_json::json!({"command":"execute_destination_update","attemptId":attempt_id}),
     )
-    .await
+    .await?;
+    Ok(result)
 }
 
 #[tauri::command]

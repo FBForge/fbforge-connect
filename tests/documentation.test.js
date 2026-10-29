@@ -29,8 +29,8 @@ test('web guide exports complete chapters with escaped executable examples', asy
     await promisify(execFile)(process.execPath, ['scripts/export-guide.mjs', destination]);
     for (const topic of helpTopics) {
       const html = await readFile(join(destination, `${topic.id}.html`), 'utf8');
-      assert.ok(html.includes(`https://fbforge.de/connect/hilfe/0.2/${topic.id}`));
-      assert.ok(html.includes('Anleitung für Version 0.2.0'));
+      assert.ok(html.includes(`https://fbforge.de/connect/hilfe/0.3/${topic.id}`));
+      assert.ok(html.includes('Anleitung für Version 0.3.0'));
       assert.ok(html.includes('<a href="/connect">FBForge Connect</a>'));
       assert.ok(!html.includes('>Connect</a>'));
       for (const picture of [topic, ...(topic.illustrations || [])]) {
@@ -53,19 +53,19 @@ test('wiki guide exports the same steps, examples and images into versioned chap
   try {
     const destination = join(temp, 'wiki');
     await promisify(execFile)(process.execPath, ['scripts/export-wiki.mjs', destination]);
-    const index = await readFile(join(destination, 'Version-0.2.md'), 'utf8');
+    const index = await readFile(join(destination, 'Version-0.3.md'), 'utf8');
     const sidebar = await readFile(join(destination, '_Sidebar.md'), 'utf8');
     for (const topic of helpTopics) {
-      assert.ok(index.includes(`](0.2-${topic.id})`));
-      assert.ok(sidebar.includes(`](0.2-${topic.id})`));
-      const markdown = await readFile(join(destination, `0.2-${topic.id}.md`), 'utf8');
-      assert.ok(markdown.includes('Anleitung für Version 0.2.0'));
+      assert.ok(index.includes(`](0.3-${topic.id})`));
+      assert.ok(sidebar.includes(`](0.3-${topic.id})`));
+      const markdown = await readFile(join(destination, `0.3-${topic.id}.md`), 'utf8');
+      assert.ok(markdown.includes('Anleitung für Version 0.3.0'));
       for (const text of [topic.intro, ...topic.steps, ...topic.notes]) assert.ok(markdown.includes(text));
       for (const example of topic.examples || []) assert.ok(markdown.includes(example.content));
       for (const picture of [topic, ...(topic.illustrations || [])]) {
-        assert.ok(markdown.includes(`/images/0.2/${picture.image}.png`));
+        assert.ok(markdown.includes(`/images/0.3/${picture.image}.png`));
         assert.deepEqual(
-          await readFile(join(destination, 'images', '0.2', `${picture.image}.png`)),
+          await readFile(join(destination, 'images', '0.3', `${picture.image}.png`)),
           await readFile(new URL(`../docs/guide/images/${picture.image}.png`, import.meta.url)),
         );
       }

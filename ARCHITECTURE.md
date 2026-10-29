@@ -71,3 +71,11 @@ BPMN-Element-IDs werden nicht als FIT-Connect-Kennungen verwendet. Eigene Modell
 SDK-Tests prüfen Verschlüsselung und Rundläufe. Frontend- und native Tests die Verträge und Kontextbindung. Browser-Fixtures werden nicht ausgeliefert. DPAPI, Installation und Upgrades werden unter Windows geprüft. Reale Austausche auf FIT-Connect TEST. Befehle stehen in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Änderungsprüfungen wählen betroffene Module aus. Die manuelle Windows-Release-Prüfung baut das vollständige Paket und prüft Installation, Profilerhalt und NVDA. Die Signierung erfordert einen erfolgreichen Lauf für denselben Commit. Ein separater Windows-Runner prüft anschließend das signierte Paket.
+
+## Erweiterungen für 0.3.0
+
+Die Testabläufe kombinieren vorhandene Testfälle und prüfen lokale Nachrichtenergebnisse. Sie besitzen keine zusätzliche Schreibberechtigung; Versand, Empfangsbestätigungen und Antworten bleiben hinter ihren bestehenden nativen Bestätigungen. Der Versandabgleich liest signierte SETs anhand bekannter Kennungen und verändert keinen Versandversuch.
+
+Profil-Arbeitsdaten (Destination-Vorlagen, Merkliste und lokale Konfigurationshistorie) liegen getrennt von Credentials und Vorgängen in Windows-DPAPI-Dateien. Zusätzliche Entropie bindet Profil, Umgebung und API. Nur native Engine-Ergebnisse erzeugen Historieneinträge. Vor dem Schreiben wird ein ungewisser Zustand dauerhaft hinterlegt; ein Fehler der abschließenden Speicherung darf einen tatsächlichen Servererfolg nicht als fehlgeschlagenen Versand umdeuten. Profilentfernung löscht auch diese Arbeitsdaten. Profil-Backups enthalten sie nicht.
+
+Der optionale Scanner ist im gemeinsamen Java-Host hinter beiden SDK-Adaptern angesiedelt und prüft nach Kryptografie, vor Veröffentlichung von Inhalten oder Quittierungsbeweisen. Jeder Nachrichtenscan hat ein Gesamtzeitlimit einschließlich DNS, Verbindungsaufbau, Schreiben und Antwort. Nur ClamAV `stream: OK` oder ICAP 204 ohne Infektionsmeldung sind sauber. Scanner-Adressen werden nativ bestätigt; die Konfiguration gilt nur für die Sitzung. Kein Callback-Dienst oder FBForge-Relay ist Bestandteil der Anwendung.

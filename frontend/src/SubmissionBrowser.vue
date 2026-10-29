@@ -6,6 +6,9 @@ const processWorkspace = inject(processWorkspaceKey, null);
 import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
 import ReceivePanel from './ReceivePanel.vue';
+import InboxAges from './integration/InboxAges.vue';
+import ReceiveQueueNavigation from './integration/ReceiveQueueNavigation.vue';
+const visibleRows = ref([]);
 import ReceiptHistory from './ReceiptHistory.vue';
 import InboxSelection from './InboxSelection.vue';
 const selection = ref(null);
@@ -14,7 +17,6 @@ import ServiceLabel from './ServiceLabel.vue';
 import { listSubmissions, loadSubmission } from './submissions.js';
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.js';
-
 const props = defineProps({
   session: Object,
   busy: Boolean,
@@ -25,8 +27,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'receive-start', 'setup']);
 const information = ref(null),
-  receivePanel = ref(null),
-  backButton = ref(null);
+  receivePanel = ref(null);
 let opener;
 
 const destination = ref(props.destinationId || ''),
@@ -210,7 +211,6 @@ async function back() {
 }
 defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true });
 </script>
-
 <template>
   <div class="submission-workspace">
     <section class="tool-section" aria-label="Einreichungen">
@@ -269,6 +269,14 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
             </p>
             <p v-else>Auf dieser Seite sind keine Einreichungen vorhanden.</p>
           </div>
+          <InboxAges
+            :session="session"
+            :items="page.submissions"
+            :destination-id="destination"
+            :busy="disabled"
+            @busy="emit('busy', $event)"
+            @rows="visibleRows = $event"
+          />
           <InboxSelection
             ref="selection"
             :session="session"
@@ -293,7 +301,7 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in page.submissions" :key="item.submissionId">
+                <tr v-for="item in visibleRows" :key="item.submissionId">
                   <td data-label="Auswahl">
                     <input
                       type="checkbox"
@@ -305,6 +313,11 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
                   </td>
                   <td data-label="Einreichung">
                     <code>{{ item.submissionId }}</code>
+                    <p class="small-note" v-if="item.collection">
+                      {{ item.collection.ageDays }} Tage · Abholfrist:
+                      {{ new Date(item.collection.dueAt).toLocaleString('de-DE') }}
+                    </p>
+                    <p class="small-note" v-else>Zeitpunkt unbekannt</p>
                   </td>
                   <td data-label="Case ID">
                     <code v-if="item.caseId">{{ item.caseId }}</code>
@@ -365,9 +378,6 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
           <h2>{{ detail.serviceName || 'Einreichung' }}</h2>
           <p>Prüfen Sie Fachdaten und Anlagen vor der Empfangsbestätigung.</p>
         </div>
-        <button ref="backButton" class="button secondary" type="button" :disabled="disabled" @click="back">
-          Zurück zum Eingang
-        </button>
       </div>
       <details v-if="detail" ref="information" class="submission-information">
         <summary>Einreichungsinformationen und Kennungen</summary>
@@ -476,6 +486,14 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
       @receive-start="emit('receive-start')"
       @verified="(value) => (verified = value)"
       @outcome="recordReceipt"
+    />
+    <ReceiveQueueNavigation
+      v-if="detail"
+      :current="detail.submissionId"
+      :items="visibleRows"
+      :busy="disabled"
+      @back="back"
+      @next="open"
     />
     <ReceiptHistory :history="receiptHistory" :busy="busy || pending" @event-log="openEventLog" />
   </div>

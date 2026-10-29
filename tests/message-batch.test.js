@@ -241,3 +241,19 @@ test('reply batches export reply content without sending any receipt', async () 
     false,
   );
 });
+
+test('a successful configured malware scan allows bulk acceptance while other review warnings still block', async () => {
+  for (const warnings of [['MALWARE_SCAN_PASSED'], ['MALWARE_SCAN_PASSED', 'DATA_SCHEMA_INVALID']]) {
+    const f = fixture({ warnings });
+    f.options.allowNoScanner = false;
+    const results = await runMessageBatch(f.options);
+    assert.equal(
+      results.every((row) => row.status === 'accepted'),
+      warnings.length === 1,
+    );
+    assert.equal(
+      f.calls.some((row) => row.command === 'execute_receipt'),
+      warnings.length === 1,
+    );
+  }
+});

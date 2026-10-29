@@ -2,6 +2,13 @@
 
 ## 0.3.0 (in Entwicklung)
 
+- Empfang mit Alter aus geprüften Serverereignissen, Filtern und „Nächste Einreichung öffnen“. Technische Abholfristen und unbekannte Zeitpunkte ausdrücklich anzeigen.
+- Ungewissen Versand mit bekannten Nachrichtenkennungen lesend gegen signierte Serverereignisse prüfen; keine automatische Wiederholung.
+- Zertifikatswarnungen mit 30/90 Tagen Vorlauf. Empfänger-Favoriten und zuletzt verwendete Destinations geschützt im Profil speichern.
+- Destination-Vorlagen mit Import, Export und Feldvergleich. Profil-, umgebungs- und API-gebundene Windows-DPAPI-Historie für Konfigurationsänderungen einschließlich ungewissem Ausgang.
+- Wiederholbare Testabläufe ergänzen Testfälle: Versand, Eingang, Inhalts-/Anlagenvergleich, erwartete Bestätigung und Antwort anhand lokaler Nachrichten prüfen; Definition und Durchlaufergebnis exportieren.
+- Optionale eigene ClamAV-/ICAP-Gegenstelle nach nativer Bestätigung. Kein gehosteter FBForge-Endpunkt. Scanfund, Zeitlimit oder unklare Freigabe bleiben blockierend.
+
 - Integrierte Updates für Windows x64: automatische, abschaltbare Suche und manuelle Suche unter „Info“, Hinweis auf neue stabile GitHub-Releases, Downloadfortschritt und abbrechbarer Download.
 - Installer erst nach erfolgreicher Paket- und Versionssignaturprüfung sowie nativer Bestätigung starten. Laufende Aktionen und offene Exporte blockieren die Installation; gespeicherte Schlüssel werden vor dem Beenden gesichert.
 - Release-Paket um Update-Signatur und `latest.json` ergänzen. Vor der Freigabe muss der eigene Update-Schlüssel eingerichtet und ein echtes signiertes Windows-Update abgenommen werden. Entwicklungspakete ohne Prüfschlüssel bieten weiterhin den manuellen Download.

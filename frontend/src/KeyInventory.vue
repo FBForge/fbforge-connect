@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
 import { invoke } from './native.js';
+import CertificateExpiryNotice from './integration/CertificateExpiryNotice.vue';
 import { loadKeyInventory, removeInventoryItem } from './key-inventory.js';
 import { resetsSessions } from './sessions.js';
 const props = defineProps({ session: Object, busy: Boolean });
@@ -130,6 +131,7 @@ async function remove() {
 }
 </script>
 <template>
+  <CertificateExpiryNotice :keys="(rows || []).map((row) => ({ ...row, kid: row.keyId }))" />
   <details class="tool-section" v-if="session">
     <summary>Schlüsselbestand dieser Verbindung</summary>
     <p>

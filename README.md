@@ -22,7 +22,7 @@ und werden zusätzlich bestätigt. Verwenden Sie für Tests fiktive Daten.
 2. Umgebung wählen und mit passenden Zugangsdaten verbinden.
 3. Einreichungen senden oder abrufen und prüfen.
 
-Integrierte Updates sind für 0.3.0 in Entwicklung und noch nicht veröffentlicht.
+Auf `release/0.3.0` werden integrierte Updates, wiederholbare Testabläufe, Empfang mit Altersübersicht, Destination-Vorlagen und geschützter Konfigurationshistorie sowie optionale eigene ClamAV-/ICAP-Scanner vorbereitet. Diese Funktionen sind noch nicht veröffentlicht.
 Details stehen in der [Roadmap](ROADMAP.md).
 
 [Anleitung mit Bildern](https://fbforge.de/connect/hilfe/0.2/start) ·

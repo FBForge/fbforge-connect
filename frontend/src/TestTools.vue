@@ -1,12 +1,16 @@
 <script setup>
 import { ref, defineAsyncComponent, watch } from 'vue';
 import TestPackages from './TestPackages.vue';
+const MalwareScannerSettings = defineAsyncComponent(() => import('./integration/MalwareScannerSettings.vue'));
+const TestFlows = defineAsyncComponent(() => import('./integration/TestFlows.vue'));
 const SchemaComparison = defineAsyncComponent(() => import('./SchemaComparison.vue'));
-defineProps({ busy: Boolean });
-const emit = defineEmits(['send']);
+defineProps({ busy: Boolean, session: Object });
+const emit = defineEmits(['send', 'busy', 'scanner-changed']);
 const mode = ref('packages');
 const comparisonOpened = ref(false);
+const flowsOpened = ref(false);
 watch(mode, (value) => {
+  if (value === 'flows') flowsOpened.value = true;
   if (value === 'comparison') comparisonOpened.value = true;
 });
 </script>
@@ -30,6 +34,32 @@ watch(mode, (value) => {
         Schema-Vergleich
       </button>
     </div>
+    <button class="button secondary" type="button" :aria-pressed="mode === 'flows'" @click="mode = 'flows'">
+      Testabläufe
+    </button>
+    <TestFlows
+      v-show="mode === 'flows'"
+      v-if="flowsOpened"
+      :session="session"
+      :busy="busy"
+      @send="emit('send', $event)"
+      @busy="emit('busy', $event)"
+    />
+    <button
+      class="button secondary"
+      type="button"
+      :aria-pressed="mode === 'scanner'"
+      @click="mode = 'scanner'"
+    >
+      Malwarescanner
+    </button>
+    <MalwareScannerSettings
+      v-if="mode === 'scanner'"
+      :session="session"
+      :busy="busy"
+      @busy="emit('busy', $event)"
+      @changed="emit('scanner-changed')"
+    />
     <TestPackages v-show="mode === 'packages'" :busy="busy" @send="emit('send', $event)" />
     <SchemaComparison v-if="comparisonOpened" v-show="mode === 'comparison'" />
   </div>

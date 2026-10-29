@@ -265,6 +265,40 @@ export function useDestinationManager(props, emit) {
     view.value = 'edit';
     await show(editHeading);
   }
+  function applyTemplate(value) {
+    if (disabled.value || locked.value) return;
+    resetFields();
+    if (Object.hasOwn(value, 'name')) {
+      nameEnabled.value = true;
+      name.value = value.name;
+    }
+    if (Object.hasOwn(value, 'status')) {
+      statusEnabled.value = true;
+      status.value = value.status;
+    }
+    if (Object.hasOwn(value, 'metadataVersions')) {
+      versionsEnabled.value = true;
+      versions.value = value.metadataVersions.join(', ');
+    }
+    for (const [key, next] of Object.entries(value.contactInformation || {})) {
+      if (contacts.value[key]) {
+        contacts.value[key].enabled = true;
+        contacts.value[key].value = next || '';
+      }
+    }
+    if (value.publicServices || value.processMessages) {
+      if (selected.value.length !== 1 || detail.value?.type !== 'A') {
+        error.value =
+          'Leistungs- und Schemavorlagen können nur auf eine einzelne Antrags-Destination angewendet werden.';
+        return;
+      }
+      offers.value = {
+        publicServices: value.publicServices ?? detail.value.offers?.publicServices ?? [],
+        processMessages: value.processMessages ?? detail.value.offers?.processMessages ?? [],
+      };
+      offersEnabled.value = true;
+    }
+  }
   async function prepare() {
     if (!canEdit.value) return;
     await run('Destination-Änderung vorbereiten', async (active, current) => {
@@ -380,5 +414,6 @@ export function useDestinationManager(props, emit) {
     recover,
     cancel,
     difference,
+    applyTemplate,
   };
 }

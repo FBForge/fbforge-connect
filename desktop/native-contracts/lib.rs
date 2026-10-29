@@ -27,3 +27,6 @@ pub mod profile_versions;
 
 #[path = "../src/update_policy.rs"]
 pub mod update_policy;
+
+#[path = "../src/profile_workspace_store.rs"]
+pub mod profile_workspace_store;

@@ -528,3 +528,31 @@ export const helpTopics = [
     ],
   },
 ];
+
+// 0.3 additions stay in the same maintained guide source; exports are versioned independently.
+const additions = {
+  send: [
+    'Bei ungewissem Ausgang mit bekannter Case ID und Submission ID „Versand mit Server abgleichen“ wählen. Nur ein eindeutig zugeordnetes, geprüftes Bereitstellungsereignis bestätigt die Übergabe. Ein fehlendes Ereignis oder Lesefehler beweist keinen fehlgeschlagenen Versand. Der Abgleich sendet nichts erneut und bestätigt keinen Empfang.',
+  ],
+  receive: [
+    '„Alter aus Event Logs laden“ liest geprüfte Bereitstellungszeitpunkte für die geladene Seite. Danach nach Alter filtern oder älteste Einreichungen zuerst anzeigen. Fehlende Zeitpunkte bleiben unbekannt. „Nächste Einreichung öffnen“ führt zur folgenden Nachricht dieser Seite, ohne sie anzunehmen.',
+  ],
+  connection: [
+    'In der Zertifikatsprüfung und im geladenen Schlüsselbestand werden abgelaufene sowie innerhalb von 30 beziehungsweise 90 Tagen ablaufende Zertifikate hervorgehoben. Erneuerung und Registrierung werden weiterhin bewusst durchgeführt.',
+  ],
+  destinations: [
+    'In der Bearbeitung unter „Konfigurationsvorlagen“ ausgewählte Felder geschützt im Profil speichern oder eine Vorlage importieren. Das Übernehmen ändert nur die Bearbeitung. Vor jedem Speichern aktuelle Servervorschau, Felder und Leistungs-/Schemaangebote vergleichen und separat bestätigen. Leistungsangebote werden als vollständige Listen ersetzt. Vorlagen mit Angeboten gelten für eine einzelne Antrags-Destination.',
+    '„Lokale Änderungshistorie“ enthält bis zu 100 aktuelle Konfigurationsänderungen dieses Profils, dieser Umgebung und API. Vorher-/Nachher-Werte werden mit Windows-DPAPI geschützt gespeichert. Externe Änderungen und Schlüsselrotationen sind kein Bestandteil dieser lokalen Konfigurationshistorie. Ein ungewisser Eintrag verlangt einen Abgleich mit dem Server vor einer Wiederholung.',
+  ],
+  tools: [
+    'Unter „Testabläufe“ ein Testpaket aus der Sammlung oder eine Datei öffnen. Ein Testfall bleibt ein einzelner Baustein; der Ablauf kombiniert Versand, Eingang, Inhaltsvergleich, erwartete Empfangsbestätigung und gegebenenfalls Antwort. Einen neuen Durchlauf starten, die Aktionen einzeln in den Arbeitsbereichen bestätigen und anschließend die passende lokale Nachricht auswählen. Prüfschritte vergleichen Fachdaten und Anlagen. JSON-Objektreihenfolge ist unerheblich; XML wird nach sicherer Syntaxprüfung exakt verglichen. Ein falscher Inhalt oder ein ungewisser Versand bleibt offen.',
+    'Ablaufdefinition und Durchlaufergebnis können exportiert werden. Definitionen enthalten das unverschlüsselte Testpaket; Ergebnisse enthalten Nachrichtenkennungen und Prüfzeitpunkte. Verwenden Sie fiktive Daten und prüfen Sie Dateien vor dem Teilen. Der Durchlauf bleibt beim Wechsel des Werkzeugs oder Profils innerhalb derselben Umgebung geöffnet. Ein neuer Durchlauf setzt die Ergebnisse zurück.',
+    'Unter „Malwarescanner“ optional einen eigenen ClamAV-INSTREAM- oder ICAP-RESPMOD-Dienst einrichten. Vor Aktivierung zeigt eine native Bestätigung die Zieladresse und die Übertragung entschlüsselter Inhalte. Diese Anbindung verwendet unverschlüsseltes TCP und benötigt eine lokale Gegenstelle oder ein anderweitig geschütztes Netz. Die Einstellung gilt nur für die Verbindung. Beim Empfang werden Metadaten, Fachdaten und Anlagen geprüft. Nur explizite Freigaben sind erfolgreich; Fund, Zeitlimit oder unklare Antworten sperren die Inhaltsfreigabe. Es erfolgt keine automatische Annahme oder Ablehnung. FBForge betreibt dafür keinen Dienst.',
+  ],
+};
+for (const topic of helpTopics) topic.steps.push(...(additions[topic.id] || []));
+helpTopics
+  .find((topic) => topic.id === 'receive')
+  .notes.push(
+    'Technische Abholfrist für nicht abgeholte Nachrichten: grundsätzlich 14 Tage ab Bereitstellung, endgültige Löschung nach 21 Tagen. Erfolgreich abgeholte Nachrichten werden nach 7 Tagen gelöscht; unvollständige Übertragungen nach einem Tag. Das sind technische Speicherfristen und keine fachlichen Bearbeitungsfristen.',
+  );

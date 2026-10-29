@@ -138,6 +138,8 @@ final class SessionReceive {
             }
         }
         try {
+            if (this.state.scanners.containsKey(id))
+                result = this.state.scanners.get(id).scan(result);
             var summary =
                     this.state.received.publish(
                             version,
@@ -217,6 +219,8 @@ final class SessionReceive {
             }
         }
         try {
+            if (this.state.scanners.containsKey(id))
+                result = this.state.scanners.get(id).scan(result);
             return new Data<>(
                     version.wireValue(),
                     id,

@@ -11,6 +11,8 @@ public final class SessionException extends RuntimeException {
                     "session_missing",
                     "invalid_credentials",
                     "invalid_resource",
+                    "malware_detected",
+                    "malware_scan_failed",
                     "resource_denied",
                     "resource_missing",
                     "resource_unavailable",
