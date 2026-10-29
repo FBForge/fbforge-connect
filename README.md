@@ -1,5 +1,7 @@
 # FBForge Connect
 
+> **Hinweis:** FBForge Connect ist für Entwicklungs-, Test- und Integrationszwecke vorgesehen.
+
 <img src="frontend/src/assets/test-client.png" alt="" width="80" height="80">
 
 Desktop-Client für FIT-Connect. Für Entwickler, Integratoren und Mitarbeiter der öffentlichen Verwaltung.
@@ -21,7 +23,7 @@ Für **Windows x64 und FIT-Connect TEST, STAGE und PROD**. Kein offizielles Prod
 
 Die Pakete werden mit digitaler Signatur, Zeitstempel und SHA-256-Prüfsumme bereitgestellt. Java wird mitgeliefert.
 
-STAGE und PROD benötigen gültige V-PKI-Zertifikate mit vollständiger Zertifikatskette. PROD-Schreibaktionen werden zusätzlich bestätigt. Die veröffentlichte Version 0.1 bleibt auf TEST beschränkt.
+STAGE und PROD benötigen gültige V-PKI-Zertifikate mit vollständiger Zertifikatskette. PROD-Schreibaktionen werden zusätzlich bestätigt.
 
 Die [Anleitung mit Bildern und Beispielen](https://fbforge.de/connect/hilfe/0.2/start) wird auf der Website gepflegt. In der Anwendung finden Sie Hinweise und Links zum passenden Kapitel.
 
