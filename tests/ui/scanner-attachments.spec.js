@@ -75,3 +75,38 @@ test('batch review saves no incomplete archive and never automatically accepts a
   expect(state.writes).toEqual([]);
   expect(state.saves).toEqual([]);
 });
+
+test('stored cases retain the blocked-file report and clean form without offering an incomplete original archive', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  await page.evaluate(() => {
+    const state = window.__caseFixture;
+    state.scopes.a[0].warnings = ['MALWARE_ATTACHMENT_BLOCKED'];
+    state.parts.push({
+      contentId: '00000014-1111-4111-8111-111111111111',
+      kind: 'scan-report',
+      fileName: 'Virenscan.json',
+      mimeType: 'application/json',
+      description: null,
+      bytes: new TextEncoder().encode(
+        JSON.stringify({
+          version: 1,
+          blockedAttachments: [
+            { attachmentId: '00000099-1111-4111-8111-111111111111', fileName: 'Gesperrte Testanlage.txt' },
+          ],
+        }),
+      ),
+    });
+  });
+  await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
+  await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
+  await page.getByRole('button', { name: 'Fiktiver Antrag auf Testleistung', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Gesperrte Anlagen' })).toContainText(
+    'Gesperrte Testanlage.txt',
+  );
+  await expect(page.locator('.application-field-value').filter({ hasText: 'Erika' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Alle Dateien herunterladen', exact: true })).toBeDisabled();
+  await expect(page.locator('.document-attachments li')).toHaveCount(2);
+  await expect(page.getByText('MALWARE_ATTACHMENT_BLOCKED', { exact: true })).toHaveCount(0);
+});

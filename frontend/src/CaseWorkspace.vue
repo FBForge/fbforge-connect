@@ -270,11 +270,15 @@ const {
         {{
           warning === 'MALWARE_SCAN_NOT_CONFIGURED'
             ? 'Kein Malwarescanner eingerichtet.'
-            : warning === 'DATA_SCHEMA_INVALID'
-              ? 'Die Fachdaten weichen vom Schema ab. Bitte die angezeigten Fehler prüfen.'
-              : warning === 'XML_SCHEMA_NOT_CHECKED'
-                ? 'XML-Syntax geprüft. Keine XSD-Prüfung durchgeführt.'
-                : warning
+            : warning === 'MALWARE_ATTACHMENT_BLOCKED'
+              ? 'Anlagen wurden vom Virenscan gesperrt. Die betroffenen Dateien bleiben unzugänglich.'
+              : warning === 'MALWARE_SCAN_PASSED'
+                ? 'Metadaten, Fachdaten und Anlagen wurden vom eingerichteten Scanner freigegeben.'
+                : warning === 'DATA_SCHEMA_INVALID'
+                  ? 'Die Fachdaten weichen vom Schema ab. Bitte die angezeigten Fehler prüfen.'
+                  : warning === 'XML_SCHEMA_NOT_CHECKED'
+                    ? 'XML-Syntax geprüft. Keine XSD-Prüfung durchgeführt.'
+                    : warning
         }}
       </p>
       <BlockedAttachments :items="blockedAttachments" />

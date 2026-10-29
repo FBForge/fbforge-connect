@@ -191,6 +191,7 @@ function Check-Installed([bool]$ExpectProfile) {
             # This profile contains only fake credentials and no private keys; no OAuth call is made.
             Invoke-Named $window 'Verbinden'
             $null = Wait-Condition { Find-Named $window 'CI TEST Profil' } 'installed_profile_not_restored'
+            Invoke-Named $window 'Verbindungsdialog schließen'
         }
         if (Test-Path -LiteralPath (Join-Path $taskInstall 'resources/scanner/component.zip')) {
             Invoke-Named $window 'Testwerkzeuge'

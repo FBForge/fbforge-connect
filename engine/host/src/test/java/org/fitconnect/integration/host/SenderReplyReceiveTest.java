@@ -453,6 +453,59 @@ class SenderReplyReceiveTest extends SenderTestSupport {
                                             tags.getAsJsonObject("attachments")
                                                     .get(fixture.attachmentId.toString())
                                                     .getAsString());
+                                    var withProblems =
+                                            request.withBlockedAttachments(
+                                                    List.of(fixture.attachmentId));
+                                    var flagged =
+                                            adapters.withSession(
+                                                    api,
+                                                    session,
+                                                    value ->
+                                                            value.prepareReplyReceipt(
+                                                                    withProblems, evidence));
+                                    var flaggedBody =
+                                            JsonParser.parseString(flagged.body())
+                                                    .getAsJsonObject();
+                                    assertEquals(
+                                            tags,
+                                            flaggedBody.getAsJsonObject("authenticationTags"));
+                                    var problem =
+                                            flaggedBody
+                                                    .getAsJsonArray("problems")
+                                                    .get(0)
+                                                    .getAsJsonObject();
+                                    assertEquals(
+                                            "attachment:" + fixture.attachmentId,
+                                            problem.get("instance").getAsString());
+                                    assertEquals(
+                                            "https://schema.fitko.de/fit-connect/events/problems/invalid-content",
+                                            problem.get("type").getAsString());
+                                    var flaggedTransport =
+                                            new SenderReplyReceiptCapture(fixture, flagged);
+                                    assertNotNull(
+                                            adapters.withSession(
+                                                    api,
+                                                    session,
+                                                    value ->
+                                                            value.sendReplyReceipt(
+                                                                    flagged,
+                                                                    flaggedTransport,
+                                                                    workspace)));
+                                    assertEquals(1, flaggedTransport.puts);
+                                    assertThrows(
+                                            SessionException.class,
+                                            () ->
+                                                    adapters.withSession(
+                                                            api,
+                                                            session,
+                                                            value ->
+                                                                    value.prepareReplyReceipt(
+                                                                            request
+                                                                                    .withBlockedAttachments(
+                                                                                            List.of(
+                                                                                                    UUID
+                                                                                                            .randomUUID())),
+                                                                            evidence)));
                                 }
                                 assertFalse(prepared.toString().contains("authenticationTags"));
                                 var transport = new SenderReplyReceiptCapture(fixture, prepared);
