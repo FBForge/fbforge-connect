@@ -33,6 +33,13 @@ final class Engine implements AutoCloseable {
             try {
                 Object result =
                         switch (command) {
+                            case "scanner_state" ->
+                                    sessions.scannerState(version, values.get("sessionId"));
+                            case "configure_scanner" ->
+                                    sessions.configureScanner(
+                                            version,
+                                            values.get("sessionId"),
+                                            values.get("schemaDocument"));
                             case "probe" -> registry.probe(version);
                             case "open_session" ->
                                     sessions.open(

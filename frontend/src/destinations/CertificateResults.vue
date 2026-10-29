@@ -1,11 +1,13 @@
 <script setup>
 import { computed } from 'vue';
 import CopyValue from '../CopyValue.vue';
+import CertificateExpiryNotice from '../integration/CertificateExpiryNotice.vue';
 import { errorMessage } from '../diagnostics.js';
 const props = defineProps({ keys: Array });
 const blocked = computed(() => props.keys.filter((key) => !key.eligible));
 </script>
 <template>
+  <CertificateExpiryNotice :keys="keys" />
   <p v-if="blocked.length" class="status-badge warn" role="status">
     {{ blocked.length }} Zertifikat(e) wurden nicht freigegeben. Öffnen Sie die Prüfergebnisse für die
     Ursache.

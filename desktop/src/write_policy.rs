@@ -111,10 +111,34 @@ pub(crate) async fn resource_action(
             .await
             .map_err(|_| "case_storage_pending")?;
     }
+    if operation == "execute_destination_update" {
+        crate::profile_workspace::mark_running(
+            app,
+            state,
+            version,
+            id,
+            command["attemptId"].as_str().ok_or("invalid_input")?,
+        )
+        .await?;
+    }
     let value: SessionResource = request(app, state, command).await?;
     if !value.validate(version, id) {
         *state.process.lock().await = None;
         return Err("engine_protocol_error");
+    }
+    if matches!(
+        operation.as_str(),
+        "prepare_destination_update"
+            | "execute_destination_update"
+            | "destination_update_state"
+            | "cancel_destination_update"
+    ) && !value.data["attemptId"].is_null()
+    {
+        let journal = crate::profile_workspace::journal(app, state, version, id, &value.data).await;
+        // Failed final persistence leaves the durable intent uncertain; preserve the remote result.
+        if operation == "prepare_destination_update" {
+            journal?;
+        }
     }
     if matches!(
         operation.as_str(),

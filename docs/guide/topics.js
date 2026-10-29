@@ -16,7 +16,7 @@ export const helpTopics = [
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
     ],
     notes: [
-      'Die Abbildungen zeigen den vorbereiteten Patchstand 0.2.1 mit der neuen Bildmarke. Download und Versionshinweise beziehen sich auf das veröffentlichte Release.',
+      'Die Abbildungen zeigen Version 0.3.0 mit ausschließlich fiktiven Testdaten. Download und Versionshinweise beziehen sich auf das veröffentlichte Release.',
       'Das Werkzeug ersetzt kein produktives Fachverfahren und ist keine offizielle Anwendung der FITKO.',
       'Die Anwendung wird weiterentwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
     ],
@@ -145,7 +145,7 @@ export const helpTopics = [
     notes: [
       'Die Nachfrage für öffentliche Schemaquellen erscheint beim Laden oder Prüfen. Ihre Freigabe gilt für die aktive Verbindung und lässt sich mit „Freigabe beenden“ widerrufen. Nach einem Verbindungswechsel oder Neustart ist erneut eine Freigabe nötig. Lokale Schemata und mitgelieferte Demos benötigen keine Freigabe.',
       'Ist ein Schema nicht verfügbar oder liefert die Quelle eine Fehlerantwort, erzeugt die Anwendung daraus keine Beispieldaten. Ihre bisherigen Fachdaten bleiben erhalten. Prüfen Sie die angebotene Schema-Version oder verwenden Sie eigene Testdaten. Passen Sie bei erzeugten Entwürfen auch Codelistenwerte und Anlagenverweise an Ihren Test an.',
-      'Bei „Ausgang ungewiss“ nicht einfach erneut senden. Nutzen Sie die bekannten IDs zur Event-Log-Prüfung, um doppelte Testnachrichten zu vermeiden. Ab 0.2.1 können Sie anschließend „Neuen Entwurf vorbereiten“ wählen und das Doppelversandrisiko ausdrücklich bestätigen. Der bisherige Versuch bleibt ungewiss und unter „Vorgänge“ erhalten. Die Case ID wird geleert; Empfängerleistungen und Schema werden erneut geladen. Erst eine neue Versandbestätigung übermittelt einen neuen Antrag. Eine eindeutige HTTP-401/403-Ablehnung beim erstmaligen Ankündigen einer Einreichung gilt als fehlgeschlagen.',
+      'Bei „Ausgang ungewiss“ nicht einfach erneut senden. Nutzen Sie die bekannten IDs zur Event-Log-Prüfung, um doppelte Testnachrichten zu vermeiden. Ab 0.3.0 können Sie anschließend „Neuen Entwurf vorbereiten“ wählen und das Doppelversandrisiko ausdrücklich bestätigen. Der bisherige Versuch bleibt ungewiss und unter „Vorgänge“ erhalten. Die Case ID wird geleert; Empfängerleistungen und Schema werden erneut geladen. Erst eine neue Versandbestätigung übermittelt einen neuen Antrag. Eine eindeutige HTTP-401/403-Ablehnung beim erstmaligen Ankündigen einer Einreichung gilt als fehlgeschlagen.',
       'Die Vorgangsablage übernimmt den tatsächlich vorbereiteten Versandinhalt. Spätere Änderungen im Eingabefeld verändern diese Kopie nicht.',
       'Für einen bewussten Negativtest können Sie die Fachdaten-Schemaprüfung unter den technischen Optionen ausschalten. Die Versandbestätigung nennt das ausdrücklich. Format und Empfängerangebot werden weiterhin vom SDK geprüft. Eine erfolgreiche Schemaprüfung bestätigt keine fachliche Richtigkeit.',
     ],
@@ -188,14 +188,14 @@ export const helpTopics = [
       'Verbinden Sie den Fachverfahren-Zugang. Öffnen Sie unter „Empfangen“ das Register „Einreichungen“. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Schlüssel zum Entschlüsseln und Signieren.',
       'Ohne Submission ID laden Sie die verfügbaren Einreichungen. Mit einer Submission ID öffnet die Schaltfläche oder die Eingabetaste direkt die Nachricht und startet die Entschlüsselung und Prüfung.',
       'Nach erfolgreicher Einrichtung wird die Empfangseinrichtung kompakt angezeigt. Über „Einrichtung ändern“ öffnen Sie Destination und Schlüssel erneut. Wenn Schlüssel oder Schemata fehlen, führt die passende Schaltfläche zur Einrichtung oder zu den Schemaeinstellungen. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
-      'Lesen Sie die Fachdaten direkt in der Formularansicht. Ab 0.2.1 zeigt eine Schemaabweichung die Fehlerübersicht und das verwendete Schema. Betroffene JSON-Felder sind markiert; bei XML werden Zeile und Spalte genannt. Sie können die Nachricht begründet ablehnen oder nach zusätzlicher nativer Bestätigung trotz Schemaabweichung annehmen. Eindeutige Schema-Bezeichnungen ersetzen technische Auswahlwerte, Datumswerte und Wahrheitswerte werden lesbar angezeigt. „Struktur, Quelltext und Feldangaben“ enthält Originalwerte, Pfade, Schemaherkunft und Quelltext. Die Eingangssuche ist während des Lesens ausgeblendet. „Zurück zum Eingang“ stellt Ihre bisherige Suche wieder her.',
+      'Lesen Sie die Fachdaten direkt in der Formularansicht. Ab 0.3.0 zeigt eine Schemaabweichung die Fehlerübersicht und das verwendete Schema. Betroffene JSON-Felder sind markiert; bei XML werden Zeile und Spalte genannt. Sie können die Nachricht begründet ablehnen oder nach zusätzlicher nativer Bestätigung trotz Schemaabweichung annehmen. Eindeutige Schema-Bezeichnungen ersetzen technische Auswahlwerte, Datumswerte und Wahrheitswerte werden lesbar angezeigt. „Struktur, Quelltext und Feldangaben“ enthält Originalwerte, Pfade, Schemaherkunft und Quelltext. Die Eingangssuche ist während des Lesens ausgeblendet. „Zurück zum Eingang“ stellt Ihre bisherige Suche wieder her.',
       'Öffnen Sie Anlagen über „Ansehen“ oder laden Sie das Original herunter. Bereits im Standardfenster bleibt die rechte Spalte mit Anlagen und Aktionen beim Lesen sichtbar. Lange Anlagenlisten scrollen innerhalb der Spalte. Bei schmalen Fenstern führt „Zu Anlagen und Aktionen“ direkt zu den Empfangsaktionen vor der Anlagenliste. Über „Antwort verfassen“ öffnen Sie den Antwortentwurf.',
       'Unter „Private Schlüssel importieren“ wählen Sie JWK, JWKS, unverschlüsseltes PKCS#8-PEM oder PKCS#12. Textdateien werden direkt geprüft. Bei .p12/.pfx geben Sie das Dateipasswort ein und starten „Schlüssel prüfen und importieren“. Kann ein PKCS#12-Zertifikat zum Signieren und Entschlüsseln verwendet werden, wählen Sie die gewünschte Verwendung. Das Dateipasswort wird nicht gespeichert. Die freigegebene Registrierung bestimmt Kennung und Zertifikatskette des geladenen Schlüssels. STAGE und PROD prüfen weiterhin V-PKI-Vertrauen und Sperrstatus mit dem SDK.',
       'Mit „Alle Dateien herunterladen“ speichern Sie Metadaten, Fachdaten und Anlagen gemeinsam. Wählen Sie im nativen Dialog einen Zielordner. Die Dateien werden entschlüsselt außerhalb der geschützten Vorgangsablage gespeichert. Jede Nachricht erhält einen eigenen Ordner mit einer Exportübersicht. Bestehende Exporte werden nicht überschrieben.',
       'Beim Annehmen einer einzelnen Einreichung fragt der Bestätigungsdialog „Dateien vor der Annahme speichern?“. Wählen Sie „Ja, alle Dateien vorher speichern“, um vor der Annahme einen Zielordner zu wählen. Erst nach erfolgreicher Speicherung wird die Annahme übermittelt. Bei Abbruch der Ordnerwahl oder einem Speicherfehler bleibt die Einreichung offen. „Nein, ohne Download annehmen“ bestätigt ohne zusätzlichen Export. Die geschützte Aufbewahrung unter „Vorgänge“ bleibt davon unabhängig.',
       'Markieren Sie im Eingang einzelne Nachrichten oder wählen Sie alle aus. „Alle auf dieser Seite auswählen“ betrifft die angezeigte Seite. Bis zu 100 Nachrichten lassen sich über mehrere Seiten gemeinsam auswählen. „Auswahl herunterladen“ prüft und speichert die Auswahl. „Prüfen, speichern und annehmen“ bestätigt anschließend nur erfolgreich geprüfte und vollständig gespeicherte Einreichungen.',
       'Ohne Malwarescanner bleiben Annahmen standardmäßig zur manuellen Prüfung stehen. „Annahmen ohne Malwarescan erlauben“ gibt ausschließlich diesen fehlenden Prüfschritt ausdrücklich frei. Schemafehler und andere offene Prüfungen bleiben weiterhin manuell. Bei mehreren Signaturschlüsseln wählen Sie den gewünschten Schlüssel. In PROD wird jede Annahme zusätzlich nativ bestätigt.',
-      'Auch „Auswahl herunterladen“ benötigt erfolgreiche Entschlüsselung und technische Prüfung. Nicht entschlüsselbare Nachrichten werden nicht exportiert. Ab 0.2.1 bleiben bei nachgewiesenen Schemaabweichungen die kryptografisch geprüften Daten lesbar und exportierbar; die Nachricht bleibt im Sammeldurchlauf zur manuellen Entscheidung stehen. Ein Prüfungsfehler bewirkt keine automatische Ablehnung. Öffnen Sie die betroffene Nachricht einzeln und wählen Sie bei Bedarf „Ablehnen“ mit einem passenden Grund. Fachlich falsche, technisch gültige Angaben erkennt die technische Prüfung nicht. Prüfen Sie solche Einreichungen vor einem Sammeldurchlauf fachlich.',
+      'Auch „Auswahl herunterladen“ benötigt erfolgreiche Entschlüsselung und technische Prüfung. Nicht entschlüsselbare Nachrichten werden nicht exportiert. Ab 0.3.0 bleiben bei nachgewiesenen Schemaabweichungen die kryptografisch geprüften Daten lesbar und exportierbar; die Nachricht bleibt im Sammeldurchlauf zur manuellen Entscheidung stehen. Ein Prüfungsfehler bewirkt keine automatische Ablehnung. Öffnen Sie die betroffene Nachricht einzeln und wählen Sie bei Bedarf „Ablehnen“ mit einem passenden Grund. Fachlich falsche, technisch gültige Angaben erkennt die technische Prüfung nicht. Prüfen Sie solche Einreichungen vor einem Sammeldurchlauf fachlich.',
       'Die Ergebnisliste zeigt gespeicherte, angenommene und manuell zu prüfende Nachrichten getrennt. „Einzeln öffnen und prüfen“ führt zur betroffenen Einreichung. „Durchlauf stoppen“ verhindert weitere Annahmen. Bei einem ungewissen Annahmestatus stoppt die Verarbeitung. Prüfen Sie den Event Log, bevor Sie erneut beginnen.',
       'Prüfen Sie fachlich, ob der Antrag zum Testfall passt. „Annehmen“ führt bei eindeutigem Signaturschlüssel direkt zur Prüfung und Bestätigung. Bei mehreren Schlüsseln wählen Sie zuerst den passenden aus. „Ablehnen“ verlangt einen ausdrücklich ausgewählten Grund. Erst die abschließende Bestätigung übermittelt die Entscheidung.',
       'Eine lokale Kopie bleibt unter „Vorgänge“ lesbar. Wenn die dauerhafte Aufbewahrung eingeschaltet ist, wird vor der Bestätigung die Sicherung geprüft.',
@@ -526,5 +526,55 @@ export const helpTopics = [
       'Der Schema-Vergleich ist ein Strukturvergleich, kein vollständiger Kompatibilitätsnachweis. Externe Referenzen, XSD-Imports und Codelisten werden nicht geladen. Bei XSD werden die ausgewählten Dateien verglichen. Prüfen Sie Änderungen zusätzlich mit Ihren Testfällen.',
       'Der Vergleich akzeptiert JSON-Schemata und XSD-Dateien bis 512 KiB. Fehlerantworten statt eines Schemas sowie XML mit DTDs oder externen Entitäten werden abgewiesen.',
     ],
+  },
+];
+
+// 0.3 additions stay in the same maintained guide source; exports are versioned independently.
+const additions = {
+  send: [
+    'Bei ungewissem Ausgang mit bekannter Case ID und Submission ID „Versand mit Server abgleichen“ wählen. Nur ein eindeutig zugeordnetes, geprüftes Bereitstellungsereignis bestätigt die Übergabe. Ein fehlendes Ereignis oder Lesefehler beweist keinen fehlgeschlagenen Versand. Der Abgleich sendet nichts erneut und bestätigt keinen Empfang.',
+  ],
+  receive: [
+    '„Alter aus Event Logs laden“ liest geprüfte Bereitstellungszeitpunkte für die geladene Seite. Danach nach Alter filtern oder älteste Einreichungen zuerst anzeigen. Fehlende Zeitpunkte bleiben unbekannt. „Nächste Einreichung öffnen“ führt zur folgenden Nachricht dieser Seite, ohne sie anzunehmen.',
+  ],
+  connection: [
+    'In der Zertifikatsprüfung und im geladenen Schlüsselbestand werden abgelaufene sowie innerhalb von 30 beziehungsweise 90 Tagen ablaufende Zertifikate hervorgehoben. Erneuerung und Registrierung werden weiterhin bewusst durchgeführt.',
+  ],
+  destinations: [
+    'In der Bearbeitung unter „Konfigurationsvorlagen“ ausgewählte Felder geschützt im Profil speichern oder eine Vorlage importieren. Das Übernehmen ändert nur die Bearbeitung. Vor jedem Speichern aktuelle Servervorschau, Felder und Leistungs-/Schemaangebote vergleichen und separat bestätigen. Leistungsangebote werden als vollständige Listen ersetzt. Vorlagen mit Angeboten gelten für eine einzelne Antrags-Destination.',
+    '„Lokale Änderungshistorie“ enthält bis zu 100 aktuelle Konfigurationsänderungen dieses Profils, dieser Umgebung und API. Vorher-/Nachher-Werte werden mit Windows-DPAPI geschützt gespeichert. Externe Änderungen und Schlüsselrotationen sind kein Bestandteil dieser lokalen Konfigurationshistorie. Ein ungewisser Eintrag verlangt einen Abgleich mit dem Server vor einer Wiederholung.',
+  ],
+  tools: [
+    'Unter „Testabläufe“ ein Testpaket aus der Sammlung oder eine Datei öffnen. Ein Testfall bleibt ein einzelner Baustein; der Ablauf kombiniert Versand, Eingang, Inhaltsvergleich, erwartete Empfangsbestätigung und gegebenenfalls Antwort. Einen neuen Durchlauf starten, die Aktionen einzeln in den Arbeitsbereichen bestätigen und anschließend die passende lokale Nachricht auswählen. Prüfschritte vergleichen Fachdaten und Anlagen. JSON-Objektreihenfolge ist unerheblich; XML wird nach sicherer Syntaxprüfung exakt verglichen. Ein falscher Inhalt oder ein ungewisser Versand bleibt offen.',
+    'Ablaufdefinition und Durchlaufergebnis können exportiert werden. Definitionen enthalten das unverschlüsselte Testpaket; Ergebnisse enthalten Nachrichtenkennungen und Prüfzeitpunkte. Verwenden Sie fiktive Daten und prüfen Sie Dateien vor dem Teilen. Der Durchlauf bleibt beim Wechsel des Werkzeugs oder Profils innerhalb derselben Umgebung geöffnet. Ein neuer Durchlauf setzt die Ergebnisse zurück.',
+    'Unter „Malwarescanner“ optional einen eigenen ClamAV-INSTREAM- oder ICAP-RESPMOD-Dienst einrichten. Vor Aktivierung zeigt eine native Bestätigung die Zieladresse und die Übertragung entschlüsselter Inhalte. Diese Anbindung verwendet unverschlüsseltes TCP und benötigt eine lokale Gegenstelle oder ein anderweitig geschütztes Netz. Die Einstellung gilt nur für die Verbindung. Beim Empfang werden Metadaten, Fachdaten und Anlagen geprüft. Nur explizite Freigaben sind erfolgreich; Fund, Zeitlimit oder unklare Antworten sperren die Inhaltsfreigabe. Es erfolgt keine automatische Annahme oder Ablehnung. FBForge betreibt dafür keinen Dienst.',
+  ],
+};
+for (const topic of helpTopics) topic.steps.push(...(additions[topic.id] || []));
+helpTopics
+  .find((topic) => topic.id === 'receive')
+  .notes.push(
+    'Technische Abholfrist für nicht abgeholte Nachrichten: grundsätzlich 14 Tage ab Bereitstellung, endgültige Löschung nach 21 Tagen. Erfolgreich abgeholte Nachrichten werden nach 7 Tagen gelöscht; unvollständige Übertragungen nach einem Tag. Das sind technische Speicherfristen und keine fachlichen Bearbeitungsfristen.',
+  );
+
+helpTopics
+  .find((topic) => topic.id === 'tools')
+  .illustrations.push(
+    {
+      image: 'test-flows',
+      caption:
+        'Ein neuer Testablauf kombiniert bestehende Testfälle und prüft die Ergebnisse Schritt für Schritt.',
+    },
+    {
+      image: 'malware-scanner',
+      caption:
+        'Eine eigene Scanner-Gegenstelle einrichten; ohne bewusste Aktivierung wird nichts übertragen.',
+    },
+  );
+helpTopics.find((topic) => topic.id === 'destinations').illustrations = [
+  ...(helpTopics.find((topic) => topic.id === 'destinations').illustrations || []),
+  {
+    image: 'destination-templates',
+    caption: 'Konfigurationsvorlagen vor der aktuellen Servervorschau in die Bearbeitung übernehmen.',
   },
 ];

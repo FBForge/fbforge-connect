@@ -56,6 +56,7 @@ final class SessionState implements AutoCloseable {
     final Map<String, LocalTestKeys> localKeys = new HashMap<>();
     final Map<String, DestinationManagement> management = new HashMap<>();
     final Map<String, SendSchemas> replySchemas = new HashMap<>();
+    final Map<String, MalwareScanner> scanners = new HashMap<>();
     final Map<String, SendSchemas> sendSchemas = new HashMap<>();
     final CaseRepository cases = new CaseRepository();
     final Map<String, String> caseScopes = new HashMap<>();
@@ -247,6 +248,7 @@ final class SessionState implements AutoCloseable {
         }
         if (entry == null) return;
         caseScopes.remove(entry.id());
+        scanners.remove(entry.id());
         var replySchema = replySchemas.remove(entry.id());
         if (replySchema != null) replySchema.clear();
         var schemas = sendSchemas.remove(entry.id());

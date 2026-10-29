@@ -14,8 +14,11 @@ mod message_export_stream;
 mod message_exports;
 mod profile_backup;
 use cases::case_workspace;
+mod malware_scanner;
 mod profile_version_commands;
 mod profile_versions;
+mod profile_workspace;
+mod profile_workspace_store;
 mod profiles;
 mod protocol;
 mod vault;
@@ -91,6 +94,9 @@ fn main() {
             commands::destination_creation::destination_creation_state,
             commands::destination_creation::reconcile_destination_creation,
             commands::keys::use_generated_keys,
+            profile_workspace::profile_workspace,
+            malware_scanner::configure_malware_scanner,
+            malware_scanner::malware_scanner_state,
             list_profiles,
             get_profile_defaults,
             save_profile_defaults,

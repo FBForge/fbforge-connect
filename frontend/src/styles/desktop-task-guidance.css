@@ -72,6 +72,19 @@
 .submission-information > summary {
   font-weight: 600;
 }
+/* Keep inbox navigation available during review and after a receipt is confirmed. */
+.submission-return {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  padding: 12px;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+}
 .next-actions {
   padding: 16px 0;
 }

@@ -34,7 +34,7 @@ test('help opens only the requested website chapter and keeps a copyable fallbac
     window.__helpFailure = true;
   });
   await page.getByRole('link', { name: /Antworten testen/ }).click();
-  await expect(page.getByRole('alert')).toContainText('https://fbforge.de/connect/hilfe/0.2/replies');
+  await expect(page.getByRole('alert')).toContainText('https://fbforge.de/connect/hilfe/0.3/replies');
   await expect(page.getByRole('button', { name: 'Hilfeadresse kopieren', exact: true })).toBeVisible();
   expect(external).toEqual([]);
 });

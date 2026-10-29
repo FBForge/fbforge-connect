@@ -3,7 +3,7 @@ pub fn documentation_url(topic: &str) -> Result<String, &'static str> {
     match topic {
         "start" | "connection" | "send" | "receive" | "replies" | "cases" | "attachments"
         | "processes" | "destinations" | "events" | "diagnostics" | "problems"
-        | "accessibility" | "tools" => Ok(format!("https://fbforge.de/connect/hilfe/0.2/{topic}")),
+        | "accessibility" | "tools" => Ok(format!("https://fbforge.de/connect/hilfe/0.3/{topic}")),
         _ => Err("invalid_input"),
     }
 }
@@ -15,7 +15,7 @@ mod tests {
     fn only_known_chapters_can_be_opened() {
         assert_eq!(
             documentation_url("receive").unwrap(),
-            "https://fbforge.de/connect/hilfe/0.2/receive"
+            "https://fbforge.de/connect/hilfe/0.3/receive"
         );
         for invalid in [
             "https://example.org",

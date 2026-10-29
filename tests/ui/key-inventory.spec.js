@@ -34,7 +34,10 @@ test('key inventory protects unresolved keys and confirms local removal with rec
   await dialog.getByRole('checkbox').check();
   await confirm.click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole('status')).toContainText('Der gewählte Eintrag wurde entfernt');
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Der gewählte Eintrag wurde entfernt' }),
+  ).toBeVisible();
+  await expect(page.getByText('Zertifikate rechtzeitig erneuern', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => window.__inventory.removals.length)).toBe(1);
   expect(await page.evaluate(() => window.__inventory.changed)).toBe(2);
   await expect(

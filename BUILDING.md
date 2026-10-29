@@ -13,9 +13,9 @@ Das Desktop-Paket wird auf Windows x64 gebaut. Frontend, Java-Engine und isolier
 Maven wird durch den mitgelieferten Wrapper geladen. Für den ersten Build ist Internet erforderlich. Zugangsdaten zu FIT-Connect oder ein Signaturzertifikat sind zum Bauen und für die lokalen Tests nicht erforderlich.
 
 Die folgenden Befehle bauen den ausgecheckten Stand. Veröffentlichte Versionen lassen sich nach dem
-Klonen über ihren Release-Tag auschecken, zum Beispiel mit `git switch --detach v0.2.0`, sobald dieser
-Tag veröffentlicht ist. Neue Entwicklung liegt auf dem jeweiligen Arbeitsbranch,
-aktuell `release/0.3.0`; Fehlerkorrekturen werden getrennt auf `fix/0.2.1` gesammelt.
+Klonen über ihren Release-Tag auschecken, zum Beispiel mit `git switch --detach v0.2.0`.
+Neue Entwicklung liegt auf dem jeweiligen Arbeitsbranch,
+aktuell `release/0.3.0`; die bisherigen 0.2.1-Fehlerkorrekturen sind darin einschließlich ihrer Branch-Historie enthalten.
 
 ## Windows
 
@@ -63,12 +63,10 @@ Der erste Rust-Build und das Laden der WebView2-Dateien können einige Minuten d
 
 ### Update-Signierung einmalig einrichten
 
-Ein unsignierter Entwicklungsbuild benötigt keinen Update-Schlüssel. Ohne eingerichteten
-Prüfschlüssel in `desktop/update-public-key.txt` bleibt der integrierte Updater erkennbar deaktiviert;
-der manuelle GitHub-Download bleibt verfügbar.
+Der öffentliche Projekt-Prüfschlüssel ist in `desktop/update-public-key.txt` hinterlegt. Für normale Entwicklungsbuilds keinen neuen Schlüssel erzeugen. Nur der Projekteigentümer richtet das dauerhafte Schlüsselpaar ein oder plant eine Schlüsselrotation. Ein Build ohne gültigen Prüfschlüssel deaktiviert den Updater erkennbar; der manuelle Download bleibt verfügbar.
 
 Der Projekteigentümer erzeugt das dauerhafte Schlüsselpaar **auf dem Windows-
-Signierrechner**. Nach `npm ci` ausführen:
+Signierrechner**. Für die einmalige Ersteinrichtung aus dem Checkout ausführen:
 
 ```powershell
 .\scripts\setup-update-signing.ps1
@@ -86,7 +84,20 @@ Für die offizielle Signierung das Passwort über den geschützten lokalen
 Signierablauf als `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` bereitstellen. Ein abweichender
 Dateipfad kann als `TAURI_SIGNING_PRIVATE_KEY_PATH` gesetzt werden. Diese Werte
 nicht in Skripte, Workflow-Dateien, Konsolentranskripte oder das Repository schreiben.
-Die Update-Signatur ergänzt das vorhandene Windows-Zertifikat und ist davon unabhängig.
+Das Passwort kann beim Start des interaktiven Signier-Runners ausschließlich für dessen Prozess bereitgestellt werden. Im Runner-Verzeichnis mit `run.cmd`:
+
+```powershell
+$secureUpdatePassword = Read-Host 'Passwort des Update-Signaturschlüssels' -AsSecureString
+try {
+    $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = [Net.NetworkCredential]::new('', $secureUpdatePassword).Password
+    .\run.cmd
+} finally {
+    Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD -ErrorAction SilentlyContinue
+    $secureUpdatePassword.Dispose()
+}
+```
+
+Dazu denselben Windows-Benutzer wie bei der Schlüsselerzeugung verwenden. Dies schreibt das Passwort weder ins Repository noch als dauerhafte Benutzer-Umgebungsvariable. Die Update-Signatur ergänzt das vorhandene Windows-Zertifikat und ist davon unabhängig.
 
 ## Linux und macOS
 

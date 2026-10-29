@@ -2,6 +2,7 @@ import { chromium, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { xmlPacket } from '../frontend/test-fixtures/xml-message-schema.js';
+import demoPack from '../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 import { openBatch, id as batchId } from '../frontend/test-fixtures/message-batch.js';
 
 const output = process.argv[2];
@@ -392,6 +393,47 @@ try {
   await open('test-fixtures/destination-setup.html');
   await expect(page.getByRole('heading', { name: 'Eigene Destination anlegen', exact: true })).toBeVisible();
   await capture('destinations');
+  await open('test-fixtures/profiles.html');
+  await button('Verbindung herstellen').click();
+  await page.locator('#client-id').fill('fiktiver-testzugang');
+  await page.locator('#client-secret').fill('synthetic-only');
+  await button('Anmelden').click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await page.evaluate(() => {
+    const previous = window.__TAURI_INTERNALS__.invoke;
+    window.__TAURI_INTERNALS__.invoke = (command, args) =>
+      command === 'malware_scanner_state'
+        ? Promise.resolve({
+            apiVersion: args.apiVersion,
+            sessionId: args.sessionId,
+            environment: 'TEST',
+            data: { kind: 'off', host: '', port: 0, service: '' },
+          })
+        : previous(command, args);
+  });
+  await button('Testwerkzeuge').click();
+  await button('Testabläufe').click();
+  await page.locator('#test-flow-file').setInputFiles({
+    name: 'fiktiv.fctest.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(demoPack)),
+  });
+  await button('Durchlauf starten').click();
+  await capture('test-flows', page.getByRole('heading', { name: 'Wiederholbare Testabläufe', exact: true }));
+  await button('Malwarescanner').click();
+  await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('clamav');
+  await capture(
+    'malware-scanner',
+    page.getByRole('heading', { name: 'Eigener Malwarescanner', exact: true }),
+  );
+  await open('test-fixtures/destination-manager.html');
+  await button('Eigene Destinations laden').click();
+  await button('Bearbeiten').first().click();
+  await page.getByText('Konfigurationsvorlagen', { exact: true }).click();
+  await capture(
+    'destination-templates',
+    page.getByRole('heading', { name: 'Destination bearbeiten', exact: true }),
+  );
   console.log(`${captures.size} Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {
   await browser.close();

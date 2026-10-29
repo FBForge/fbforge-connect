@@ -97,7 +97,7 @@ final class ReceiverTransport implements HttpService {
             if (readFailure == null) readFailure = failure;
             throw failure;
         } catch (Exception failure) {
-            if (readFailure == null) readFailure = new SessionException("invalid_resource");
+            if (readFailure == null) readFailure = new SessionException("receive_response_invalid");
             throw readFailure;
         }
     }

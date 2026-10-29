@@ -194,6 +194,9 @@ pub async fn forget_profile(
     if !valid_session_id(&profile_id) {
         return Err("invalid_input");
     }
+    // Use the same order as workspace mutations: workspace -> profile binding. A renderer reload
+    // must not let a late template/history save recreate files after the profile was forgotten.
+    let _workspace = crate::profile_workspace::WORKSPACE_LOCK.lock().await;
     let mut bindings = state.profiles.lock().await;
     let cases = app
         .path()
@@ -209,6 +212,21 @@ pub async fn forget_profile(
             return Err("vault_invalid");
         }
         std::fs::remove_dir_all(cases).map_err(|_| "vault_unavailable")?;
+    }
+    let workspace = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "vault_unavailable")?
+        .join("profile-workspaces")
+        .join(&profile_id);
+    if workspace.try_exists().map_err(|_| "vault_unavailable")? {
+        if !std::fs::symlink_metadata(&workspace)
+            .map_err(|_| "vault_unavailable")?
+            .is_dir()
+        {
+            return Err("vault_invalid");
+        }
+        std::fs::remove_dir_all(workspace).map_err(|_| "vault_unavailable")?;
     }
     vault(&app)?.forget(&profile_id)?;
     bindings.retain(|_, binding| binding.profile_id != profile_id);

@@ -49,6 +49,67 @@ class ReceiveAccessTest {
     }
 
     @Test
+    void malformedServerIdentifiersAreReportedAsResponseFailuresRatherThanSchemaInputErrors() {
+        for (var api : ApiVersion.values()) {
+            for (String wire :
+                    List.of(
+                            detail().replace(CASE, "synthetic-private-marker"),
+                            detail().replace(ATT, "synthetic-private-marker"))) {
+                try (var read = new ReceiveAccess(api, DEST, SUB, (url, headers) -> wire)) {
+                    assertEquals(
+                            "receive_response_invalid",
+                            blocked(() -> read.get(base(api) + "/submissions/" + SUB, Map.of()))
+                                    .code());
+                }
+            }
+        }
+    }
+
+    @Test
+    void malformedResponsesHaveSpecificReasonsAndRetireTheirReadScope() {
+        for (var api : ApiVersion.values()) {
+            var cases = new LinkedHashMap<String, String>();
+            cases.put("receive_message_mismatch", detail().replace(DEST, ATT));
+            cases.put(
+                    "receive_attachments_invalid",
+                    detail().replace("[\"" + ATT + "\"]", "[\"" + ATT + "\",\"" + ATT + "\"]"));
+            cases.put("receive_payload_invalid", detail().replace(JWE, "synthetic-private-marker"));
+            cases.put("receive_response_invalid", "{\"synthetic-private-marker\":true}");
+            for (var item : cases.entrySet()) {
+                try (var read =
+                        new ReceiveAccess(api, DEST, SUB, (url, headers) -> item.getValue())) {
+                    var failure =
+                            blocked(() -> read.get(base(api) + "/submissions/" + SUB, Map.of()));
+                    assertEquals(item.getKey(), failure.code(), api.toString());
+                    assertEquals(item.getKey(), failure.getMessage());
+                    assertEquals(
+                            "endpoint_blocked",
+                            blocked(() -> read.get(base(api) + "/submissions/" + SUB, Map.of()))
+                                    .code());
+                }
+            }
+            try (var read =
+                    new ReceiveAccess(
+                            api,
+                            DEST,
+                            SUB,
+                            (url, headers) -> "{\"kid\":\"synthetic-private-marker\"}")) {
+                assertEquals(
+                        "receive_key_mismatch",
+                        blocked(
+                                        () ->
+                                                read.get(
+                                                        base(api)
+                                                                + "/destinations/"
+                                                                + DEST
+                                                                + "/keys/expected",
+                                                        Map.of()))
+                                .code());
+            }
+        }
+    }
+
+    @Test
     void bothVersionsBindSubsequentReadsToTheEnvelopeAndNeverForwardWrites() {
         for (ApiVersion api : ApiVersion.values()) {
             AtomicInteger calls = new AtomicInteger();
@@ -148,7 +209,7 @@ class ReceiveAccessTest {
                 read.get(base(api) + "/submissions/" + SUB, Map.of());
                 response.set(detail().replace(CASE, DEST));
                 assertEquals(
-                        "invalid_resource",
+                        "receive_message_changed",
                         blocked(() -> read.get(base(api) + "/submissions/" + SUB, Map.of()))
                                 .code());
                 assertEquals(
@@ -359,7 +420,7 @@ class ReceiveAccessTest {
                             SUB,
                             (u, h) -> detail().replace(JWE, wire(header)))) {
                 assertEquals(
-                        "invalid_resource",
+                        "receive_payload_invalid",
                         blocked(
                                         () ->
                                                 read.get(

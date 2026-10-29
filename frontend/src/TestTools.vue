@@ -1,12 +1,16 @@
 <script setup>
 import { ref, defineAsyncComponent, watch } from 'vue';
 import TestPackages from './TestPackages.vue';
+const MalwareScannerSettings = defineAsyncComponent(() => import('./integration/MalwareScannerSettings.vue'));
+const TestFlows = defineAsyncComponent(() => import('./integration/TestFlows.vue'));
 const SchemaComparison = defineAsyncComponent(() => import('./SchemaComparison.vue'));
-defineProps({ busy: Boolean });
-const emit = defineEmits(['send']);
+defineProps({ busy: Boolean, session: Object });
+const emit = defineEmits(['send', 'busy', 'scanner-changed']);
 const mode = ref('packages');
 const comparisonOpened = ref(false);
+const flowsOpened = ref(false);
 watch(mode, (value) => {
+  if (value === 'flows') flowsOpened.value = true;
   if (value === 'comparison') comparisonOpened.value = true;
 });
 </script>
@@ -14,22 +18,36 @@ watch(mode, (value) => {
   <div class="test-tools">
     <div class="client-actions" role="group" aria-label="Testwerkzeug auswählen">
       <button
+        v-for="tool in [
+          { id: 'packages', title: 'Testpakete' },
+          { id: 'comparison', title: 'Schema-Vergleich' },
+          { id: 'flows', title: 'Testabläufe' },
+          { id: 'scanner', title: 'Malwarescanner' },
+        ]"
+        :key="tool.id"
         type="button"
         class="button secondary"
-        :aria-pressed="mode === 'packages'"
-        @click="mode = 'packages'"
+        :aria-pressed="mode === tool.id"
+        @click="mode = tool.id"
       >
-        Testpakete
-      </button>
-      <button
-        type="button"
-        class="button secondary"
-        :aria-pressed="mode === 'comparison'"
-        @click="mode = 'comparison'"
-      >
-        Schema-Vergleich
+        {{ tool.title }}
       </button>
     </div>
+    <TestFlows
+      v-show="mode === 'flows'"
+      v-if="flowsOpened"
+      :session="session"
+      :busy="busy"
+      @send="emit('send', $event)"
+      @busy="emit('busy', $event)"
+    />
+    <MalwareScannerSettings
+      v-if="mode === 'scanner'"
+      :session="session"
+      :busy="busy"
+      @busy="emit('busy', $event)"
+      @changed="emit('scanner-changed')"
+    />
     <TestPackages v-show="mode === 'packages'" :busy="busy" @send="emit('send', $event)" />
     <SchemaComparison v-if="comparisonOpened" v-show="mode === 'comparison'" />
   </div>

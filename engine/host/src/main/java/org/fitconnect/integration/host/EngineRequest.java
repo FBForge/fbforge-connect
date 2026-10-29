@@ -85,6 +85,8 @@ record EngineRequest(
         if (command == null) throw new IllegalArgumentException();
         switch (command) {
             case "probe" -> {}
+            case "scanner_state" -> expected.add("sessionId");
+            case "configure_scanner" -> expected.addAll(Set.of("sessionId", "schemaDocument"));
             case "open_session" -> expected.addAll(Set.of("role", "clientId", "clientSecret"));
             case "check_session", "close_session" -> expected.add("sessionId");
             case "open_session_for_api" -> expected.addAll(Set.of("sessionId", "targetApiVersion"));

@@ -70,7 +70,7 @@ export async function loadManagedDestination(invoke, session, destinationId) {
   }
   return { ...data, contact: contact(data.contactJson), offers };
 }
-function checkedPreview(data, expectedId, expectedRows) {
+export function checkedPreview(data, expectedId, expectedRows) {
   const statuses = [
     'idle',
     'prepared',

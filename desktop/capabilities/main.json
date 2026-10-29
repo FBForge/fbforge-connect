@@ -110,6 +110,9 @@
     "allow-test-library",
     "allow-begin-message-export",
     "allow-export-message",
-    "allow-finish-message-export"
+    "allow-finish-message-export",
+    "allow-profile-workspace",
+    "allow-configure-malware-scanner",
+    "allow-malware-scanner-state"
   ]
 }

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import SaveTestCase from './send/SaveTestCase.vue';
 import TestCaseLibrary from './send/TestCaseLibrary.vue';
 import SendConfirmation from './send/SendConfirmation.vue';
+import SendReconciliation from './integration/SendReconciliation.vue';
 import ReplyAttachmentsStep from './send/ReplyAttachmentsStep.vue';
 import DataStep from './send/DataStep.vue';
 import AddressingStep from './send/AddressingStep.vue';
@@ -196,6 +197,12 @@ const {
         Bitte nicht erneut senden. Prüfen Sie zunächst die Einreichungen und das Event Log. Ein Teil der
         Übertragung kann bereits abgeschlossen sein.
       </p>
+      <SendReconciliation
+        :session="confirmedSession"
+        :outcome="outcome"
+        :busy="busy || working"
+        @busy="emit('busy', $event)"
+      />
       <p v-if="outcome.error">{{ explain(outcome.error) }}</p>
       <details v-if="outcome.diagnostics?.length" :open="outcome.status !== 'sent'">
         <summary>Technische Versanddiagnose</summary>

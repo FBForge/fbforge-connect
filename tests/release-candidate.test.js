@@ -169,7 +169,7 @@ with tempfile.TemporaryDirectory() as directory:
     for before, expected in [(previous, False), ('f' * 40, True), ('0' * 40, True)]:
         event.write_text(json.dumps({'before': before}))
         output.write_text('')
-        env = dict(os.environ, GITHUB_EVENT_PATH=str(event), GITHUB_OUTPUT=str(output))
+        env = dict(os.environ, GITHUB_EVENT_NAME='push', GITHUB_REF='refs/heads/main', GITHUB_REPOSITORY='FBForge/fbforge-connect', GITHUB_EVENT_PATH=str(event), GITHUB_OUTPUT=str(output), GITHUB_STEP_SUMMARY=str(root / 'summary.md'))
         subprocess.run([sys.executable, script], cwd=root, env=env, check=True)
         assert output.read_text().splitlines()[:3] == [f'{name}={str(expected).lower()}' for name in ['frontend', 'engine', 'native']]
 print('component selection passed')

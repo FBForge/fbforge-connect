@@ -146,7 +146,8 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
                 throw error("endpoint_blocked");
             if (++requests > 1024) throw error("content_limit");
             String body = remote.get(endpoint, safeHeaders(headers, trust));
-            if (body == null || body.length() > maximumBytes(uri)) throw error("invalid_resource");
+            if (body == null || body.length() > maximumBytes(uri))
+                throw error("receive_response_invalid");
             byte[] encoded = body.getBytes(StandardCharsets.UTF_8);
             if (encoded.length > maximumBytes(uri)
                     || (bytes += encoded.length) > 128L * 1024 * 1024) throw error("content_limit");
@@ -156,7 +157,8 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
                 if (collection.equals("replies")) {
                     UUID id = java.util.UUID.fromString(path.substring(path.lastIndexOf('/') + 1));
                     String tag = tag(body), previous = attachmentTags.putIfAbsent(id, tag);
-                    if (previous != null && !previous.equals(tag)) throw error("invalid_resource");
+                    if (previous != null && !previous.equals(tag))
+                        throw error("receive_message_changed");
                 }
             }
             if (detail) bindEnvelope(body, encoded);
@@ -166,7 +168,7 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
                             base
                                     + "/destinations/"
                                     + id(StrictJson.object(body, 1024 * 1024), "destinationId")))
-                throw error("invalid_resource");
+                throw error("receive_message_mismatch");
             if (trust && path.contains("/keys/")) {
                 String expected =
                         URLDecoder.decode(
@@ -176,15 +178,17 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
                 if (kid == null
                         || !kid.isJsonPrimitive()
                         || !kid.getAsJsonPrimitive().isString()
-                        || !expected.equals(kid.getAsString())) throw error("invalid_resource");
+                        || !expected.equals(kid.getAsString())) throw error("receive_key_mismatch");
             }
             return body;
         } catch (SessionException failure) {
             close(); // No failed or mismatched snapshot can authorize a later SDK read.
+            if (failure.code().equals("invalid_resource") || failure.code().equals("invalid_input"))
+                throw error("receive_response_invalid");
             throw failure;
         } catch (Exception failure) {
             close();
-            throw error("invalid_resource");
+            throw error("receive_response_invalid");
         }
     }
 
@@ -203,26 +207,27 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
         boolean reply = collection.equals("replies");
         if ((!reply && !destination.equals(id(document, "destinationId")))
                 || !submission.equals(id(document, reply ? "replyId" : "submissionId")))
-            throw error("invalid_resource");
+            throw error("receive_message_mismatch");
         checkedJwe(text(document, "encryptedMetadata"));
         if (document.has("encryptedData") && !document.get("encryptedData").isJsonNull()) {
             String data = text(document, "encryptedData");
             if (!data.isBlank()) checkedJwe(data);
         }
         String nextCase = id(document, "caseId");
-        if (expectedCase != null && !expectedCase.equals(nextCase)) throw error("invalid_resource");
+        if (expectedCase != null && !expectedCase.equals(nextCase))
+            throw error("receive_message_mismatch");
         if (!document.has("attachments") || !document.get("attachments").isJsonArray())
-            throw error("invalid_resource");
+            throw error("receive_attachments_invalid");
         var ids = new HashSet<String>();
         for (JsonElement element : document.getAsJsonArray("attachments")) {
             if (!element.isJsonPrimitive()
                     || !element.getAsJsonPrimitive().isString()
                     || !ids.add(DestinationAccess.id(element.getAsString()))
-                    || ids.size() > 512) throw error("invalid_resource");
+                    || ids.size() > 512) throw error("receive_attachments_invalid");
         }
         byte[] digest = MessageDigest.getInstance("SHA-256").digest(encoded);
         if (envelopeDigest != null && !MessageDigest.isEqual(envelopeDigest, digest))
-            throw error("invalid_resource");
+            throw error("receive_message_changed");
         envelopeDigest = digest;
         caseId = nextCase;
         attachments = Set.copyOf(ids);
@@ -239,12 +244,13 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
 
     private void bindCase(String body) {
         var document = StrictJson.object(body, 1024 * 1024);
-        if (!caseId.equals(id(document, "caseId"))) throw error("invalid_resource");
+        if (!caseId.equals(id(document, "caseId"))) throw error("receive_message_mismatch");
         var ids = new HashSet<String>();
         ids.add(id(document, "destinationId"));
         if (document.has("fromDestinationId") && !document.get("fromDestinationId").isJsonNull())
             ids.add(id(document, "fromDestinationId"));
-        if (!participants.isEmpty() && !participants.equals(ids)) throw error("invalid_resource");
+        if (!participants.isEmpty() && !participants.equals(ids))
+            throw error("receive_message_changed");
         participants = Set.copyOf(ids);
     }
 
@@ -401,13 +407,17 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
     }
 
     private static String id(JsonObject document, String field) {
-        return DestinationAccess.id(text(document, field));
+        try {
+            return DestinationAccess.id(text(document, field));
+        } catch (SessionException failure) {
+            throw error("receive_response_invalid");
+        }
     }
 
     private static String text(JsonObject document, String field) {
         var value = document.get(field);
         if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString())
-            throw error("invalid_resource");
+            throw error("receive_response_invalid");
         return value.getAsString();
     }
 
@@ -415,7 +425,7 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
         try {
             int dot = wire.indexOf('.');
             if (dot < 1 || dot > 16384 || wire.chars().filter(c -> c == '.').count() != 4)
-                throw error("invalid_resource");
+                throw error("receive_payload_invalid");
             byte[] bytes = Base64.getUrlDecoder().decode(wire.substring(0, dot));
             String protectedHeader =
                     StandardCharsets.UTF_8
@@ -429,9 +439,9 @@ final class ReceiveAccess implements ReplySource, AutoCloseable {
                     || text(header, "kid").length() > 512
                     || header.has("crit")
                     || header.has("zip") && !"DEF".equals(text(header, "zip")))
-                throw error("invalid_resource");
+                throw error("receive_payload_invalid");
         } catch (Exception failure) {
-            throw error("invalid_resource");
+            throw error("receive_payload_invalid");
         }
     }
 

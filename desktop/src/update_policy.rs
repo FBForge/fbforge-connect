@@ -91,6 +91,11 @@ pub fn verify(bytes: &[u8], signature: &str, key: &str, version: &str) -> Result
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn embedded_release_verification_key_is_configured_and_valid() {
+        assert!(super::public_key(include_str!("../update-public-key.txt")).is_ok());
+    }
+
     use super::*;
     fn release(version: &str) -> Value {
         serde_json::json!({"version":version,"notes":"Fiktive Änderungen",

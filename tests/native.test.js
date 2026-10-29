@@ -58,3 +58,23 @@ test('a native failure is returned once without retrying or blocking subsequent 
   assert.equal(await cleanup, 'discarded');
   assert.deepEqual(calls, ['verify_submission', 'discard_received']);
 });
+
+test('profile removal serializes with protected workspace writes before acquiring the binding lock', async () => {
+  const workspace = await readFile(new URL('../desktop/src/profile_workspace.rs', import.meta.url), 'utf8');
+  const profiles = await readFile(new URL('../desktop/src/profiles.rs', import.meta.url), 'utf8');
+  const removal = profiles.slice(
+    profiles.indexOf('pub async fn forget_profile('),
+    profiles.indexOf('pub async fn open_saved_profile('),
+  );
+  assert.ok(workspace.includes('pub(crate) static WORKSPACE_LOCK: Mutex<()>'));
+  assert.equal(
+    (workspace.match(/let _guard = WORKSPACE_LOCK.lock\(\).await;/g) || []).length,
+    3,
+    'all workspace mutation entry points must serialize',
+  );
+  assert.ok(
+    removal.indexOf('WORKSPACE_LOCK.lock().await') < removal.indexOf('state.profiles.lock().await'),
+    'prevent lock inversion and orphaned files during forget',
+  );
+  assert.ok(removal.indexOf('WORKSPACE_LOCK.lock().await') < removal.indexOf('remove_dir_all(workspace)'));
+});
