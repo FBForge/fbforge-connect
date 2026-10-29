@@ -148,3 +148,5 @@ Hinweis, Download, Abbruch, ungültige Signatur, offene Aktionen, gesicherte Pro
 NSIS-Update, Neustart und erneute Anmeldung. Dieser erste manuelle Installationsschritt
 bleibt für Versionen ohne eingebauten Updater erforderlich. Die vorhandene Prüfung
 von Neuinstallation und Upgrade ersetzt die Bedienung des Updaters nicht.
+
+Das Schlüssel-Skript kann auch aus einem WSL-UNC-Checkout in Windows-PowerShell aufgerufen werden: `./scripts/setup-update-signing.ps1` ohne Projektpfad als Argument. Es startet die exakt gepinnte Windows-Tauri-CLI aus einem lokalen temporären Verzeichnis, damit CMD weder am UNC-Arbeitsverzeichnis noch an Linux-`node_modules` scheitert. `-KeyPath` bezeichnet ausschließlich eine neue lokale Datei außerhalb des Repositorys; standardmäßig liegt sie unter `%LOCALAPPDATA%\FBForge\signing\connect-updater.key`. Vorhandene Schlüssel werden nicht überschrieben.
