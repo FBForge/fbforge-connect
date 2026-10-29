@@ -33,6 +33,7 @@ __pycache__/
 /docs/*
 !/docs/guide/
 !/docs/design-review/
+!/docs/plans/
 /.codex/
 /.agents/
 /AGENTS.md

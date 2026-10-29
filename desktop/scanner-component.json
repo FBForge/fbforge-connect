@@ -1,0 +1,228 @@
+{
+  "format": 1,
+  "version": "1.5.4",
+  "target": "windows-x86_64",
+  "signerFingerprint": "5BADCA2665EF59DCF8A23D8B707F0DB480836771",
+  "archive": {
+    "url": "https://github.com/Cisco-Talos/clamav/releases/download/clamav-1.5.4/clamav-1.5.4.win.x64.zip",
+    "bytes": 225774978,
+    "sha256": "0d9e0228b2674137ea1a2853566c98a0278ad52ab2582c3d6dbd75373848c395"
+  },
+  "source": {
+    "url": "https://github.com/Cisco-Talos/clamav/releases/download/clamav-1.5.4/clamav-1.5.4.tar.gz",
+    "bytes": 63702396,
+    "sha256": "1af1117a228f1b5bc7fa91a0dabc37848a99e7d25188e9be8043332ce721dfd3"
+  },
+  "files": [
+    {
+      "path": "COPYING.txt",
+      "bytes": 18738,
+      "sha256": "0c4fd2fa9733fc9122503797648710851e4ee6d9e4969dd33fcbd8c63cd2f584"
+    },
+    {
+      "path": "COPYING/COPYING.LGPL",
+      "bytes": 26527,
+      "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+    },
+    {
+      "path": "COPYING/COPYING.YARA",
+      "bytes": 11532,
+      "sha256": "a20d6317c5384e8d4c05f9c31097878675d9429ec46090656166039cc10bc957"
+    },
+    {
+      "path": "COPYING/COPYING.bzip2",
+      "bytes": 2049,
+      "sha256": "d72a145c90918184a05ef65a04c9e6f7466faa59bc1b82c8f6a8ddc7ddcb9bed"
+    },
+    {
+      "path": "COPYING/COPYING.curl",
+      "bytes": 1088,
+      "sha256": "8c8824f50e73a021f5dde1fccbf69685939247399a33a32abab1fa448c9ddabb"
+    },
+    {
+      "path": "COPYING/COPYING.file",
+      "bytes": 1872,
+      "sha256": "dfb818a0d41411c6fb1c193c68b73018ceadd1994bda41ad541cbff292894bc6"
+    },
+    {
+      "path": "COPYING/COPYING.getopt",
+      "bytes": 1125,
+      "sha256": "6dce638b76399e7521ad8e182d3e33e4496c85b3b69b6ff434b53017101e82ad"
+    },
+    {
+      "path": "COPYING/COPYING.llvm",
+      "bytes": 3249,
+      "sha256": "e3a9b913515a42f8ff3ef1551c3a2cdba383c39ed959729e0e2911219496ad74"
+    },
+    {
+      "path": "COPYING/COPYING.lzma",
+      "bytes": 210,
+      "sha256": "c7cbcf00b59dc61165b655b45bf6c21bb685d593861e7abbc78460c499167b42"
+    },
+    {
+      "path": "COPYING/COPYING.pcre",
+      "bytes": 2515,
+      "sha256": "accdcf2455c07b99abea59016b3663eaef926a92092d103bfaa25fed27cf6b24"
+    },
+    {
+      "path": "COPYING/COPYING.regex",
+      "bytes": 1762,
+      "sha256": "e2c1395a3d9fea6d5d25847c9d783db6e2cc8b085b4025861f459139c5dfd90b"
+    },
+    {
+      "path": "COPYING/COPYING.unrar",
+      "bytes": 2403,
+      "sha256": "1faccc6b5c7b958fb807a3f573d5be9bf7889fe898f7e0617c544b05a81bfd00"
+    },
+    {
+      "path": "COPYING/COPYING.zlib",
+      "bytes": 885,
+      "sha256": "c2f77553f8d870c5635b0dace0519253233f172b33ce1fdf6578610706294eee"
+    },
+    {
+      "path": "certs/clamav.crt",
+      "bytes": 1976,
+      "sha256": "60200e4b4b1b1b7257bb4550487aeb142034341f3300a8526e77a3134a940e9d"
+    },
+    {
+      "path": "clamd.exe",
+      "bytes": 279552,
+      "sha256": "d052be9cb42b3798e7a7a65c48a51a4253d8685d7720679b4279007fd6a1aa3f"
+    },
+    {
+      "path": "clamscan.exe",
+      "bytes": 292352,
+      "sha256": "f368912f61ddea8b302acf9114891ec57f8a45b0de77f076b1d19c960bc6f7cf"
+    },
+    {
+      "path": "concrt140.dll",
+      "bytes": 322560,
+      "sha256": "4f500992a53c41a0ba44a11c33c481d8763505a7453be12d85107856ab8fb332"
+    },
+    {
+      "path": "freshclam.exe",
+      "bytes": 264192,
+      "sha256": "4032fdd45184333d7c963eec87664a8339c6f31dc5ae94bb5008fe5e88feaf1f"
+    },
+    {
+      "path": "json-c.dll",
+      "bytes": 58368,
+      "sha256": "08e0518f7e4ef40fd7b90a2846825974cffb2dacec62fa881404c0cc3e7866b8"
+    },
+    {
+      "path": "libbz2.dll",
+      "bytes": 78336,
+      "sha256": "2838dc37de3174f9c23b4828e037e64975490e377cec79f40a90d1ac01ffda71"
+    },
+    {
+      "path": "libclamav.dll",
+      "bytes": 31218176,
+      "sha256": "5d7e525494e8a5c27282ce015b3444dfe230b982feecf7e477142a45be85b41a"
+    },
+    {
+      "path": "libclammspack.dll",
+      "bytes": 116736,
+      "sha256": "52ab290affa5f734ddcfbd20723e279fb71a412c3ecd518fe8814990957be5ba"
+    },
+    {
+      "path": "libclamunrar.dll",
+      "bytes": 442368,
+      "sha256": "fa35ccd05b9c82c0b000af12716ef3819d67516ddd5e940ed22221d627e3718e"
+    },
+    {
+      "path": "libclamunrar_iface.dll",
+      "bytes": 46592,
+      "sha256": "032d5eabad191243218830ce05360b8de82f14b3abe0b52179acfff47d291ae3"
+    },
+    {
+      "path": "libcrypto-3-x64.dll",
+      "bytes": 7373824,
+      "sha256": "283a0f725ea2f0187de8a4be49c70eb211f9b759d3174429fb28d2235e9e4e31"
+    },
+    {
+      "path": "libcurl.dll",
+      "bytes": 861184,
+      "sha256": "07642f8668ff23fe987c33a92ad92d52ad8c7c58e0e2306af6332e38a7433876"
+    },
+    {
+      "path": "libfreshclam.dll",
+      "bytes": 29215232,
+      "sha256": "6cf691eac0473c1392edcc7189ac9075ce76d85de6cb95253b48559744e8e0eb"
+    },
+    {
+      "path": "libssh2.dll",
+      "bytes": 305664,
+      "sha256": "832813cd782ce2327753e0208e8053391bc0795093045f8c476913ff757fcdd3"
+    },
+    {
+      "path": "libssl-3-x64.dll",
+      "bytes": 1331200,
+      "sha256": "db1119dcf3d2c85d2031c7413e7f6a4cbd67fb6380ba816b59ec129d1e14b16d"
+    },
+    {
+      "path": "libxml2.dll",
+      "bytes": 1222144,
+      "sha256": "222bee0a9763efba1bd8291d0e1762f70417f0c4fc38bc4f4d4dd546ed866dfd"
+    },
+    {
+      "path": "msvcp140.dll",
+      "bytes": 575056,
+      "sha256": "a4c2229bdc2a2a630acdc095b4d86008e5c3e3bc7773174354f3da4f5beb9cde"
+    },
+    {
+      "path": "msvcp140_1.dll",
+      "bytes": 35808,
+      "sha256": "91cd05c16c61c39788c47434602a59c17f5b08dbb3eee04ce85f8d5b70e8e604"
+    },
+    {
+      "path": "msvcp140_2.dll",
+      "bytes": 268880,
+      "sha256": "713f17b253d802d283d306ce75647e37d83a546aeb1a881e5d9e529e856c007e"
+    },
+    {
+      "path": "msvcp140_atomic_wait.dll",
+      "bytes": 50664,
+      "sha256": "aede4ec454a82f146eb4a721e616e2086870107d88aabc6b0bd1eea0a505d935"
+    },
+    {
+      "path": "msvcp140_codecvt_ids.dll",
+      "bytes": 31744,
+      "sha256": "d52d349fbbe6abc61965c07e04cc82d8ee0cea1de7faf90a838964e3f40acedd"
+    },
+    {
+      "path": "nghttp2.dll",
+      "bytes": 154624,
+      "sha256": "9b408e9346718e52ac09b92ee3e2e277c1d20941071946324cafee5585323893"
+    },
+    {
+      "path": "pcre2-8.dll",
+      "bytes": 387584,
+      "sha256": "e5628f9a9f55ecf367db84cb25609ecc7dfa8245b3fc49d05781a2f0ac38280a"
+    },
+    {
+      "path": "pdcurses.dll",
+      "bytes": 251904,
+      "sha256": "e114dafaad1895adff84cc6c9d294df34eca4e02c05ce0f62229234cfd6300f8"
+    },
+    {
+      "path": "pthreadVC3.dll",
+      "bytes": 103936,
+      "sha256": "4eccadb925b73eb08c8041f856be6c3d162f22183e6cb08449c7ef1746d8a17f"
+    },
+    {
+      "path": "sigtool.exe",
+      "bytes": 29249536,
+      "sha256": "1794061099bf9f5d9edbb82a359c506c6fe20b63de6392b30ab8e7362aee9006"
+    },
+    {
+      "path": "vcruntime140.dll",
+      "bytes": 119888,
+      "sha256": "02c6aa0e6e624411a9f19b0360a7865ab15908e26024510e5c38a9c08362c35a"
+    },
+    {
+      "path": "vcruntime140_1.dll",
+      "bytes": 49640,
+      "sha256": "7dd9aa02e271c68ca6d5f18d651d23a15d7259715af43326578f7dde27f37637"
+    }
+  ]
+}
