@@ -53,8 +53,15 @@ catch { if ($_.Exception.Message -ne 'update_key_already_exists') { throw } }
 `,
       );
       const result = spawnSync(
-        process.env.FITCONNECT_TEST_PWSH,
-        ['-NoProfile', '-File', harness, repository, join(root, 'private.key')],
+        powershell,
+        [
+          '-NoProfile',
+          ...(process.platform === 'win32' ? ['-ExecutionPolicy', 'Bypass'] : []),
+          '-File',
+          harness,
+          repository,
+          join(root, 'private.key'),
+        ],
         { encoding: 'utf8' },
       );
       assert.equal(result.status, 0, result.stderr);
