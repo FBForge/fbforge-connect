@@ -1,36 +1,34 @@
 # FBForge Connect
 
+> **Hinweis:** FBForge Connect ist für Entwicklungs-, Test- und Integrationszwecke vorgesehen.
+
 <img src="frontend/src/assets/test-client.png" alt="" width="80" height="80">
 
-Desktop-Client für FIT-Connect. Für Entwickler, Integratoren und Mitarbeiter der öffentlichen Verwaltung.
+Open-Source-Desktop-Client für FIT-Connect. Kein offizielles Produkt der FITKO.
 
 - Einreichungen und Antworten über API v2/v3 senden, empfangen und prüfen.
-- JSON/XML lesen, Nachrichten gesammelt herunterladen und geprüfte Einreichungen gemeinsam annehmen.
-- Anlagen ansehen und Vorgänge lokal aufbewahren.
-- Event Logs durchsuchen, eigene v3-Destinations verwalten und BPMN-Nachrichten auswählen.
-- Zugänge und Schlüssel optional mit Windows-DPAPI speichern.
-- Testfälle als Paket wiederverwenden und Schemaänderungen lokal vergleichen.
+- JSON/XML und Anlagen ansehen, Nachrichten gesammelt herunterladen und annehmen.
+- Vorgänge, Profile und Schlüssel optional mit Windows-DPAPI speichern.
+- Event Logs prüfen, v3-Destinations verwalten und BPMN-Nachrichten auswählen.
+- Testfälle wiederverwenden und Schemaänderungen vergleichen.
 
-Für **Windows x64 und FIT-Connect TEST, STAGE und PROD**. Kein offizielles Produkt der FITKO. Für Tests verwenden Sie fiktive Daten. In PROD werden Nachrichten tatsächlich zugestellt.
+Für **Windows x64 und FIT-Connect TEST, STAGE und PROD**. STAGE und PROD benötigen
+V-PKI-Zertifikate mit vollständiger Kette. PROD-Aktionen wirken auf echte Daten
+und werden zusätzlich bestätigt. Verwenden Sie für Tests fiktive Daten.
 
 ## Installation
 
-1. Das signierte Windows-Setup unter [Releases](https://github.com/FBForge/fbforge-connect/releases) herunterladen und installieren.
-2. FBForge Connect starten, die Umgebung wählen und mit passenden Zugangsdaten verbinden.
-3. Einen Testantrag senden oder eine Einreichung empfangen und prüfen.
+1. Signiertes Windows-Setup unter [Releases](https://github.com/FBForge/fbforge-connect/releases) installieren. Java wird mitgeliefert.
+2. Umgebung wählen und mit passenden Zugangsdaten verbinden.
+3. Einreichungen senden oder abrufen und prüfen.
 
-Die Pakete werden mit digitaler Signatur, Zeitstempel und SHA-256-Prüfsumme bereitgestellt. Java wird mitgeliefert.
+Integrierte Updates sind für 0.3.0 in Entwicklung und noch nicht veröffentlicht.
+Details stehen in der [Roadmap](ROADMAP.md).
 
-Auf `release/0.3.0` wird der integrierte Windows-Updater vorbereitet: neue stabile
-GitHub-Releases melden, geprüft herunterladen und nach Zustimmung installieren.
-Die veröffentlichte 0.2.0 enthält diese Funktion noch nicht. Vor der Freigabe sind
-der eigene Update-Schlüssel und die Windows-Update-Abnahme erforderlich.
-
-STAGE und PROD benötigen gültige V-PKI-Zertifikate mit vollständiger Zertifikatskette. PROD-Schreibaktionen werden zusätzlich bestätigt.
-
-Die [Anleitung mit Bildern und Beispielen](https://fbforge.de/connect/hilfe/0.2/start) wird auf der Website gepflegt. In der Anwendung finden Sie Hinweise und Links zum passenden Kapitel.
-
-[Versionshinweise](RELEASE_NOTES.md) · [Roadmap](ROADMAP.md) · [Lokal bauen](BUILDING.md) · [Mitwirken](CONTRIBUTING.md) · [Issues](https://github.com/FBForge/fbforge-connect/issues) · [Sicherheit](SECURITY.md)
+[Anleitung mit Bildern](https://fbforge.de/connect/hilfe/0.2/start) ·
+[Versionshinweise](RELEASE_NOTES.md) · [Lokal bauen](BUILDING.md) ·
+[Mitwirken](CONTRIBUTING.md) · [Issues](https://github.com/FBForge/fbforge-connect/issues) ·
+[Sicherheit](SECURITY.md)
 
 ## Lizenz
 

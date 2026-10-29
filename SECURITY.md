@@ -1,76 +1,78 @@
 # Sicherheit
 
-FBForge Connect 0.2 unterstützt Windows sowie FIT-Connect TEST, STAGE und PROD. Verwenden Sie passende eigene Zugänge und für Tests fiktive Daten. Version 0.1 unterstützt nur TEST.
+Die Sicherheitshinweise gelten für Windows sowie FIT-Connect TEST, STAGE und PROD.
 
 ## Sicherheitslücken melden
 
-Bitte über [GitHub Private Vulnerability Reporting](https://github.com/FBForge/fbforge-connect/security/advisories/new) melden, nicht in öffentlichen Issues. Nennen Sie Version, Betriebssystem und Schritte zur Reproduktion. Keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten beifügen.
+Über [GitHub Private Vulnerability Reporting](https://github.com/FBForge/fbforge-connect/security/advisories/new),
+nicht in öffentlichen Issues. Bitte Version, Betriebssystem und Reproduktionsschritte
+angeben, keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten.
 
 ## Datenspeicherung
 
-Zugangsdaten und Schlüssel bleiben standardmäßig in der Sitzung. Optional gespeicherte Profile, Schlüssel und Vorgänge sind mit Windows-DPAPI an das Benutzerkonto gebunden. Profilsicherungen enthalten keine Vorgänge. Zugangstokens werden nicht gespeichert.
+Zugänge und Schlüssel bleiben standardmäßig in der Sitzung. Optional gespeicherte
+Profile, Schlüssel und Vorgänge schützt Windows-DPAPI für das Benutzerkonto.
+Tokens werden nicht gespeichert; Profilsicherungen enthalten keine Vorgänge.
 
-Nachrichten-Downloads, Anlagen-Downloads, exportierte Testpakete und Vergleichsberichte liegen
-unverschlüsselt außerhalb dieser geschützten Ablage. Wählen Sie einen geeigneten Speicherort und
-prüfen Sie Inhalte vor dem Weitergeben. Ein Download wird durch das Löschen eines Profils nicht entfernt.
-
-DPAPI schützt nicht vor Schadsoftware unter demselben Benutzerkonto. Die Vorgangsablage ist kein revisionssicheres Archiv. Löschen garantiert kein physisches Überschreiben von Datenträgern oder Sicherungen. Das Beenden einer Sitzung widerruft keine bereits ausgestellten Tokens.
+Downloads, exportierte Testpakete und Vergleichsberichte sind unverschlüsselt.
+Sie bleiben beim Löschen eines Profils bestehen. DPAPI schützt nicht vor
+Schadsoftware unter demselben Benutzerkonto. Die Vorgangsablage ist kein
+revisionssicheres Archiv; Löschen garantiert kein physisches Überschreiben.
+Eine Abmeldung widerruft keine bereits ausgestellten Tokens.
 
 ## Schutzgrenzen
 
-- Kein integrierter Malwarescanner. Technische Integrität, Schema-Prüfung und fachliche Bewertung sind getrennt.
-- Keine allgemeinen HTTP-, Shell- oder Dateisystemrechte im Renderer. Schreibaktionen erfordern eine Bestätigung. Ungewisse Übertragungen werden nicht automatisch wiederholt.
-- Die Umgebung ist je Engine-Prozess fest. Ein Wechsel beendet bestehende Verbindungen und erfordert eine neue Anmeldung. Gespeicherte Profile und Vorgänge bleiben ihrer Umgebung zugeordnet.
-- STAGE und PROD verlangen V-PKI-Zertifikate. Vertrauenskette und Sperrstatus werden mit den Vorgaben des eingebundenen SDK geprüft. Fehlgeschlagene Prüfungen werden nicht umgangen. Selbstsignierte Destination-Schlüssel sind nur in TEST erlaubt.
-- Jede produktive Schreibaktion erfordert zusätzlich die native PROD-Bestätigung. Diese ist kein Ersatz für serverseitige Berechtigungen.
-- Öffentliche Schemaquellen werden nur nach Freigabe geladen.
-- Das optionale Laden von Leistungsnamen fragt das öffentliche FIM-Portal anhand von LeiKa-Kennungen ab. Zugangsdaten und Fachdaten werden dabei nicht übertragen. Öffentliche Schemaabrufe übermitteln die benötigten Schema-URIs; geben Sie diese Quellen nur bewusst frei.
-- Technische Fehler im Sammeldurchlauf führen weder zu einer automatischen Annahme noch zu einer automatischen Ablehnung. Fachlich falsche, technisch gültige Daten benötigen eine manuelle Bewertung. Eine Annahme ohne Malwarescan muss im Sammeldurchlauf ausdrücklich erlaubt werden.
-- Ab 0.2.1 bleiben erfolgreich entschlüsselte und kryptografisch geprüfte Inhalte bei nachgewiesenen Schemaabweichungen lesbar. Die Abweichungen werden separat angezeigt. Eine Einzelannahme benötigt eine zusätzliche native Bestätigung des aktuellen vorbereiteten Vorgangs; im Sammeldurchlauf bleibt die Nachricht manuell. Hash-, Signatur-, Zertifikats- und Entschlüsselungsfehler werden dadurch nicht übergangen.
+- Kein integrierter Malwarescanner. Technische und fachliche Prüfung bleiben getrennt;
+  Sammelannahme ohne Scan erfordert eine ausdrückliche Freigabe.
+- Keine allgemeinen HTTP-, Shell- oder Dateisystemrechte im Renderer. Schreibaktionen
+  benötigen eine Bestätigung; ungewisse Übertragungen werden nicht automatisch wiederholt.
+- Umgebungswechsel beendet Sitzungen und erfordert eine neue Anmeldung. Gespeicherte
+  Profile und Vorgänge bleiben ihrer Umgebung zugeordnet.
+- STAGE und PROD prüfen V-PKI-Kette und Sperrstatus nach SDK-Vorgaben. Selbstsignierte
+  Destination-Schlüssel sind nur in TEST erlaubt. PROD-Schreibaktionen benötigen zusätzlich
+  eine native Bestätigung; serverseitige Berechtigungen bleiben erforderlich.
+- Öffentliche Schemaquellen benötigen eine Freigabe. Schemaabrufe übertragen Schema-URIs;
+  die optionale FIM-Abfrage überträgt LeiKa-Kennungen, keine Zugangsdaten oder Fachdaten.
+- Fehlerhafte Einreichungen im Sammeldurchlauf bleiben manuell; es gibt keine automatische
+  Ablehnung. Fachlich falsche, technisch gültige Daten benötigen ebenfalls eine Entscheidung.
+- Ab 0.2.1 bleiben kryptografisch geprüfte Inhalte trotz Schemaabweichungen lesbar.
+  Einzelannahme erfordert eine zusätzliche native Bestätigung; Sammelannahme bleibt gesperrt.
+  Hash-, Signatur-, Zertifikats- und Entschlüsselungsfehler bleiben blockierend.
 
-## Updates ab 0.3.0
+## Updates ab 0.3.0 – in Entwicklung
 
-Die automatische Suche ist unter „Info“ abschaltbar und überträgt keine FIT-Connect-
-Zugangsdaten oder Fachdaten. GitHub erhält die normale HTTPS-Anfrage einschließlich
-IP-Adresse und Updater-Kennung. Offline- oder Metadatenfehler werden nicht als
-erfolgreiche Aktualitätsprüfung angezeigt. Der manuelle Download bleibt verfügbar.
+Die automatische Suche ist abschaltbar. GitHub erhält IP-Adresse und Updater-Kennung,
+keine FIT-Connect-Zugangsdaten oder Fachdaten. Fehlgeschlagene Prüfungen gelten nicht
+als Aktualitätsnachweis; manueller Download bleibt möglich.
 
-Der native Updater akzeptiert nur neuere stabile Windows-x64-Pakete aus dem eigenen
-GitHub-Repository, mit begrenzter Downloadgröße und erlaubten HTTPS-Weiterleitungen.
-Vor der Installation wird die Minisign-Signatur einschließlich der signierten
-Versionsnummer geprüft. Die Signatur des Artefakts verhindert nicht nur veränderte
-Bytes: Die Versionsbindung verhindert auch, dass ein altes signiertes Paket unter
-einer erfundenen neueren Versionsnummer angeboten wird. Windows-Authenticode und
-der unabhängig geprüfte Release-Prozess bleiben zusätzlich erforderlich.
+Nur neuere stabile Windows-x64-Pakete aus dem eigenen Repository werden angeboten:
+HTTPS, begrenzte Downloads und Weiterleitungen sowie Prüfung von Paket- und
+Versionssignatur. Authenticode und die unabhängige Release-Prüfung bleiben erforderlich.
+Installation benötigt native Zustimmung; laufende Kernaufrufe und offene Exporte
+blockieren sie. Gespeicherte Schlüssel werden vorher gesichert; ungespeicherte
+Entwürfe und Sitzungsschlüssel müssen Sie selbst sichern.
 
-Installation benötigt die native Zustimmung. Sie beendet bestehende Sitzungen;
-ungespeicherte Entwürfe und ausschließlich sitzungsgebundene Schlüssel müssen vorher
-gesichert werden. Geschützte Profile werden vor dem Beenden gesichert. Offene Exporte
-oder laufende Kernaufrufe verhindern die Installation. Ein fehlender Update-Schlüssel
-deaktiviert den Updater; es gibt keinen unsignierten Installations-Fallback.
+Ohne Prüfschlüssel bleibt der Updater deaktiviert. Der private Schlüssel bleibt
+außerhalb des Repositorys; Verlust oder Kompromittierung erfordert einen eigenen
+Migrationsablauf. Schlüssel-Einrichtung und echte Windows-Update-Abnahme stehen vor
+der Freigabe an. Details: [BUILDING.md](BUILDING.md) und [RELEASING.md](RELEASING.md).
 
-Der private Update-Schlüssel bleibt beim Herausgeber außerhalb des Repositorys.
-Verlust oder Kompromittierung erfordert einen gesonderten Wiederherstellungs- oder
-Migrationsablauf; den öffentlichen Prüfschlüssel nicht beiläufig austauschen.
-Die Funktionsabnahme eines echten Windows-Updates steht vor der 0.3.0-Freigabe an.
+## Abhängigkeiten und bekannte Befunde
 
-## Abhängigkeiten und bisheriger Prüfstand
+JavaScript, Java, Rust, JDK und WebView2 werden getrennt geprüft. Lockfiles und
+Actions-Versionen sind festgelegt. Der Abgleich vom 27. Oktober 2026 nutzte npm-Audit
+und OSV/RustSec für Rust und Maven. Am 29. Oktober wurden zusätzlich 48 neue
+Rust-Paketversionen gegen OSV geprüft, ohne Meldungen. Das ersetzt keine Systemprüfung.
 
-JavaScript-, Java- und Rust-Abhängigkeiten, JDK und WebView2 müssen getrennt geprüft werden. Lockfiles und Actions-Versionen sind festgelegt.
+Bouncy Castle `bcprov`, `bcpkix` und `bcutil` sind auf 1.86 festgelegt. Damit sind die
+zuvor gemeldeten CVEs CVE-2025-14813, CVE-2026-0636, CVE-2026-5588, CVE-2026-8763 und
+CVE-2026-13506 in diesen Abhängigkeiten behoben.
 
-Der Release-Abgleich vom 27. Oktober 2026 verwendet npm-Audit sowie OSV-/RustSec-Meldungen für
-die gelockten Rust- und aufgelösten Maven-Abhängigkeiten. Ein Abgleich bestätigt nur den bekannten
-Meldungsstand; er ersetzt keine Prüfung von Anwendung, Betriebssystem und mitgelieferter Java-Laufzeit.
+`GHSA-qwgh-2vcv-g2f7` betrifft laut OSV `block-buffer 0.10.4` im Tauri-Buildbaum
+(`sha2` → `digest`), nicht im Windows-Laufzeitbaum. Diese Version enthält die konkret
+betroffene `ReadBuffer`-Implementierung nicht und speichert den Cursor separat.
+Der gemeldete Versionsbereich ist weiter gefasst; bei Updates erneut prüfen.
 
-Die transitiven Bouncy-Castle-Module `bcprov`, `bcpkix` und `bcutil` sind einheitlich auf 1.86
-festgelegt. Damit sind die beim Abgleich gemeldeten CVEs CVE-2025-14813, CVE-2026-0636,
-CVE-2026-5588, CVE-2026-8763 und CVE-2026-13506 in diesen Abhängigkeiten behoben.
-
-OSV meldet `GHSA-qwgh-2vcv-g2f7` für `block-buffer 0.10.4` über den Tauri-Codegenerator
-(`sha2` → `digest` → `block-buffer`). Diese Abhängigkeit gehört zur Buildzeit, nicht zum
-Windows-Laufzeitbaum. Die Meldung beschreibt einen Cursor im Datenpuffer; Version 0.10.4 speichert
-ihn in einem separaten Feld und enthält die betroffene `ReadBuffer`-Implementierung nicht.
-Der Versionsbereich der Meldung ist weiter gefasst als dieser konkrete Fehlermechanismus.
-Der Befund bleibt dokumentiert und ist bei Tauri- oder RustCrypto-Updates erneut zu prüfen.
-
-Im Linux-Abhängigkeitsbaum sind RustSec-Hinweise für `glib`, `proc-macro-error`, `zbus_names`, `zvariant` und `zvariant_derive` offen. Diese Pakete werden im Windows-Build nicht verwendet. Linux wird derzeit nicht unterstützt.
+Offene Linux-RustSec-Hinweise: `glib`, `proc-macro-error`, `zbus_names`, `zvariant`
+und `zvariant_derive`. Diese Pakete werden im Windows-Build nicht verwendet.
+Linux wird derzeit nicht unterstützt.
