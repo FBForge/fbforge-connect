@@ -24,3 +24,6 @@ pub mod message_export_stream;
 
 #[path = "../src/profile_versions.rs"]
 pub mod profile_versions;
+
+#[path = "../src/update_policy.rs"]
+pub mod update_policy;

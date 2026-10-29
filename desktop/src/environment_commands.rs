@@ -10,6 +10,9 @@ pub async fn select_environment(
     environment: Environment,
 ) -> Result<Environment, &'static str> {
     let mut process = state.process.try_lock().map_err(|_| "engine_busy")?;
+    if state.updating.load(Ordering::Acquire) {
+        return Err("update_activity_pending");
+    }
     if state.environment() == environment {
         return Ok(environment);
     }
@@ -17,9 +20,7 @@ pub async fn select_environment(
     if let Some(previous) = process.take() {
         previous.shutdown().await?;
     }
-    state.profiles.lock().await.clear();
-    state.case_profiles.lock().await.clear();
-    state.case_errors.lock().await.clear();
+    state.forget_closed_sessions().await;
     state
         .selected_environment
         .store(environment.code(), Ordering::Release);

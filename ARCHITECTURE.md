@@ -37,7 +37,20 @@ JSON/XML-Fachdaten werden im nativen Kern gegen JSON Schema beziehungsweise XSD 
 
 Testpakete und Schema-Vergleich arbeiten lokal im Renderer. Pakete enthalten fiktive Nutzdaten, Anlagen, lokale Schemata und manuelle Erwartungen. Verbindungsdaten und private Schlüssel werden nicht übernommen. Erst die Übernahme in den normalen Versandablauf ermöglicht einen separat bestätigten Versand.
 
-## BPMN
+## Anwendungsupdates ab 0.3.0
+
+Die Updatesuche ist unabhängig von der FIT-Connect-Engine und verwendet eigene
+native Befehle. Der Renderer erhält nur begrenzte Statusdaten und kann weder
+Downloadpfad, Prüfschlüssel noch Installerargumente vorgeben. `update_policy.rs`
+prüft Ziel, Version und die Minisign-Signatur samt Versionsbindung;
+`update_transport.rs` begrenzt HTTPS-Abrufe und Weiterleitungen.
+`application_updates.rs` hält Release-Identität und geprüfte Bytes ausschließlich
+nativ. Der offizielle Tauri-Updater startet nach einer nativen Bestätigung NSIS
+im Update-Modus. Vorher werden geschützte Schlüssel gesichert und der Java-Kern
+geordnet beendet; aktive Kernaufrufe und offene Exporte blockieren die Installation.
+Die neue Version wird nicht automatisch ohne Zustimmung installiert.
+
+## BPMN-Referenzen
 
 BPMN-Element-IDs werden nicht als FIT-Connect-Kennungen verwendet. Eigene Modelle können diese Client-Erweiterung nutzen:
 

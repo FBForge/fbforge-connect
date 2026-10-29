@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-foreach ($name in @('scripts/windows-signing.psm1','scripts/sign-windows-file.ps1','scripts/build-signed-windows.ps1','scripts/ci/check-signed-package.ps1','scripts/windows-install-smoke.ps1')) {
+foreach ($name in @('scripts/windows-signing.psm1','scripts/sign-windows-file.ps1','scripts/build-signed-windows.ps1','scripts/ci/check-signed-package.ps1','scripts/windows-install-smoke.ps1','scripts/setup-update-signing.ps1')) {
     $tokens = $null
     $errors = $null
     $null = [Management.Automation.Language.Parser]::ParseFile((Join-Path $root $name), [ref]$tokens, [ref]$errors)

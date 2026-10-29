@@ -71,7 +71,11 @@ test('guided start routes to the test task and help without performing an exchan
   await page.keyboard.press('Escape');
   await expect(connect).toBeFocused();
   expect(
-    await page.evaluate(() => window.__startCommands.every((command) => command === 'list_profiles')),
+    await page.evaluate(() =>
+      window.__startCommands.every((command) =>
+        ['list_profiles', 'application_update_status'].includes(command),
+      ),
+    ),
   ).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('guided-start.png'), fullPage: true });
 });

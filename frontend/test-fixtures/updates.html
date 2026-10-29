@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Updates · fiktive Testdaten</title>
+  </head>
+  <body>
+    <main class="workspace-content">
+      <h1>Info</h1>
+      <div id="app"></div>
+    </main>
+    <script type="module">
+      import { createApp, shallowRef, ref, onMounted, h } from 'vue';
+      import ApplicationUpdates from '../src/app/ApplicationUpdates.vue';
+      import { createUpdateController } from '../src/application-updates.js';
+      import { useTheme } from '../src/app/useTheme.ts';
+      import '../src/styles/index.css';
+      const fixture = (window.__updateFixture = { calls: [], fail: '', busy: false, phase: 'idle' });
+      createApp({
+        components: { ApplicationUpdates },
+        setup() {
+          useTheme();
+          const state = shallowRef(null),
+            busy = ref(false);
+          const status = () => ({
+            configured: true,
+            supported: true,
+            phase: fixture.phase,
+            version: fixture.phase === 'idle' ? null : '0.4.0',
+            notes: '<img src=x onerror="window.__injected=true">\nFiktive Änderungen.',
+            downloaded: 0,
+            total: null,
+          });
+          const controller = createUpdateController(
+            async (command, args) => {
+              fixture.calls.push({ command, args });
+              if (command === 'application_update_status') return status();
+              if (fixture.fail) throw fixture.fail;
+              if (command === 'check_application_update') fixture.phase = 'available';
+              if (command === 'download_application_update') fixture.phase = 'downloaded';
+              if (command === 'install_application_update') throw 'update_cancelled';
+              return status();
+            },
+            { changed: (value) => (state.value = value), storage: { getItem: () => 'false' } },
+          );
+          state.value = controller.state;
+          fixture.setBusy = (value) => (busy.value = value);
+          fixture.setPhase = async (value) => {
+            fixture.phase = value;
+            await controller.refresh();
+          };
+          onMounted(() => controller.initialize());
+          return { state, controller, busy };
+        },
+        render() {
+          return h(ApplicationUpdates, {
+            state: this.state,
+            busy: this.busy,
+            onCheck: this.controller.check,
+            onDownload: this.controller.download,
+            onInstall: this.controller.install,
+            onCancel: this.controller.cancel,
+            onAutomatic: this.controller.setAutomatic,
+            onManual: this.controller.manual,
+          });
+        },
+      }).mount('#app');
+    </script>
+  </body>
+</html>

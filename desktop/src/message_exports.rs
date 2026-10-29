@@ -18,6 +18,12 @@ struct Permit {
 #[derive(Default)]
 pub struct MessageExports(tokio::sync::Mutex<HashMap<String, Permit>>);
 
+impl MessageExports {
+    pub(crate) async fn active(&self) -> bool {
+        !self.0.lock().await.is_empty()
+    }
+}
+
 #[tauri::command]
 pub async fn begin_message_export(
     app: tauri::AppHandle,

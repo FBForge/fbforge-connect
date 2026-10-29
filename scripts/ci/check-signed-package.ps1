@@ -25,6 +25,14 @@ $previous = @(Get-ChildItem -LiteralPath $Baseline -Filter '*-setup.exe' -File)
 if ($previous.Count -ne 1) { throw 'signed_upgrade_baseline_ambiguous' }
 $previousManifest = Get-Content -LiteralPath (Join-Path $Baseline 'build-info.json') -Raw | ConvertFrom-Json
 if ($previousManifest.commit -ne $env:GITHUB_SHA -or $previousManifest.runId -ne $env:VALIDATION_RUN -or $previousManifest.version -ne $version -or $previousManifest.installer -ne $previous[0].Name -or $previousManifest.signing -ne 'unsigned' -or $previousManifest.sha256 -ne (Get-FileHash -LiteralPath $previous[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'signed_upgrade_baseline_mismatch' }
+$updateVerifier = Join-Path $PSScriptRoot '../../desktop/native-contracts/target/debug/examples/verify-update.exe'
+& $updateVerifier $Directory (Join-Path $PSScriptRoot '../../desktop/update-public-key.txt')
+if ($LASTEXITCODE -ne 0) { throw 'update_artifact_verification_failed' }
+# Manifest fingerprints use the trimmed public key to avoid newline-dependent identity.
+$keyBytes = [Text.Encoding]::UTF8.GetBytes([IO.File]::ReadAllText((Join-Path $PSScriptRoot '../../desktop/update-public-key.txt')).Trim())
+$hasher = [Security.Cryptography.SHA256]::Create()
+try { $expectedUpdateKey = [BitConverter]::ToString($hasher.ComputeHash($keyBytes)).Replace('-', '').ToLowerInvariant() } finally { $hasher.Dispose() }
+if ($manifest.updatePublicKeySha256 -ne $expectedUpdateKey) { throw 'update_public_key_provenance_mismatch' }
 $bridge = Join-Path $PSScriptRoot '../../desktop/native-contracts/target/debug/examples/profile-checkpoint.exe'
 & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot '../windows-install-smoke.ps1') -InstallerPath $setup -ExpectedBinaryPath $binary -CheckpointBridge $bridge -PreviousInstallerPath $previous[0].FullName -ExpectedSignerThumbprint $Thumbprint -SignatureReportPath (Join-Path $Directory 'signature-info.json')
 if ($LASTEXITCODE -ne 0) { throw 'signed_installer_validation_failed' }

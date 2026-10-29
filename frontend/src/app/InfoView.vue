@@ -1,6 +1,15 @@
 <script setup>
 import { ref } from 'vue';
-defineProps({ visible: Boolean });
+import ApplicationUpdates from './ApplicationUpdates.vue';
+defineProps({ visible: Boolean, updateState: Object, busy: Boolean });
+const emit = defineEmits([
+  'check-update',
+  'download-update',
+  'install-update',
+  'cancel-update',
+  'automatic-updates',
+  'manual-update',
+]);
 import AppIcon from '../AppIcon.vue';
 import appLogo from '../assets/test-client.png';
 import { productName, productPurpose } from '../product.js';
@@ -9,6 +18,7 @@ import licenseText from '../../../LICENSE?raw';
 import bpmnLicense from '../../../licenses/bpmn-js.txt?raw';
 import apacheLicense from '../../../licenses/Apache-2.0.txt?raw';
 import pdfLicense from '../../../licenses/pdfjs-NOTICE.txt?raw';
+import updateLicenses from '../../../licenses/native-updates.txt?raw';
 const version = packageInfo.version;
 const licenseDialog = ref(null);
 const dependencyDialog = ref(null);
@@ -35,6 +45,17 @@ async function showDependencyLicenses() {
         <p>{{ productPurpose }}.</p>
       </div>
     </section>
+    <ApplicationUpdates
+      v-if="updateState"
+      :state="updateState"
+      :busy="busy"
+      @check="emit('check-update')"
+      @download="emit('download-update')"
+      @install="emit('install-update')"
+      @cancel="emit('cancel-update')"
+      @manual="emit('manual-update')"
+      @automatic="emit('automatic-updates', $event)"
+    />
     <section class="tool-section" aria-labelledby="scope-title">
       <h2 id="scope-title">Aktueller Funktionsumfang</h2>
       <dl class="info-facts">
@@ -73,7 +94,9 @@ async function showDependencyLicenses() {
 {{ apacheLicense }}
 {{ pdfLicense }}
 
-{{ frontendLicenses }}</pre>
+{{ frontendLicenses }}
+
+{{ updateLicenses }}</pre>
   </dialog>
   <dialog ref="licenseDialog" class="tool-dialog license-dialog" aria-labelledby="license-dialog-title">
     <div class="tool-section-heading">

@@ -107,7 +107,7 @@ jobs:
         run: |
           rustup toolchain install 1.99.0 --profile minimal
           if ($LASTEXITCODE -ne 0) { throw 'signing_verification_toolchain_failed' }
-          cargo +1.99.0 build --manifest-path desktop/native-contracts/Cargo.toml --locked --example profile-checkpoint
+          cargo +1.99.0 build --manifest-path desktop/native-contracts/Cargo.toml --locked --examples
           if ($LASTEXITCODE -ne 0) { throw 'signing_checkpoint_bridge_failed' }
       - name: Check signed installation, runtime, profile preservation and upgrade
         env:
@@ -123,5 +123,7 @@ jobs:
             ${{ env.SIGNED_CANDIDATE }}/build-info.json
             ${{ env.SIGNED_CANDIDATE }}/SHA256SUMS.txt
             ${{ env.SIGNED_CANDIDATE }}/signature-info.json
+            ${{ env.SIGNED_CANDIDATE }}/*.exe.sig
+            ${{ env.SIGNED_CANDIDATE }}/latest.json
           if-no-files-found: error
           retention-days: 30

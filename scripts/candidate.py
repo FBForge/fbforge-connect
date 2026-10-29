@@ -6,6 +6,12 @@ import json
 import re
 import subprocess
 import zipfile
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+
+_spec = spec_from_file_location('update_release', Path(__file__).with_name('update-release.py'))
+_updater = module_from_spec(_spec)
+_spec.loader.exec_module(_updater)
 
 REPOSITORY = "FBForge/fbforge-connect"
 LIMIT = 160 * 1024 * 1024
@@ -59,8 +65,11 @@ def read_candidate(archive_bytes, commit, checksum, version, run_id):
     require(len(archive_bytes) <= LIMIT, "artifact_too_large")
     installer = f"FBForge Connect_{version}_x64-setup.exe"
     names = {installer, "SHA256SUMS.txt", "build-info.json", "signature-info.json"}
+    with_updates = tuple(map(int, version.split('-')[0].split('.'))) >= (0, 3, 0)
+    if with_updates:
+        names |= {installer + '.sig', 'latest.json'}
     with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
-        require(set(archive.namelist()) == names and len(archive.namelist()) == 4, "unexpected_archive_files")
+        require(set(archive.namelist()) == names and len(archive.namelist()) == len(names), "unexpected_archive_files")
         require(sum(item.file_size for item in archive.infolist()) <= LIMIT, "candidate_too_large")
         files = {name: archive.read(name) for name in names}
     manifest = json.loads(files["build-info.json"].decode("utf-8-sig"))
@@ -89,6 +98,11 @@ def read_candidate(archive_bytes, commit, checksum, version, run_id):
         require(bool(re.fullmatch(r"[a-f0-9]{64}", entry.get("sha256", ""))), "signature_digest_invalid")
         if entry["file"] == installer:
             require(entry["sha256"] == checksum, "signature_installer_mismatch")
+    if with_updates:
+        try:
+            _updater.validate(files, manifest)
+        except (ValueError, KeyError, TypeError, UnicodeDecodeError):
+            raise RuntimeError('update_manifest_mismatch') from None
     return files, manifest
 
 

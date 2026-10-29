@@ -15,6 +15,10 @@ $signTool = Get-WindowsSignTool
 $certificate = Get-Item -LiteralPath ('Cert:\CurrentUser\My\' + $Thumbprint)
 Assert-CodeSigningCertificate $certificate
 $root = Split-Path -Parent $PSScriptRoot
+$publicKey = Join-Path $root 'desktop/update-public-key.txt'
+$updateKeyPath = $env:TAURI_SIGNING_PRIVATE_KEY_PATH
+if (-not $updateKeyPath) { $updateKeyPath = Join-Path $env:LOCALAPPDATA 'FBForge\signing\connect-updater.key' }
+if (-not (Test-Path -LiteralPath $updateKeyPath -PathType Leaf) -or -not ([IO.File]::ReadAllText($publicKey).Trim()) -or -not $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD) { throw 'update_signing_setup_required' }
 $temporary = Join-Path $env:RUNNER_TEMP ('fbforge-signing-' + [Guid]::NewGuid().ToString('N') + '.json')
 $output = Join-Path $env:RUNNER_TEMP ('fbforge-signed-' + [Guid]::NewGuid().ToString('N'))
 $binary = Join-Path $output 'fbforge-connect.exe'
@@ -46,6 +50,12 @@ try {
     $manifest = [ordered]@{ application = 'FBForge Connect'; version = $version; repository = $env:GITHUB_REPOSITORY; commit = $head; runId = $env:GITHUB_RUN_ID; validationRunId = $env:VALIDATION_RUN; platform = 'windows-x64'; signing = 'authenticode'; certificateThumbprint = $Thumbprint.ToUpperInvariant(); installer = $setup[0].Name; bytes = $setup[0].Length; sha256 = $signatures[1].sha256 }
     [IO.File]::WriteAllText((Join-Path $output 'build-info.json'), ($manifest | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
     [IO.File]::WriteAllText((Join-Path $output 'SHA256SUMS.txt'), ($manifest.sha256 + '  ' + $manifest.installer + "`n"), [Text.UTF8Encoding]::new($false))
+    # Sign the final Authenticode-signed bytes; do not re-sign or modify setup afterwards.
+    & npx.cmd tauri signer sign --private-key-path $updateKeyPath --app-version $version $setup[0].FullName | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'update_signature_failed' }
+    Copy-Item -LiteralPath ($setup[0].FullName + '.sig') -Destination $output
+    & python.exe (Join-Path $PSScriptRoot 'update-release.py') $output --public-key $publicKey
+    if ($LASTEXITCODE -ne 0) { throw 'update_manifest_failed' }
     Add-Content -LiteralPath $env:GITHUB_ENV -Value ('SIGNED_OUTPUT=' + $output)
     Write-Output 'Signed application and installer verified. No release was published.'
 } finally {

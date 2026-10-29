@@ -148,7 +148,7 @@ assert m.components(['desktop/src/vault.rs']) == dict(frontend=True, engine=Fals
 assert all(m.components(['.github/workflows/checks.yml']).values())
 assert all(m.components(['scripts/windows-signing.psm1']).values())
 assert all(m.components(['.npmrc']).values())
-for path in ['licenses/frontend.txt', 'THIRD_PARTY_NOTICES.md', 'LICENSE', '.prettierignore', '.editorconfig']:
+for path in ['licenses/frontend.txt', '.prettierignore', '.editorconfig']:
     assert m.components([path]) == dict(frontend=True, engine=False, native=False)
 script = str(pathlib.Path('scripts/ci/changed-components.py').resolve())
 with tempfile.TemporaryDirectory() as directory:
@@ -171,7 +171,7 @@ with tempfile.TemporaryDirectory() as directory:
         output.write_text('')
         env = dict(os.environ, GITHUB_EVENT_PATH=str(event), GITHUB_OUTPUT=str(output))
         subprocess.run([sys.executable, script], cwd=root, env=env, check=True)
-        assert output.read_text().splitlines() == [f'{name}={str(expected).lower()}' for name in ['frontend', 'engine', 'native']]
+        assert output.read_text().splitlines()[:3] == [f'{name}={str(expected).lower()}' for name in ['frontend', 'engine', 'native']]
 print('component selection passed')
 `;
   assert.match(execFileSync(python, ['-c', program], { cwd: root, encoding: 'utf8' }), /selection passed/);

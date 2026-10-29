@@ -2,7 +2,7 @@
 use crate::documentation_links::documentation_url;
 
 #[cfg(windows)]
-fn launch(url: &str) -> Result<(), &'static str> {
+pub(crate) fn launch(url: &str) -> Result<(), &'static str> {
     use std::{ffi::c_void, ptr};
     #[link(name = "shell32")]
     extern "system" {
@@ -37,7 +37,7 @@ fn launch(url: &str) -> Result<(), &'static str> {
 }
 
 #[cfg(not(windows))]
-fn launch(url: &str) -> Result<(), &'static str> {
+pub(crate) fn launch(url: &str) -> Result<(), &'static str> {
     use std::process::{Command, Stdio};
     let executable = if cfg!(target_os = "macos") {
         "/usr/bin/open"

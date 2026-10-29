@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 use std::{
     path::PathBuf,
     process::Stdio,
-    sync::atomic::{AtomicU64, AtomicU8, Ordering},
+    sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
     time::Duration,
 };
 use tauri::Manager;
@@ -23,6 +23,7 @@ pub(crate) struct EngineProcess {
 }
 #[derive(Default)]
 pub(crate) struct EngineState {
+    pub(crate) updating: AtomicBool,
     pub(crate) process: Mutex<Option<EngineProcess>>,
     pub(crate) sequence: AtomicU64,
     pub(crate) selected_environment: AtomicU8,
@@ -32,6 +33,12 @@ pub(crate) struct EngineState {
 }
 
 impl EngineState {
+    pub(crate) async fn forget_closed_sessions(&self) {
+        self.profiles.lock().await.clear();
+        self.case_profiles.lock().await.clear();
+        self.case_errors.lock().await.clear();
+    }
+
     pub(crate) fn environment(&self) -> Environment {
         Environment::from_code(self.selected_environment.load(Ordering::Acquire))
     }
@@ -154,6 +161,9 @@ pub(crate) async fn request<T: DeserializeOwned>(
     mut command: serde_json::Value,
 ) -> Result<T, &'static str> {
     let mut guard = state.process.try_lock().map_err(|_| "engine_busy")?;
+    if state.updating.load(Ordering::Acquire) {
+        return Err("update_activity_pending");
+    }
     if guard.is_none() {
         let resources = app.path().resource_dir().map_err(|_| "engine_not_staged")?;
         *guard = Some(EngineProcess::spawn(resources, state.environment())?);
@@ -220,6 +230,39 @@ pub(crate) async fn request<T: DeserializeOwned>(
 mod process_tests {
     use super::*;
     use crate::protocol::{ApiVersion, ProbeResult};
+
+    #[test]
+    fn a_closed_engine_does_not_leave_bindings_that_block_reauthentication() {
+        tauri::async_runtime::block_on(async {
+            let state = EngineState::default();
+            state.profiles.lock().await.insert(
+                "old-session".into(),
+                profiles::Binding {
+                    profile_id: "stored-profile".into(),
+                    api: ApiVersion::V3,
+                    role: crate::protocol::SessionRole::OnlineService,
+                    error: None,
+                },
+            );
+            state.case_profiles.lock().await.insert(
+                "old-session".into(),
+                cases::Binding {
+                    profile_id: "stored-profile".into(),
+                    api: ApiVersion::V3,
+                    role: crate::protocol::SessionRole::OnlineService,
+                },
+            );
+            state
+                .case_errors
+                .lock()
+                .await
+                .insert("old-session".into(), "vault_pending");
+            state.forget_closed_sessions().await;
+            assert!(state.profiles.lock().await.is_empty());
+            assert!(state.case_profiles.lock().await.is_empty());
+            assert!(state.case_errors.lock().await.is_empty());
+        });
+    }
 
     #[test]
     fn packaged_engine_finishes_cleanly_when_native_shutdown_closes_its_input() {
