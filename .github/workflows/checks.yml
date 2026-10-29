@@ -4,8 +4,13 @@ on:
   pull_request:
     branches: [main, 'release/**']
   push:
-    branches: [main, 'release/**']
+    branches: ['**']
   workflow_dispatch:
+    inputs:
+      full:
+        description: Run every normal check instead of only affected components
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -22,6 +27,8 @@ jobs:
       frontend: ${{ steps.changed.outputs.frontend }}
       engine: ${{ steps.changed.outputs.engine }}
       native: ${{ steps.changed.outputs.native }}
+      documentation: ${{ steps.changed.outputs.documentation }}
+      release: ${{ steps.changed.outputs.release }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -29,6 +36,21 @@ jobs:
           fetch-depth: 0
       - id: changed
         run: python3 scripts/ci/changed-components.py
+
+  documentation:
+    needs: changes
+    if: needs.changes.outputs.documentation == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.20.0
+          package-manager-cache: false
+      - run: node --experimental-strip-types --test tests/documentation.test.js
 
   frontend:
     needs: changes
@@ -96,7 +118,7 @@ jobs:
   result:
     name: Checks passed
     if: always()
-    needs: [changes, frontend, engine, native]
+    needs: [changes, documentation, frontend, engine, native]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -109,3 +131,20 @@ jobs:
           assert results['changes']['result'] == 'success', 'Change detection failed'
           assert all(job['result'] in ('success', 'skipped') for job in results.values()), 'A required check failed'
           PY
+
+  release-check:
+    needs: [changes, result]
+    if: github.repository_id == '1421171092' && github.event_name == 'push' && needs.changes.outputs.release == 'true' && needs.result.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Request exact Windows validation without signing or publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/release-check.py
