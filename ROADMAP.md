@@ -15,9 +15,7 @@ Die Freigabe benötigt die v2/v3-Regression, Tastatur-/NVDA- und Skalierungsprü
 
 ## Goal 0.3.0: Wiederholbare Integrationsabläufe und sicherer Betrieb
 
-Auf `release/0.3.0` wird ein integrierter Updater für veröffentlichte GitHub-Releases umgesetzt. Das ist
-eine neue Funktion; der vollständige Ablauf ist für 0.3.0 vorgesehen und gehört
-nicht automatisch zum Fehlerkorrekturpaket 0.2.1. Die Implementierung ist noch nicht veröffentlicht. Der öffentliche Update-Prüfschlüssel ist hinterlegt; Signier-Runner-Einrichtung und Windows-Update-Abnahme stehen vor der Freigabe an.
+Auf `release/0.3.0` entstehen integrierte Updates und die folgenden Komfortfunktionen. Die bisherigen 0.2.1-Fehlerkorrekturen sind vollständig integriert; ein separates 0.2.1-Release ist nicht vorgesehen. Die Version ist noch nicht veröffentlicht. Der öffentliche Update-Prüfschlüssel ist hinterlegt; Signier-Runner-Einrichtung und Windows-Update-Abnahme stehen vor der Freigabe an.
 
 - Beim Start eine begrenzte, abschaltbare Hintergrundprüfung und unter „Info“
   eine manuelle Suche anbieten. Ohne Internet weiterarbeiten; eine fehlgeschlagene

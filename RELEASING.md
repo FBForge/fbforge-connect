@@ -2,7 +2,7 @@
 
 Für 0.3.0 ist eine reguläre Version ohne Alpha-, Beta- oder RC-Zusatz vorgesehen.
 Main behält seine veröffentlichte Historie; `v0.2.0` bleibt unverändert.
-Die Entwicklung liegt auf `release/0.3.0`, getrennt von den 0.2.1-Fixes.
+Die Entwicklung liegt auf `release/0.3.0`. `fix/0.2.1` ist vollständig darin zusammengeführt; ein gesondertes 0.2.1-Release ist nicht vorgesehen.
 Die Veröffentlichung bleibt eine bewusste Aktion nach abgeschlossener Abnahme.
 
 ## 1. Lokal abnehmen
@@ -39,7 +39,8 @@ Automatisierte Tests ersetzen weder eine fachliche Prüfung noch eine formale Si
 
 ## 2. Branches übernehmen
 
-Der vorgesehene Weg ist `release/0.3.0` → `main`. Neue Änderungen entstehen auf eigenen
+Der vorgesehene Weg ist `release/0.3.0` → `main`. Neue Änderungen entstehen auf eigenen Die nachvollziehbaren, thematischen Commits bleiben erhalten. Für Main wird bei der bestehenden linearen Historie Rebase-Merge verwendet; kein pauschaler Release-Squash und kein zusätzlicher Develop-Branch. Der daraus entstandene Main-Commit wird vor Signierung und Tag erneut exakt validiert.
+
 `feature/...`-, `fix/...`- oder `release/...`-Branches und werden per Pull Request gegen Main geprüft.
 Die aktiven Regeln verlangen eine lineare Historie, erfolgreiche Statusprüfungen sowie CodeQL-
 und Code-Quality-Ergebnisse. Lösch- und Force-Push-Sperren bleiben eingeschaltet.

@@ -14,7 +14,7 @@
 - Release-Paket um Update-Signatur und `latest.json` ergänzen. Der öffentliche Prüfschlüssel ist hinterlegt. Vor der Freigabe müssen der private Schlüssel am Signier-Runner eingerichtet und ein echtes signiertes Windows-Update abgenommen werden. Entwicklungspakete ohne Prüfschlüssel bieten weiterhin den manuellen Download.
 - Die erste Version mit Updater muss einmal manuell installiert werden; ältere Versionen erhalten diese Funktion nicht nachträglich.
 
-## 0.2.1 (in Vorbereitung)
+### Übernommene Fehlerkorrekturen aus 0.2.1
 
 - Bei nicht verwendbaren Empfangsinhalten konkrete Prüfschritte und Gründe anzeigen, etwa fehlende oder nicht unterstützte Metadatenversionen, unzulässige Dateinamen, widersprüchliche Kennungen oder während des Abrufs veränderte Nachrichteninformationen. Ohne näheren Grund bleibt die Diagnose ausdrücklich unbestimmt.
 
