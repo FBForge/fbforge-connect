@@ -1,5 +1,6 @@
 import { navigate, queryEventLog } from './exchange.mjs';
 import { check, until } from './desktop.mjs';
+import { returnToInbox } from './inbox.mjs';
 import { downloadMessage, nativeFolder, nativeSchemaReview, verifyDownload } from './downloads.mjs';
 
 export async function previewPdf(page) {
@@ -67,8 +68,7 @@ export async function bulkReceive(desktop, fixture, valid, invalid) {
   const { page } = desktop;
   await navigate(page, 'Empfangen');
   await page.getByRole('tab', { name: 'Einreichungen', exact: true }).click();
-  const back = page.getByRole('button', { name: 'Zurück zum Eingang', exact: true });
-  if (await back.isVisible()) await back.click();
+  await returnToInbox(page);
   await page.locator('#pickup-destination').fill(fixture.destination);
   await page.locator('#pickup-submission').fill('');
   await page.getByRole('button', { name: 'Einreichungen laden', exact: true }).click();
@@ -106,6 +106,7 @@ export async function bulkReceive(desktop, fixture, valid, invalid) {
 export async function rejectInvalid(page, fixture, message) {
   await navigate(page, 'Empfangen');
   await page.getByRole('tab', { name: 'Einreichungen', exact: true }).click();
+  await returnToInbox(page);
   await page.locator('#pickup-destination').fill(fixture.destination);
   await page.locator('#pickup-submission').fill(message.submissionId);
   await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
@@ -147,6 +148,7 @@ export async function acceptInvalid(desktop, fixture, message) {
   const { page } = desktop;
   await navigate(page, 'Empfangen');
   await page.getByRole('tab', { name: 'Einreichungen', exact: true }).click();
+  await returnToInbox(page);
   await page.locator('#pickup-destination').fill(fixture.destination);
   await page.locator('#pickup-submission').fill(message.submissionId);
   await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();

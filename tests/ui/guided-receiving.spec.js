@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { returnToInbox } from '../../scripts/live-ui/inbox.mjs';
 const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
 async function open(page, keys = 1, verificationFailure = null, api = 'v3') {
   await page.goto(`http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1&api=${api}`);
@@ -83,6 +84,7 @@ async function open(page, keys = 1, verificationFailure = null, api = 'v3') {
         return original(command, args);
       };
     }, verificationFailure);
+  await returnToInbox(page);
   await page.locator('#pickup-submission').fill(id(3));
   await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
   if (verificationFailure) await expect(page.locator('.receive-workspace [role="alert"]')).toBeVisible();
@@ -108,7 +110,9 @@ test('accept prepares the current verified message once, cancel sends nothing an
   await expect(page.getByRole('button', { name: 'Annehmen', exact: true })).toHaveCount(0);
   const back = page.getByRole('button', { name: 'Zurück zum Eingang', exact: true });
   await expect(back).toBeInViewport({ ratio: 1 });
-  await back.click();
+  await returnToInbox(page);
+  await expect(page.locator('#pickup-destination')).toBeVisible();
+  expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(1);
   await expect(page.getByRole('heading', { name: 'Einreichungen suchen', exact: true })).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }),

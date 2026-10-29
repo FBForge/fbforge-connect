@@ -2,6 +2,7 @@
 import { writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { check, until } from './desktop.mjs';
+import { returnToInbox } from './inbox.mjs';
 import { nativeFolder, verifyDownload } from './downloads.mjs';
 import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 
@@ -150,6 +151,7 @@ export async function sendSubmission(page, fixture, api = 'v3', xml = false, inv
 export async function openSubmission(page, fixture, message) {
   await navigate(page, 'Empfangen');
   await page.getByRole('tab', { name: 'Einreichungen', exact: true }).click();
+  await returnToInbox(page);
   await page.locator('#pickup-destination').fill(fixture.destination);
   await page.locator('#pickup-submission').fill(message.submissionId);
   await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
