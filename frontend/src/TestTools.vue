@@ -18,25 +18,21 @@ watch(mode, (value) => {
   <div class="test-tools">
     <div class="client-actions" role="group" aria-label="Testwerkzeug auswählen">
       <button
+        v-for="tool in [
+          { id: 'packages', title: 'Testpakete' },
+          { id: 'comparison', title: 'Schema-Vergleich' },
+          { id: 'flows', title: 'Testabläufe' },
+          { id: 'scanner', title: 'Malwarescanner' },
+        ]"
+        :key="tool.id"
         type="button"
         class="button secondary"
-        :aria-pressed="mode === 'packages'"
-        @click="mode = 'packages'"
+        :aria-pressed="mode === tool.id"
+        @click="mode = tool.id"
       >
-        Testpakete
-      </button>
-      <button
-        type="button"
-        class="button secondary"
-        :aria-pressed="mode === 'comparison'"
-        @click="mode = 'comparison'"
-      >
-        Schema-Vergleich
+        {{ tool.title }}
       </button>
     </div>
-    <button class="button secondary" type="button" :aria-pressed="mode === 'flows'" @click="mode = 'flows'">
-      Testabläufe
-    </button>
     <TestFlows
       v-show="mode === 'flows'"
       v-if="flowsOpened"
@@ -45,14 +41,6 @@ watch(mode, (value) => {
       @send="emit('send', $event)"
       @busy="emit('busy', $event)"
     />
-    <button
-      class="button secondary"
-      type="button"
-      :aria-pressed="mode === 'scanner'"
-      @click="mode = 'scanner'"
-    >
-      Malwarescanner
-    </button>
     <MalwareScannerSettings
       v-if="mode === 'scanner'"
       :session="session"

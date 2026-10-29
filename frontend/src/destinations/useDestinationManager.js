@@ -267,6 +267,15 @@ export function useDestinationManager(props, emit) {
   }
   function applyTemplate(value) {
     if (disabled.value || locked.value) return;
+    if (
+      (value.publicServices || value.processMessages) &&
+      (selected.value.length !== 1 || detail.value?.type !== 'A')
+    ) {
+      error.value =
+        'Leistungs- und Schemavorlagen können nur auf eine einzelne Antrags-Destination angewendet werden.';
+      return;
+    }
+    error.value = '';
     resetFields();
     if (Object.hasOwn(value, 'name')) {
       nameEnabled.value = true;
@@ -287,11 +296,6 @@ export function useDestinationManager(props, emit) {
       }
     }
     if (value.publicServices || value.processMessages) {
-      if (selected.value.length !== 1 || detail.value?.type !== 'A') {
-        error.value =
-          'Leistungs- und Schemavorlagen können nur auf eine einzelne Antrags-Destination angewendet werden.';
-        return;
-      }
       offers.value = {
         publicServices: value.publicServices ?? detail.value.offers?.publicServices ?? [],
         processMessages: value.processMessages ?? detail.value.offers?.processMessages ?? [],

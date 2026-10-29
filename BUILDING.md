@@ -63,12 +63,10 @@ Der erste Rust-Build und das Laden der WebView2-Dateien können einige Minuten d
 
 ### Update-Signierung einmalig einrichten
 
-Ein unsignierter Entwicklungsbuild benötigt keinen Update-Schlüssel. Ohne eingerichteten
-Prüfschlüssel in `desktop/update-public-key.txt` bleibt der integrierte Updater erkennbar deaktiviert;
-der manuelle GitHub-Download bleibt verfügbar.
+Der öffentliche Projekt-Prüfschlüssel ist in `desktop/update-public-key.txt` hinterlegt. Für normale Entwicklungsbuilds keinen neuen Schlüssel erzeugen. Nur der Projekteigentümer richtet das dauerhafte Schlüsselpaar ein oder plant eine Schlüsselrotation. Ein Build ohne gültigen Prüfschlüssel deaktiviert den Updater erkennbar; der manuelle Download bleibt verfügbar.
 
 Der Projekteigentümer erzeugt das dauerhafte Schlüsselpaar **auf dem Windows-
-Signierrechner**. Nach `npm ci` ausführen:
+Signierrechner**. Für die einmalige Ersteinrichtung aus dem Checkout ausführen:
 
 ```powershell
 .\scripts\setup-update-signing.ps1
@@ -86,7 +84,20 @@ Für die offizielle Signierung das Passwort über den geschützten lokalen
 Signierablauf als `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` bereitstellen. Ein abweichender
 Dateipfad kann als `TAURI_SIGNING_PRIVATE_KEY_PATH` gesetzt werden. Diese Werte
 nicht in Skripte, Workflow-Dateien, Konsolentranskripte oder das Repository schreiben.
-Die Update-Signatur ergänzt das vorhandene Windows-Zertifikat und ist davon unabhängig.
+Das Passwort kann beim Start des interaktiven Signier-Runners ausschließlich für dessen Prozess bereitgestellt werden. Im Runner-Verzeichnis mit `run.cmd`:
+
+```powershell
+$secureUpdatePassword = Read-Host 'Passwort des Update-Signaturschlüssels' -AsSecureString
+try {
+    $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = [Net.NetworkCredential]::new('', $secureUpdatePassword).Password
+    .\run.cmd
+} finally {
+    Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD -ErrorAction SilentlyContinue
+    $secureUpdatePassword.Dispose()
+}
+```
+
+Dazu denselben Windows-Benutzer wie bei der Schlüsselerzeugung verwenden. Dies schreibt das Passwort weder ins Repository noch als dauerhafte Benutzer-Umgebungsvariable. Die Update-Signatur ergänzt das vorhandene Windows-Zertifikat und ist davon unabhängig.
 
 ## Linux und macOS
 

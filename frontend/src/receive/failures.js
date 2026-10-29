@@ -1,5 +1,15 @@
 // Fixed explanations only: native SDK and HTTP exception text can contain received data.
 export const receiveFailures = Object.freeze({
+  malware_detected: {
+    title: 'Malwarescanner meldet einen Fund',
+    message:
+      'Der eingerichtete Scanner meldet einen Fund. Inhalte werden nicht zur Vorschau, Annahme oder zum Export freigegeben. Prüfen Sie die Meldung an Ihrer Scanner-Gegenstelle. Eine begründete manuelle Ablehnung bleibt möglich; es wird nichts automatisch angenommen oder abgelehnt.',
+  },
+  malware_scan_failed: {
+    title: 'Malwareprüfung nicht abgeschlossen',
+    message:
+      'Der eingerichtete Scanner konnte die Inhalte nicht eindeutig freigeben. Prüfen Sie Erreichbarkeit und Konfiguration der Scanner-Gegenstelle. Inhalte bleiben gesperrt. Sie können erneut prüfen oder begründet manuell ablehnen; es erfolgt kein automatischer Empfangsabschluss.',
+  },
   receive_response_invalid: {
     title: 'API-Antwort nicht lesbar',
     message:

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 const cases = [
+  ['malware_detected', 'Malwarescanner meldet einen Fund', /Scanner meldet einen Fund/],
+  ['malware_scan_failed', 'Malwareprüfung nicht abgeschlossen', /nicht eindeutig freigeben/],
   ['receive_response_invalid', 'API-Antwort nicht lesbar', /API-Antwort.*erwarteten Format/],
   [
     'receive_message_mismatch',

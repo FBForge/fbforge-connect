@@ -94,7 +94,7 @@ function apply(value) {
   if (value && !props.disabled) {
     emit('apply', JSON.parse(JSON.stringify(value.changes)));
     notice.value =
-      'Vorlage in die Bearbeitung übernommen. Noch nichts auf dem Server geändert. Bitte Vorschau für die gewählten Destinations erstellen.';
+      'Bitte prüfen Sie die nachfolgende Bearbeitung und eventuelle Hinweise. Noch nichts auf dem Server geändert. Erst eine aktuelle Vorschau und separate Bestätigung speichern Änderungen.';
   }
 }
 async function remove() {

@@ -273,22 +273,29 @@ async function verify() {
       <p v-if="!session">Zum Durchführen bitte ein Profil verbinden.</p>
       <template v-if="run">
         <p>Umgebung: {{ run.environment }} · Beginn: {{ new Date(run.startedAt).toLocaleString('de-DE') }}</p>
-        <ol>
-          <li
-            v-for="(item, index) in flow.steps"
-            :key="index"
-            :aria-current="index === run.results.length ? 'step' : undefined"
-          >
-            {{ flowSteps[item.type] }} · {{ item.caseId }} ·
-            {{
-              index < run.results.length
-                ? 'Erfolgreich'
-                : index === run.results.length
-                  ? 'Aktueller Schritt'
-                  : 'Ausstehend'
-            }}
-          </li>
-        </ol>
+        <p>
+          Schritt {{ Math.min(run.results.length + 1, flow.steps.length) }} von {{ flow.steps.length }} ·
+          {{ run.results.length }} erfolgreich geprüft
+        </p>
+        <details>
+          <summary>Ablaufplan anzeigen</summary>
+          <ol>
+            <li
+              v-for="(item, index) in flow.steps"
+              :key="index"
+              :aria-current="index === run.results.length ? 'step' : undefined"
+            >
+              {{ flowSteps[item.type] }} · {{ item.caseId }} ·
+              {{
+                index < run.results.length
+                  ? 'Erfolgreich'
+                  : index === run.results.length
+                    ? 'Aktueller Schritt'
+                    : 'Ausstehend'
+              }}
+            </li>
+          </ol>
+        </details>
         <section v-if="step">
           <h3>{{ flowSteps[step.type] }}: {{ testCase.name }}</h3>
           <p>

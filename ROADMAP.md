@@ -17,7 +17,7 @@ Die Freigabe benötigt die v2/v3-Regression, Tastatur-/NVDA- und Skalierungsprü
 
 Auf `release/0.3.0` wird ein integrierter Updater für veröffentlichte GitHub-Releases umgesetzt. Das ist
 eine neue Funktion; der vollständige Ablauf ist für 0.3.0 vorgesehen und gehört
-nicht automatisch zum Fehlerkorrekturpaket 0.2.1. Die Implementierung ist noch nicht veröffentlicht; Schlüssel-Einrichtung und Windows-Update-Abnahme stehen vor der Freigabe an.
+nicht automatisch zum Fehlerkorrekturpaket 0.2.1. Die Implementierung ist noch nicht veröffentlicht; Der öffentliche Update-Prüfschlüssel ist hinterlegt; Signier-Runner-Einrichtung und Windows-Update-Abnahme stehen vor der Freigabe an.
 
 - Beim Start eine begrenzte, abschaltbare Hintergrundprüfung und unter „Info“
   eine manuelle Suche anbieten. Ohne Internet weiterarbeiten; eine fehlgeschlagene
@@ -70,7 +70,7 @@ Freigabe erforderlich; dieser Roadmap-Eintrag aktiviert keine Updates.
 
 Nicht enthalten: Callback-/Webhook-Werkzeug, neue Anlage-ID-Funktionen, große XSD-Bibliothek und nicht exportierbare Schlüssel/HSM. Netzwerk-Vorabprüfung (DNS, TLS, Proxy, Firewall sowie V-PKI-OCSP/CRL) und Routing-Debugger gehören zu **FBForge Inspect**.
 
-Die Implementierung auf dem Feature-Branch ist keine Release-Freigabe. Vor Veröffentlichung bleiben Update-Schlüsseleinrichtung, signierter Windows-Upgrade-Test und die Abnahme mit echten TEST-Zugängen erforderlich. Keine PR- oder Tag-Erstellung ohne gesonderten Release-Auftrag.
+Die Implementierung auf dem Feature-Branch ist keine Release-Freigabe. Vor Veröffentlichung bleiben Einrichtung des privaten Schlüssels am Signier-Runner, signierter Windows-Upgrade-Test und die Abnahme mit echten TEST-Zugängen erforderlich. Keine PR- oder Tag-Erstellung ohne gesonderten Release-Auftrag.
 
 ## Weitere Planung
 

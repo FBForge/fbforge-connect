@@ -11,7 +11,7 @@
 
 - Integrierte Updates für Windows x64: automatische, abschaltbare Suche und manuelle Suche unter „Info“, Hinweis auf neue stabile GitHub-Releases, Downloadfortschritt und abbrechbarer Download.
 - Installer erst nach erfolgreicher Paket- und Versionssignaturprüfung sowie nativer Bestätigung starten. Laufende Aktionen und offene Exporte blockieren die Installation; gespeicherte Schlüssel werden vor dem Beenden gesichert.
-- Release-Paket um Update-Signatur und `latest.json` ergänzen. Vor der Freigabe muss der eigene Update-Schlüssel eingerichtet und ein echtes signiertes Windows-Update abgenommen werden. Entwicklungspakete ohne Prüfschlüssel bieten weiterhin den manuellen Download.
+- Release-Paket um Update-Signatur und `latest.json` ergänzen. Der öffentliche Prüfschlüssel ist hinterlegt. Vor der Freigabe müssen der private Schlüssel am Signier-Runner eingerichtet und ein echtes signiertes Windows-Update abgenommen werden. Entwicklungspakete ohne Prüfschlüssel bieten weiterhin den manuellen Download.
 - Die erste Version mit Updater muss einmal manuell installiert werden; ältere Versionen erhalten diese Funktion nicht nachträglich.
 
 ## 0.2.1 (in Vorbereitung)
