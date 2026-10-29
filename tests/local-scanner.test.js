@@ -59,3 +59,14 @@ test('blocked attachment report preserves identities but cannot introduce a down
   assert.match(scannerError('content_cancelled'), /beibehalten|erhalten/);
   assert.ok(!scannerError('untrusted server message').includes('untrusted'));
 });
+
+test('Git-for-Windows GnuPG receives MSYS drive paths while native GnuPG keeps Windows paths', async () => {
+  const { gpgPath } = await import('../scripts/scanner/component.mjs');
+  const path = 'D:\\Eigene Dateien\\Prüfung\\public.asc';
+  assert.equal(
+    gpgPath(path, 'C:\\Program Files\\Git\\usr\\bin\\gpg.exe', 'win32'),
+    '/d/Eigene Dateien/Prüfung/public.asc',
+  );
+  assert.equal(gpgPath(path, 'C:\\GnuPG\\bin\\gpg.exe', 'win32'), 'D:/Eigene Dateien/Prüfung/public.asc');
+  assert.equal(gpgPath('/workspace/key.asc', 'gpg', 'linux'), '/workspace/key.asc');
+});

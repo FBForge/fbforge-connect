@@ -2,7 +2,15 @@
 import { readFile, writeFile, mkdir, mkdtemp, rm, rename, copyFile, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { manifest, run, download, verifyEngine, copyEngine, databaseFiles } from './scanner/component.mjs';
+import {
+  manifest,
+  run,
+  download,
+  verifyEngine,
+  copyEngine,
+  databaseFiles,
+  gpgPath,
+} from './scanner/component.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const argument = (name) => {
   const index = process.argv.indexOf(name);
@@ -28,7 +36,8 @@ try {
   const keyring = join(scratch, 'gpg');
   await mkdir(keyring, { mode: 0o700 });
   const key = fileURLToPath(new URL('./scanner/talos-public-key.asc', import.meta.url));
-  run(gpg, ['--homedir', keyring, '--batch', '--import', key]);
+  const forGpg = (path) => gpgPath(path, gpg);
+  run(gpg, ['--homedir', forGpg(keyring), '--batch', '--import', forGpg(key)]);
   for (const file of [archive, source]) {
     const url = (file === archive ? manifest.archive.url : manifest.source.url) + '.sig';
     const signature = file + '.sig';
@@ -51,7 +60,16 @@ try {
     }
     const result = run(
       gpg,
-      ['--homedir', keyring, '--batch', '--status-fd', '1', '--verify', signature, file],
+      [
+        '--homedir',
+        forGpg(keyring),
+        '--batch',
+        '--status-fd',
+        '1',
+        '--verify',
+        forGpg(signature),
+        forGpg(file),
+      ],
       { stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8' },
     );
     if (!result.stdout.includes(`[GNUPG:] VALIDSIG ${manifest.signerFingerprint} `))

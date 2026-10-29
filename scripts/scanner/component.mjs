@@ -7,6 +7,15 @@ import { join, dirname } from 'node:path';
 export const manifest = JSON.parse(
   await readFile(new URL('../../desktop/scanner-component.json', import.meta.url), 'utf8'),
 );
+// Git's GnuPG is an MSYS executable, not a native Gpg4win executable.
+// Explicit drive paths must use its /c/... form; backslashes become relative path characters.
+export function gpgPath(path, executable, platform = process.platform) {
+  if (platform !== 'win32') return path;
+  const normalized = path.replaceAll('\\', '/');
+  return /\/Git\/usr\/bin\/gpg\.exe$/i.test(executable.replaceAll('\\', '/'))
+    ? normalized.replace(/^([a-z]):\//i, (_, drive) => `/${drive.toLowerCase()}/`)
+    : normalized;
+}
 export function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     stdio: 'inherit',
