@@ -16,6 +16,7 @@ export const helpTopics = [
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
     ],
     notes: [
+      'Die Abbildungen zeigen den vorbereiteten Patchstand 0.2.1 mit der neuen Bildmarke. Download und Versionshinweise beziehen sich auf das veröffentlichte Release.',
       'Das Werkzeug ersetzt kein produktives Fachverfahren und ist keine offizielle Anwendung der FITKO.',
       'Die Anwendung wird weiterentwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
     ],
