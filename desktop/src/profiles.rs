@@ -194,6 +194,9 @@ pub async fn forget_profile(
     if !valid_session_id(&profile_id) {
         return Err("invalid_input");
     }
+    // Use the same order as workspace mutations: workspace -> profile binding. A renderer reload
+    // must not let a late template/history save recreate files after the profile was forgotten.
+    let _workspace = crate::profile_workspace::WORKSPACE_LOCK.lock().await;
     let mut bindings = state.profiles.lock().await;
     let cases = app
         .path()

@@ -8,7 +8,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use tauri::{Manager, State};
 use tokio::sync::Mutex;
-static LOCK: Mutex<()> = Mutex::const_new(());
+pub(crate) static WORKSPACE_LOCK: Mutex<()> = Mutex::const_new(());
 #[derive(Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum WorkspaceRequest {
@@ -57,7 +57,7 @@ pub async fn profile_workspace(
     session_id: String,
     request: WorkspaceRequest,
 ) -> Result<Value, &'static str> {
-    let _guard = LOCK.lock().await;
+    let _guard = WORKSPACE_LOCK.lock().await;
     let Some(store) = store(&app, &state, api_version, &session_id).await? else {
         return Ok(Value::Null);
     };
@@ -85,7 +85,7 @@ pub async fn journal(
     session: &str,
     value: &Value,
 ) -> Result<(), &'static str> {
-    let _guard = LOCK.lock().await;
+    let _guard = WORKSPACE_LOCK.lock().await;
     let Some(store) = store(app, state, api, session).await? else {
         return Ok(());
     };
@@ -100,7 +100,7 @@ pub async fn mark_running(
     session: &str,
     attempt: &str,
 ) -> Result<(), &'static str> {
-    let _guard = LOCK.lock().await;
+    let _guard = WORKSPACE_LOCK.lock().await;
     let Some(store) = store(app, state, api, session).await? else {
         return Ok(());
     };
