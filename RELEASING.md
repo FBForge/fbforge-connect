@@ -31,7 +31,7 @@ Vor dem Release auf dem Windows-Zielgerät prüfen:
 - Abhängigkeiten gegen aktuelle Sicherheitsmeldungen prüfen, einschließlich aufgelöster Maven-
   Abhängigkeiten und plattformspezifischer Rust-Pfade. Bekannte Hinweise und ihre Bewertung unter
   [SECURITY.md](SECURITY.md) aktualisieren. JDK und WebView2 benötigen zusätzlich aktuelle Sicherheitsupdates.
-- Die in der Anwendung verlinkte [0.2-Anleitung](https://fbforge.de/connect/hilfe/0.2/start)
+- Die in der Anwendung verlinkte [0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start)
   vor der Veröffentlichung auf der Website bereitstellen und ihre Links im Browser prüfen.
 
 Live-Tests bevorzugt in TEST ausführen. Produktive Schreibaktionen einzeln und bewusst bestätigen.
@@ -98,11 +98,11 @@ Keine Tags früherer Versionen umbenennen und kein bereits veröffentlichtes Pak
 
 Die Quelle der Anleitung ist `docs/guide/`. Sie enthält ausschließlich fiktive Beispiele und Bilder.
 `scripts/capture-help.mjs` erzeugt aktuelle Bilder. `scripts/export-guide.mjs` und
-`scripts/export-wiki.mjs` exportieren die Web-Anleitung und die 0.2-Wiki-Kapitel.
-Vorhandene 0.1-Kapitel bleiben für Nutzer der früheren Version erhalten.
+`scripts/export-wiki.mjs` exportieren die Web-Anleitung und die 0.3-Wiki-Kapitel.
+Vorhandene 0.1- und 0.2-Kapitel bleiben für Nutzer der früheren Version erhalten.
 
-Die 0.2-Anleitung vor der Softwareveröffentlichung über den vorbereiteten Website-PR in
-`FBForge/fbforge` bereitstellen. Bis dahin müssen Downloadlinks und Release-Metadaten weiter auf
+Die 0.3-Anleitung vor der Softwareveröffentlichung aus dem vorbereiteten Website-Branch
+`release/connect-0.3.0` in `FBForge/fbforge` bereitstellen. Ein PR oder Merge wird erst im ausdrücklich beauftragten Release-Prozess erstellt. Bis dahin müssen Downloadlinks und Release-Metadaten weiter auf
 das tatsächlich veröffentlichte Paket zeigen. Nach Veröffentlichung übernimmt `Update project information`
 die neuen Release-Metadaten und den tatsächlichen Installer-Link. Keine Download-URL vorab erfinden.
 Main-Pushes und Projektaktualisierungen können bei aktiviertem `DEPLOY_ENABLED` ein Deployment auslösen.

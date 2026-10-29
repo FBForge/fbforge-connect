@@ -11,10 +11,10 @@ angeben, keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten.
 ## Datenspeicherung
 
 Zugänge und Schlüssel bleiben standardmäßig in der Sitzung. Optional gespeicherte
-Profile, Schlüssel und Vorgänge schützt Windows-DPAPI für das Benutzerkonto.
-Tokens werden nicht gespeichert; Profilsicherungen enthalten keine Vorgänge.
+Profile, Schlüssel, Vorgänge, Destination-Vorlagen und Konfigurationshistorie schützt Windows-DPAPI für das Benutzerkonto.
+Tokens werden nicht gespeichert; Profilsicherungen enthalten weder Vorgänge noch die getrennten Profil-Arbeitsdaten.
 
-Downloads, exportierte Testpakete und Vergleichsberichte sind unverschlüsselt.
+Downloads, exportierte Testpakete, Abläufe, Vorlagen und Vergleichsberichte sind unverschlüsselt.
 Sie bleiben beim Löschen eines Profils bestehen. DPAPI schützt nicht vor
 Schadsoftware unter demselben Benutzerkonto. Die Vorgangsablage ist kein
 revisionssicheres Archiv; Löschen garantiert kein physisches Überschreiben.
@@ -22,8 +22,7 @@ Eine Abmeldung widerruft keine bereits ausgestellten Tokens.
 
 ## Schutzgrenzen
 
-- Kein integrierter Malwarescanner. Technische und fachliche Prüfung bleiben getrennt;
-  Sammelannahme ohne Scan erfordert eine ausdrückliche Freigabe.
+- Kein mitgelieferter Malwaredienst. Ab 0.3.0 können eigene ClamAV-/ICAP-Gegenstellen nach nativer Bestätigung angebunden werden. Sie erhalten entschlüsselte Inhalte über unverschlüsseltes TCP und benötigen daher ein vertrauenswürdiges lokales oder anderweitig geschütztes Netz. Fund, Zeitlimit und unklare Freigabe blockieren die Inhaltsfreigabe. Technische und fachliche Prüfung bleiben getrennt; Sammelannahme ohne Scan erfordert eine ausdrückliche Freigabe.
 - Keine allgemeinen HTTP-, Shell- oder Dateisystemrechte im Renderer. Schreibaktionen
   benötigen eine Bestätigung; ungewisse Übertragungen werden nicht automatisch wiederholt.
 - Umgebungswechsel beendet Sitzungen und erfordert eine neue Anmeldung. Gespeicherte
