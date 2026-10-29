@@ -29,6 +29,9 @@ const flow = shallowRef(null),
 let generation = 0;
 const step = computed(() => flow.value?.steps[run.value?.results.length || 0]);
 const testCase = computed(() => flow.value?.pack.cases.find((item) => item.id === step.value?.caseId));
+const expectedMessage = computed(() =>
+  ['reply', 'check_reply'].includes(step.value?.type) ? testCase.value?.reply : testCase.value?.request,
+);
 const candidates = computed(() =>
   run.value && step.value
     ? records.value.filter((record) =>
@@ -293,6 +296,15 @@ async function verify() {
             Sie können dazu passende Profile in derselben Umgebung verbinden. Nur Nachrichten dieses
             Durchlaufs mit übereinstimmenden Kennungen werden angeboten.
           </p>
+          <details v-if="expectedMessage">
+            <summary>Erwartete Fachdaten und Anlagen</summary>
+            <pre>{{ expectedMessage.data }}</pre>
+            <ul>
+              <li v-for="item in expectedMessage.attachments" :key="item.fileName">
+                {{ item.fileName }} · {{ item.mimeType }}
+              </li>
+            </ul>
+          </details>
           <button
             v-if="step.type === 'send'"
             class="button secondary"

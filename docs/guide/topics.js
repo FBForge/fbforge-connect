@@ -16,7 +16,7 @@ export const helpTopics = [
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
     ],
     notes: [
-      'Die Abbildungen zeigen den vorbereiteten Patchstand 0.2.1 mit der neuen Bildmarke. Download und Versionshinweise beziehen sich auf das veröffentlichte Release.',
+      'Die Abbildungen zeigen Version 0.3.0 mit ausschließlich fiktiven Testdaten. Download und Versionshinweise beziehen sich auf das veröffentlichte Release.',
       'Das Werkzeug ersetzt kein produktives Fachverfahren und ist keine offizielle Anwendung der FITKO.',
       'Die Anwendung wird weiterentwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
     ],
@@ -556,3 +556,25 @@ helpTopics
   .notes.push(
     'Technische Abholfrist für nicht abgeholte Nachrichten: grundsätzlich 14 Tage ab Bereitstellung, endgültige Löschung nach 21 Tagen. Erfolgreich abgeholte Nachrichten werden nach 7 Tagen gelöscht; unvollständige Übertragungen nach einem Tag. Das sind technische Speicherfristen und keine fachlichen Bearbeitungsfristen.',
   );
+
+helpTopics
+  .find((topic) => topic.id === 'tools')
+  .illustrations.push(
+    {
+      image: 'test-flows',
+      caption:
+        'Ein neuer Testablauf kombiniert bestehende Testfälle und prüft die Ergebnisse Schritt für Schritt.',
+    },
+    {
+      image: 'malware-scanner',
+      caption:
+        'Eine eigene Scanner-Gegenstelle einrichten; ohne bewusste Aktivierung wird nichts übertragen.',
+    },
+  );
+helpTopics.find((topic) => topic.id === 'destinations').illustrations = [
+  ...(helpTopics.find((topic) => topic.id === 'destinations').illustrations || []),
+  {
+    image: 'destination-templates',
+    caption: 'Konfigurationsvorlagen vor der aktuellen Servervorschau in die Bearbeitung übernehmen.',
+  },
+];

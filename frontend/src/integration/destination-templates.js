@@ -1,3 +1,4 @@
+import { checkedPreview } from '../destination-management.js';
 import { validOffers } from '../destination-offers.js';
 export function validateTemplate(value) {
   if (
@@ -97,5 +98,41 @@ export async function profileWorkspace(invoke, session, request = { action: 'rea
     !Array.isArray(result.recent)
   )
     throw new Error('engine_protocol_error');
+  const uuid = (value) =>
+    typeof value === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+  if (
+    Object.keys(result).sort().join() !== 'favorites,history,recent,templates' ||
+    result.favorites.length > 20 ||
+    result.recent.length > 10 ||
+    [...result.favorites, ...result.recent].some((id) => !uuid(id)) ||
+    new Set(result.templates.map((row) => row.id)).size !== result.templates.length ||
+    new TextEncoder().encode(JSON.stringify(result)).length > 4 * 1024 * 1024
+  )
+    throw new Error('engine_protocol_error');
+  for (const row of result.templates) {
+    if (!row || Object.keys(row).sort().join() !== 'changes,id,name' || !uuid(row.id))
+      throw new Error('engine_protocol_error');
+    try {
+      validateTemplate({
+        format: 'fbforge-connect-destination-template',
+        version: 1,
+        name: row.name,
+        changes: row.changes,
+      });
+    } catch {
+      throw new Error('engine_protocol_error');
+    }
+  }
+  for (const row of result.history) {
+    if (
+      !row ||
+      Object.keys(row).sort().join() !== 'recordedAt,snapshot' ||
+      !Number.isSafeInteger(row.recordedAt) ||
+      row.recordedAt < 0
+    )
+      throw new Error('engine_protocol_error');
+    checkedPreview(row.snapshot);
+  }
   return result;
 }
