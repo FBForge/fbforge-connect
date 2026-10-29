@@ -1,6 +1,6 @@
 # Sicherheit
 
-FBForge Connect 0.2 unterstützt Windows sowie FIT-Connect TEST, STAGE und PROD. Verwenden Sie passende eigene Zugänge und für Tests fiktive Daten. Version 0.1 unterstützt nur TEST.
+Die Sicherheitshinweise gelten für Windows sowie FIT-Connect TEST, STAGE und PROD.
 
 ## Sicherheitslücken melden
 

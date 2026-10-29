@@ -1,5 +1,7 @@
 # FBForge Connect
 
+> **Hinweis:** FBForge Connect ist für Entwicklungs-, Test- und Integrationszwecke vorgesehen.
+
 <img src="frontend/src/assets/test-client.png" alt="" width="80" height="80">
 
 Desktop-Client für FIT-Connect. Für Entwickler, Integratoren und Mitarbeiter der öffentlichen Verwaltung.
