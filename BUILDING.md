@@ -192,3 +192,7 @@ Der rein lesende Workflow `Check ClamAV upstream release` meldet wöchentlich od
 bei manuellem Start eine neuere offizielle Engine-Version. Er installiert oder
 veröffentlicht nichts. Ein Engine-Update erfordert neue geprüfte Hashes, Quellen
 und die erneute Komponenten-Abnahme; Signaturupdates ersetzen kein Engine-Update.
+
+Für die gezielte Windows-Abnahme einer Scanner-Änderung kann `Windows release
+validation` mit `scanner_only=true` gestartet werden. Dieser Modus baut keinen
+Installer und ersetzt keine vollständige Release-Validierung oder Signierfreigabe.

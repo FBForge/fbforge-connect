@@ -11,6 +11,10 @@ on:
         description: Optional successful signed run to test upgrading from an earlier version
         required: false
         type: string
+      scanner_only:
+        description: Validate only the optional local ClamAV component (no installer/release validation)
+        type: boolean
+        default: false
       offline:
         description: Also build the larger offline WebView2 installer
         type: boolean
@@ -40,6 +44,7 @@ jobs:
 
   signing-contracts:
     needs: verify-source
+    if: inputs.scanner_only != true
     runs-on: windows-2025
     timeout-minutes: 5
     steps:
@@ -52,6 +57,7 @@ jobs:
 
   test-readonly:
     needs: verify-source
+    if: inputs.scanner_only != true
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -84,6 +90,7 @@ jobs:
 
   windows:
     needs: verify-source
+    if: inputs.scanner_only != true
     runs-on: windows-2025
     timeout-minutes: 60
     steps:
@@ -264,3 +271,35 @@ jobs:
           name: windows-alpha-unsigned-offline-setup
           path: desktop/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
+
+  windows-scanner:
+    needs: verify-source
+    if: inputs.scanner_only == true
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.20.0
+          package-manager-cache: false
+      - run: rustup toolchain install 1.99.0 --profile minimal
+      - name: Package official engine, signed databases, source and licenses
+        run: npm run stage:scanner
+      - name: Exercise actual owned runtime with clean and EICAR streams
+        shell: powershell
+        run: |
+          $archive = @(Get-ChildItem 'desktop/target/scanner-dist' -Filter 'FBForge-Connect-ClamAV-*.zip' -File)
+          if ($archive.Count -ne 1) { throw 'scanner_component_missing' }
+          $workspace = Join-Path $env:RUNNER_TEMP ('fbforge-scanner-' + [Guid]::NewGuid().ToString('N'))
+          cargo +1.99.0 run --locked --manifest-path desktop/native-contracts/Cargo.toml --example scanner-runtime -- $archive[0].FullName $workspace
+          if ($LASTEXITCODE -ne 0) { throw 'scanner_component_acceptance_failed' }
+      - name: Retain tested optional distribution without signing or publishing
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-scanner-component
+          path: desktop/target/scanner-dist/
+          if-no-files-found: error
+          retention-days: 7
