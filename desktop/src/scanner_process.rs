@@ -193,6 +193,16 @@ pub fn owns_port(_pid: u32, _port: u16) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(windows)]
+    #[test]
+    fn loopback_listener_is_bound_to_its_actual_process_not_an_arbitrary_pid() {
+        let listener = std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        assert!(owns_port(std::process::id(), port));
+        assert!(!owns_port(0, port));
+        drop(listener);
+        assert!(!owns_port(std::process::id(), port));
+    }
     #[cfg(unix)]
     #[test]
     fn helpers_are_bounded_and_timeout_terminates_the_owned_process() {

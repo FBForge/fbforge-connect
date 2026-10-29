@@ -268,6 +268,38 @@ mod tests {
     }
 
     #[test]
+    fn blocked_live_and_historical_messages_cannot_export_even_clean_remainder_bytes() {
+        for local in [false, true] {
+            let root = store::reserve(&std::env::temp_dir(), "fbforge-blocked-export").unwrap();
+            let mut parts = parts();
+            if local {
+                parts.push(json!({"kind":"scan-report","contentId":id(8),"totalBytes":1}));
+            }
+            let result = ready(export(
+                &root,
+                "Einreichung",
+                &id(7),
+                local,
+                "TEST",
+                |content, offset| {
+                    assert!(
+                        content.is_none(),
+                        "blocked snapshots must never begin a byte read"
+                    );
+                    let mut page = response(&parts, content, offset);
+                    if !local {
+                        page["blockedAttachmentCount"] = 1.into();
+                    }
+                    std::future::ready(Ok(page))
+                },
+            ));
+            assert_eq!(result.unwrap_err(), "message_content_blocked");
+            assert_eq!(fs::read_dir(&root).unwrap().count(), 0);
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
     fn transport_only_case_is_not_a_protocol_error_and_creates_no_files() {
         let root = store::reserve(&std::env::temp_dir(), "fbforge-transport-only").unwrap();
         let parts = vec![parts()[0].clone()];
