@@ -34,7 +34,7 @@ Eine Abmeldung widerruft keine bereits ausgestellten Tokens.
   die optionale FIM-Abfrage überträgt LeiKa-Kennungen, keine Zugangsdaten oder Fachdaten.
 - Fehlerhafte Einreichungen im Sammeldurchlauf bleiben manuell; es gibt keine automatische
   Ablehnung. Fachlich falsche, technisch gültige Daten benötigen ebenfalls eine Entscheidung.
-- Ab 0.2.1 bleiben kryptografisch geprüfte Inhalte trotz Schemaabweichungen lesbar.
+- Ab 0.3.0 bleiben kryptografisch geprüfte Inhalte trotz Schemaabweichungen lesbar.
   Einzelannahme erfordert eine zusätzliche native Bestätigung; Sammelannahme bleibt gesperrt.
   Hash-, Signatur-, Zertifikats- und Entschlüsselungsfehler bleiben blockierend.
 
