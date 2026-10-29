@@ -39,25 +39,23 @@ Automatisierte Tests ersetzen weder eine fachliche Prüfung noch eine formale Si
 
 ## 2. Branches übernehmen
 
-Der vorgesehene Weg ist `release/0.3.0` → `main`. Neue Änderungen entstehen auf eigenen Die nachvollziehbaren, thematischen Commits bleiben erhalten. Für Main wird bei der bestehenden linearen Historie Rebase-Merge verwendet; kein pauschaler Release-Squash und kein zusätzlicher Develop-Branch. Der daraus entstandene Main-Commit wird vor Signierung und Tag erneut exakt validiert.
+Der vorgesehene Weg ist `release/0.3.0` → `main`. Neue Änderungen entstehen auf
+`feature/...`-, `fix/...`- oder `release/...`-Branches. Ein zusätzlicher Develop-Branch
+ist nicht vorgesehen. Die Übernahme nach Main erfolgt nach Prüfung per Pull Request.
 
-`feature/...`-, `fix/...`- oder `release/...`-Branches und werden per Pull Request gegen Main geprüft.
-Die aktiven Regeln verlangen eine lineare Historie, erfolgreiche Statusprüfungen sowie CodeQL-
-und Code-Quality-Ergebnisse. Lösch- und Force-Push-Sperren bleiben eingeschaltet.
+Die nachvollziehbaren, thematischen Commits bleiben erhalten; ein ganzer Release wird
+nicht pauschal zu einem Commit zusammengefasst. Bei der bestehenden linearen Historie
+wird Rebase-Merge verwendet. Dabei ändern sich Commit-IDs; deshalb wird der entstandene
+Main-Stand vor Signierung und Tag erneut exakt validiert. Merge-Verknüpfungen aus den
+Arbeitsbranches werden nicht in die lineare Main-Historie übernommen.
 
-Unveröffentlichte Änderungen können im vereinbarten Umfang zusammengefasst werden.
-Veröffentlichte Historie und Tags bleiben unverändert. Ein geänderter Commit benötigt
-eigene Prüfungen; frühere Ergebnisse ersetzen seine Windows-Abnahme nicht.
+Die aktiven Regeln verlangen erfolgreiche Statusprüfungen sowie CodeQL- und
+Code-Quality-Ergebnisse. Lösch- und Force-Push-Sperren bleiben eingeschaltet.
+Veröffentlichte Historie und Tags bleiben unverändert. Falls Main inzwischen weitere
+Änderungen enthält, werden diese vor der abschließenden Abnahme integriert.
 
-Die Übernahme zuerst per Pull Request prüfen lassen. Ist Main ein Vorfahr des geprüften
-Release-Stands, wird dieser per Fast-forward übernommen. So übernimmt Main denselben geprüften
-Release-Commit. Der Quell-Commit wird dabei nicht verändert.
-Eine solche Übernahme ist auch ohne Merge-Commit mit der linearen Historie vereinbar.
-Die Branchregeln und die erforderlichen Prüfungen gelten weiterhin für den Push.
-
-Falls Fast-forward nicht möglich ist, zuerst einen neuen Integrationsbranch mit den zwischenzeitlichen
-Änderungen vorbereiten und erneut prüfen. Keine geschützte Historie ersetzen und keinen Force-Push nutzen.
-Nicht bei jeder Weitergabe dieselben Änderungen erneut zusammenfassen oder neu schreiben.
+Ein Commit benötigt keine neue veröffentlichte Version. Versionssprung, Installer,
+Signierung und Tag gehören zur bewussten Veröffentlichung nach der Abnahme.
 
 Versionsdateien und Versionshinweise vor der letzten Abnahme fertigstellen. Ein abschließender Commit
 `chore: prepare 0.3.0` kann diese Änderungen enthalten. Ein zusätzlicher leerer Commit ist nicht erforderlich.
