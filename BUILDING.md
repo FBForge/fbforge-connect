@@ -8,6 +8,7 @@ Das Desktop-Paket wird auf Windows x64 gebaut. Frontend, Java-Engine und isolier
 - Ein vollständiges JDK 25 mit `javac` und `jlink`. `JAVA_HOME` muss auf dessen Installationsverzeichnis zeigen.
 - Python 3.10 oder neuer für die lokalen Prüfungen. Unter Windows muss `python`, unter Linux und macOS `python3` im `PATH` verfügbar sein.
 - Rust über rustup. Die benötigte Version steht in `desktop/rust-toolchain.toml`.
+- Für den Scanner-Paketbau: GnuPG (unter Windows beispielsweise aus Git for Windows); offizielle ClamAV-Downloads und FreshClam müssen erreichbar sein.
 - Für Windows: Visual Studio Build Tools mit „Desktopentwicklung mit C++“, MSVC-x64-Werkzeugen und Windows SDK. Außerdem Microsoft Edge WebView2 Runtime. Einzelheiten stehen in den [Tauri-Voraussetzungen](https://v2.tauri.app/start/prerequisites/).
 
 Maven wird durch den mitgelieferten Wrapper geladen. Für den ersten Build ist Internet erforderlich. Zugangsdaten zu FIT-Connect oder ein Signaturzertifikat sind zum Bauen und für die lokalen Tests nicht erforderlich.
@@ -47,7 +48,10 @@ Der Befehl startet Frontend und Desktop-Anwendung gemeinsam. Frontend-Änderunge
 
 ### Installer bauen
 
+Zuerst die optionale Scanner-Komponente einschließlich geprüfter Datenbanken und passendem Quellcode bereitstellen. Beide Installer enthalten diese abwählbare Komponente; die Unterscheidung bei WebView2 bleibt davon unabhängig.
+
 ```powershell
+npm run stage:scanner
 npm run desktop:build -- -- --locked
 ```
 
@@ -152,3 +156,39 @@ Installation, Upgrade und NVDA werden im Workflow `Windows release validation` g
 | Windows blockiert `build-script-build.exe` | Den Schutzverlauf prüfen. Auf verwalteten Geräten eine gezielte Freigabe mit dem Administrator abstimmen.       |
 
 Bei Fehlern nicht mit späteren Buildschritten fortfahren. Keine Zugangsdaten oder privaten Schlüssel in Fehlerberichte übernehmen.
+
+## Lokaler Scanner und echte Scan-Abnahme
+
+`stage:scanner` prüft ClamAV 1.5.4 anhand des festgelegten Talos-Schlüssels und der
+Hashes in `desktop/scanner-component.json`. GnuPG aus einer anderen Installation
+kann mit `npm run stage:scanner -- --gpg C:/Pfad/gpg.exe` angegeben werden.
+Downloads werden unter `.cache/scanner/` zwischengespeichert und vor Verwendung
+erneut geprüft. Offizielle Datenbanken werden höchstens 24 Stunden aus dem zuvor
+geprüften Build-Cache übernommen. Keine Zugangsdaten sind erforderlich.
+
+Ergebnis: `desktop/resources/scanner/component.zip` für das Setup und
+`desktop/target/scanner-dist/` für die Weiterverteilung, einschließlich passendem
+Quellarchiv, offizieller Quellsignatur, Prüfschlüssel und Lizenzhinweisen.
+Diese Dateien gehören nicht ins Git. Ein Release-Build ohne Komponente bricht ab.
+Im Entwicklungsmodus ist sie optional; der echte lokale Scanner benötigt Windows.
+
+Eine vorbereitete Offline-Datenbank kann mit `--database-directory` übernommen
+werden: `main.cvd`, `daily.cvd`, `bytecode.cvd` und die drei zur Version gehörenden
+`.cvd.sign`-Dateien. `sigtool --verify` prüft die offiziellen Signaturen. Unter
+Linux zusätzlich `--sigtool /pfad/zu/sigtool` angeben. Für vollständig abgeschottete
+Buildrechner den bereits gefüllten Downloadcache mitnehmen und `--cache` angeben.
+
+Die Windows-Validierung führt `scanner-runtime` gegen das echte Paket aus:
+Offline-Installation, eigener Loopback-Prozess, saubere Datei, im Speicher erzeugte
+EICAR-Testdaten und Prozessende. Der Test verändert keine bestehende Installation.
+`npm run test:scanner -- --engine-directory <Verzeichnis-mit-clamd> --database-directory <Datenbanken> --certificates-directory <CVD-Zertifikate>`
+prüft ebenfalls die echte Engine mit sauberen Text-/PDF-Dateien und EICAR.
+Mit `--java-acceptance` wird zusätzlich der tatsächliche Host über INSTREAM und
+einen lokalen, an diese Engine angeschlossenen ICAP-Testdienst geprüft. Das ist
+keine Zertifizierung fremder ICAP-Produkte. EICAR ist ein ungefährlicher
+standardisierter Erkennungstest, keine allgemeine Sicherheitsgarantie.
+
+Der rein lesende Workflow `Check ClamAV upstream release` meldet wöchentlich oder
+bei manuellem Start eine neuere offizielle Engine-Version. Er installiert oder
+veröffentlicht nichts. Ein Engine-Update erfordert neue geprüfte Hashes, Quellen
+und die erneute Komponenten-Abnahme; Signaturupdates ersetzen kein Engine-Update.

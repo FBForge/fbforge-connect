@@ -149,3 +149,26 @@ bleibt für Versionen ohne eingebauten Updater erforderlich. Die vorhandene Prü
 von Neuinstallation und Upgrade ersetzt die Bedienung des Updaters nicht.
 
 Das Schlüssel-Skript kann auch aus einem WSL-UNC-Checkout in Windows-PowerShell aufgerufen werden: `./scripts/setup-update-signing.ps1` ohne Projektpfad als Argument. Es startet die exakt gepinnte Windows-Tauri-CLI aus einem lokalen temporären Verzeichnis, damit CMD weder am UNC-Arbeitsverzeichnis noch an Linux-`node_modules` scheitert. `-KeyPath` bezeichnet ausschließlich eine neue lokale Datei außerhalb des Repositorys; standardmäßig liegt sie unter `%LOCALAPPDATA%\FBForge\signing\connect-updater.key`. Vorhandene Schlüssel werden nicht überschrieben.
+
+## Optionale Scanner-Komponente ab 0.3.0
+
+Windows-Validierung und Signierlauf führen `stage:scanner` aus. Das Setup bietet
+die Komponente ausdrücklich abwählbar an; stille Installationen können
+`/SCANNER=0` oder `/SCANNER=1` vor dem abschließenden `/D=...` verwenden. Ein Upgrade
+erhält die Auswahl. Mitgelieferte Engine-Dateien werden nicht neu signiert oder
+verändert; ihre offiziellen Hashes bleiben Bestandteil der App-Vertrauensgrenze.
+
+Der Signierlauf bewahrt unter `windows-scanner-component` die genau zu diesem
+Build gehörende Distribution mit Engine, datierten Datenbanken, zugehörigem
+Quellarchiv, Originalsignatur und allen Lizenzhinweisen auf. `attach-candidate.py`
+prüft Herkunft und Dateien und hängt diese vollständige Distribution zusätzlich
+an den unveröffentlichten Entwurf. Das Archiv enthält das separat importierbare
+Komponenten-ZIP. Quellen und Hinweise müssen zusammen mit der Binärkomponente
+öffentlich verfügbar bleiben. Nicht nur das innere Komponenten-ZIP veröffentlichen.
+
+Vor Freigabe Setup mit und ohne Komponente, Erhalt der Auswahl beim Upgrade,
+Nachinstallation, Signaturimport/-update und Prozessende prüfen. EICAR nur lokal
+oder in einer ausdrücklich eigenen TEST-Konstellation verwenden; keine Funde an
+fremde Empfänger oder nach STAGE/PROD schicken. Einzelannahme mit Anlagenproblemen
+bestätigt die Nachricht insgesamt. Problembezüge in den signierten Event Logs
+prüfen; es gibt keinen separaten serverseitigen Anlagenannahmestatus.

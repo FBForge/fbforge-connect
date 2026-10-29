@@ -107,3 +107,26 @@ vorbereiteten unveränderlichen Inhalt binden. Auch Antworten berücksichtigen.
 Nach Abschluss: vollständige Regression, echter Windows-Installer und TEST-Lauf,
 Dokumentation/Architektur/Security/Release Notes sowie Hilfe, Screenshots und
 Website-Nginx-/Deploymentprüfungen aktualisieren. Erst dann Integration in 0.3.0.
+
+## Umsetzungsstand und verbleibende Freigaben
+
+Implementiert auf `feature/local-scanner-0.3.0`: native Komponentenverwaltung,
+vier Scanner-Modi, optionale Setup-Komponente, offizielle Engine-/CVD-Prüfung,
+Offline-Import und bewusste FreshClam-Updates, Prozessbindung an die App,
+Anlagenberichte, signierte Accept-Probleme und ausgehende Scan-Grenze.
+
+Belegt durch lokale Abnahme: echte ClamAV-1.5.4-Engine mit offizieller
+Signaturdatenbank, saubere Text-/PDF-Dateien und EICAR; tatsächlicher Java-Host
+über INSTREAM und einen an die echte Engine angeschlossenen lokalen ICAP-Peer.
+Browser prüft gesperrte Anlage, verbleibende Inhalte, kein Vollarchiv,
+Einzelannahme, Abbruch und keine automatische Sammelannahme.
+Die vollständigen automatischen Prüfungen und die echte Windows-Installation
+werden vor Integration ausgewertet. Ein Protokoll-Peer ist keine Abnahme eines
+konkreten externen ICAP-Produkts.
+
+Freigabegates: Windows-Paketinstallation mit und ohne Komponente einschließlich
+Upgrade/Prozessende; eigener realer TEST-Nachrichtenfluss mit aktiviertem Scanner;
+abschließend signierte Installation und Update nach dem Main-Merge im gesonderten
+Release-Prozess. Kein automatisches Veröffentlichen und kein PR. Testzahlen und
+Lauf-IDs gehören zum Abnahmebericht, nicht als dauerhafte Erfolgsgarantie in die
+Produktbeschreibung.

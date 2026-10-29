@@ -42,6 +42,13 @@ for file in package:
     rejected(dict(parts,**{name:zip_bytes(bad)}))
 rejected(dict(parts,**{name:zip_bytes(dict(package, **{'engine/clamd.exe':b'wrong'}))}))
 rejected(dict(parts,**{'../escape':b'wrong'}))
+u = importlib.util.spec_from_file_location('upstream', 'scripts/scanner/check-upstream.py')
+upstream = importlib.util.module_from_spec(u); u.loader.exec_module(upstream)
+upstream.check('1.5.4',dict(tag_name='clamav-1.5.4',draft=False,prerelease=False))
+for release in [dict(tag_name='clamav-1.5.5'),dict(tag_name='clamav-1.5.4',prerelease=True),dict(tag_name='unexpected')]:
+    try: upstream.check('1.5.4',release)
+    except RuntimeError: pass
+    else: raise AssertionError('new or invalid upstream ignored')
 print('scanner release checks passed')
 `,
     ],

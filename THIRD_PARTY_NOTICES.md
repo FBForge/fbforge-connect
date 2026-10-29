@@ -22,3 +22,13 @@ Für Apache-2.0 liegt der vollständige Lizenztext unter `licenses/Apache-2.0.tx
 
 Die Lizenz- und Copyright-Texte der neuen nativen Update-Komponenten einschließlich
 ring sind in `licenses/native-updates.txt` und in der Infoansicht enthalten.
+
+## Optionale ClamAV-Komponente (ab 0.3.0)
+
+Das Windows-Setup kann unveränderte offizielle ClamAV-1.5.4-Dateien einschließlich
+Bibliotheken und datierter Virendatenbanken enthalten. ClamAV steht unter GPL-2.0;
+die mitgelieferten Bibliotheken haben eigene Hinweise. Die Originaldateien
+`COPYING.txt` und `COPYING/` begleiten die Komponente. Der Release enthält außerdem
+die vollständige Scanner-Distribution mit passendem ClamAV-Quellarchiv,
+Originalsignatur, Buildverweisen und sämtlichen mitgelieferten Lizenzhinweisen.
+Die EUPL-Lizenz der FBForge-Connect-Anwendung ersetzt diese Lizenzen nicht.

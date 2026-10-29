@@ -547,7 +547,12 @@ const additions = {
   tools: [
     'Unter „Testabläufe“ ein Testpaket aus der Sammlung oder eine Datei öffnen. Ein Testfall bleibt ein einzelner Baustein; der Ablauf kombiniert Versand, Eingang, Inhaltsvergleich, erwartete Empfangsbestätigung und gegebenenfalls Antwort. Einen neuen Durchlauf starten, die Aktionen einzeln in den Arbeitsbereichen bestätigen und anschließend die passende lokale Nachricht auswählen. Prüfschritte vergleichen Fachdaten und Anlagen. JSON-Objektreihenfolge ist unerheblich; XML wird nach sicherer Syntaxprüfung exakt verglichen. Ein falscher Inhalt oder ein ungewisser Versand bleibt offen.',
     'Ablaufdefinition und Durchlaufergebnis können exportiert werden. Definitionen enthalten das unverschlüsselte Testpaket; Ergebnisse enthalten Nachrichtenkennungen und Prüfzeitpunkte. Verwenden Sie fiktive Daten und prüfen Sie Dateien vor dem Teilen. Der Durchlauf bleibt beim Wechsel des Werkzeugs oder Profils innerhalb derselben Umgebung geöffnet. Ein neuer Durchlauf setzt die Ergebnisse zurück.',
-    'Unter „Malwarescanner“ optional einen eigenen ClamAV-INSTREAM- oder ICAP-RESPMOD-Dienst einrichten. Vor Aktivierung zeigt eine native Bestätigung die Zieladresse und die Übertragung entschlüsselter Inhalte. Diese Anbindung verwendet unverschlüsseltes TCP und benötigt eine lokale Gegenstelle oder ein anderweitig geschütztes Netz. Die Einstellung gilt nur für die Verbindung. Beim Empfang werden Metadaten, Fachdaten und Anlagen geprüft. Nur explizite Freigaben sind erfolgreich; Fund, Zeitlimit oder unklare Antworten sperren die Inhaltsfreigabe. Es erfolgt keine automatische Annahme oder Ablehnung. FBForge betreibt dafür keinen Dienst.',
+    'Unter „Malwarescanner“ zwischen ausgeschaltet, lokalem ClamAV und eigener ClamAV-/ICAP-Gegenstelle wählen. Im Windows-Setup kann die lokale Komponente mit offiziellen datierten Signaturen ausgewählt werden; sie wird beim ersten App-Start ohne Internet übernommen. Der aktivierte lokale Standard gilt auch für neue Verbindungen. Er läuft nur während der Sitzung auf diesem Rechner, nicht als Windows-Dienst.',
+    'Für die Nachinstallation „Scanner online einrichten“ oder „Lokales Scanner-Paket importieren“ wählen. Das Release enthält eine ClamAV-Distribution mit Komponenten-ZIP, Quellen und Lizenzhinweisen. Die Distribution zunächst entpacken und das innere Komponenten-ZIP auswählen. Anschließend „Lokaler ClamAV“ auswählen und anwenden. Downloads zeigen Fortschritt und sind abbrechbar. Engine-Dateien und Virendatenbanken werden vor Übernahme geprüft.',
+    'Engine-Version, Bereitschaft, Signaturversion und Signaturdatum bleiben sichtbar. Ein Bestand ab sieben Tagen erhält einen Altershinweis. Ohne erneutes Update oder Offline-Import altert der Bestand weiter. „Signaturen aktualisieren“ lädt offizielle Datenbanken mit FreshClam nach Bestätigung. Automatische Updates beim App-Start sind separat abschaltbar und erfolgen höchstens einmal täglich. FIT-Connect-Inhalte werden dafür nicht übertragen.',
+    'Offline-Import: main.cvd, daily.cvd und bytecode.cvd sowie die jeweils zur Datenbankversion gehörende .cvd.sign-Datei gemeinsam auswählen. Die sechs Dateien stammen aus einem frisch erzeugten geprüften Komponentenpaket oder einer eigenen offiziellen FreshClam-Aktualisierung. Ungültige Signaturen und ältere Datenbanken ersetzen keinen neueren gültigen Bestand. Das App-Setup und der Scanner-Import benötigen dafür keinen zusätzlichen Netzaufruf.',
+    'Eigene ClamAV-INSTREAM-/ICAP-RESPMOD-Dienste gelten nur für die Verbindung. Eine native Bestätigung zeigt Ziel und Übertragung entschlüsselter Inhalte. Unverschlüsseltes TCP benötigt eine lokale oder anderweitig geschützte Gegenstelle. Der Scanner prüft Metadaten, Fachdaten und Anlagen beim Empfang und vor Versand oder Antwort. Metadaten-/Fachdatenfunde, Zeitlimits und unvollständige Scans bleiben blockierend. Es erfolgt keine automatische Annahme oder Ablehnung und keine Übertragung an einen FBForge-Scanner.',
+    'Bei einem Anlagenfund bleiben geprüfte übrige Inhalte lesbar. Die betroffene Anlage erscheint mit Name und Kennung, jedoch ohne freigegebene Bytes. Ein vollständiger Originaldownload und die Sammelannahme sind gesperrt. Eine Einzelannahme mit Anlagenproblemen benötigt eine zusätzliche native Bestätigung; sie bestätigt die gesamte Nachricht und meldet die betroffenen Kennungen als Problem an FIT-Connect. Benötigte Anlagen gegebenenfalls erneut anfordern. Es gibt kein Sanitizing und keine zusätzliche dauerhafte Quarantäne. Ein unauffälliger Scan ist keine Sicherheitsgarantie.',
   ],
 };
 for (const topic of helpTopics) topic.steps.push(...(additions[topic.id] || []));
@@ -567,8 +572,12 @@ helpTopics
     },
     {
       image: 'malware-scanner',
+      caption: 'Lokalen ClamAV mit sichtbarem Signaturstand oder eine eigene Scanner-Gegenstelle auswählen.',
+    },
+    {
+      image: 'local-scanner',
       caption:
-        'Eine eigene Scanner-Gegenstelle einrichten; ohne bewusste Aktivierung wird nichts übertragen.',
+        'Lokale Komponente mit geprüftem Signaturbestand, bewussten Updates und Offline-Import verwalten.',
     },
   );
 helpTopics.find((topic) => topic.id === 'destinations').illustrations = [

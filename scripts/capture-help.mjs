@@ -422,10 +422,33 @@ try {
   await capture('test-flows', page.getByRole('heading', { name: 'Wiederholbare Testabläufe', exact: true }));
   await button('Malwarescanner').click();
   await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('clamav');
-  await capture(
-    'malware-scanner',
-    page.getByRole('heading', { name: 'Eigener Malwarescanner', exact: true }),
-  );
+  await capture('malware-scanner', page.getByRole('heading', { name: 'Virenscan', exact: true }));
+  await page.evaluate(() => {
+    const previous = window.__TAURI_INTERNALS__.invoke;
+    window.__TAURI_INTERNALS__.invoke = (command, args) =>
+      command === 'local_scanner_status'
+        ? Promise.resolve({
+            installed: true,
+            ready: true,
+            enabled: true,
+            automaticUpdates: false,
+            engineVersion: '1.5.4',
+            databaseVersion: 28168,
+            databaseCreatedAt: 1793255040,
+            databaseAgeDays: 0,
+            lastUpdate: null,
+            updateFailed: false,
+            busy: false,
+            operation: '',
+            error: null,
+            downloadedBytes: 0,
+            downloadTotalBytes: 225774978,
+          })
+        : previous(command, args);
+  });
+  await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('local');
+  await page.getByText('Scanner läuft lokal', { exact: true }).waitFor();
+  await capture('local-scanner', page.getByRole('heading', { name: 'Lokaler ClamAV', exact: true }));
   await open('test-fixtures/destination-manager.html');
   await button('Eigene Destinations laden').click();
   await button('Bearbeiten').first().click();
