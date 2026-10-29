@@ -23,6 +23,10 @@ test('documentation stays light, code checks run automatically and full markers 
   assert.match(
     check(`
 empty=dict(frontend=False,engine=False,native=False)
+for event in [{'deleted':True,'head_commit':None}, {'head_commit':None}]:
+    p=m.plan(event,'push','refs/heads/ci/old',[],repo)
+    assert not any(p[n] for n in m.NAMES) and not p['release']
+assert m.plan({'deleted':True},'push','refs/heads/ci/old',None,repo)['mode']=='branch-deleted'
 for path in ['README.md','SECURITY.md','THIRD_PARTY_NOTICES.md','LICENSE','docs/guide/topics.js','docs/guide/images/send.png']:
     assert m.components([path]) == empty, path
     p=m.plan({},'push','refs/heads/fix/example',[path],repo)
