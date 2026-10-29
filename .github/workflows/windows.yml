@@ -1,30 +1,12 @@
 name: Windows release validation
 
 on:
-  push:
-    branches: ['release/0.2.0']
-    paths:
-      - .github/workflows/windows.yml
-      # Engine and package changes must exercise the bundled Windows runtime.
-      - engine/**
-      - desktop/Cargo.toml
-      - desktop/Cargo.lock
-      - desktop/tauri*.json
-      - package*.json
-      - scripts/stage-engine.mjs
-      - scripts/stage-permissions.mjs
-      - scripts/windows-install-smoke.ps1
-      - scripts/windows-accessibility-smoke.ps1
-      - scripts/ci/prepare-nvda.ps1
-      - scripts/ci/nvda-capture.py
-      # Process UI changes must also exercise the installed native keyboard and NVDA journey.
-      - frontend/src/ProcessWorkspace.vue
-      - frontend/src/process/**
-      - scripts/load-upgrade-baseline.py
-      - tests/nvda-observer.test.js
-      - tests/upgrade-baseline.test.js
   workflow_dispatch:
     inputs:
+      expected_commit:
+        description: Optional exact commit requested by the CI release-check marker
+        required: false
+        type: string
       upgrade_run:
         description: Optional successful signed run to test upgrading from an earlier version
         required: false
@@ -43,7 +25,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  verify-source:
+    if: github.repository_id == '1421171092' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Reject a moved branch or unsupported validation source
+        env:
+          RELEASE_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        run: python3 scripts/ci/release-check.py --verify-source
+
   signing-contracts:
+    needs: verify-source
     runs-on: windows-2025
     timeout-minutes: 5
     steps:
@@ -55,7 +51,7 @@ jobs:
         run: ./scripts/ci/test-windows-signing.ps1
 
   test-readonly:
-    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/fix/'))) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
+    needs: verify-source
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -87,7 +83,7 @@ jobs:
         run: node scripts/live-readonly.mjs
 
   windows:
-    if: github.repository_id == '1421171092' && ((github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/fix/'))) || (github.event_name == 'push' && github.ref == 'refs/heads/release/0.2.0'))
+    needs: verify-source
     runs-on: windows-2025
     timeout-minutes: 40
     steps:
@@ -174,14 +170,14 @@ jobs:
             desktop/native-contracts/target
           key: ${{ steps.rust-cache.outputs.cache-primary-key }}
       - name: Load a verified signed upgrade baseline
-        if: github.event_name == 'push' || inputs.upgrade_run != ''
+        if: inputs.expected_commit != '' || inputs.upgrade_run != ''
         env:
           GH_TOKEN: ${{ github.token }}
           UPGRADE_RUN: ${{ inputs.upgrade_run }}
-          UPGRADE_LATEST: ${{ github.event_name == 'push' }}
+          UPGRADE_LATEST: ${{ inputs.expected_commit != '' }}
         run: python scripts/load-upgrade-baseline.py
       - name: Verify baseline signature and timestamp
-        if: github.event_name == 'push' || inputs.upgrade_run != ''
+        if: inputs.expected_commit != '' || inputs.upgrade_run != ''
         run: |
           Import-Module './scripts/windows-signing.psm1' -Force
           $tool = Get-WindowsSignTool

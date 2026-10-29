@@ -52,9 +52,30 @@ Die Probe zur Absenderbeschränkung aktiviert ausschließlich an der neu angeleg
 
 ## CI
 
-`Checks` prüft bei Änderungen die betroffenen Bereiche: Frontend mit Browsertests, Java-Engine und native Verträge. Reine Dokumentationsänderungen benötigen keinen Installer-Build. Diese Jobs verwenden keine TEST-Secrets und keinen Signier-Runner.
+`Checks` lässt Dokuänderungen ohne Build- und Testjobs durch einen kleinen Statuslauf prüfen.
+Änderungen an `docs/guide/` erhalten nur die gezielte Exportprüfung. Codeänderungen
+werden auf allen Branches einschließlich `main` und bei Pull Requests automatisch
+für die betroffenen Bereiche getestet. Dafür ist kein Commit-Marker nötig.
+Optional erweitert ein Marker in der letzten Commit-Nachricht den Prüfumfang:
 
-`Windows release validation` wird vor einem Release manuell gestartet; für die Patch-Abnahme sind auch `fix/...`- und `release/...`-Branches zugelassen. Auf `release/0.2.0` starten relevante Änderungen an Engine, Paketkonfiguration, Windows-Abnahme und Prozessoberfläche außerdem eine Cloud-Abnahme. Die vollständigen Auslöser stehen in `.github/workflows/windows.yml`. Ein automatischer Branchlauf prüft das Upgrade vom letzten erfolgreich signierten Paket. Der Workflow prüft das vollständige Desktop-Paket, Installation, Profilerhalt, NVDA und die schreibgeschützten TEST-Aufrufe; er veröffentlicht nichts. Beim manuellen Start kann `upgrade_run` die Lauf-ID eines früheren erfolgreichen Signierlaufs enthalten. Dessen noch verfügbares signiertes Paket wird vor dem Upgrade anhand von Herkunft, Prüfsumme, Signatur und Zeitstempel geprüft. Beim manuellen Start ohne diese Angabe werden Neuinstallation und erneute Installation derselben Version geprüft.
+- `[ci full]`: alle normalen Prüfungen, auch bei einer Dokuänderung.
+- `[release-check]`: alle normalen Prüfungen und danach die vollständige Windows-Abnahme.
+
+`[release-check]` gilt auf `main`, `fix/...` und `release/...` im Original-Repository.
+Es startet weder Signierung noch Veröffentlichung. Die Windows-Abnahme prüft den
+angeforderten Commit; wurde der Branch inzwischen weitergeschoben, wird sie abgebrochen.
+Manuelle Workflow-Aufrufe bleiben möglich. Der erforderliche Status `Checks passed`
+bleibt bestehen; sein Laufprotokoll nennt die tatsächlich angeforderten Prüfbereiche.
+`[skip ci]` nicht verwenden, da sonst der erforderliche Status fehlen kann.
+
+`Windows release validation` startet über `[release-check]` oder manuell. Beim manuellen
+Aufruf kann `upgrade_run` ein vorhandenes signiertes Vorgängerpaket festlegen;
+der Marker-Aufruf wählt die letzte gültige signierte Upgrade-Grundlage.
+Der Workflow prüft das vollständige Desktop-Paket, Installation, Profilerhalt, NVDA
+und die schreibgeschützten TEST-Aufrufe; er veröffentlicht nichts. Das signierte
+Vorgängerpaket wird anhand von Herkunft, Prüfsumme, Signatur und Zeitstempel geprüft.
+Beim manuellen Start ohne `upgrade_run` werden Neuinstallation und erneute
+Installation derselben Version geprüft.
 
 ## Windows-Pakete
 
