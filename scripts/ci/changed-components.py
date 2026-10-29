@@ -68,7 +68,9 @@ def changed_paths(event):
 
 
 def plan(event, event_name, ref, paths, repository):
-    message = event.get('head_commit', {}).get('message', '')
+    if event.get('deleted'):
+        return {**dict.fromkeys(NAMES, False), 'documentation': False, 'release': False, 'mode': 'branch-deleted'}
+    message = (event.get('head_commit') or {}).get('message', '')
     if event_name == 'pull_request':
         pr = event.get('pull_request', {})
         message = str(pr.get('title', '')) + '\n' + str(pr.get('body') or '')
@@ -94,7 +96,7 @@ def plan(event, event_name, ref, paths, repository):
 def main():
     event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text(encoding='utf-8'))
     selected = plan(event, os.environ.get('GITHUB_EVENT_NAME', ''), os.environ.get('GITHUB_REF', ''),
-                    changed_paths(event), os.environ.get('GITHUB_REPOSITORY', ''))
+                    [] if event.get('deleted') else changed_paths(event), os.environ.get('GITHUB_REPOSITORY', ''))
     with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
         for name, value in selected.items():
             output.write(f'{name}={str(value).lower() if isinstance(value, bool) else value}\n')
