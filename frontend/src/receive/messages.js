@@ -1,3 +1,5 @@
+import { receiveFailures } from './failures.js';
+
 export function receiveMessages(reply) {
   const messages = {
     key_missing:
@@ -32,15 +34,19 @@ export function receiveMessages(reply) {
     resource_denied: 'Diese Zugangsdaten dürfen die angefragte Einreichung nicht abrufen.',
     resource_missing: 'Dieser Inhalt ist nicht mehr verfügbar. Bitte die Einreichung erneut prüfen.',
     invalid_resource:
-      'Das Ergebnis ist nicht mehr verfügbar oder passt nicht zum aktuellen Inhalt. Bitte erneut prüfen.',
+      'Die Nachrichteninformationen oder Inhalte konnten nicht zuverlässig verarbeitet werden. Für diesen Fehler hat der Anwendungskern keinen genaueren Grund geliefert. Öffnen Sie die Einreichung erneut und prüfen Sie das Event Log.',
     content_cleanup_failed:
       'Lokale Dateien konnten nicht vollständig entfernt werden. Bitte die Sitzung schließen.',
   };
 
-  return messages;
+  return {
+    ...messages,
+    ...Object.fromEntries(Object.entries(receiveFailures).map(([code, value]) => [code, value.message])),
+  };
 }
 
 export function receiveErrorTitle(code) {
+  if (Object.hasOwn(receiveFailures, code)) return receiveFailures[code].title;
   return (
     {
       schema_consent_required: 'Freigabe für Schemaquellen erforderlich',

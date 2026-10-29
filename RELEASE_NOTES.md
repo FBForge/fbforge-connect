@@ -2,6 +2,8 @@
 
 ## 0.2.1 (in Vorbereitung)
 
+- Bei nicht verwendbaren Empfangsinhalten konkrete Prüfschritte und Gründe anzeigen, etwa fehlende oder nicht unterstützte Metadatenversionen, unzulässige Dateinamen, widersprüchliche Kennungen oder während des Abrufs veränderte Nachrichteninformationen. Ohne näheren Grund bleibt die Diagnose ausdrücklich unbestimmt.
+
 - „Zurück zum Eingang“ beim Empfang in einer beim Scrollen sichtbaren unteren Navigationsleiste anzeigen, auch nach Annahme oder Ablehnung. Lange Anlagenlisten berücksichtigen deren Höhe.
 - Nach fehlgeschlagener Inhaltsprüfung mit `invalid_resource` oder `verification_failed` die manuelle Ablehnung direkt an der Fehlermeldung anbieten. Ein Ablehnungsgrund und eine ausdrückliche Versandbestätigung bleiben erforderlich.
 

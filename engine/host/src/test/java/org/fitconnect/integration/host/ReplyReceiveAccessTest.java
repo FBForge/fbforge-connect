@@ -157,7 +157,9 @@ class ReplyReceiveAccessTest {
             try (var read = ReceiveAccess.forReply(api, CASE, REPLY, (u, h) -> response.get())) {
                 read.get(root + "/replies/" + REPLY, Map.of());
                 response.set(envelope().replace(CASE, ATT));
-                fails("invalid_resource", () -> read.get(root + "/replies/" + REPLY, Map.of()));
+                fails(
+                        "receive_message_mismatch",
+                        () -> read.get(root + "/replies/" + REPLY, Map.of()));
                 fails("endpoint_blocked", () -> read.get(root + "/replies/" + REPLY, Map.of()));
             }
             response.set(envelope());
@@ -167,7 +169,7 @@ class ReplyReceiveAccessTest {
                         "{\"caseId\":\"" + CASE + "\",\"destinationId\":\"" + RECEIVER + "\"}");
                 read.get(root + "/cases/" + CASE, Map.of());
                 response.set(response.get().replace(RECEIVER, SENDER));
-                fails("invalid_resource", () -> read.get(root + "/cases/" + CASE, Map.of()));
+                fails("receive_message_changed", () -> read.get(root + "/cases/" + CASE, Map.of()));
             }
             for (int variant = 0; variant < 6; variant++) {
                 try (var read =

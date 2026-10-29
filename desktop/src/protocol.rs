@@ -89,6 +89,30 @@ impl<T> EngineResponse<T> {
                 Some("invalid_credentials") => EngineFailure::Remote("invalid_credentials"),
                 Some("session_missing") => EngineFailure::Remote("session_missing"),
                 Some("invalid_resource") => EngineFailure::Remote("invalid_resource"),
+                Some("receive_response_invalid") => {
+                    EngineFailure::Remote("receive_response_invalid")
+                }
+                Some("receive_message_mismatch") => {
+                    EngineFailure::Remote("receive_message_mismatch")
+                }
+                Some("receive_message_changed") => EngineFailure::Remote("receive_message_changed"),
+                Some("receive_attachments_invalid") => {
+                    EngineFailure::Remote("receive_attachments_invalid")
+                }
+                Some("receive_key_mismatch") => EngineFailure::Remote("receive_key_mismatch"),
+                Some("receive_payload_invalid") => EngineFailure::Remote("receive_payload_invalid"),
+                Some("receive_metadata_invalid") => {
+                    EngineFailure::Remote("receive_metadata_invalid")
+                }
+                Some("receive_metadata_schema_missing") => {
+                    EngineFailure::Remote("receive_metadata_schema_missing")
+                }
+                Some("receive_metadata_schema_unsupported") => {
+                    EngineFailure::Remote("receive_metadata_schema_unsupported")
+                }
+                Some("receive_filename_invalid") => {
+                    EngineFailure::Remote("receive_filename_invalid")
+                }
                 Some("destination_conflict") => EngineFailure::Remote("destination_conflict"),
                 Some("destination_update_locked") => {
                     EngineFailure::Remote("destination_update_locked")
@@ -295,6 +319,16 @@ mod tests {
             "resource_missing",
             "resource_unavailable",
             "invalid_resource",
+            "receive_response_invalid",
+            "receive_message_mismatch",
+            "receive_message_changed",
+            "receive_attachments_invalid",
+            "receive_key_mismatch",
+            "receive_payload_invalid",
+            "receive_metadata_invalid",
+            "receive_metadata_schema_missing",
+            "receive_metadata_schema_unsupported",
+            "receive_filename_invalid",
             "key_rejected",
             "key_missing",
             "test_certificate_required",
