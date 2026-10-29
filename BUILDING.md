@@ -13,8 +13,8 @@ Das Desktop-Paket wird auf Windows x64 gebaut. Frontend, Java-Engine und isolier
 Maven wird durch den mitgelieferten Wrapper geladen. Für den ersten Build ist Internet erforderlich. Zugangsdaten zu FIT-Connect oder ein Signaturzertifikat sind zum Bauen und für die lokalen Tests nicht erforderlich.
 
 Die folgenden Befehle bauen den ausgecheckten Stand. Veröffentlichte Versionen lassen sich nach dem
-Klonen über ihren Release-Tag auschecken, zum Beispiel mit `git switch --detach v0.2.0`, sobald dieser
-Tag veröffentlicht ist. Neue Entwicklung liegt auf dem jeweiligen Arbeitsbranch,
+Klonen über ihren Release-Tag auschecken, zum Beispiel mit `git switch --detach v0.2.0`.
+Neue Entwicklung liegt auf dem jeweiligen Arbeitsbranch,
 aktuell `release/0.3.0`; die bisherigen 0.2.1-Fehlerkorrekturen sind darin einschließlich ihrer Branch-Historie enthalten.
 
 ## Windows

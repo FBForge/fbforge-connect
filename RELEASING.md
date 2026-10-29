@@ -25,7 +25,7 @@ Vor dem Release auf dem Windows-Zielgerät prüfen:
   bleiben manuell. Es gibt keine automatische Ablehnung. Fachliche Fehler können technisch gültig sein.
 - „Auswahl herunterladen“ übermittelt keine Empfangsbestätigung und benötigt erfolgreiche
   Entschlüsselung und technische Prüfung. Ungeprüfte Rohdaten werden nicht exportiert.
-- Geschützte Aufbewahrung, Neustart, Profil-Backup und Upgrade von der veröffentlichten 0.1-Version.
+- Geschützte Aufbewahrung, Neustart, Profil-Backup und Upgrade von der veröffentlichten Version 0.2.0.
   Ein normaler Download speichert entschlüsselte Dateien außerhalb der geschützten Vorgangsablage.
 - Tastaturbedienung, Screenreader, Textvergrößerung, schmale Fenster und beide Farbschemata.
 - Abhängigkeiten gegen aktuelle Sicherheitsmeldungen prüfen, einschließlich aufgelöster Maven-
