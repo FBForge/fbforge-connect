@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cancel-application-update"
+description = "Enables the cancel_application_update command without any pre-configured scope."
+commands.allow = ["cancel_application_update"]
+
+[[permission]]
+identifier = "deny-cancel-application-update"
+description = "Denies the cancel_application_update command without any pre-configured scope."
+commands.deny = ["cancel_application_update"]

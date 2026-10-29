@@ -21,6 +21,11 @@ Für **Windows x64 und FIT-Connect TEST, STAGE und PROD**. Kein offizielles Prod
 
 Die Pakete werden mit digitaler Signatur, Zeitstempel und SHA-256-Prüfsumme bereitgestellt. Java wird mitgeliefert.
 
+Auf `release/0.3.0` wird der integrierte Windows-Updater vorbereitet: neue stabile
+GitHub-Releases melden, geprüft herunterladen und nach Zustimmung installieren.
+Die veröffentlichte 0.2.0 enthält diese Funktion noch nicht. Vor der Freigabe sind
+der eigene Update-Schlüssel und die Windows-Update-Abnahme erforderlich.
+
 STAGE und PROD benötigen gültige V-PKI-Zertifikate mit vollständiger Zertifikatskette. PROD-Schreibaktionen werden zusätzlich bestätigt.
 
 Die [Anleitung mit Bildern und Beispielen](https://fbforge.de/connect/hilfe/0.2/start) wird auf der Website gepflegt. In der Anwendung finden Sie Hinweise und Links zum passenden Kapitel.

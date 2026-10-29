@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
+
+const version = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version;
 
 const url = 'http://127.0.0.1:1420/test-fixtures/environments.html';
 const layouts = [
@@ -92,7 +95,7 @@ test('Info shows the regular version without an obsolete release qualifier', asy
   await page.goto(url);
   await page.getByRole('button', { name: 'Info', exact: true }).click();
   const info = page.locator('.info-view');
-  await expect(info.getByText('Version 0.2.1', { exact: true })).toBeVisible();
+  await expect(info.getByText(`Version ${version}`, { exact: true })).toBeVisible();
   await expect(info).not.toContainText(/Alpha|Beta|Release Candidate|Entwicklungsstand/);
   await expect(info.getByText('FIT-Connect TEST, STAGE und PROD', { exact: true })).toBeVisible();
 });

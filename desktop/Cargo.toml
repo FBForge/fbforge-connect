@@ -1,6 +1,6 @@
 [package]
 name = "fbforge-connect"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.90"
 license = "EUPL-1.2"
@@ -15,7 +15,13 @@ tauri-plugin-single-instance = "=2.4.0"
 tauri-plugin-dialog = "=2.8.3"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
-tokio = { version = "=1.53.3", features = ["process", "io-util", "sync", "time"] }
+tokio = { version = "=1.53.3", features = ["process", "io-util", "sync", "time", "macros"] }
+tauri-plugin-updater = "=2.14.1"
+semver = "=1.0.28"
+reqwest = { version = "=0.13.5", default-features = false, features = ["rustls-no-provider", "system-proxy", "stream"] }
+rustls = { version = "=0.23.46", default-features = false, features = ["ring"] }
+base64 = "=0.22.1"
+minisign-verify = "=0.3.0"
 
 [profile.release]
 strip = true

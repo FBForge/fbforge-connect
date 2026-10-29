@@ -1,6 +1,13 @@
 fn main() {
+    println!("cargo:rerun-if-changed=update-public-key.txt");
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "application_update_status",
+            "open_update_download",
+            "check_application_update",
+            "download_application_update",
+            "cancel_application_update",
+            "install_application_update",
             "begin_message_export",
             "export_message",
             "finish_message_export",

@@ -1,5 +1,12 @@
 # Versionshinweise
 
+## 0.3.0 (in Entwicklung)
+
+- Integrierte Updates für Windows x64: automatische, abschaltbare Suche und manuelle Suche unter „Info“, Hinweis auf neue stabile GitHub-Releases, Downloadfortschritt und abbrechbarer Download.
+- Installer erst nach erfolgreicher Paket- und Versionssignaturprüfung sowie nativer Bestätigung starten. Laufende Aktionen und offene Exporte blockieren die Installation; gespeicherte Schlüssel werden vor dem Beenden gesichert.
+- Release-Paket um Update-Signatur und `latest.json` ergänzen. Vor der Freigabe muss der eigene Update-Schlüssel eingerichtet und ein echtes signiertes Windows-Update abgenommen werden. Entwicklungspakete ohne Prüfschlüssel bieten weiterhin den manuellen Download.
+- Die erste Version mit Updater muss einmal manuell installiert werden; ältere Versionen erhalten diese Funktion nicht nachträglich.
+
 ## 0.2.1 (in Vorbereitung)
 
 - Java-SDK für API v3 von 4.0.0-rc.2 auf die finale Version 4.0.0 aktualisiert. Der getrennte v2-Adapter verwendet weiterhin die aktuelle 3.x-Version 3.5.2.

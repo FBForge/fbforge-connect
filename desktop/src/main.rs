@@ -24,8 +24,11 @@ use profiles::{
     forget_profile, get_profile_defaults, list_profiles, open_saved_profile, profile_status,
     save_profile_defaults, save_profile_state, update_profile,
 };
+mod application_updates;
 mod commands;
 mod engine;
+mod update_policy;
+mod update_transport;
 mod write_policy;
 use engine::{request, EngineState};
 use std::time::Duration;
@@ -42,9 +45,21 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        .plugin(
+            tauri_plugin_updater::Builder::new()
+                .pubkey(application_updates::PUBLIC_KEY.trim())
+                .build(),
+        )
+        .manage(application_updates::ApplicationUpdates::default())
         .manage(EngineState::default())
         .manage(message_exports::MessageExports::default())
         .invoke_handler(tauri::generate_handler![
+            application_updates::application_update_status,
+            application_updates::open_update_download,
+            application_updates::check_application_update,
+            application_updates::download_application_update,
+            application_updates::cancel_application_update,
+            application_updates::install_application_update,
             message_exports::begin_message_export,
             message_exports::export_message,
             message_exports::finish_message_export,

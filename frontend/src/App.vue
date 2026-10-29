@@ -15,6 +15,8 @@ import { useEnvironmentSwitch } from './app/useEnvironmentSwitch.js';
 import { useDiagnostics } from './app/useDiagnostics.js';
 import { useTheme } from './app/useTheme.ts';
 import { useConnections } from './app/useConnections.js';
+import { useReceiveTabs } from './app/useReceiveTabs.js';
+import { useApplicationUpdates } from './app/useApplicationUpdates.js';
 import { navigation } from './app/navigation.js';
 import ConnectionDialog from './app/ConnectionDialog.vue';
 import DiagnosticsView from './app/DiagnosticsView.vue';
@@ -24,7 +26,7 @@ import ApplicationChrome from './app/ApplicationChrome.vue';
 import DocumentationLink from './DocumentationLink.vue';
 import { createSchemaSourceAccess, schemaSourceAccessKey } from './schema-source-access.js';
 import StartWorkspace from './StartWorkspace.vue';
-import packageInfo from '../../package.json';
+import { version } from '../../package.json';
 import { productName } from './product.js';
 import { errorMessage } from './diagnostics.js';
 import DestinationKeys from './DestinationKeys.vue';
@@ -120,7 +122,6 @@ function openEventLog(target) {
   navigate('Event Log');
   eventTarget.value = { ...target, requestId: crypto.randomUUID() };
 }
-const version = packageInfo.version;
 const diagnostics = useDiagnostics({
   version,
   environment,
@@ -134,19 +135,13 @@ const diagnostics = useDiagnostics({
 const { results, events, trace, reportJson, addEvent, probe, exportReport, clearHistory } = diagnostics;
 
 const currentView = computed(() => navigation.find((item) => item.name === section.value));
-const receiveTab = ref('submissions'),
-  receiveBrowser = ref(null);
-watch(
-  () => activeSession.value?.sessionId,
-  () => {
-    receiveTab.value = 'submissions';
-  },
-);
-async function selectReceiveTab(value) {
-  if (busy.value || receiveTab.value === value) return;
-  if (receiveTab.value === 'submissions' && !(await receiveBrowser.value?.confirmLeave())) return;
-  receiveTab.value = value;
-}
+const receiveBrowser = ref(null);
+const { receiveTab, selectReceiveTab, receiveTabKey } = useReceiveTabs({
+  activeSession,
+  busy,
+  receiveBrowser,
+});
+const updates = useApplicationUpdates({ busy, receiveBrowser, sessions, fatal });
 const changeEnvironment = useEnvironmentSwitch({
   busy,
   environment,
@@ -170,21 +165,6 @@ async function changeApi(event) {
   const selected = event.target.value;
   event.target.value = apiVersion.value;
   await connections.changeApi(selected);
-}
-async function receiveTabKey(event) {
-  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-  event.preventDefault();
-  const target =
-    event.key === 'Home'
-      ? 'submissions'
-      : event.key === 'End'
-        ? 'replies'
-        : receiveTab.value === 'submissions'
-          ? 'replies'
-          : 'submissions';
-  await selectReceiveTab(target);
-  await nextTick();
-  document.getElementById(`receive-tab-${receiveTab.value}`)?.focus();
 }
 const workspace = ref(null),
   viewHeading = ref(null);
@@ -222,7 +202,7 @@ onBeforeUnmount(() => {
 
 <template>
   <a class="skip-link" href="#main">Zum Arbeitsbereich</a>
-  <div class="desktop-shell" @dragover.prevent @drop.prevent>
+  <div class="desktop-shell" :inert="updates.installing.value" @dragover.prevent @drop.prevent>
     <ApplicationChrome
       :api-version="apiVersion"
       :busy="busy"
@@ -265,6 +245,18 @@ onBeforeUnmount(() => {
       </div>
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div :key="environment" class="workspace-content">
+          <div
+            v-if="updates.state.value.version && !updates.state.value.dismissed && section !== 'Info'"
+            class="connection-notice"
+            role="status"
+          >
+            <div>
+              <strong>FBForge Connect {{ updates.state.value.version }} ist verfügbar.</strong>
+              <p>Aktualisieren Sie die Anwendung, wenn Ihre aktuelle Arbeit abgeschlossen ist.</p>
+            </div>
+            <button class="button secondary" @click="navigate('Info')">Update ansehen</button>
+            <button class="button secondary" @click="updates.controller.dismiss()">Später</button>
+          </div>
           <p v-if="environment === 'PROD'" class="environment-warning" role="status">
             <strong>PROD · Produktivbetrieb</strong>
             Sie arbeiten mit echten Daten. Prüfen Sie vor jeder Aktion Destination und Inhalt.
@@ -472,7 +464,17 @@ onBeforeUnmount(() => {
             @export="exportReport"
             @clear="clearHistory"
           />
-          <InfoView :visible="section === 'Info'" />
+          <InfoView
+            :visible="section === 'Info'"
+            :update-state="updates.state.value"
+            :busy="busy"
+            @check-update="updates.controller.check()"
+            @download-update="updates.controller.download()"
+            @install-update="updates.install()"
+            @cancel-update="updates.controller.cancel()"
+            @manual-update="updates.controller.manual()"
+            @automatic-updates="updates.controller.setAutomatic($event)"
+          />
         </div>
       </main>
     </div>

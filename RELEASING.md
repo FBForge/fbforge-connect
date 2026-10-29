@@ -1,12 +1,13 @@
 # Release vorbereiten und veröffentlichen
 
-Für 0.2.0 ist eine reguläre Version ohne Alpha-, Beta- oder RC-Zusatz vorgesehen.
-Main behält seine veröffentlichte Historie. Der Tag `v0.2.0` kennzeichnet den veröffentlichten Stand.
+Für 0.3.0 ist eine reguläre Version ohne Alpha-, Beta- oder RC-Zusatz vorgesehen.
+Main behält seine veröffentlichte Historie; `v0.2.0` bleibt unverändert.
+Die Entwicklung liegt auf `release/0.3.0`, getrennt von den 0.2.1-Fixes.
 Die Veröffentlichung bleibt eine bewusste Aktion nach abgeschlossener Abnahme.
 
 ## 1. Lokal abnehmen
 
-Den aktuellen Stand von `release/0.2.0` beziehen und nach [BUILDING.md](BUILDING.md) bauen.
+Den aktuellen Stand von `release/0.3.0` beziehen und nach [BUILDING.md](BUILDING.md) bauen.
 Wer das separate PowerShell-Skript für WSL-Quellen verwendet, aktualisiert zuerst die WSL-Arbeitskopie
 und wiederholt anschließend seinen bisherigen Buildaufruf mit den bisherigen Signierparametern.
 Das Skript ist eine lokale Arbeitshilfe und gehört nicht zu den Voraussetzungen des Projekts.
@@ -38,16 +39,14 @@ Automatisierte Tests ersetzen weder eine fachliche Prüfung noch eine formale Si
 
 ## 2. Branches übernehmen
 
-Der vorgesehene Weg ist `release/0.2.0` → `main`. Neue Änderungen entstehen auf eigenen
+Der vorgesehene Weg ist `release/0.3.0` → `main`. Neue Änderungen entstehen auf eigenen
 `feature/...`-, `fix/...`- oder `release/...`-Branches und werden per Pull Request gegen Main geprüft.
 Die aktiven Regeln verlangen eine lineare Historie, erfolgreiche Statusprüfungen sowie CodeQL-
 und Code-Quality-Ergebnisse. Lösch- und Force-Push-Sperren bleiben eingeschaltet.
 
-Für die noch unveröffentlichte 0.2.0 sind die Änderungen in einem Commit `release: 0.2.0`
-auf dem bisherigen Main-Stand zusammengefasst. Autor- und Commitzeitpunkt
-entsprechen der tatsächlichen Erstellung dieses neuen Commits. Veröffentlichte Historie und Tags
-bleiben unverändert. Die neue Commit-Kennung benötigt eigene Statusprüfungen und eine neue
-Windows-Abnahme; frühere Prüfergebnisse gelten nicht als Freigabe dieses Commits.
+Unveröffentlichte Änderungen können im vereinbarten Umfang zusammengefasst werden.
+Veröffentlichte Historie und Tags bleiben unverändert. Ein geänderter Commit benötigt
+eigene Prüfungen; frühere Ergebnisse ersetzen seine Windows-Abnahme nicht.
 
 Die Übernahme zuerst per Pull Request prüfen lassen. Ist Main ein Vorfahr des geprüften
 Release-Stands, wird dieser per Fast-forward übernommen. So übernimmt Main denselben geprüften
@@ -60,14 +59,14 @@ Falls Fast-forward nicht möglich ist, zuerst einen neuen Integrationsbranch mit
 Nicht bei jeder Weitergabe dieselben Änderungen erneut zusammenfassen oder neu schreiben.
 
 Versionsdateien und Versionshinweise vor der letzten Abnahme fertigstellen. Ein abschließender Commit
-`release: 0.2.0` kann diese Änderungen enthalten. Ein zusätzlicher leerer Commit ist nicht erforderlich.
+`chore: prepare 0.3.0` kann diese Änderungen enthalten. Ein zusätzlicher leerer Commit ist nicht erforderlich.
 Danach keine Änderungen mehr in den zu veröffentlichenden Stand aufnehmen.
 
 ## 3. Exakten Stand auf Main validieren und signieren
 
 1. Den vollständigen Commit-SHA auf Main festhalten und die normalen `Checks` abwarten.
 2. `Windows release validation` manuell auf Main starten. Für den Upgrade-Test unter `upgrade_run`
-   einen erfolgreichen Signierlauf mit einem noch verfügbaren, veröffentlichten 0.1-Paket angeben.
+   einen erfolgreichen Signierlauf mit einem noch verfügbaren, veröffentlichten Vorgängerpaket angeben.
    Dieser Lauf muss vollständig erfolgreich sein, einschließlich Installation, Profilerhalt und NVDA.
 3. `Sign Windows candidate` ebenfalls auf Main starten. Als `validation_run` die numerische Lauf-ID
    genau dieser erfolgreichen Windows-Abnahme angeben. Branch und Commit müssen übereinstimmen.
@@ -76,19 +75,19 @@ Danach keine Änderungen mehr in den zu veröffentlichenden Stand aufnehmen.
 5. Den gesamten Signierlauf einschließlich `verify-package` abwarten. Er prüft Anwendung,
    Deinstallationsprogramm, Setup, Zeitstempel, Installation und Upgrade unabhängig.
 6. Das geprüfte Setup aus `windows-alpha-signed-setup` herunterladen. Dieser bestehende Artefaktname
-   ist ein interner Workflow-Bezeichner. Die veröffentlichte Version lautet weiterhin 0.2.0.
+   ist ein interner Workflow-Bezeichner. Die Paketversion muss 0.3.0 entsprechen.
 
 Ein früher lokal gebautes Setup ist für den manuellen Test geeignet. Das Veröffentlichungspaket muss
 zum exakten freigegebenen Main-Commit gehören. Nach jeder weiteren Codeänderung beginnt die Abnahme neu.
 
 ## 4. Release-Entwurf, Tag und Dateien
 
-Einen unveröffentlichten GitHub-Release-Entwurf mit Titel `0.2.0`, Tagname `v0.2.0` und dem vollständigen
+Einen unveröffentlichten GitHub-Release-Entwurf mit Titel `0.3.0`, Tagname `v0.3.0` und dem vollständigen
 geprüften Main-SHA als Ziel vorbereiten. „Pre-release“ bleibt ausgeschaltet.
-Die Beschreibung aus dem Abschnitt 0.2.0 in [RELEASE_NOTES.md](RELEASE_NOTES.md) übernehmen.
+Die Beschreibung aus dem Abschnitt 0.3.0 in [RELEASE_NOTES.md](RELEASE_NOTES.md) übernehmen.
 
 `Attach verified candidate to draft` hängt ausschließlich das unabhängig geprüfte Paket an den Entwurf.
-Erforderlich sind Signierlauf-ID, exakter Commit, Installer-SHA-256, Version `0.2.0` und Entwurfs-ID.
+Erforderlich sind Signierlauf-ID, exakter Commit, Installer-SHA-256, Version `0.3.0` und Entwurfs-ID.
 Die Zuordnung von Paket, Version und Commit wird geprüft. Der Workflow veröffentlicht nichts.
 
 Vor dem Veröffentlichen Setup, `SHA256SUMS.txt`, `build-info.json` und `signature-info.json` kontrollieren.
@@ -121,3 +120,31 @@ Signierläufe veröffentlichter Pakete samt benötigter Upgrade-Grundlage erhalt
 Das Löschen eines Laufs entfernt auch seine Logs und Artefakte; die Signier- und
 Release-Workflows benötigen diese Zuordnung weiterhin. Laufende Jobs erst abschließen
 oder bewusst abbrechen, niemals eine noch verwendete Paketquelle entfernen.
+
+## Update-Pakete ab 0.3.0
+
+Vor dem ersten offiziellen Build den eigenen Update-Schlüssel nach [BUILDING.md](BUILDING.md)
+einrichten und den öffentlichen Schlüssel committen. Ein fehlender oder falscher
+Schlüssel ist ein Freigabeblocker. Der private Schlüssel und sein Passwort bleiben
+auf dem interaktiven Signierrechner und werden nicht als Release-Artefakt hochgeladen.
+
+Der Signierjob erstellt die zusätzliche Tauri-Signatur **nach** der abschließenden
+Authenticode-Signierung des Setups. `--app-version` bindet die Version an die Signatur.
+`scripts/update-release.py` erzeugt `latest.json` für genau diesen Installer und
+vermerkt den öffentlichen Schlüssel im Herkunftsnachweis. Der unabhängige Windows-
+Runner prüft diese Signatur mit `verify-update` und dem Prüfschlüssel desselben
+Quell-Commits, bevor er das Paket zur Veröffentlichung bereitstellt.
+
+Der geprüfte Kandidat enthält zusätzlich zum bisherigen Paket `<Installer>.sig`
+und `latest.json`. `attach-candidate.py` übernimmt diese Dateien unverändert in den
+weiterhin unveröffentlichten Entwurf. Erst das vollständige stabile Release darf
+als neueste Version veröffentlicht werden. Danach die öffentliche URL
+`https://github.com/FBForge/fbforge-connect/releases/latest/download/latest.json`
+und den darin verlinkten, signierten Installer prüfen. Kein separates Neusignieren
+oder Neubauen nach der Kandidatenprüfung.
+
+Vor der 0.3.0-Freigabe ein echtes Update vom installierten Vorgänger prüfen:
+Hinweis, Download, Abbruch, ungültige Signatur, offene Aktionen, gesicherte Profile,
+NSIS-Update, Neustart und erneute Anmeldung. Dieser erste manuelle Installationsschritt
+bleibt für Versionen ohne eingebauten Updater erforderlich. Die vorhandene Prüfung
+von Neuinstallation und Upgrade ersetzt die Bedienung des Updaters nicht.

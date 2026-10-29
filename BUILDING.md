@@ -14,7 +14,8 @@ Maven wird durch den mitgelieferten Wrapper geladen. Für den ersten Build ist I
 
 Die folgenden Befehle bauen den ausgecheckten Stand. Veröffentlichte Versionen lassen sich nach dem
 Klonen über ihren Release-Tag auschecken, zum Beispiel mit `git switch --detach v0.2.0`, sobald dieser
-Tag veröffentlicht ist. Vor der Veröffentlichung liegt 0.2.0 auf `release/0.2.0`.
+Tag veröffentlicht ist. Neue Entwicklung liegt auf dem jeweiligen Arbeitsbranch,
+aktuell `release/0.3.0`; Fehlerkorrekturen werden getrennt auf `fix/0.2.1` gesammelt.
 
 ## Windows
 
@@ -26,7 +27,7 @@ Windows-Verzeichnis statt direkt unter `\\wsl.localhost\...`.
 ```powershell
 git clone https://github.com/FBForge/fbforge-connect.git
 cd fbforge-connect
-# Nur vor der Veröffentlichung: git switch release/0.2.0
+# Für die neue Entwicklung: git switch release/0.3.0
 rustup toolchain install 1.99.0 --profile minimal --component rustfmt
 npm ci --ignore-scripts
 .\engine\mvnw.cmd -f engine/pom.xml --batch-mode verify
@@ -59,6 +60,33 @@ npm run desktop:build:offline -- -- --locked
 ```
 
 Der erste Rust-Build und das Laden der WebView2-Dateien können einige Minuten dauern. Beide Varianten verwenden dasselbe Ausgabeverzeichnis. Benötigte Pakete vor dem nächsten Build an einen anderen Ort kopieren.
+
+### Update-Signierung einmalig einrichten
+
+Ein unsignierter Entwicklungsbuild benötigt keinen Update-Schlüssel. Ohne eingerichteten
+Prüfschlüssel in `desktop/update-public-key.txt` bleibt der integrierte Updater erkennbar deaktiviert;
+der manuelle GitHub-Download bleibt verfügbar.
+
+Der Projekteigentümer erzeugt das dauerhafte Schlüsselpaar **auf dem Windows-
+Signierrechner**. Nach `npm ci` ausführen:
+
+```powershell
+.\scripts\setup-update-signing.ps1
+```
+
+Ein nicht leeres Passwort vergeben. Standardpfad des privaten Schlüssels:
+`%LOCALAPPDATA%\FBForge\signing\connect-updater.key`. Das Skript überschreibt
+keine vorhandenen Schlüssel und legt den privaten Schlüssel nicht im Repository ab.
+Privaten Schlüssel und Passwort sicher sichern; im Repository wird nur der
+öffentliche Prüfschlüssel `desktop/update-public-key.txt` übernommen. Diesen Commit
+vor dem offiziellen Build validieren. Mit dem Prüfschlüssel kann die App zukünftige
+Pakete prüfen; ein öffentlich geteilter privater Testschlüssel ist dafür ungeeignet.
+
+Für die offizielle Signierung das Passwort über den geschützten lokalen
+Signierablauf als `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` bereitstellen. Ein abweichender
+Dateipfad kann als `TAURI_SIGNING_PRIVATE_KEY_PATH` gesetzt werden. Diese Werte
+nicht in Skripte, Workflow-Dateien, Konsolentranskripte oder das Repository schreiben.
+Die Update-Signatur ergänzt das vorhandene Windows-Zertifikat und ist davon unabhängig.
 
 ## Linux und macOS
 

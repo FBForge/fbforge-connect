@@ -28,7 +28,33 @@ DPAPI schützt nicht vor Schadsoftware unter demselben Benutzerkonto. Die Vorgan
 - Technische Fehler im Sammeldurchlauf führen weder zu einer automatischen Annahme noch zu einer automatischen Ablehnung. Fachlich falsche, technisch gültige Daten benötigen eine manuelle Bewertung. Eine Annahme ohne Malwarescan muss im Sammeldurchlauf ausdrücklich erlaubt werden.
 - Ab 0.2.1 bleiben erfolgreich entschlüsselte und kryptografisch geprüfte Inhalte bei nachgewiesenen Schemaabweichungen lesbar. Die Abweichungen werden separat angezeigt. Eine Einzelannahme benötigt eine zusätzliche native Bestätigung des aktuellen vorbereiteten Vorgangs; im Sammeldurchlauf bleibt die Nachricht manuell. Hash-, Signatur-, Zertifikats- und Entschlüsselungsfehler werden dadurch nicht übergangen.
 
-## Abhängigkeiten
+## Updates ab 0.3.0
+
+Die automatische Suche ist unter „Info“ abschaltbar und überträgt keine FIT-Connect-
+Zugangsdaten oder Fachdaten. GitHub erhält die normale HTTPS-Anfrage einschließlich
+IP-Adresse und Updater-Kennung. Offline- oder Metadatenfehler werden nicht als
+erfolgreiche Aktualitätsprüfung angezeigt. Der manuelle Download bleibt verfügbar.
+
+Der native Updater akzeptiert nur neuere stabile Windows-x64-Pakete aus dem eigenen
+GitHub-Repository, mit begrenzter Downloadgröße und erlaubten HTTPS-Weiterleitungen.
+Vor der Installation wird die Minisign-Signatur einschließlich der signierten
+Versionsnummer geprüft. Die Signatur des Artefakts verhindert nicht nur veränderte
+Bytes: Die Versionsbindung verhindert auch, dass ein altes signiertes Paket unter
+einer erfundenen neueren Versionsnummer angeboten wird. Windows-Authenticode und
+der unabhängig geprüfte Release-Prozess bleiben zusätzlich erforderlich.
+
+Installation benötigt die native Zustimmung. Sie beendet bestehende Sitzungen;
+ungespeicherte Entwürfe und ausschließlich sitzungsgebundene Schlüssel müssen vorher
+gesichert werden. Geschützte Profile werden vor dem Beenden gesichert. Offene Exporte
+oder laufende Kernaufrufe verhindern die Installation. Ein fehlender Update-Schlüssel
+deaktiviert den Updater; es gibt keinen unsignierten Installations-Fallback.
+
+Der private Update-Schlüssel bleibt beim Herausgeber außerhalb des Repositorys.
+Verlust oder Kompromittierung erfordert einen gesonderten Wiederherstellungs- oder
+Migrationsablauf; den öffentlichen Prüfschlüssel nicht beiläufig austauschen.
+Die Funktionsabnahme eines echten Windows-Updates steht vor der 0.3.0-Freigabe an.
+
+## Abhängigkeiten und bisheriger Prüfstand
 
 JavaScript-, Java- und Rust-Abhängigkeiten, JDK und WebView2 müssen getrennt geprüft werden. Lockfiles und Actions-Versionen sind festgelegt.
 
