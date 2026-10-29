@@ -34,7 +34,7 @@ final class ReceiveCrypto extends JWECryptoService {
             if (wire == null || wire.length() > 46 * 1024 * 1024)
                 throw new SessionException("content_limit");
             if (wire.indexOf('.') < 1 || wire.indexOf('.') > 16384)
-                throw new SessionException("invalid_resource");
+                throw new SessionException("receive_payload_invalid");
             JWEObject jwe = JWEObject.parse(wire);
             var header = jwe.getHeader();
             if (!JWEAlgorithm.RSA_OAEP_256.equals(header.getAlgorithm())
@@ -75,25 +75,39 @@ final class ReceiveCrypto extends JWECryptoService {
                         .build();
         try (var parser = factory.createParser(plain)) {
             if (parser.nextToken() != JsonToken.START_OBJECT)
-                throw new SessionException("invalid_resource");
+                throw new SessionException("receive_metadata_invalid");
             int depth = 1, remaining = 20000;
-            boolean supported = false;
+            boolean supported = false, schemaPresent = false;
             JsonToken token;
             while ((token = parser.nextToken()) != null) {
-                if (--remaining < 0 || depth == 0) throw new SessionException("invalid_resource");
+                if (--remaining < 0 || depth == 0)
+                    throw new SessionException("receive_metadata_invalid");
                 if (token.isStructStart()) depth++;
                 if (token.isStructEnd()) depth--;
-                if (token == JsonToken.VALUE_STRING && "filename".equals(parser.currentName()))
-                    ReceiveFileNames.check(parser.getText());
+                if (token == JsonToken.VALUE_STRING && "filename".equals(parser.currentName())) {
+                    try {
+                        ReceiveFileNames.check(parser.getText());
+                    } catch (SessionException failure) {
+                        throw new SessionException("receive_filename_invalid");
+                    }
+                }
                 if (depth == 1
                         && token == JsonToken.VALUE_STRING
-                        && "$schema".equals(parser.currentName()))
+                        && "$schema".equals(parser.currentName())) {
+                    schemaPresent = true;
                     supported =
                             parser.getText()
                                     .matches(
                                             "https://schema\\.fitko\\.de/fit-connect/metadata/2\\.\\d+\\.\\d+/metadata\\.schema\\.json");
+                }
             }
-            if (!supported || depth != 0) throw new SessionException("invalid_resource");
+            if (depth != 0) throw new SessionException("receive_metadata_invalid");
+            if (!schemaPresent) throw new SessionException("receive_metadata_schema_missing");
+            if (!supported) throw new SessionException("receive_metadata_schema_unsupported");
+        } catch (SessionException failure) {
+            throw failure;
+        } catch (Exception failure) {
+            throw new SessionException("receive_metadata_invalid");
         }
     }
 }

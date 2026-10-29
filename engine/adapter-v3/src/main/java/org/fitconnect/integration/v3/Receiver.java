@@ -51,7 +51,7 @@ final class Receiver {
             var result = receiver.openSubmission(UUID.fromString(submission));
             if (!UUID.fromString(destination).equals(result.getDestinationId())
                     || !UUID.fromString(submission).equals(result.submissionId()))
-                throw new SessionException("invalid_resource");
+                throw new SessionException("receive_message_mismatch");
             if (!result.acceptable())
                 throw new SessionException(
                         services.http().schemaFailed()

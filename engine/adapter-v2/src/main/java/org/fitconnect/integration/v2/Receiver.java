@@ -52,7 +52,7 @@ final class Receiver {
             var result = receiver.receiveSubmission(UUID.fromString(submission));
             if (!UUID.fromString(destination).equals(result.getDestinationId())
                     || !UUID.fromString(submission).equals(result.getSubmissionId()))
-                throw new SessionException("invalid_resource");
+                throw new SessionException("receive_message_mismatch");
             var attachments = new ArrayList<ReceivedContent.Attachment>();
             for (var attachment : result.getAttachments()) {
                 try (var stream = attachment.getDataAsInputStream()) {

@@ -1,3 +1,4 @@
+import { receiveFailures } from './receive/failures.js';
 const sdkVersions = Object.freeze({ v2: '3.5.2', v3: '4.0.0' });
 
 export async function probeAdapter(invoke, apiVersion, environment = 'TEST') {
@@ -18,6 +19,9 @@ export async function probeAdapter(invoke, apiVersion, environment = 'TEST') {
 }
 
 export function errorMessage(code) {
+  const receiveCode = typeof code === 'string' ? code : code?.message;
+  if (typeof receiveCode === 'string' && Object.hasOwn(receiveFailures, receiveCode))
+    return receiveFailures[receiveCode].message;
   const messages = {
     malware_detected:
       'Der eingerichtete Scanner meldet einen Fund. Die Inhalte bleiben gesperrt; kein automatischer Empfangsabschluss.',
@@ -98,6 +102,7 @@ export function errorMessage(code) {
 
 // Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
 const reportableCodes = new Set([
+  ...Object.keys(receiveFailures),
   'export_failed',
   'export_expired',
   'message_content_missing',

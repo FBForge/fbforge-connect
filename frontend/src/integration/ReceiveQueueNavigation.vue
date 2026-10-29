@@ -9,7 +9,7 @@ const next = computed(() => {
 });
 </script>
 <template>
-  <nav aria-label="Empfangsnavigation" class="receive-queue-navigation client-actions">
+  <nav aria-label="Empfangsnavigation" class="submission-return client-actions">
     <button class="button secondary" type="button" :disabled="busy" @click="emit('back')">
       Zurück zum Eingang
     </button>
@@ -18,13 +18,3 @@ const next = computed(() => {
     </button>
   </nav>
 </template>
-<style>
-.receive-queue-navigation {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-  padding: 12px;
-  background: var(--surface);
-  border-top: 1px solid var(--line);
-}
-</style>

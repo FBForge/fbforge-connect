@@ -1,5 +1,6 @@
 <script setup>
 import { warning, label, bytesLabel } from './receive/presentation.ts';
+import { isReceiveFailure } from './receive/failures.js';
 import { canPreview } from './submission-preview.js';
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
 import FileDropInput from './FileDropInput.vue';
@@ -218,7 +219,11 @@ defineExpose({
           Lokales Schema hinzufügen
         </button>
         <button
-          v-if="!reply && !proof && ['invalid_resource', 'verification_failed'].includes(diagnostic)"
+          v-if="
+            !reply &&
+            !proof &&
+            (isReceiveFailure(diagnostic) || ['invalid_resource', 'verification_failed'].includes(diagnostic))
+          "
           type="button"
           class="button secondary"
           :disabled="disabled || receiptUncertain"
