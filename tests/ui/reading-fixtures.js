@@ -68,6 +68,8 @@ export async function receiveReadingExample(page, attachmentCount = 0) {
 
 export async function caseReadingExample(page) {
   await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  // The fixture loads its PDF asynchronously before exposing its native boundary.
+  await page.getByRole('heading', { name: 'Meine Vorgänge', exact: true }).waitFor();
   await page.evaluate(
     ({ text, packet }) => {
       const parts = window.__caseFixture.parts;

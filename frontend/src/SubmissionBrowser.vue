@@ -496,5 +496,10 @@ defineExpose({ confirmLeave: () => receivePanel.value?.confirmLeave() ?? true })
       @next="open"
     />
     <ReceiptHistory :history="receiptHistory" :busy="busy || pending" @event-log="openEventLog" />
+    <nav v-if="detail" class="submission-return" aria-label="Empfangsnavigation">
+      <button class="button secondary" type="button" :disabled="disabled" @click="back">
+        Zurück zum Eingang
+      </button>
+    </nav>
   </div>
 </template>

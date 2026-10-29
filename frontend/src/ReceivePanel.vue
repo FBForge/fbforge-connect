@@ -217,6 +217,15 @@ defineExpose({
         >
           Lokales Schema hinzufügen
         </button>
+        <button
+          v-if="!reply && !proof && ['invalid_resource', 'verification_failed'].includes(diagnostic)"
+          type="button"
+          class="button secondary"
+          :disabled="disabled || receiptUncertain"
+          @click="beginReceipt('reject')"
+        >
+          Manuelle Ablehnung
+        </button>
         <DocumentationLink :topic="reply ? 'replies' : 'problems'">Hilfe zu diesem Problem</DocumentationLink>
       </ActionNotice>
       <template v-if="proof">

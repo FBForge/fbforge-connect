@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
-async function open(page, keys = 1) {
-  await page.goto('http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1');
+async function open(page, keys = 1, verificationFailure = null, api = 'v3') {
+  await page.goto(`http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1&api=${api}`);
   await page.evaluate((keyCount) => {
     const original = window.__TAURI_INTERNALS__.invoke;
     const uuid = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
@@ -75,9 +75,18 @@ async function open(page, keys = 1) {
       return original(command, args);
     };
   }, keys);
+  if (verificationFailure)
+    await page.evaluate((failure) => {
+      const original = window.__TAURI_INTERNALS__.invoke;
+      window.__TAURI_INTERNALS__.invoke = async (command, args) => {
+        if (command === 'verify_submission') throw failure;
+        return original(command, args);
+      };
+    }, verificationFailure);
   await page.locator('#pickup-submission').fill(id(3));
   await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Antrag lesen', exact: true })).toBeVisible();
+  if (verificationFailure) await expect(page.locator('.receive-workspace [role="alert"]')).toBeVisible();
+  else await expect(page.getByRole('heading', { name: 'Antrag lesen', exact: true })).toBeVisible();
 }
 test('accept prepares the current verified message once, cancel sends nothing and confirm writes once', async ({
   page,
@@ -97,6 +106,13 @@ test('accept prepares the current verified message once, cancel sends nothing an
   await expect(page.getByText('Annahme von FIT-Connect bestätigt', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(1);
   await expect(page.getByRole('button', { name: 'Annehmen', exact: true })).toHaveCount(0);
+  const back = page.getByRole('button', { name: 'Zurück zum Eingang', exact: true });
+  await expect(back).toBeInViewport({ ratio: 1 });
+  await back.click();
+  await expect(page.getByRole('heading', { name: 'Einreichungen suchen', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }),
+  ).toBeFocused();
 });
 test('reject requires a reason and multiple keys require an explicit key selection', async ({ page }) => {
   await open(page, 2);
@@ -274,3 +290,36 @@ test('changing API or reconnecting preserves an unsent reply until explicit disc
   ).toBe(1);
   expect(await page.evaluate(() => window.__applicationFixture.replyWrites)).toBe(0);
 });
+
+for (const [api, failure] of [
+  ['v2', 'invalid_resource'],
+  ['v3', 'invalid_resource'],
+  ['v2', 'verification_failed'],
+  ['v3', 'verification_failed'],
+]) {
+  test(`${api} ${failure} content remains rejectable without a proof and requires explicit confirmation`, async ({
+    page,
+  }) => {
+    await open(page, 1, failure, api);
+    await expect(page.getByRole('button', { name: 'Annehmen', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Antwort verfassen', exact: true })).toHaveCount(0);
+    await page
+      .locator('.receive-workspace [role="alert"]')
+      .getByRole('button', { name: 'Manuelle Ablehnung', exact: true })
+      .click();
+    await expect(page.locator('#receipt-reason')).toBeFocused();
+    await page.locator('#receipt-reason').selectOption('technical-error');
+    await page.getByRole('button', { name: 'Ablehnung prüfen', exact: true }).click();
+    const confirmation = page.getByRole('dialog', { name: 'Einreichung ablehnen?', exact: true });
+    await expect(confirmation).toBeVisible();
+    expect(await page.evaluate(() => window.__guidedFixture.drafts[0].proofId)).toBeNull();
+    expect(await page.evaluate(() => window.__guidedFixture.drafts[0].reason)).toBe('technical-error');
+    expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(0);
+    await confirmation.getByRole('button', { name: 'Jetzt ablehnen', exact: true }).click();
+    await expect(page.getByText('Ablehnung von FIT-Connect bestätigt', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(1);
+    await expect(page.getByRole('button', { name: 'Zurück zum Eingang', exact: true })).toBeInViewport({
+      ratio: 1,
+    });
+  });
+}
