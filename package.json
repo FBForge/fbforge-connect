@@ -17,6 +17,7 @@
     "desktop:build": "node scripts/desktop.mjs build",
     "desktop:build:offline": "node scripts/desktop.mjs build --config tauri.offline.conf.json",
     "test:ui": "playwright test",
+    "test:bundle": "node --test tests/frontend-bundle.integration.js",
     "lint": "eslint frontend/src docs/guide tests scripts *.config.js frontend/vite.config.js && npm run typecheck && npm run quality:check",
     "licenses:check": "node scripts/frontend-licenses.mjs --check",
     "licenses:update": "node scripts/frontend-licenses.mjs",

@@ -2,6 +2,9 @@
 
 ## 0.3.0 (in Entwicklung)
 
+- Windows-Installer-Builds bereiten ein fehlendes optionales Scanner-Paket automatisch vor dem Rust-Build vor; eine fehlgeschlagene Vorbereitung stoppt den Ablauf. Entwicklungsstarts und Debug-Builds bleiben ohne automatischen Scanner-Download.
+- Lizenztexte und Destination-Werkzeuge in eigene Frontend-Pakete aufgeteilt. Eine zusätzliche Produktionsprüfung kontrolliert Paketgrößen und die Ausführung der gebauten Oberfläche.
+
 - Prozessantworten direkt aus übernommenen Modellzuordnungen oder vereinbarten Kennungen zusammenstellen. Schemahinweise, Duplikate und Limits prüfen; Modellzuordnungen auch beim Bearbeiten von Destination-Prozessnachrichten übernehmen.
 - Lokaler JSON-Kanalschema-Assistent für fachliche Statusmitteilungen und Nachforderungen: editierbare Felder, Pflichtangaben und Statuswerte; Schema-, Beispiel- und Entwurfsexport mit Wiederimport. Schema-Kennungen aus Dateien in die Konfiguration übernehmen; der Versand bleibt an das aktuelle Antwortangebot des Empfängers gebunden.
 

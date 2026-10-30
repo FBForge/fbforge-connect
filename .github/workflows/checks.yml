@@ -72,6 +72,7 @@ jobs:
       - run: npm test
       - run: npm run build:frontend
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:bundle
       - run: npm run test:ui
 
   engine:
