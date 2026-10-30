@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { productName } from '../frontend/src/product.js';
 
-test('renamed installer preserves the legacy upgrade identity with only two reviewed upstream changes', async () => {
+test('renamed installer preserves the legacy upgrade identity with isolated reviewed scanner additions', async () => {
   const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
   const [template, provenance, pkg, config, page, cargo, lock] = await Promise.all([
     read('desktop/installer/installer.nsi'),
@@ -23,6 +23,7 @@ test('renamed installer preserves the legacy upgrade identity with only two revi
   assert.equal(JSON.parse(lock).packages[''].name, 'fbforge-connect');
   assert.match(cargo, /^name = "fbforge-connect"$/m);
   const original = template
+    .replace(/^[ \t]*; FBForge scanner begin[^\n]*\n[\s\S]*?^[ \t]*; FBForge scanner end[^\n]*\n/gm, '')
     .replace(
       '!define UNINSTKEY "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\FIT-Connect Test-Client"',
       '!define UNINSTKEY "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${PRODUCTNAME}"',

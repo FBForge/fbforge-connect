@@ -65,6 +65,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'signing_runtime_staging_failed' }
           npm run test:engine
           if ($LASTEXITCODE -ne 0) { throw 'signing_runtime_validation_failed' }
+      - name: Stage optional ClamAV with matching source and notices
+        run: |
+          npm run stage:scanner
+          if ($LASTEXITCODE -ne 0) { throw 'signing_scanner_staging_failed' }
+      - name: Retain the exact scanner distribution used by this signed build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-scanner-component
+          path: desktop/target/scanner-dist/
+          if-no-files-found: error
+          retention-days: 30
       - name: Sign application, uninstaller and setup using the local certificate
         env:
           VALIDATION_RUN: ${{ inputs.validation_run }}

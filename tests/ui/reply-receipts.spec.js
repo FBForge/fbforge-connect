@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 
 test('reply-receipts with synthetic native fixtures', async ({ browser }) => {
@@ -55,3 +55,22 @@ test('reply-receipts with synthetic native fixtures', async ({ browser }) => {
     'Reply receipt UI passed: explicit prepare/cancel/confirm, accept/reject, uncertain lock, stale-proof cleanup, reply/case log navigation.',
   );
 });
+
+for (const api of ['v2', 'v3'])
+  test(`reply attachment problems require an explicit whole-answer decision (${api})`, async ({ page }) => {
+    await page.goto(`http://127.0.0.1:1420/test-fixtures/reply-receipt.html?blocked=1&api=${api}`);
+    await page.getByRole('button', { name: 'Aktion vorbereiten', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Antwort annehmen?', exact: true });
+    await expect(dialog).toContainText('Die Annahme bestätigt die gesamte Antwort');
+    await expect(
+      dialog.getByRole('button', { name: 'Mit Anlagenproblemen annehmen', exact: true }),
+    ).toBeVisible();
+    await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+    expect(await page.evaluate(() => window.__receiptFixture.writes)).toBe(0);
+    await page.getByRole('button', { name: 'Aktion vorbereiten', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Mit Anlagenproblemen annehmen', exact: true }).click();
+    await expect(dialog).toBeHidden();
+    const state = await page.evaluate(() => window.__receiptFixture);
+    expect(state.writes).toBe(1);
+    expect(state.lastDraft).not.toHaveProperty('blockedAttachments');
+  });

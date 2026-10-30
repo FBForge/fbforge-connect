@@ -22,7 +22,8 @@ Eine Abmeldung widerruft keine bereits ausgestellten Tokens.
 
 ## Schutzgrenzen
 
-- Kein mitgelieferter Malwaredienst. Ab 0.3.0 können eigene ClamAV-/ICAP-Gegenstellen nach nativer Bestätigung angebunden werden. Sie erhalten entschlüsselte Inhalte über unverschlüsseltes TCP und benötigen daher ein vertrauenswürdiges lokales oder anderweitig geschütztes Netz. Fund, Zeitlimit und unklare Freigabe blockieren die Inhaltsfreigabe. Technische und fachliche Prüfung bleiben getrennt; Sammelannahme ohne Scan erfordert eine ausdrückliche Freigabe.
+- Ab 0.3.0 optional lokaler ClamAV als geprüfte Windows-Komponente oder eine eigene ClamAV-/ICAP-Gegenstelle. Der mitgelieferte Scanner läuft ausschließlich auf Loopback als Benutzerprozess und endet mit der App. Engine-Dateien sind fest gepinnt; offizielle CVD-Datenbanken benötigen gültige Signaturen. Downloads und automatische Signaturupdates benötigen Zustimmung; Offline-Bestände altern sichtbar.
+- Eigene Scanner erhalten entschlüsselte Inhalte über unverschlüsseltes TCP und benötigen ein vertrauenswürdiges lokales oder anderweitig geschütztes Netz. Metadaten-/Fachdatenfunde, Zeitlimits und unvollständige Scans blockieren die Freigabe. Anlagenfunde sperren die betroffenen Dateien; andere geprüfte Inhalte bleiben lesbar. Die Einzelannahme bestätigt die gesamte Nachricht mit nativen Problemangaben und zusätzlicher Bestätigung. Sammelannahme und vollständiger Export bleiben für solche Nachrichten gesperrt. Kein Sanitizing und keine zusätzliche dauerhafte Quarantäne. Ein unauffälliger Scan ist keine Sicherheitsgarantie.
 - Keine allgemeinen HTTP-, Shell- oder Dateisystemrechte im Renderer. Schreibaktionen
   benötigen eine Bestätigung; ungewisse Übertragungen werden nicht automatisch wiederholt.
 - Umgebungswechsel beendet Sitzungen und erfordert eine neue Anmeldung. Gespeicherte

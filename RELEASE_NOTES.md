@@ -7,7 +7,8 @@
 - Zertifikatswarnungen mit 30/90 Tagen Vorlauf. Empfänger-Favoriten und zuletzt verwendete Destinations geschützt im Profil speichern.
 - Destination-Vorlagen mit Import, Export und Feldvergleich. Profil-, umgebungs- und API-gebundene Windows-DPAPI-Historie für Konfigurationsänderungen einschließlich ungewissem Ausgang.
 - Wiederholbare Testabläufe ergänzen Testfälle: Versand, Eingang, Inhalts-/Anlagenvergleich, erwartete Bestätigung und Antwort anhand lokaler Nachrichten prüfen; Definition und Durchlaufergebnis exportieren.
-- Optionale eigene ClamAV-/ICAP-Gegenstelle nach nativer Bestätigung. Kein gehosteter FBForge-Endpunkt. Scanfund, Zeitlimit oder unklare Freigabe bleiben blockierend.
+- Optionaler lokaler ClamAV 1.5.4 im Windows-Setup, offline nachinstallierbares Komponentenpaket und bewusste Online-Einrichtung. Geprüfte offizielle Engine-Dateien, signierte Virendatenbanken, sichtbarer Signaturstand und zustimmungspflichtige FreshClam-Updates. Eigene ClamAV-/ICAP-Gegenstellen bleiben auswählbar.
+- Metadaten, Fachdaten und Anlagen beim Empfang sowie vor Versand und Antwort scannen. Betroffene Anlagen bleiben gesperrt; geprüfte übrige Inhalte bleiben lesbar. Einzelannahmen mit Anlagenproblemen benötigen zusätzliche Bestätigung und melden die Kennungen im signierten Accept. Sammelannahme und vollständiger Originalexport bleiben dafür gesperrt. Unvollständige Scans bleiben blockierend. Kein gehosteter Dienst, Sanitizing oder zusätzliche Quarantäne.
 
 - Integrierte Updates für Windows x64: automatische, abschaltbare Suche und manuelle Suche unter „Info“, Hinweis auf neue stabile GitHub-Releases, Downloadfortschritt und abbrechbarer Download.
 - Installer erst nach erfolgreicher Paket- und Versionssignaturprüfung sowie nativer Bestätigung starten. Laufende Aktionen und offene Exporte blockieren die Installation; gespeicherte Schlüssel werden vor dem Beenden gesichert.

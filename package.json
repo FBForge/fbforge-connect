@@ -23,7 +23,9 @@
     "format:check": "prettier --check frontend/src frontend/test-fixtures docs/guide tests scripts *.config.js package.json tsconfig.json .prettierrc.json .github/workflows",
     "format": "prettier --write frontend/src frontend/test-fixtures docs/guide tests scripts *.config.js package.json tsconfig.json .prettierrc.json .github/workflows",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
-    "quality:check": "node scripts/check-source-size.mjs"
+    "quality:check": "node scripts/check-source-size.mjs",
+    "stage:scanner": "node scripts/stage-scanner.mjs",
+    "test:scanner": "node scripts/scanner/smoke.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

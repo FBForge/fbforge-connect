@@ -16,7 +16,9 @@ test('desktop command registration, generated permissions and main-window grants
     .filter(Boolean)
     .sort();
   assert.equal(new Set(registered).size, registered.length, 'command names must be unique across modules');
-  const declared = [...build.matchAll(/"([a-z][a-z0-9_]+)"/g)].map((match) => match[1]).sort();
+  const commandList = build.match(/\.commands\(&\[([\s\S]*?)\]\)/)?.[1];
+  assert.ok(commandList, 'generated command declaration must be present');
+  const declared = [...commandList.matchAll(/"([a-z][a-z0-9_]+)"/g)].map((match) => match[1]).sort();
   const grants = JSON.parse(capability);
   assert.deepEqual(grants.windows, ['main']);
   assert.equal(grants.remote, undefined, 'remote pages must not receive native permissions');
@@ -57,6 +59,36 @@ test('a native failure is returned once without retrying or blocking subsequent 
   await assert.rejects(failure, /verification_failed/);
   assert.equal(await cleanup, 'discarded');
   assert.deepEqual(calls, ['verify_submission', 'discard_received']);
+});
+
+test('scanner status and cancellation stay responsive during installation without overlapping Java calls', async () => {
+  const calls = [];
+  let finishInstall, finishReceive;
+  const invoke = serialInvoke(async (command) => {
+    calls.push(command);
+    if (command === 'install_local_scanner')
+      await new Promise((resolve) => {
+        finishInstall = resolve;
+      });
+    if (command === 'verify_submission')
+      await new Promise((resolve) => {
+        finishReceive = resolve;
+      });
+    return command;
+  });
+  const install = invoke('install_local_scanner'),
+    receive = invoke('verify_submission'),
+    cleanup = invoke('discard_received');
+  await Promise.resolve();
+  assert.equal(await invoke('local_scanner_status'), 'local_scanner_status');
+  assert.equal(await invoke('cancel_local_scanner_operation'), 'cancel_local_scanner_operation');
+  assert.ok(!calls.includes('discard_received'));
+  finishReceive();
+  await receive;
+  await cleanup;
+  assert.ok(calls.includes('discard_received'));
+  finishInstall();
+  await install;
 });
 
 test('profile removal serializes with protected workspace writes before acquiring the binding lock', async () => {

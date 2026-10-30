@@ -3,6 +3,7 @@ import { defaultCaseMessage } from './case-groups.js';
 import DocumentLayout from './DocumentLayout.vue';
 import AttachmentList from './AttachmentList.vue';
 import MessageDownload from './MessageDownload.vue';
+import BlockedAttachments from './BlockedAttachments.vue';
 import { exportSource } from './message-export.js';
 import CopyValue from './CopyValue.vue';
 import DocumentationLink from './DocumentationLink.vue';
@@ -37,6 +38,7 @@ const {
   disabled,
   attachments,
   hasPlaintext,
+  blockedAttachments,
   bytesLabel,
   when,
   resetFilters,
@@ -268,13 +270,18 @@ const {
         {{
           warning === 'MALWARE_SCAN_NOT_CONFIGURED'
             ? 'Kein Malwarescanner eingerichtet.'
-            : warning === 'DATA_SCHEMA_INVALID'
-              ? 'Die Fachdaten weichen vom Schema ab. Bitte die angezeigten Fehler prüfen.'
-              : warning === 'XML_SCHEMA_NOT_CHECKED'
-                ? 'XML-Syntax geprüft. Keine XSD-Prüfung durchgeführt.'
-                : warning
+            : warning === 'MALWARE_ATTACHMENT_BLOCKED'
+              ? 'Anlagen wurden vom Virenscan gesperrt. Die betroffenen Dateien bleiben unzugänglich.'
+              : warning === 'MALWARE_SCAN_PASSED'
+                ? 'Metadaten, Fachdaten und Anlagen wurden vom eingerichteten Scanner freigegeben.'
+                : warning === 'DATA_SCHEMA_INVALID'
+                  ? 'Die Fachdaten weichen vom Schema ab. Bitte die angezeigten Fehler prüfen.'
+                  : warning === 'XML_SCHEMA_NOT_CHECKED'
+                    ? 'XML-Syntax geprüft. Keine XSD-Prüfung durchgeführt.'
+                    : warning
         }}
       </p>
+      <BlockedAttachments :items="blockedAttachments" />
       <DocumentLayout>
         <template #data>
           <div class="tool-section-heading">
@@ -304,6 +311,7 @@ const {
           <MessageDownload
             :session="session"
             :source="exportSource(selected, selected.kind === 'reply')"
+            :blocked="selected.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')"
             :disabled="disabled || !hasPlaintext"
             @busy="emit('busy', $event)"
           />

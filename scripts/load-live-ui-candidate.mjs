@@ -19,7 +19,9 @@ try {
       run.conclusion === 'success' &&
       run.path === '.github/workflows/windows.yml' &&
       run.head_repository?.full_name === repository &&
-      (run.head_branch === 'main' || /^(?:release|fix)\/[A-Za-z0-9._/-]+$/.test(run.head_branch)),
+      (run.head_branch === 'main' ||
+        run.head_branch === 'feature/local-scanner-0.3.0' ||
+        /^(?:release|fix)\/[A-Za-z0-9._/-]+$/.test(run.head_branch)),
     'ui_validation_not_trusted',
   );
   const directory = await mkdtemp(join(process.env.RUNNER_TEMP, 'fbforge-ui-candidate-'));
@@ -56,7 +58,7 @@ try {
   );
   const installer = join(directory, manifest.installer);
   const size = (await stat(installer)).size;
-  requireCheck(size > 0 && size <= 160 * 1024 * 1024, 'ui_installer_size_invalid');
+  requireCheck(size > 0 && size <= 512 * 1024 * 1024, 'ui_installer_size_invalid');
   const bytes = await readFile(installer);
   requireCheck(
     bytes.length === manifest.bytes && createHash('sha256').update(bytes).digest('hex') === manifest.sha256,

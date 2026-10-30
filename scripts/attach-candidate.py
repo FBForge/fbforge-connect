@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import tempfile
+from importlib.util import module_from_spec, spec_from_file_location
 
 from candidate import api, download_candidate, gh, require
 
@@ -46,6 +47,11 @@ def main():
     # ZIP as well, so its manifest and checksum filenames still match after extraction.
     files = {name.replace(" ", "."): content for name, content in files.items()}
     files[f"FBForge-Connect_{version}_windows-x64.zip"] = archive_bytes
+    if tuple(map(int, version.split('-')[0].split('.'))) >= (0, 3, 0):
+        spec = spec_from_file_location('scanner_candidate', Path(__file__).with_name('scanner-candidate.py'))
+        scanner = module_from_spec(spec)
+        spec.loader.exec_module(scanner)
+        files.update(scanner.download_distribution(run_id, commit))
     with tempfile.TemporaryDirectory(prefix="fbforge-candidate-") as temporary:
         for name, content in files.items():
             # Recheck before every write; reject a published or retargeted draft.
@@ -77,7 +83,7 @@ def main():
             )
     print(
         "Verified signed installer, signatures, checksums and original ZIP attached. "
-        "Release remains an unpublished draft."
+        "Optional scanner source and license distribution included for 0.3+. Release remains an unpublished draft."
     )
 
 

@@ -47,6 +47,14 @@ final class SessionSend {
                         entry.id(),
                         ContentStore.TOTAL_BYTES - reserved);
         discardPendingChannel(entry, entry.sender().state().attemptId());
+        try {
+            if (this.state.scanners.containsKey(id))
+                this.state.scanners.get(id).scan(draft.input());
+        } catch (SessionException failure) {
+            if (entry.sender().state().status().equals("prepared"))
+                entry.sender().cancel(entry.sender().state().attemptId());
+            throw failure;
+        }
         var attempt = entry.sender().prepare(draft.input());
         if (draft.input().replyOffer() != null) {
             try {
@@ -78,6 +86,14 @@ final class SessionSend {
             if (entry.sender().pendingInput() == null
                     || !Objects.equals(attemptId, entry.sender().state().attemptId()))
                 throw new SessionException("send_locked");
+            try {
+                if (this.state.scanners.containsKey(id))
+                    this.state.scanners.get(id).scan(entry.sender().pendingInput());
+            } catch (SessionException failure) {
+                entry.sender().cancel(attemptId);
+                discardPendingChannel(entry, attemptId);
+                throw failure;
+            }
             String recordId =
                     this.state.cases.outgoing(
                             this.state.caseScopes.get(id), entry.sender().pendingInput());

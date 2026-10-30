@@ -84,6 +84,14 @@ public record ReceivedContent(
             if (item == null || !ids.add(item.id())) invalid();
             total += item.bytes.length;
         }
+        var blocked =
+                issues.stream()
+                        .flatMap(issue -> issue.blockedAttachments().stream())
+                        .map(BlockedAttachment::attachmentId)
+                        .toList();
+        if (blocked.size() + attachments.size() > 39
+                || blocked.stream().distinct().count() != blocked.size()
+                || blocked.stream().anyMatch(ids::contains)) invalid();
         if (total > 64L * 1024 * 1024) invalid();
         metadata = metadata.clone();
         data = data.clone();
@@ -163,10 +171,25 @@ public record ReceivedContent(
         }
     }
 
-    /** Stable stage/severity only. SDK messages may embed payloads or arbitrary server text. */
-    public record Issue(String stage, boolean error) {
+    /** Stable stage/severity and bounded blocked-file identities; never raw scanner messages. */
+    public record Issue(String stage, boolean error, List<BlockedAttachment> blockedAttachments) {
+        public Issue(String stage, boolean error) {
+            this(stage, error, List.of());
+        }
+
         public Issue {
             if (stage == null || !stage.matches("[A-Z_]{1,64}")) invalid();
+            if (blockedAttachments == null
+                    || blockedAttachments.size() > 39
+                    || blockedAttachments.stream().anyMatch(Objects::isNull)
+                    || blockedAttachments.stream()
+                                    .map(BlockedAttachment::attachmentId)
+                                    .distinct()
+                                    .count()
+                            != blockedAttachments.size()
+                    || !blockedAttachments.isEmpty()
+                            && (!stage.equals("MALWARE_ATTACHMENT_BLOCKED") || error)) invalid();
+            blockedAttachments = List.copyOf(blockedAttachments);
         }
     }
 

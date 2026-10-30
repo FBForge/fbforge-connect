@@ -22,7 +22,8 @@ final class ReplyReceiveStore {
             int partCount,
             int warningCount,
             List<String> warnings,
-            SubmissionInput.ProcessMessage processMessage) {
+            SubmissionInput.ProcessMessage processMessage,
+            List<BlockedAttachment> blockedAttachments) {
         Summary(
                 String proofId,
                 String replyId,
@@ -41,7 +42,8 @@ final class ReplyReceiveStore {
                     partCount,
                     warningCount,
                     warnings,
-                    null);
+                    null,
+                    List.of());
         }
     }
 
@@ -102,7 +104,8 @@ final class ReplyReceiveStore {
                                 .distinct()
                                 .limit(16)
                                 .toList(),
-                        content.processMessage());
+                        content.processMessage(),
+                        ScanFindings.blocked(content.issues()));
         current =
                 new Stored(
                         api,
@@ -138,7 +141,8 @@ final class ReplyReceiveStore {
                         value.parts()
                                 .subList(
                                         offset,
-                                        Math.min(offset + PAGE_SIZE, value.parts().size()))));
+                                        Math.min(offset + PAGE_SIZE, value.parts().size()))),
+                value.summary().blockedAttachments().size());
     }
 
     synchronized Chunk read(

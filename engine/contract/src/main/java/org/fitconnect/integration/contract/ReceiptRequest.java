@@ -14,8 +14,50 @@ public record ReceiptRequest(
         String signingKid,
         String reason,
         String description,
-        UUID attachmentId) {
+        UUID attachmentId,
+        List<UUID> blockedAttachments) {
+    public ReceiptRequest(
+            UUID destinationId,
+            UUID submissionId,
+            UUID caseId,
+            String action,
+            String signingKid,
+            String reason,
+            String description,
+            UUID attachmentId) {
+        this(
+                destinationId,
+                submissionId,
+                caseId,
+                action,
+                signingKid,
+                reason,
+                description,
+                attachmentId,
+                List.of());
+    }
+
+    public ReceiptRequest withBlockedAttachments(List<UUID> ids) {
+        return new ReceiptRequest(
+                destinationId,
+                submissionId,
+                caseId,
+                action,
+                signingKid,
+                reason,
+                description,
+                attachmentId,
+                ids);
+    }
+
     public ReceiptRequest {
+        if (blockedAttachments == null
+                || blockedAttachments.size() > 39
+                || blockedAttachments.stream().anyMatch(Objects::isNull)
+                || blockedAttachments.stream().distinct().count() != blockedAttachments.size()
+                || !blockedAttachments.isEmpty() && !"accept".equals(action)) invalid();
+        blockedAttachments = List.copyOf(blockedAttachments);
+
         if (destinationId == null
                 || submissionId == null
                 || caseId == null

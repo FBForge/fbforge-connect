@@ -166,6 +166,15 @@ final class SessionReplies {
                             session, proof.proofId(), draft.summary().schemaId(), draft.input());
                     return null;
                 });
+        try {
+            if (this.state.scanners.containsKey(id))
+                this.state.scanners.get(id).scan(draft.input());
+        } catch (SessionException failure) {
+            if (entry.replySender().state().status().equals("prepared"))
+                entry.replySender().cancel(entry.replySender().state().attemptId());
+            this.state.pendingReplies.remove(id);
+            throw failure;
+        }
         var attempt = entry.replySender().prepare(draft.input(), recipient);
         this.state.pendingReplies.put(id, draft.summary());
         return new Data<>(
@@ -183,6 +192,14 @@ final class SessionReplies {
                     || entry.replySender().pendingInput() == null
                     || !Objects.equals(attemptId, entry.replySender().state().attemptId()))
                 throw new SessionException("send_locked");
+            try {
+                if (this.state.scanners.containsKey(id))
+                    this.state.scanners.get(id).scan(entry.replySender().pendingInput());
+            } catch (SessionException failure) {
+                entry.replySender().cancel(attemptId);
+                this.state.pendingReplies.remove(id);
+                throw failure;
+            }
             String recordId =
                     this.state.cases.outgoing(
                             this.state.caseScopes.get(id), entry.replySender().pendingInput());

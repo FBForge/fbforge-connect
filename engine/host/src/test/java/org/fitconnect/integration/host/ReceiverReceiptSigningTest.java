@@ -135,6 +135,37 @@ class ReceiverReceiptSigningTest extends ReceiverTestSupport {
                                     .getAsString());
                     assertFalse(event.has("problems"));
                     assertFalse(signed.toString().contains(signed.jwt()));
+                    var withProblem =
+                            accept.withBlockedAttachments(
+                                    List.of(UUID.fromString(ReceiverFixture.ATT)));
+                    var problemToken =
+                            registry.withSession(
+                                    api, session, s -> s.signReceipt(withProblem, workspace));
+                    var problemEvent =
+                            checkedReceipt(problemToken, "accept")
+                                    .getAsJsonObject("events")
+                                    .getAsJsonObject(
+                                            "https://schema.fitko.de/fit-connect/events/accept-submission");
+                    assertEquals(1, problemEvent.getAsJsonArray("problems").size());
+                    assertEquals(
+                            "attachment:" + ReceiverFixture.ATT,
+                            problemEvent
+                                    .getAsJsonArray("problems")
+                                    .get(0)
+                                    .getAsJsonObject()
+                                    .get("instance")
+                                    .getAsString());
+                    assertEquals(
+                            "https://schema.fitko.de/fit-connect/events/problems/invalid-content",
+                            problemEvent
+                                    .getAsJsonArray("problems")
+                                    .get(0)
+                                    .getAsJsonObject()
+                                    .get("type")
+                                    .getAsString());
+                    assertEquals(
+                            event.get("authenticationTags"),
+                            problemEvent.get("authenticationTags"));
                     var wrongCase =
                             new ReceiptRequest(
                                     UUID.fromString(DEST),

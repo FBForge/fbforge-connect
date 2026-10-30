@@ -29,6 +29,12 @@ where
     let mut expected_total = None;
     for offset in (0..42).step_by(2) {
         let data = read(None, offset).await?;
+        if data
+            .get("blockedAttachmentCount")
+            .is_some_and(|count| count.as_u64().is_none_or(|n| n > 0))
+        {
+            return Err("message_content_blocked");
+        }
         let total = data["total"]
             .as_u64()
             .filter(|n| *n >= minimum && *n <= 42)
@@ -45,6 +51,9 @@ where
         if parts.len() == total {
             break;
         }
+    }
+    if parts.iter().any(|part| part["kind"] == "scan-report") {
+        return Err("message_content_blocked");
     }
     let parts: Vec<_> = parts
         .into_iter()
@@ -256,6 +265,38 @@ mod tests {
         assert_eq!(manifest["source"], "local-copy");
         assert_eq!(manifest["environment"], "STAGE");
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn blocked_live_and_historical_messages_cannot_export_even_clean_remainder_bytes() {
+        for local in [false, true] {
+            let root = store::reserve(&std::env::temp_dir(), "fbforge-blocked-export").unwrap();
+            let mut parts = parts();
+            if local {
+                parts.push(json!({"kind":"scan-report","contentId":id(8),"totalBytes":1}));
+            }
+            let result = ready(export(
+                &root,
+                "Einreichung",
+                &id(7),
+                local,
+                "TEST",
+                |content, offset| {
+                    assert!(
+                        content.is_none(),
+                        "blocked snapshots must never begin a byte read"
+                    );
+                    let mut page = response(&parts, content, offset);
+                    if !local {
+                        page["blockedAttachmentCount"] = 1.into();
+                    }
+                    std::future::ready(Ok(page))
+                },
+            ));
+            assert_eq!(result.unwrap_err(), "message_content_blocked");
+            assert_eq!(fs::read_dir(&root).unwrap().count(), 0);
+            fs::remove_dir_all(root).unwrap();
+        }
     }
 
     #[test]

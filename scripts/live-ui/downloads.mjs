@@ -22,7 +22,9 @@ export async function nativeFolder(desktop, fixture, operation, cancel = false, 
       '-Folder',
       folder,
       ...(cancel ? ['-Cancel'] : []),
-      ...(schemaReview ? ['-SchemaReview'] : []),
+      ...(schemaReview === true || schemaReview === 'schema' ? ['-SchemaReview'] : []),
+      ...(schemaReview === 'attachment' ? ['-AttachmentReview'] : []),
+      ...(schemaReview === 'scanner' ? ['-ScannerReview'] : []),
     ],
     { env: cleanEnvironment(), stdio: ['ignore', 'pipe', 'ignore'] },
   );
@@ -148,3 +150,9 @@ export async function downloadMessage(desktop, fixture, message, reply = false) 
 
 export const nativeSchemaReview = (desktop, fixture, operation, cancel = false) =>
   nativeFolder(desktop, fixture, operation, cancel, true);
+
+export const nativeAttachmentReview = (desktop, fixture, operation) =>
+  nativeFolder(desktop, fixture, operation, false, 'attachment');
+
+export const nativeScannerReview = (desktop, fixture, operation) =>
+  nativeFolder(desktop, fixture, operation, false, 'scanner');

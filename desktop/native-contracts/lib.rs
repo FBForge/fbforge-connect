@@ -30,3 +30,15 @@ pub mod update_policy;
 
 #[path = "../src/profile_workspace_store.rs"]
 pub mod profile_workspace_store;
+
+#[path = "../src/scanner_package.rs"]
+pub mod scanner_package;
+
+#[path = "../src/scanner_process.rs"]
+pub mod scanner_process;
+
+#[path = "../src/scanner_runtime.rs"]
+pub mod scanner_runtime;
+
+#[path = "../src/scanner_install.rs"]
+pub mod scanner_install;

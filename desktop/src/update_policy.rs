@@ -7,7 +7,7 @@ use serde_json::Value;
 pub const ENDPOINT: &str =
     "https://github.com/FBForge/fbforge-connect/releases/latest/download/latest.json";
 pub const MAX_MANIFEST: usize = 128 * 1024;
-pub const MAX_PACKAGE: usize = 160 * 1024 * 1024;
+pub const MAX_PACKAGE: usize = 512 * 1024 * 1024;
 
 pub fn stable_version(text: &str) -> Result<Version, &'static str> {
     let version = Version::parse(text.strip_prefix('v').unwrap_or(text))

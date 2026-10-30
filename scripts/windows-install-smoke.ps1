@@ -36,7 +36,10 @@ $taskProfileId = [Guid]::NewGuid().ToString()
 $taskProfileFile = Join-Path $taskProfiles ($taskProfileId + '.profile')
 $taskApp = $null
 $taskJavaIds = @()
+$taskScannerPid = $null
 $taskOwnsProfiles = $false
+$taskScannerRoot = Join-Path $env:LOCALAPPDATA 'org.fitconnect.integration-client\scanner'
+$taskOwnsScanner = $false
 $taskBinaryName = 'fbforge-connect.exe'
 $taskLegacyShortcuts = [Collections.Generic.List[string]]::new()
 
@@ -49,10 +52,10 @@ function Wait-Condition([scriptblock]$Check, [string]$Failure, [int]$Seconds = 4
     } while ([DateTime]::UtcNow -lt $deadline)
     throw $Failure
 }
-function Install-Owned([string]$Setup, [string]$BinaryName = $taskBinaryName) {
+function Install-Owned([string]$Setup, [string]$BinaryName = $taskBinaryName, [string]$Scanner = '') {
     if (-not (Test-Path -LiteralPath $Setup -PathType Leaf)) { throw 'installer_missing' }
     # NSIS requires /D last; the remaining command line is the destination, including spaces.
-    $install = Start-Process -FilePath $Setup -ArgumentList ('/S /D=' + $taskInstall) -PassThru
+    $install = Start-Process -FilePath $Setup -ArgumentList ('/S ' + $(if ($Scanner) { '/SCANNER=' + $Scanner + ' ' } else { '' }) + '/D=' + $taskInstall) -PassThru
     if (-not $install.WaitForExit(120000)) { $install.Kill(); throw 'installer_timeout' }
     if ($install.ExitCode -ne 0) { throw 'installer_failed' }
     if (-not (Test-Path -LiteralPath (Join-Path $taskInstall $BinaryName))) { throw 'installed_binary_missing' }
@@ -98,6 +101,10 @@ function Stop-OwnedApp {
             if (-not $script:taskApp.WaitForExit(15000)) { $script:taskApp.Kill(); $script:taskApp.WaitForExit() }
         }
         foreach ($childId in $script:taskJavaIds) { Stop-Process -Id $childId -Force -ErrorAction SilentlyContinue }
+        if ($script:taskScannerPid) {
+            $null = Wait-Condition { -not (Get-Process -Id $script:taskScannerPid -ErrorAction SilentlyContinue) } 'scanner_orphan_after_app_exit' 10
+            $script:taskScannerPid = $null
+        }
         $script:taskApp.Dispose(); $script:taskApp = $null; $script:taskJavaIds = @()
     }
 }
@@ -116,9 +123,26 @@ function Find-Button($Root, [string]$Name) {
 function Invoke-Named($Root, [string]$Name) {
     $element = Wait-Condition { Find-Button $Root $Name } ('installer_ui_control_missing: ' + $Name)
     $pattern = $null
-    if (-not $element.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) { throw 'installer_ui_invoke_unavailable' }
     $element.SetFocus()
-    $pattern.Invoke()
+    if ($element.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
+        $pattern.Invoke()
+        return
+    }
+    # WebView2 icon buttons can be keyboard-operable without advertising InvokePattern.
+    # Never send a key until the exact owned window and requested button hold focus.
+    $handle = [IntPtr]$Root.Current.NativeWindowHandle
+    $null = [InstallerWindowFocus]::SetForegroundWindow($handle)
+    $element.SetFocus()
+    $null = Wait-Condition {
+        $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
+        [InstallerWindowFocus]::GetForegroundWindow() -eq $handle -and
+            $focused.Current.ProcessId -eq $element.Current.ProcessId -and
+            $focused.Current.Name -eq $Name -and
+            $focused.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button
+    } ('installer_ui_keyboard_target_missing: ' + $Name) 15
+    $shell = New-Object -ComObject WScript.Shell
+    try { $shell.SendKeys(' ') }
+    finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
 }
 function Open-Diagnostics($Root) {
     # UIA Invoke is asynchronous and can be lost while a new WebView activates.
@@ -184,6 +208,15 @@ function Check-Installed([bool]$ExpectProfile) {
             # This profile contains only fake credentials and no private keys; no OAuth call is made.
             Invoke-Named $window 'Verbinden'
             $null = Wait-Condition { Find-Named $window 'CI TEST Profil' } 'installed_profile_not_restored'
+            Invoke-Named $window 'Verbindungsdialog schließen'
+        }
+        if (Test-Path -LiteralPath (Join-Path $taskInstall 'resources/scanner/component.zip')) {
+            Invoke-Named $window 'Testwerkzeuge'
+            Invoke-Named $window 'Malwarescanner'
+            $null = Wait-Condition { Find-Named $window 'Scanner läuft lokal' } 'installed_scanner_not_ready' 90
+            $clam = @(Get-CimInstance Win32_Process -Filter ("ParentProcessId = " + $script:taskApp.Id + " AND Name = 'clamd.exe'"))
+            if ($clam.Count -ne 1 -or -not $clam[0].ExecutablePath.StartsWith($taskScannerRoot + '\', [StringComparison]::OrdinalIgnoreCase)) { throw 'installed_scanner_ownership_invalid' }
+            $script:taskScannerPid = [int]$clam[0].ProcessId
         }
         Write-Output 'Installed desktop application loaded both SDKs using its bundled JDK with Java/Node absent from PATH'
     } finally { Stop-OwnedApp }
@@ -206,13 +239,31 @@ function Save-SyntheticProfile {
 }
 try {
     $null = New-Item -ItemType Directory -Path $taskRoot
-    Install-Owned ([IO.Path]::GetFullPath($InstallerPath))
+    if (Test-Path -LiteralPath $taskScannerRoot) { throw 'scanner_fixture_conflict' }
+    $taskOwnsScanner = $true
+    Install-Owned ([IO.Path]::GetFullPath($InstallerPath)) $taskBinaryName '0'
+    if (Test-Path -LiteralPath (Join-Path $taskInstall 'resources/scanner/component.zip')) { throw 'unselected_scanner_installed' }
     Check-Installed $false
     Save-SyntheticProfile
     Check-Installed $true
     Uninstall-Owned
     if (-not (Test-Path -LiteralPath $taskProfileFile)) { throw 'uninstall_removed_saved_profile' }
     Write-Output 'Fresh installation, native SDK loading and uninstall preserving the protected profile passed'
+    # Optional component selection survives a subsequent silent upgrade without an override.
+    Install-Owned ([IO.Path]::GetFullPath($InstallerPath)) $taskBinaryName '1'
+    if (-not (Test-Path -LiteralPath (Join-Path $taskInstall 'resources/scanner/component.zip'))) { throw 'selected_scanner_missing' }
+    Install-Owned ([IO.Path]::GetFullPath($InstallerPath))
+    if (-not (Test-Path -LiteralPath (Join-Path $taskInstall 'resources/scanner/component.zip'))) { throw 'scanner_selection_not_preserved' }
+    Check-Installed $true
+    $preferences = Join-Path $taskScannerRoot 'preferences.json'
+    $null = Wait-Condition { Test-Path -LiteralPath $preferences } 'bundled_scanner_not_adopted' 90
+    if (-not (Get-Content -LiteralPath $preferences -Raw | ConvertFrom-Json).enabled) { throw 'bundled_scanner_not_enabled' }
+    Uninstall-Owned
+    # Preserve user scanner data on uninstall, remove only this test's isolated fixture below.
+    if (-not (Test-Path -LiteralPath $preferences)) { throw 'scanner_preferences_removed_by_uninstall' }
+    Remove-Item -LiteralPath $taskScannerRoot -Recurse -Force
+    Write-Output 'Optional scanner selected, adopted offline, preserved across upgrade and stopped with the application'
+
     foreach ($previous in @($PreviousInstallerPath, $RecentInstallerPath)) {
         if (-not $previous) { continue }
         $baselineBinary = if ($previous -eq $PreviousInstallerPath) { $PreviousBinaryName } else { $taskBinaryName }
@@ -230,6 +281,7 @@ try {
     }
 } finally {
     Stop-OwnedApp
+    if ($taskOwnsScanner -and (Test-Path -LiteralPath $taskScannerRoot)) { Remove-Item -LiteralPath $taskScannerRoot -Recurse -Force }
     if ($taskOwnsProfiles -and (Test-Path -LiteralPath $taskProfiles)) { Remove-Item -LiteralPath $taskProfiles -Recurse -Force }
     foreach ($path in $taskLegacyShortcuts) { if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force } }
     if (Test-Path -LiteralPath $taskRoot) { Remove-Item -LiteralPath $taskRoot -Recurse -Force }

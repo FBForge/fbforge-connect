@@ -4,7 +4,7 @@ import { invoke } from './native.js';
 import { downloadMessage } from './message-export.js';
 import { errorMessage } from './diagnostics.js';
 import CopyValue from './CopyValue.vue';
-const props = defineProps({ session: Object, source: Object, disabled: Boolean });
+const props = defineProps({ session: Object, source: Object, disabled: Boolean, blocked: Boolean });
 const emit = defineEmits(['busy']);
 const pending = ref(false),
   error = ref(''),
@@ -20,7 +20,7 @@ watch(
 );
 onBeforeUnmount(() => generation++);
 async function download() {
-  if (pending.value || props.disabled || !props.session) return;
+  if (pending.value || props.disabled || props.blocked || !props.session) return;
   const session = { ...props.session },
     source = { ...props.source },
     stamp = generation;
@@ -44,11 +44,15 @@ async function download() {
     <button
       type="button"
       class="button secondary"
-      :disabled="disabled || pending || !session"
+      :disabled="disabled || blocked || pending || !session"
       @click="download"
     >
       {{ pending ? 'Dateien werden gespeichert …' : 'Alle Dateien herunterladen' }}
     </button>
+    <p v-if="blocked" class="small-note">
+      Ein vollständiger Originaldownload ist wegen gesperrter Anlagen nicht möglich. Unauffällige Dateien
+      können Sie einzeln speichern.
+    </p>
     <p v-if="error" role="alert">{{ error }}</p>
     <div v-if="saved" role="status" class="small-note">
       <p>{{ saved.fileCount }} Dateien gespeichert.</p>

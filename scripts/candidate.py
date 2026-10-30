@@ -14,7 +14,7 @@ _updater = module_from_spec(_spec)
 _spec.loader.exec_module(_updater)
 
 REPOSITORY = "FBForge/fbforge-connect"
-LIMIT = 160 * 1024 * 1024
+LIMIT = 512 * 1024 * 1024
 
 
 def application_binary(version):

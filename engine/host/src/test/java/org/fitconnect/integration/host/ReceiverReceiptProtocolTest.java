@@ -104,9 +104,8 @@ class ReceiverReceiptProtocolTest extends ReceiverTestSupport {
                                                                             owner,
                                                                             "prepare_receipt",
                                                                             "receiptDocument",
-                                                                            new Gson()
-                                                                                    .toJson(
-                                                                                            request))
+                                                                            rendererDocument(
+                                                                                    request))
                                                                     .toString())),
                                             SessionManager.PreparedReceipt.class);
                     assertFalse(new Gson().toJson(prepared).contains("synthetic-token"));
@@ -345,5 +344,12 @@ class ReceiverReceiptProtocolTest extends ReceiverTestSupport {
                     assertEquals(discard ? 0 : 1, writes.get());
                 }
             }
+    }
+
+    private static String rendererDocument(ReceiptRequest request) {
+        var document = new Gson().toJsonTree(request).getAsJsonObject();
+        // Host-only scanner problems are never part of the renderer draft contract.
+        document.remove("blockedAttachments");
+        return document.toString();
     }
 }

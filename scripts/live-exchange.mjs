@@ -9,6 +9,7 @@ import { randomUUID, randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { exerciseDesktopUI } from './live-ui/index.mjs';
 import { probeSenderRestrictions } from './live-sender-restrictions.mjs';
+import { scannerFixture } from './live-scanner-fixture.mjs';
 
 const requireCheck = (value, code = 'acceptance_check_failed') => {
   if (!value) throw new Error(code);
@@ -688,6 +689,15 @@ try {
       signingKid: receiptSigningKid,
       runName,
       receiverProfiles,
+      ...scannerFixture({
+        openSender: (api) => openNativeSession('sender', api),
+        receiver: (api) => (api === 'v3' ? receiverV3 : receiverV2),
+        upload,
+        destination,
+        service,
+        schemaUri: applicationUri,
+        from: process.env.SENDERDEST,
+      }),
     });
   }
   console.log('Live TEST exchange acceptance completed');

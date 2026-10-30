@@ -14,6 +14,17 @@ pub(crate) async fn resource_action(
     command["apiVersion"] = serde_json::to_value(version).map_err(|_| "invalid_input")?;
     command["sessionId"] = id.into();
     let operation = command["command"].as_str().unwrap_or("").to_string();
+    if matches!(
+        operation.as_str(),
+        "verify_submission"
+            | "verify_reply"
+            | "prepare_send"
+            | "prepare_reply"
+            | "execute_send"
+            | "execute_reply"
+    ) {
+        crate::malware_scanner::ensure_local_default(app, state, version, id).await?;
+    }
     if state.environment() == crate::environments::Environment::PROD {
         if let Some(action) = crate::environments::production_action(&operation) {
             crate::environment_commands::confirm_production_action(app, action).await?;
@@ -98,14 +109,22 @@ pub(crate) async fn resource_action(
             "command": if operation == "execute_receipt" { "receipt_review" } else { "reply_receipt_review" },
             "apiVersion": version, "sessionId": id, "attemptId": command["attemptId"]
         })).await?;
-        if !review.validate(version, id) || review.data.as_object().map(|o| o.len()) != Some(1) {
+        if !review.validate(version, id) || review.data.as_object().map(|o| o.len()) != Some(2) {
             return Err("engine_protocol_error");
         }
         if review.data["requiresConfirmation"]
             .as_bool()
             .ok_or("engine_protocol_error")?
         {
-            crate::environment_commands::confirm_schema_review(app).await?;
+            let blocked = review.data["attachmentProblemCount"]
+                .as_u64()
+                .filter(|n| *n <= 39)
+                .ok_or("engine_protocol_error")?;
+            if blocked > 0 {
+                crate::environment_commands::confirm_attachment_review(app, blocked).await?;
+            } else {
+                crate::environment_commands::confirm_schema_review(app).await?;
+            }
         }
         cases::checkpoint(app, state, version, id)
             .await

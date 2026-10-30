@@ -30,10 +30,11 @@ final class ReplyReceipts {
         if (request.action().equals("accept")) {
             if (evidence == null
                     || !request.caseId().equals(evidence.caseId())
-                    || !request.replyId().equals(evidence.replyId()))
+                    || !request.replyId().equals(evidence.replyId())
+                    || !evidence.attachments().keySet().containsAll(request.blockedAttachments()))
                 throw new SessionException("verification_failed");
             return new AcceptReply(
-                    List.of(),
+                    ReceiptSigner.attachmentProblems(request.blockedAttachments()),
                     new AuthenticationTags(
                             evidence.metadata(), evidence.data(), evidence.attachments()));
         }

@@ -89,12 +89,22 @@ export async function createDesktop(directory, profiles) {
     'live_ui_context_denied',
   );
   const appData = join(process.env.APPDATA, 'org.fitconnect.integration-client');
+  const useScanner = process.env.FBFORGE_UI_SCANNER === 'true';
+  const scannerRoot = join(process.env.LOCALAPPDATA, 'org.fitconnect.integration-client', 'scanner');
   const profileRoot = join(appData, 'profiles');
   try {
     await access(appData);
     throw new Error('live_ui_existing_app_data');
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
+  }
+  if (useScanner) {
+    try {
+      await access(scannerRoot);
+      throw new Error('live_ui_existing_scanner_data');
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
   }
   const install = join(directory, 'desktop-ui', 'application');
   let app,
@@ -134,7 +144,10 @@ export async function createDesktop(directory, profiles) {
         stdio: 'ignore',
         timeout: 120000,
       });
-    if (ownsData) await rm(appData, { recursive: true, force: true });
+    if (ownsData) {
+      await rm(appData, { recursive: true, force: true });
+      if (useScanner) await rm(scannerRoot, { recursive: true, force: true });
+    }
     check(!policyCleanupFailed, 'live_ui_test_policy_cleanup_failed');
   };
   const testPolicy = (mode, port) =>
@@ -158,11 +171,15 @@ export async function createDesktop(directory, profiles) {
     );
   try {
     await mkdir(join(directory, 'desktop-ui'), { recursive: true });
-    const setup = spawnSync(process.env.FBFORGE_UI_INSTALLER, ['/S', `/D=${install}`], {
-      env: cleanEnvironment(),
-      stdio: 'ignore',
-      timeout: 120000,
-    });
+    const setup = spawnSync(
+      process.env.FBFORGE_UI_INSTALLER,
+      ['/S', `/SCANNER=${useScanner ? 1 : 0}`, `/D=${install}`],
+      {
+        env: cleanEnvironment(),
+        stdio: 'ignore',
+        timeout: 120000,
+      },
+    );
     check(!setup.error && setup.status === 0, 'live_ui_install_failed');
     installed = true;
     ownsData = true;

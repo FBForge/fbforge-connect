@@ -26,6 +26,8 @@ export function errorMessage(code) {
     batch_selection_limit: 'Bitte höchstens 100 Nachrichten für einen Durchlauf auswählen.',
     export_failed:
       'Die Dateien konnten nicht vollständig gespeichert werden. Bitte Schreibrechte und freien Speicherplatz im Zielordner prüfen.',
+    message_content_blocked:
+      'Ein vollständiger Originaldownload ist wegen gesperrter Anlagen nicht möglich. Unauffällige Inhalte können Sie einzeln speichern.',
     message_content_missing:
       'Für diese lokale Kopie sind noch keine entschlüsselten Fachdaten verfügbar. Öffnen Sie die Nachricht im Empfang und entschlüsseln und prüfen Sie die Inhalte zuerst.',
     export_expired:
@@ -102,6 +104,20 @@ const reportableCodes = new Set([
   'export_failed',
   'export_expired',
   'message_content_missing',
+  'message_content_blocked',
+  'scanner_busy',
+  'scanner_unsupported',
+  'scanner_package_invalid',
+  'scanner_install_failed',
+  'scanner_database_missing',
+  'scanner_database_invalid',
+  'scanner_database_rollback',
+  'scanner_configuration_invalid',
+  'scanner_start_failed',
+  'scanner_download_failed',
+  'scanner_update_failed',
+  'scanner_scan_failed',
+
   'batch_review_required',
   'batch_list_changed',
   'batch_selection_limit',

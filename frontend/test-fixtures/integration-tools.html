@@ -25,6 +25,25 @@
         records: [],
         data: '{}',
         scanner: { kind: 'off', host: '', port: 0, service: '' },
+        local: {
+          installed: false,
+          ready: false,
+          enabled: false,
+          automaticUpdates: false,
+          engineVersion: '1.5.4',
+          databaseVersion: null,
+          databaseCreatedAt: null,
+          databaseAgeDays: null,
+          lastUpdate: null,
+          updateFailed: false,
+          busy: false,
+          operation: '',
+          error: null,
+          downloadedBytes: 0,
+          downloadTotalBytes: 225774978,
+        },
+        holdLocalInstall: false,
+        localFailure: null,
         applied: null,
         emitted: null,
         wrong: false,
@@ -33,6 +52,40 @@
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
           fixture.calls.push({ command, args });
+          if (command === 'local_scanner_status') return structuredClone(fixture.local);
+          if (command === 'cancel_local_scanner_operation') {
+            fixture.local.busy = false;
+            fixture.local.operation = '';
+            fixture.local.error = 'content_cancelled';
+            fixture.rejectLocal?.('content_cancelled');
+            return;
+          }
+          if (command === 'install_local_scanner') {
+            if (fixture.localFailure) throw fixture.localFailure;
+            if (fixture.holdLocalInstall) {
+              fixture.local.busy = true;
+              fixture.local.operation = 'downloading';
+              fixture.local.downloadedBytes = 1000000;
+              await new Promise((resolve, reject) => {
+                fixture.finishLocal = resolve;
+                fixture.rejectLocal = reject;
+              });
+            }
+            fixture.local.installed = true;
+            fixture.local.busy = false;
+            fixture.local.operation = '';
+            fixture.local.error = null;
+            return structuredClone(fixture.local);
+          }
+          if (command === 'local_scanner_preferences') {
+            fixture.local.automaticUpdates = args.automaticUpdates;
+            return structuredClone(fixture.local);
+          }
+          if (command === 'stop_local_scanner') {
+            fixture.local.enabled = false;
+            fixture.local.ready = false;
+            return structuredClone(fixture.local);
+          }
           if (command === 'profile_workspace') {
             const request = args.request;
             if (request.action === 'save_template') fixture.workspace.templates.push(request.template);

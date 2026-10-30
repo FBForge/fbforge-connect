@@ -43,6 +43,22 @@ function schemaCatalog(schemas, allowExternalSchemas = false) {
   return schemaDocument;
 }
 function checkedSummary(data) {
+  const blocked = data.blockedAttachments ?? [];
+  if (
+    !Array.isArray(blocked) ||
+    blocked.length > 39 ||
+    blocked.some(
+      (item) =>
+        !exact(item, ['attachmentId', 'fileName']) ||
+        !uuid(item.attachmentId) ||
+        typeof item.fileName !== 'string' ||
+        !text(item.fileName, 128),
+    ) ||
+    new Set(blocked.map((item) => item.attachmentId)).size !== blocked.length ||
+    blocked.length > 0 !== data.warnings?.includes('MALWARE_ATTACHMENT_BLOCKED')
+  )
+    fail();
+
   if (
     data.processMessage !== undefined &&
     data.processMessage !== null &&
@@ -57,6 +73,7 @@ function checkedSummary(data) {
     !Number.isSafeInteger(data.partCount) ||
     data.partCount < 2 ||
     data.partCount > 41 ||
+    data.partCount - 2 + blocked.length > 39 ||
     !Number.isSafeInteger(data.warningCount) ||
     data.warningCount < 0 ||
     data.warningCount > 512 ||
@@ -94,6 +111,7 @@ export async function verifyReply(
       'warningCount',
       'warnings',
       ...(Object.hasOwn(data, 'processMessage') ? ['processMessage'] : []),
+      ...(Object.hasOwn(data, 'blockedAttachments') ? ['blockedAttachments'] : []),
     ]) ||
     !uuid(data.proofId) ||
     data.caseId !== caseId ||
@@ -131,6 +149,7 @@ export async function verifySubmission(
       'warningCount',
       'warnings',
       ...(Object.hasOwn(data, 'processMessage') ? ['processMessage'] : []),
+      ...(Object.hasOwn(data, 'blockedAttachments') ? ['blockedAttachments'] : []),
     ]) ||
     !uuid(data.proofId) ||
     data.destinationId !== destinationId ||
@@ -152,7 +171,14 @@ export async function listReceivedContents(invoke, session, proof, offset = 0, r
     { proofId: proof.proofId, offset },
   );
   if (
-    !exact(data, ['proofId', 'offset', 'total', 'parts']) ||
+    !exact(data, [
+      'proofId',
+      'offset',
+      'total',
+      'parts',
+      ...(Object.hasOwn(data, 'blockedAttachmentCount') ? ['blockedAttachmentCount'] : []),
+    ]) ||
+    (data.blockedAttachmentCount ?? 0) !== (proof.blockedAttachments?.length ?? 0) ||
     data.proofId !== proof.proofId ||
     data.offset !== offset ||
     data.total !== proof.partCount ||

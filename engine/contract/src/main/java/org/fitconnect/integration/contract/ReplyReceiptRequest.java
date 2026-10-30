@@ -11,8 +11,31 @@ public record ReplyReceiptRequest(
         String action,
         String reason,
         String description,
-        UUID attachmentId) {
+        UUID attachmentId,
+        List<UUID> blockedAttachments) {
+    public ReplyReceiptRequest(
+            UUID caseId,
+            UUID replyId,
+            String action,
+            String reason,
+            String description,
+            UUID attachmentId) {
+        this(caseId, replyId, action, reason, description, attachmentId, List.of());
+    }
+
+    public ReplyReceiptRequest withBlockedAttachments(List<UUID> ids) {
+        return new ReplyReceiptRequest(
+                caseId, replyId, action, reason, description, attachmentId, ids);
+    }
+
     public ReplyReceiptRequest {
+        if (blockedAttachments == null
+                || blockedAttachments.size() > 39
+                || blockedAttachments.stream().anyMatch(Objects::isNull)
+                || blockedAttachments.stream().distinct().count() != blockedAttachments.size()
+                || !blockedAttachments.isEmpty() && !"accept".equals(action)) invalid();
+        blockedAttachments = List.copyOf(blockedAttachments);
+
         if (caseId == null
                 || replyId == null
                 || action == null
