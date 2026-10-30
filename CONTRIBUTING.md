@@ -11,6 +11,31 @@ Formatieren: `npm run format`, `./mvnw spotless:apply` im Engine-Verzeichnis und
 
 Nach Updates der Frontend-Abhängigkeiten `npm run licenses:update` ausführen. `npm run licenses:check` prüft die mitgelieferten Lizenztexte gegen die installierten, festgelegten Versionen.
 
+## Skripte und Tests
+
+`scripts/` enthält ausführbare Projektwerkzeuge und deren gemeinsame Hilfsmodule.
+Sie werden über npm, GitHub Actions oder bewusst von Hand gestartet, nicht allein
+durch ihre Ablage in diesem Verzeichnis.
+
+| Aufgabe | Beispiele |
+| --- | --- |
+| Entwicklungsstart und Paketbau | `desktop.mjs`, `stage-engine.mjs`, `stage-scanner.mjs`, `stage-permissions.mjs` |
+| Signierung und Release-Dateien | `build-signed-windows.ps1`, `windows-signing.psm1`, `candidate.py`, `attach-candidate.py`, `update-release.py` |
+| Paket- und echte Integrationstests | `live-readonly.mjs`, `live-exchange.mjs`, `live-ui/`, `windows-install-smoke.ps1`, `windows-accessibility-smoke.ps1`, `scanner/smoke.mjs` |
+| Dokumentation, Lizenzen und CI-Steuerung | `capture-help.mjs`, `export-guide.mjs`, `export-wiki.mjs`, `frontend-licenses.mjs`, `ci/` |
+
+Die automatisierten JavaScript- und Browser-Testfälle liegen unter `tests/`,
+Java-Tests in den jeweiligen Maven-Modulen, Rust-Tests bei ihren Modulen und unter
+`desktop/native-contracts/`. Die ausführbaren Integrationstest-Treiber unter
+`scripts/` brauchen teilweise einen gebauten Installer, Windows, einen echten
+Scanner oder ausdrücklich bereitgestellte TEST-Zugänge. `npm test` startet diese
+externen Abläufe nicht. Test-Fixtures und Test-Treiber werden nicht mit der App
+ausgeliefert.
+
+`scripts/verify-windows.cmd` ist ein manuell aufrufbarer Einstieg für einen Teil
+der lokalen Prüfungen; die Workflows verwenden ihn nicht. Er ersetzt weder die
+vollständigen Prüfungen nach [BUILDING.md](BUILDING.md) noch die Release-Abnahme.
+
 ## Änderungen
 
 - Logik im zuständigen Modul halten. SDK-Unterschiede gehören in die Adapter.
@@ -79,26 +104,10 @@ Installation derselben Version geprüft.
 
 ## Windows-Pakete
 
-Installer: `npm run desktop:build -- -- --locked`. Ausgabe: `desktop/target/release/bundle/nsis/`. Für ein Paket mit eingebettetem WebView2-Installer: `npm run desktop:build:offline -- -- --locked`.
-
-Vor einem Release Funktionen, Neuinstallation, Upgrade mit Profilerhalt, Tastatur, Screenreader und Monitor-Skalierung prüfen. Automatisierte CI-Prüfungen ersetzen die manuelle Zielgeräteabnahme nicht.
-
-Die offizielle Signierung und Veröffentlichung folgen [RELEASING.md](RELEASING.md). Der Workflow
-erzeugt Prüfsumme, `build-info.json` und `signature-info.json`; diese Herkunftsnachweise nicht von Hand
-ändern. Installation und Upgrade werden am signierten Paket unabhängig wiederholt.
-
-### Signierung über Actions
-
-1. Einen eigenen Windows-x64-Runner mit Label `fbforge-signing` unter einem separaten Windows-Benutzer einrichten. Buildwerkzeuge, Windows SDK und den lokalen Signaturdienst installieren. Den Runner interaktiv starten, nicht als Dienst. Das Zertifikat muss im Zertifikatspeicher dieses Benutzers verfügbar sein.
-2. Das GitHub-Environment `windows-signing` anlegen. Als einzigen Required Reviewer `FBForge` eintragen. „Prevent self-review“ ausschalten, damit der Eigentümer seinen eigenen Lauf freigeben kann.
-3. Repository-Variablen `WINDOWS_SIGNING_THUMBPRINT` und `WINDOWS_TIMESTAMP_URL` setzen. Gemeint sind der öffentliche Zertifikatsfingerabdruck ohne Leerzeichen und der RFC-3161-Zeitstempelserver des Anbieters. Keine Zugangsdaten oder TOTP-Geheimnisse in GitHub speichern.
-4. Bei diesem öffentlichen Repository müssen alle externen Fork-PRs auf manuelle Workflow-Freigabe warten. Fork-PR-Workflows niemals auf dem Signier-Runner freigeben. Den Signier-Runner ausschließlich für den manuellen Signierjob verwenden und außerhalb der Signierung anhalten.
-5. Für den aktuellen Commit `Windows release validation` manuell auf `main` starten und vollständig erfolgreich abschließen. `Sign Windows candidate` auf derselben Branch-Version mit dessen Lauf-ID starten und den Signierjob freigeben.
-
-Der Job signiert Anwendung, Deinstallationsprogramm und Setup. Ein separater GitHub-Runner prüft Signaturen, Zeitstempel, Installation und Upgrade vom unsigned Prüfpaket. Erst danach entsteht das Artefakt `windows-alpha-signed-setup`. Es wird nichts veröffentlicht.
-
-GitHub bietet den manuellen Workflow erst an, wenn er nach Review im Default-Branch liegt.
-
-`attach-candidate.yml` hängt ausschließlich ein unabhängig geprüftes, signiertes Paket an einen unveröffentlichten Entwurf. Eingaben: Lauf-ID, Commit, Version, Installer-SHA-256 und Entwurfs-ID. Es veröffentlicht nichts und ersetzt keine abweichenden Dateien.
+Lokale Installer, Voraussetzungen und Buildbefehle stehen in [BUILDING.md](BUILDING.md).
+Die einmalige Runner-Einrichtung, manuelle Abnahme, unabhängige Paketprüfung,
+Signierung und Veröffentlichung stehen in [RELEASING.md](RELEASING.md).
+Diese Abläufe werden dort zentral gepflegt. Ein normaler Entwicklungsbuild
+benötigt keinen Signier-Runner.
 
 Beiträge stehen unter der EUPL-1.2. Lizenzhinweise erhalten. Sicherheitslücken gemäß [SECURITY.md](SECURITY.md) melden.

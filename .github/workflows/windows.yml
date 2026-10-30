@@ -147,6 +147,8 @@ jobs:
         run: npm run build:frontend
       - name: Install browser for synthetic UI regression tests
         run: npx playwright install chromium
+      - name: Test production chunks and built application startup
+        run: npm run test:bundle
       - name: Fetch immutable public FIM schema fixtures with integrity checks
         run: node scripts/fetch-public-schemas.mjs
       - name: Test application workflows in browser

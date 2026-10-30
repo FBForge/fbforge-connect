@@ -50,6 +50,14 @@ Der Befehl startet Frontend und Desktop-Anwendung gemeinsam. Frontend-Änderunge
 
 Zuerst die optionale Scanner-Komponente einschließlich geprüfter Datenbanken und passendem Quellcode bereitstellen. Beide Installer enthalten diese abwählbare Komponente; die Unterscheidung bei WebView2 bleibt davon unabhängig.
 
+Fehlt das Paket bei einem Windows-Installer-Build, bereitet `desktop:build` es
+automatisch vor dem Rust-Build vor. Das gilt auch für `desktop:build:offline` und
+lokale PowerShell-Buildhilfen, die diese npm-Befehle verwenden. GnuPG und die
+Download-Voraussetzungen bleiben erforderlich. Vorhandene vorbereitete Pakete
+werden wiederverwendet; nach Änderungen am Scanner-Manifest erneut ausdrücklich
+`npm run stage:scanner` ausführen. Entwicklungsstart und `build --debug` laden
+keinen Scanner nach. Ein fehlgeschlagener Vorbereitungsschritt bricht den Build ab.
+
 ```powershell
 npm run stage:scanner
 npm run desktop:build -- -- --locked
@@ -69,12 +77,26 @@ Der erste Rust-Build und das Laden der WebView2-Dateien können einige Minuten d
 
 Der öffentliche Projekt-Prüfschlüssel ist in `desktop/update-public-key.txt` hinterlegt. Für normale Entwicklungsbuilds keinen neuen Schlüssel erzeugen. Nur der Projekteigentümer richtet das dauerhafte Schlüsselpaar ein oder plant eine Schlüsselrotation. Ein Build ohne gültigen Prüfschlüssel deaktiviert den Updater erkennbar; der manuelle Download bleibt verfügbar.
 
+Diese Datei ist die gemeinsame Quelle für die Anwendung, den Signierablauf und die
+unabhängige Paketprüfung. Der Schlüsselwert wird nicht zusätzlich in der Dokumentation
+oder `tauri.conf.json` gepflegt. Bei der Erzeugung entsteht außerdem die öffentliche
+Datei `connect-updater.key.pub` neben dem privaten Schlüssel auf dem Signierrechner;
+das Skript kopiert deren Inhalt in die Repository-Datei. Beide öffentlichen Kopien
+sind beabsichtigt. Die private `.key`-Datei bleibt außerhalb des Repositorys.
+
 Der Projekteigentümer erzeugt das dauerhafte Schlüsselpaar **auf dem Windows-
 Signierrechner**. Für die einmalige Ersteinrichtung aus dem Checkout ausführen:
 
 ```powershell
 .\scripts\setup-update-signing.ps1
 ```
+
+Diese einmalige Schlüsselerzeugung funktioniert auch aus einem WSL-UNC-Checkout
+in Windows-PowerShell, ohne zusätzlichen Projektpfad als Argument. Das Skript
+startet die festgelegte Windows-Tauri-CLI aus einem lokalen temporären Verzeichnis;
+es verwendet weder WSL-`node_modules` noch einen UNC-Arbeitsordner für CMD.
+`-KeyPath` bezeichnet ausschließlich eine neue private Schlüsseldatei auf einem
+lokalen Windows-Laufwerk außerhalb des Repositorys.
 
 Ein nicht leeres Passwort vergeben. Standardpfad des privaten Schlüssels:
 `%LOCALAPPDATA%\FBForge\signing\connect-updater.key`. Das Skript überschreibt
@@ -129,6 +151,7 @@ npm run format:check
 npm run licenses:check
 npm test
 npx playwright install chromium
+npm run test:bundle
 node scripts/fetch-public-schemas.mjs
 npm run test:ui
 cargo +1.99.0 fmt --manifest-path desktop/Cargo.toml --all -- --check
@@ -136,6 +159,16 @@ cargo +1.99.0 fmt --manifest-path desktop/native-contracts/Cargo.toml --all -- -
 ```
 
 Die öffentlichen Schema-Fixtures werden vor dem Speichern anhand ihrer Prüfsummen geprüft. Ohne diesen Download werden die zugehörigen Integrationstests übersprungen. Auf Linux kann Playwright zusätzlich Systembibliotheken benötigen. Dafür `npx playwright install --with-deps chromium` verwenden, sofern Systempakete installiert werden dürfen.
+
+`test:bundle` baut die Produktionsdateien in einem temporären Verzeichnis und
+prüft Paketgrößen sowie Start, Navigation, Lizenztexte und dynamisch geladene
+Werkzeuge im Browser. Die Warnschwelle des Bundlers bleibt unverändert.
+
+XML-Negativtests übergeben bewusst syntaktisch falsche Daten oder verbotene
+DOCTYPE-Angaben an das SDK. Dessen Parser kann dabei `[Fatal Error]` auf die
+Konsole schreiben, obwohl der Test die erwartete Ablehnung erfolgreich prüft.
+Prüfen Sie die zugehörige JUnit-Zusammenfassung: `Failures: 0, Errors: 0` bedeutet
+bestandene Tests. Ein tatsächlicher Test- oder Buildfehler darf nicht übergangen werden.
 
 Unter Windows zusätzlich die vollständigen nativen Tests ausführen:
 
