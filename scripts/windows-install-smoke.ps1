@@ -123,9 +123,26 @@ function Find-Button($Root, [string]$Name) {
 function Invoke-Named($Root, [string]$Name) {
     $element = Wait-Condition { Find-Button $Root $Name } ('installer_ui_control_missing: ' + $Name)
     $pattern = $null
-    if (-not $element.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) { throw 'installer_ui_invoke_unavailable' }
     $element.SetFocus()
-    $pattern.Invoke()
+    if ($element.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
+        $pattern.Invoke()
+        return
+    }
+    # WebView2 icon buttons can be keyboard-operable without advertising InvokePattern.
+    # Never send a key until the exact owned window and requested button hold focus.
+    $handle = [IntPtr]$Root.Current.NativeWindowHandle
+    $null = [InstallerWindowFocus]::SetForegroundWindow($handle)
+    $element.SetFocus()
+    $null = Wait-Condition {
+        $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
+        [InstallerWindowFocus]::GetForegroundWindow() -eq $handle -and
+            $focused.Current.ProcessId -eq $element.Current.ProcessId -and
+            $focused.Current.Name -eq $Name -and
+            $focused.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button
+    } ('installer_ui_keyboard_target_missing: ' + $Name) 15
+    $shell = New-Object -ComObject WScript.Shell
+    try { $shell.SendKeys(' ') }
+    finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
 }
 function Open-Diagnostics($Root) {
     # UIA Invoke is asynchronous and can be lost while a new WebView activates.
