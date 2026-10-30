@@ -209,6 +209,12 @@ export function useDestinationManager(props, emit) {
     target.value?.focus();
     target.value?.scrollIntoView({ block: 'start' });
   }
+  async function existing() {
+    if (disabled.value) return;
+    setupOpen.value = false;
+    await back();
+    if (!page.value) await search();
+  }
   async function back() {
     view.value = 'list';
     await nextTick();
@@ -377,6 +383,7 @@ export function useDestinationManager(props, emit) {
   }
   return {
     setupOpen,
+    existing,
     setupNotice,
     page,
     selected,

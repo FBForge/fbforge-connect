@@ -80,7 +80,7 @@ const labels = {
         </button>
       </div>
     </template>
-    <p v-if="state.error" class="status-badge error" role="alert">{{ state.error }}</p>
+    <p v-if="state.error" class="action-notice error" role="alert">{{ state.error }}</p>
     <details v-if="state.code">
       <summary>Technischen Fehlercode anzeigen</summary>
       <code>{{ state.code }}</code>

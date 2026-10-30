@@ -151,6 +151,9 @@ pub async fn enable(app: tauri::AppHandle) -> Result<u16, &'static str> {
     .await
 }
 
+pub fn busy(app: &tauri::AppHandle) -> bool {
+    app.state::<LocalScanner>().busy.load(Ordering::SeqCst)
+}
 pub fn enabled(app: &tauri::AppHandle) -> Result<bool, &'static str> {
     let state = app.state::<LocalScanner>();
     if state.busy.load(Ordering::SeqCst) {
@@ -342,7 +345,7 @@ pub async fn local_scanner_preferences(
     automatic_updates: bool,
 ) -> Result<View, &'static str> {
     if automatic_updates {
-        approve(&app, "Automatische Signaturupdates erlauben?", "Beim Start von FBForge Connect darf FreshClam höchstens einmal täglich offizielle ClamAV-Signaturen aktualisieren. Dafür werden externe ClamAV-Server kontaktiert; Dokumente und FIT-Connect-Zugangsdaten werden nicht übertragen.", "Automatische Updates erlauben").await?;
+        approve(&app, "Automatische Signaturupdates erlauben?", "Beim Start von FBForge Connect darf FreshClam höchstens einmal täglich offizielle ClamAV-Signaturen aktualisieren. Dafür werden externe ClamAV-Server kontaktiert. Dokumente und FIT-Connect-Zugangsdaten werden nicht übertragen.", "Automatische Updates erlauben").await?;
     }
     perform(app.clone(), "saving", move |_, _, runtime| {
         runtime.preferences.automatic_updates = automatic_updates;

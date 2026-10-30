@@ -72,6 +72,10 @@ export function useSendAttempt({
         dataFile.value || new Blob([dataText.value]),
         attachments.value,
         {
+          onPhase: () => {
+            progress.value =
+              'Fachdaten und Anlagen werden geprüft. Bei aktiviertem Virenscan wird auf das Scan-Ergebnis gewartet …';
+          },
           onProgress: (item) => {
             progress.value = `${(item.receivedBytes / 1024).toFixed(0)} / ${(item.totalBytes / 1024).toFixed(0)} KiB lokal übertragen`;
           },

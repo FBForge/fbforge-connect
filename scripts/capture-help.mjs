@@ -94,8 +94,8 @@ try {
   await button('Fiktiven Beispielvergleich öffnen').click();
   await expect(page.locator('.schema-change-list')).toContainText('Jetzt ein Pflichtfeld');
   await capture('schema-comparison');
-  await button('Kanalschemas').click();
-  await page.getByRole('heading', { name: 'Eigene JSON-Kanalschemas erstellen', exact: true }).waitFor();
+  await button('Antwortschemas').click();
+  await page.getByRole('heading', { name: 'Antwortschema erstellen', exact: true }).waitFor();
   await capture('channel-schemas');
   await capture(
     'channel-schema-export',
@@ -419,6 +419,7 @@ try {
         : previous(command, args);
   });
   await button('Testwerkzeuge').click();
+  await button('Testfälle und Abläufe').click();
   await button('Testabläufe').click();
   await page.locator('#test-flow-file').setInputFiles({
     name: 'fiktiv.fctest.json',
@@ -427,9 +428,9 @@ try {
   });
   await button('Durchlauf starten').click();
   await capture('test-flows', page.getByRole('heading', { name: 'Wiederholbare Testabläufe', exact: true }));
-  await button('Malwarescanner').click();
+  await button('Virenscan').click();
   await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('clamav');
-  await capture('malware-scanner', page.getByRole('heading', { name: 'Virenscan', exact: true }));
+  await capture('malware-scanner', page.getByRole('heading', { name: 'Virenscan', exact: true, level: 2 }));
   await page.evaluate(() => {
     const previous = window.__TAURI_INTERNALS__.invoke;
     window.__TAURI_INTERNALS__.invoke = (command, args) =>

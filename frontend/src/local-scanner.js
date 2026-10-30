@@ -92,3 +92,14 @@ export function scannerError(cause) {
     }[code] || 'Der lokale Scanner konnte nicht eingerichtet werden. Es liegt keine erfolgreiche Prüfung vor.'
   );
 }
+
+export const scannerOperation = (operation) =>
+  ({
+    initializing: 'Lokale Komponente wird geprüft',
+    starting: 'Scanner wird gestartet',
+    stopping: 'Scanner wird beendet',
+    installing: 'Scanner wird installiert',
+    downloading: 'Engine wird heruntergeladen',
+    'updating-database': 'Virensignaturen werden aktualisiert',
+    saving: 'Scanner-Einstellung wird gespeichert',
+  })[operation] || 'Scanner-Aktion läuft';

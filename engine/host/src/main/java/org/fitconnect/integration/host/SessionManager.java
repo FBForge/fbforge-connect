@@ -36,9 +36,10 @@ final class SessionManager implements AutoCloseable {
             List<ReplySchema> schemas,
             List<SubmissionInput.ProcessMessage> processMessages) {}
 
-    record PreparedReply(ReplyAccess.State attempt, ReplyDraft.Summary summary) {}
+    record PreparedReply(
+            ReplyAccess.State attempt, ReplyDraft.Summary summary, String scanStatus) {}
 
-    record Prepared(SendAccess.State attempt, SubmissionDraft.Summary summary) {}
+    record Prepared(SendAccess.State attempt, SubmissionDraft.Summary summary, String scanStatus) {}
 
     record ReplyChannels(List<ReplyChannelReference> channels) {}
 

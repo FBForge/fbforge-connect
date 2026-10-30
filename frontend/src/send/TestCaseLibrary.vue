@@ -86,8 +86,8 @@ function saveDraft(name, exportOnly = false) {
     const pack = await props.createPack(name.trim());
     if (!pack) return;
     if (exportOnly) {
-      downloadLocal(serializeTestPack(pack), 'testfall.fctest.json');
-      notice.value = 'Testfall als unverschlüsselte Datei exportiert.';
+      if (await downloadLocal(serializeTestPack(pack), 'testfall.fctest.json'))
+        notice.value = 'Testfall als unverschlüsselte Datei exportiert.';
     } else await store(pack);
   }, 'save');
 }

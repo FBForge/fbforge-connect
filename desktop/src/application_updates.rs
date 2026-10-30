@@ -217,7 +217,11 @@ pub async fn install_application_update(
         release
     };
     let result = async {
-        if engine.process.try_lock().is_err() || exports.active().await {
+        if engine.process.try_lock().is_err()
+            || exports.active().await
+            || crate::local_scanner::busy(&app)
+            || app.state::<crate::file_saves::FileSaves>().active()
+        {
             return Err("update_activity_pending");
         }
         if !confirm_install(&app, &version).await? {
@@ -238,7 +242,10 @@ pub async fn install_application_update(
             .process
             .try_lock()
             .map_err(|_| "update_activity_pending")?;
-        if exports.active().await {
+        if exports.active().await
+            || crate::local_scanner::busy(&app)
+            || app.state::<crate::file_saves::FileSaves>().active()
+        {
             return Err("update_activity_pending");
         }
         engine.updating.store(true, Ordering::Release);

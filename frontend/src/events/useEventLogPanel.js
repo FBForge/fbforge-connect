@@ -1,3 +1,4 @@
+import { eventDetailRows } from '../event-details.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { invoke } from '../native.js';
 import {
@@ -14,6 +15,7 @@ import { resetsSessions } from '../sessions.js';
 // Owns event log panel state and its session-bound lifecycle.
 export function useEventLogPanel(props, emit) {
   const diagnostic = ref('');
+  const eventDetails = shallowRef({});
   const recent = computed(() =>
     (props.knownTargets || []).filter(
       (item) => item.sessionId === props.session?.sessionId && item.apiVersion === props.session?.apiVersion,
@@ -108,8 +110,23 @@ export function useEventLogPanel(props, emit) {
   const time = (value) => new Date(value).toLocaleString('de-DE');
   async function changePage(value) {
     page.value = value;
+    await run('Ereignisdetails lesen', async (active, current) => {
+      await hydrate(active, current);
+    });
     await nextTick();
     heading.value?.focus();
+  }
+  async function hydrate(active, current) {
+    const log = result.value;
+    if (!log) return;
+    for (const event of shown.value) {
+      if (!current()) return;
+      if (eventDetails.value[event.eventId]) continue;
+      const rawText = await readEventDocument(invoke, active, log.logId, event, 'claims');
+      if (!current()) return;
+      const rows = eventDetailRows(rawText, event.eventType);
+      eventDetails.value = { ...eventDetails.value, [event.eventId]: { rows } };
+    }
   }
   async function release(active, id) {
     try {
@@ -128,6 +145,7 @@ export function useEventLogPanel(props, emit) {
     result.value = null;
     owner = null;
     events.value = [];
+    eventDetails.value = {};
     query.value = '';
     page.value = 0;
     return previous && active ? release(active, previous.logId) : Promise.resolve();
@@ -152,6 +170,7 @@ export function useEventLogPanel(props, emit) {
   );
   watch(query, () => {
     page.value = 0;
+    if (result.value && !disabled.value) void run('Ereignisdetails lesen', hydrate);
   });
   watch(
     () => props.visible,
@@ -250,6 +269,7 @@ export function useEventLogPanel(props, emit) {
         result.value = loaded;
         events.value = rows.sort((left, right) => Date.parse(left.issuedAt) - Date.parse(right.issuedAt));
         loaded = null;
+        await hydrate(active, current);
         await nextTick();
         if (current()) heading.value?.focus();
       } finally {
@@ -286,6 +306,7 @@ export function useEventLogPanel(props, emit) {
   }
   return {
     diagnostic,
+    eventDetails,
     recent,
     mode,
     replyId,

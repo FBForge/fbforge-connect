@@ -23,6 +23,9 @@ export function errorMessage(code) {
   if (typeof receiveCode === 'string' && Object.hasOwn(receiveFailures, receiveCode))
     return receiveFailures[receiveCode].message;
   const messages = {
+    scanner_busy:
+      'Der Virenscan wird gerade eingerichtet oder aktualisiert. Sie können weiterarbeiten. Warten Sie vor der Inhaltsprüfung oder öffnen Sie „Virenscan“, um den Vorgang abzubrechen.',
+    export_busy: 'Ein Speichern-Dialog ist bereits geöffnet. Schließen Sie ihn zuerst.',
     batch_selection_limit: 'Bitte höchstens 100 Nachrichten für einen Durchlauf auswählen.',
     export_failed:
       'Die Dateien konnten nicht vollständig gespeichert werden. Bitte Schreibrechte und freien Speicherplatz im Zielordner prüfen.',

@@ -1,3 +1,4 @@
+import { downloadLocal } from '../local-download.js';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { isTauri } from '@tauri-apps/api/core';
 import { invoke, diagnosticLog } from '../native.js';
@@ -59,20 +60,15 @@ export function useDiagnostics({
     }
   }
   const trace = ref(diagnosticLog.snapshot());
-  let unsubscribe, downloadUrl, downloadTimer;
+  let unsubscribe;
   onMounted(() => {
     unsubscribe = diagnosticLog.subscribe((entries) => {
       trace.value = entries;
     });
   });
-  function clearDownload() {
-    clearTimeout(downloadTimer);
-    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-    downloadUrl = null;
-  }
+
   onBeforeUnmount(() => {
     unsubscribe?.();
-    clearDownload();
   });
   const reportJson = computed(() =>
     JSON.stringify(
@@ -88,15 +84,7 @@ export function useDiagnostics({
     ),
   );
   function exportReport() {
-    clearDownload();
-    downloadUrl = URL.createObjectURL(new Blob([reportJson.value], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `FBForge-Connect-Diagnose-${version}.json`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    downloadTimer = setTimeout(clearDownload, 30000);
+    return downloadLocal(reportJson.value, `FBForge-Connect-Diagnose-${version}.json`);
   }
   function clearHistory() {
     events.value = [];

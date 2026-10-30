@@ -2,11 +2,17 @@
 
 ## 0.3.0 (in Entwicklung)
 
+- Formulare, Dropdowns und Checkboxen mit einheitlichen Abständen, breiten mehrzeiligen Feldern und lesbaren Auswahltexten. Testpakete und Abläufe sind gemeinsam gruppiert. Der Assistent heißt „Antwortschemas“.
+- Virenscan direkt in der Navigation und mit sichtbarem Status beim Senden und Empfangen. Tatsächlich geprüfte Anlagen und Scan-Ergebnisse werden ausdrücklich ausgewiesen. Signaturaktualisierungen bleiben nach einem Seitenwechsel sichtbar und abbrechbar, ohne die übrigen Arbeitsbereiche zu sperren.
+- Einzeldownloads und lokale Exporte verwenden in der Desktop-Anwendung den nativen Speichern-Dialog. Der Benutzer-Downloadordner wird vorgeschlagen. Erfolg, Abbruch und Schreibfehler bleiben sichtbar. Das Empfangsergebnis bleibt nach einem Speicherfehler nutzbar.
+- Event-Log-Details einschließlich Anlagen, Authentifizierungstags und Problemen direkt in der Übersicht. Originaldokumente bleiben zusätzlich erreichbar.
+- „Bestehende Destinations“ lädt die Übersicht und führt aus der Detailansicht zurück. Fehlende veröffentlichte Update-Informationen werden von Netzwerk- und Signaturfehlern unterschieden. Update-Downloads unterstützen die gleiche Größenbegrenzung wie der native Kern.
+
 - Windows-Installer-Builds bereiten ein fehlendes optionales Scanner-Paket automatisch vor dem Rust-Build vor; eine fehlgeschlagene Vorbereitung stoppt den Ablauf. Entwicklungsstarts und Debug-Builds bleiben ohne automatischen Scanner-Download.
 - Lizenztexte und Destination-Werkzeuge in eigene Frontend-Pakete aufgeteilt. Eine zusätzliche Produktionsprüfung kontrolliert Paketgrößen und die Ausführung der gebauten Oberfläche.
 
 - Prozessantworten direkt aus übernommenen Modellzuordnungen oder vereinbarten Kennungen zusammenstellen. Schemahinweise, Duplikate und Limits prüfen; Modellzuordnungen auch beim Bearbeiten von Destination-Prozessnachrichten übernehmen.
-- Lokaler JSON-Kanalschema-Assistent für fachliche Statusmitteilungen und Nachforderungen: editierbare Felder, Pflichtangaben und Statuswerte; Schema-, Beispiel- und Entwurfsexport mit Wiederimport. Schema-Kennungen aus Dateien in die Konfiguration übernehmen; der Versand bleibt an das aktuelle Antwortangebot des Empfängers gebunden.
+- Lokaler Assistent für JSON-Antwortschemas für fachliche Statusmitteilungen und Nachforderungen: editierbare Felder, Pflichtangaben und Statuswerte; Schema-, Beispiel- und Entwurfsexport mit Wiederimport. Schema-Kennungen aus Dateien in die Konfiguration übernehmen; der Versand bleibt an das aktuelle Antwortangebot des Empfängers gebunden.
 
 - Empfang mit Alter aus geprüften Serverereignissen, Filtern und „Nächste Einreichung öffnen“. Technische Abholfristen und unbekannte Zeitpunkte ausdrücklich anzeigen.
 - Ungewissen Versand mit bekannten Nachrichtenkennungen lesend gegen signierte Serverereignisse prüfen; keine automatische Wiederholung.
@@ -14,7 +20,7 @@
 - Destination-Vorlagen mit Import, Export und Feldvergleich. Profil-, umgebungs- und API-gebundene Windows-DPAPI-Historie für Konfigurationsänderungen einschließlich ungewissem Ausgang.
 - Wiederholbare Testabläufe ergänzen Testfälle: Versand, Eingang, Inhalts-/Anlagenvergleich, erwartete Bestätigung und Antwort anhand lokaler Nachrichten prüfen; Definition und Durchlaufergebnis exportieren.
 - Optionaler lokaler ClamAV 1.5.4 im Windows-Setup, offline nachinstallierbares Komponentenpaket und bewusste Online-Einrichtung. Geprüfte offizielle Engine-Dateien, signierte Virendatenbanken, sichtbarer Signaturstand und zustimmungspflichtige FreshClam-Updates. Eigene ClamAV-/ICAP-Gegenstellen bleiben auswählbar.
-- Metadaten, Fachdaten und Anlagen beim Empfang sowie vor Versand und Antwort scannen. Betroffene Anlagen bleiben gesperrt; geprüfte übrige Inhalte bleiben lesbar. Einzelannahmen mit Anlagenproblemen benötigen zusätzliche Bestätigung und melden die Kennungen im signierten Accept. Sammelannahme und vollständiger Originalexport bleiben dafür gesperrt. Unvollständige Scans bleiben blockierend. Kein gehosteter Dienst, Sanitizing oder zusätzliche Quarantäne.
+- Metadaten, Fachdaten und Anlagen beim Empfang scannen. Vor Versand und Antwort werden Fachdaten und Anlagen geprüft. Betroffene Anlagen bleiben gesperrt; geprüfte übrige Inhalte bleiben lesbar. Einzelannahmen mit Anlagenproblemen benötigen zusätzliche Bestätigung und melden die Kennungen im signierten Accept. Sammelannahme und vollständiger Originalexport bleiben dafür gesperrt. Unvollständige Scans bleiben blockierend. Kein gehosteter Dienst, Sanitizing oder zusätzliche Quarantäne.
 
 - Integrierte Updates für Windows x64: automatische, abschaltbare Suche und manuelle Suche unter „Info“, Hinweis auf neue stabile GitHub-Releases, Downloadfortschritt und abbrechbarer Download.
 - Installer erst nach erfolgreicher Paket- und Versionssignaturprüfung sowie nativer Bestätigung starten. Laufende Aktionen und offene Exporte blockieren die Installation; gespeicherte Schlüssel werden vor dem Beenden gesichert.

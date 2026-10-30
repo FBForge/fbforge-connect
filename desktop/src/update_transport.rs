@@ -1,5 +1,7 @@
 //! Bounded HTTPS requests independent of any FIT-Connect session or credentials.
-use crate::update_policy::{trusted_transport, ENDPOINT, MAX_MANIFEST, MAX_PACKAGE};
+use crate::update_policy::{
+    response_error, trusted_transport, ENDPOINT, MAX_MANIFEST, MAX_PACKAGE,
+};
 use reqwest::{redirect::Policy, Client};
 use std::{
     sync::atomic::{AtomicBool, Ordering},
@@ -29,6 +31,7 @@ fn client() -> Result<Client, &'static str> {
 async fn read(
     url: &str,
     limit: usize,
+    manifest: bool,
     cancelled: &AtomicBool,
     mut progress: impl FnMut(usize, Option<u64>),
 ) -> Result<Vec<u8>, &'static str> {
@@ -37,7 +40,10 @@ async fn read(
         .send()
         .await
         .map_err(|_| "update_network_failed")?;
-    if !response.status().is_success() || !trusted_transport(response.url().as_str()) {
+    if let Some(error) = response_error(response.status().as_u16(), manifest) {
+        return Err(error);
+    }
+    if !trusted_transport(response.url().as_str()) {
         return Err("update_network_failed");
     }
     let total = response.content_length();
@@ -69,7 +75,13 @@ async fn read(
 pub async fn manifest() -> Result<serde_json::Value, &'static str> {
     let bytes = tokio::time::timeout(
         Duration::from_secs(20),
-        read(ENDPOINT, MAX_MANIFEST, &AtomicBool::new(false), |_, _| {}),
+        read(
+            ENDPOINT,
+            MAX_MANIFEST,
+            true,
+            &AtomicBool::new(false),
+            |_, _| {},
+        ),
     )
     .await
     .map_err(|_| "update_network_failed")??;
@@ -81,5 +93,5 @@ pub async fn package(
     cancelled: &AtomicBool,
     progress: impl FnMut(usize, Option<u64>),
 ) -> Result<Vec<u8>, &'static str> {
-    read(url, MAX_PACKAGE, cancelled, progress).await
+    read(url, MAX_PACKAGE, false, cancelled, progress).await
 }

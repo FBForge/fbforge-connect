@@ -42,3 +42,6 @@ pub mod scanner_runtime;
 
 #[path = "../src/scanner_install.rs"]
 pub mod scanner_install;
+
+#[path = "../src/file_save_store.rs"]
+pub mod file_save_store;

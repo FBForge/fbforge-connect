@@ -1,4 +1,5 @@
 <script setup>
+import ScanResult from '../ScanResult.vue';
 import { useEnvironment } from '../environments.js';
 const environment = useEnvironment();
 import ServiceLabel from '../ServiceLabel.vue';
@@ -51,6 +52,7 @@ const { prepared, working, error, dialog, confirmedSchemaValidation, confirmedSe
         <dt>Anlagen</dt>
         <dd>{{ prepared.summary.attachments.length }}</dd>
       </dl>
+      <ScanResult :status="prepared.scanStatus" :attachments="prepared.summary.attachments" outgoing />
       <ul v-if="prepared.summary.replyOffer?.processMessages?.length">
         <li
           v-for="item in prepared.summary.replyOffer.processMessages"

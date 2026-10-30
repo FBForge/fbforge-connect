@@ -3,7 +3,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { invoke } from '../native.js';
 import { checkedLocalScanner, scannerError } from '../local-scanner.js';
 const props = defineProps({ disabled: Boolean, connected: Boolean });
-const emit = defineEmits(['busy', 'changed', 'disable']);
+const emit = defineEmits(['changed', 'disable']);
 const status = ref(null),
   error = ref(''),
   pending = ref(false);
@@ -26,7 +26,6 @@ async function run(command, args = {}) {
   if (pending.value || props.disabled || status.value?.busy) return;
   pending.value = true;
   error.value = '';
-  emit('busy', true);
   try {
     const value = checkedLocalScanner(await invoke(command, args));
     if (alive) {
@@ -37,7 +36,6 @@ async function run(command, args = {}) {
     if (alive) error.value = scannerError(cause);
   } finally {
     if (alive) pending.value = false;
-    emit('busy', false);
     await refresh();
   }
 }
@@ -79,6 +77,22 @@ onBeforeUnmount(() => {
       Optionale geprüfte Komponente für Windows x64. Der Scan läuft auf Ihrem Rechner. Die Engine und ihre
       Virensignaturen werden getrennt von FIT-Connect-Zugängen verwaltet.
     </p>
+    <p v-if="status" role="status">
+      <span
+        class="status-badge"
+        :class="status.busy ? 'info' : status.ready ? 'ok' : status.enabled ? 'warn' : 'info'"
+      >
+        {{
+          status.busy
+            ? operation()
+            : status.ready
+              ? 'Scanner bereit'
+              : status.enabled
+                ? 'Scanner nicht bereit'
+                : 'Scanner ausgeschaltet'
+        }}
+      </span>
+    </p>
     <dl v-if="status" class="key-value-list">
       <dt>Installation</dt>
       <dd>{{ status.installed ? `ClamAV ${status.engineVersion}` : 'Nicht installiert' }}</dd>
@@ -106,7 +120,14 @@ onBeforeUnmount(() => {
     <p v-if="status?.updateFailed" role="status">
       Die letzte Signaturaktualisierung ist fehlgeschlagen. Der bisherige Bestand wurde beibehalten.
     </p>
-    <p v-if="status?.busy" role="status">{{ operation() }} …</p>
+    <div v-if="pending || status?.busy" class="scan-progress" role="status">
+      <strong>{{ status?.busy ? operation() : 'Aktion wird vorbereitet' }} …</strong>
+      <progress v-if="status?.operation !== 'downloading'" aria-label="Scanner-Aktionsfortschritt"></progress>
+      <p>
+        Sie können weiterarbeiten. Solange der Scanner nicht bereit ist, wird keine erfolgreiche
+        Inhaltsprüfung bestätigt.
+      </p>
+    </div>
     <progress
       v-if="status?.busy && status.operation === 'downloading'"
       :value="progress()"
@@ -172,8 +193,37 @@ onBeforeUnmount(() => {
     </label>
     <p class="small-note">
       Offline-Import benötigt main.cvd, daily.cvd und bytecode.cvd sowie die jeweils zugehörige .sign-Datei.
-      Herkunft und Signaturen werden geprüft; ältere Datenbanken ersetzen keinen neueren Bestand.
+      Herkunft und Signaturen werden geprüft. Ältere Datenbanken ersetzen keinen neueren Bestand.
     </p>
-    <p v-if="error || status?.error" role="alert">{{ error || scannerError(status.error) }}</p>
+    <p v-if="error || status?.error" class="action-notice error" role="alert">
+      {{ error || scannerError(status.error) }}
+    </p>
   </section>
 </template>
+
+<style scoped>
+.key-value-list {
+  display: grid;
+  grid-template-columns: minmax(10rem, 15rem) minmax(0, 1fr);
+  gap: 10px 20px;
+  max-width: 56rem;
+  margin-block: 20px;
+}
+.key-value-list dt,
+.key-value-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.key-value-list dt {
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .key-value-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .key-value-list dd {
+    margin-bottom: 10px;
+  }
+}
+</style>

@@ -77,7 +77,10 @@ final class SessionSend {
                 version.wireValue(),
                 id,
                 IntegrationEnvironment.current().name(),
-                new Prepared(attempt, draft.summary()));
+                new Prepared(
+                        attempt,
+                        draft.summary(),
+                        this.state.scanners.containsKey(id) ? "passed" : "not_configured"));
     }
 
     Data<?> send(ApiVersion version, String id, String command, String attemptId) {

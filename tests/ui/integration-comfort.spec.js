@@ -23,7 +23,7 @@ for (const api of ['v2', 'v3']) {
     await button(page, 'Zertifikate').click();
     await expect(page.getByRole('status')).toContainText('Zertifikate rechtzeitig erneuern');
     await button(page, 'Werkzeuge').click();
-    await button(page, 'Malwarescanner').click();
+    await button(page, 'Virenscan').click();
     await page.getByLabel('Verfahren', { exact: true }).selectOption('clamav');
     await page.getByLabel('Host', { exact: true }).fill('localhost');
     await button(page, 'Scanner-Einstellung anwenden').click();
@@ -55,6 +55,7 @@ for (const api of ['v2', 'v3']) {
     pack.cases[0].request.attachments = [];
     pack.cases[0].request.replyOffer = null;
     await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
+    await button(page, 'Testfälle und Abläufe').click();
     await button(page, 'Testabläufe').click();
     await page.locator('#test-flow-file').setInputFiles({
       name: 'flow.json',
@@ -98,6 +99,7 @@ for (const api of ['v2', 'v3']) {
       page.getByRole('heading', { name: `Eingang prüfen: ${pack.cases[0].name}`, exact: true }),
     ).toBeVisible();
     await button(page, 'Schema-Vergleich').click();
+    await button(page, 'Testfälle und Abläufe').click();
     await button(page, 'Testabläufe').click();
     await button(page, 'Anderes Profil').click();
     await expect(

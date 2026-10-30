@@ -69,6 +69,8 @@ for (const scale of [1.25, 1.5, 2]) {
       'Senden',
       'Empfangen',
       'Event Log',
+      'Testwerkzeuge',
+      'Virenscan',
       'Destinations',
       'Prozesse',
       'Info',

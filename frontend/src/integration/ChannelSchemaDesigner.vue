@@ -64,25 +64,26 @@ async function load(files) {
     reading.value = false;
   }
 }
-function save(kind) {
+async function save(kind) {
   if (!result.value) return;
   const name = {
     schema: 'antwort.schema.json',
     example: 'antwort.beispiel.json',
     draft: 'antwort.entwurf.json',
   }[kind];
-  downloadLocal(
+  const saved = await downloadLocal(
     JSON.stringify(result.value[kind], null, 2),
     name,
     kind === 'schema' ? 'application/schema+json' : 'application/json',
   );
+  if (!saved) return;
   notice.value =
-    'Dateidownload gestartet. Für den Austausch Schema-Kennung und Definition mit der Gegenstelle abstimmen.';
+    'Datei gespeichert oder an den Browser übergeben. Für den Austausch Schema-Kennung und Definition mit der Gegenstelle abstimmen.';
 }
 </script>
 <template>
   <section class="tool-section" aria-labelledby="channel-designer-title">
-    <h2 id="channel-designer-title">Eigene JSON-Kanalschemas erstellen</h2>
+    <h2 id="channel-designer-title">Antwortschema erstellen</h2>
     <p>
       Fachliche Statusmitteilungen und Nachforderungen definieren. Der Assistent arbeitet lokal. Eine
       Statusmeldung ersetzt keine technische FIT-Connect-Annahme oder -Ablehnung.
@@ -124,29 +125,31 @@ function save(kind) {
           <input id="channel-title" v-model="definition.title" maxlength="160" required />
         </label>
       </div>
-      <label for="channel-description">
-        Beschreibung
-        <textarea
-          id="channel-description"
-          v-model="definition.description"
-          maxlength="2000"
-          rows="2"
-        ></textarea>
-      </label>
-      <label for="channel-statuses">
-        Erlaubte fachliche Statuswerte
-        <textarea
-          id="channel-statuses"
-          v-model="statuses"
-          rows="4"
-          maxlength="1100"
-          spellcheck="false"
-        ></textarea>
-        <small>
-          Ein Wert pro Zeile, maximal 16. Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich. Das Feld
-          „status“ ist immer erforderlich.
-        </small>
-      </label>
+      <div class="client-fields">
+        <label for="channel-description">
+          Beschreibung
+          <textarea
+            id="channel-description"
+            v-model="definition.description"
+            maxlength="2000"
+            rows="2"
+          ></textarea>
+        </label>
+        <label for="channel-statuses">
+          Erlaubte fachliche Statuswerte
+          <textarea
+            id="channel-statuses"
+            v-model="statuses"
+            rows="4"
+            maxlength="1100"
+            spellcheck="false"
+          ></textarea>
+          <small>
+            Ein Wert pro Zeile, maximal 16. Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich. Das Feld
+            „status“ ist immer erforderlich.
+          </small>
+        </label>
+      </div>
       <article v-for="(field, index) in definition.fields" :key="index" class="tool-section">
         <h3>Angabe {{ index + 1 }}</h3>
         <div class="client-fields">
@@ -180,7 +183,7 @@ function save(kind) {
       </button>
     </fieldset>
     <p v-if="!result" role="alert">
-      Bitte Kennung, Bezeichnung, eindeutige Feldnamen und Statuswerte prüfen. Bis zu 32 Angaben sind möglich;
+      Bitte Kennung, Bezeichnung, eindeutige Feldnamen und Statuswerte prüfen. Bis zu 32 Angaben sind möglich.
       „status“ ist reserviert.
     </p>
     <p v-if="error" role="alert">{{ error }}</p>
@@ -195,7 +198,7 @@ function save(kind) {
         </li>
         <li>
           Beim Empfänger die Kennung als unterstütztes Antwortschema der Leistung hinterlegen. In
-          „Destinations“ kann die Kennung aus der Schemadatei übernommen werden; Änderungen werden separat
+          „Destinations“ kann die Kennung aus der Schemadatei übernommen werden. Änderungen werden separat
           bestätigt.
         </li>
         <li>

@@ -40,7 +40,7 @@ async function select(files) {
       @files="select"
     >
       Nur die Kennung wird übernommen. Die Datei wird weder hochgeladen noch veröffentlicht. Eigene
-      Definitionen erstellen Sie unter „Testwerkzeuge → Kanalschemas“.
+      Definitionen erstellen Sie unter „Testwerkzeuge → Antwortschemas“.
     </FileDropInput>
     <p v-if="error" role="alert">{{ error }}</p>
   </div>

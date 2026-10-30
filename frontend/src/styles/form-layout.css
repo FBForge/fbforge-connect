@@ -1,0 +1,112 @@
+/* Shared desktop field rhythm. Text labels stay above their controls at every width. */
+:where(.workspace-content, .tool-dialog, .tool-section)
+  label:where(:has(> textarea, > input:not([type='checkbox'], [type='radio'], [type='file']), > select)):not(
+    .switch,
+    .api-picker,
+    .environment-picker,
+    .profile-api-choice
+  ) {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  margin-block: 12px;
+  line-height: 1.5;
+}
+:is(.workspace-content, .tool-dialog, .tool-section)
+  label
+  > :is(textarea, input:not([type='checkbox'], [type='radio'], [type='file']), select) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  text-align: start;
+  font-weight: 400;
+}
+:is(.workspace-content, .tool-dialog, .tool-section) textarea {
+  display: block;
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.55;
+}
+:is(.workspace-content, .tool-dialog, .tool-section) select {
+  text-indent: 0;
+  padding-inline: 12px 36px;
+  text-overflow: ellipsis;
+}
+.workspace-content .client-fields > label {
+  margin-block: 0;
+}
+:is(.workspace-content, .tool-dialog, .tool-section)
+  label:has(> input:is([type='checkbox'], [type='radio'])):not(.switch) {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 28px;
+  margin-block: 12px;
+  cursor: pointer;
+}
+:is(.workspace-content, .tool-dialog, .tool-section) input:is([type='checkbox'], [type='radio']) {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 2px 0 0;
+}
+.workspace-content .switch input {
+  width: 46px;
+  height: 26px;
+  margin: 0;
+}
+.workspace-content .button:not(.compact-copy, .small-button, .copy-mini) {
+  min-height: 40px;
+  padding: 9px 14px;
+}
+.workspace-content .client-actions {
+  align-items: center;
+  gap: 10px;
+  margin-block: 16px;
+}
+:is(.workspace-content, .tool-dialog, .tool-section) small {
+  display: block;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.scan-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  margin-block: 16px;
+}
+.scan-status p {
+  margin: 0;
+}
+.scan-status > div {
+  flex: 1;
+  min-width: 0;
+}
+.scan-status .status-badge {
+  white-space: normal;
+}
+.scan-progress {
+  display: grid;
+  gap: 10px;
+  border-inline-start: 3px solid var(--status-info-line);
+  padding: 14px 16px;
+  background: var(--status-info-bg);
+  border-radius: 6px;
+  margin-block: 16px;
+}
+.scan-progress progress {
+  width: 100%;
+  max-width: 36rem;
+  accent-color: var(--accent);
+}
+.scan-progress p {
+  margin: 0;
+}

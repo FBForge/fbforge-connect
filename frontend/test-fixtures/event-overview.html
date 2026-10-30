@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Eventübersicht · synthetische Testdaten</title>
+  </head>
+  <body>
+    <main class="workspace-content">
+      <h1>Event Log</h1>
+      <div id="app"></div>
+    </main>
+    <script type="module">
+      import { createApp, h } from 'vue';
+      import EventLogPanel from '../src/EventLogPanel.vue';
+      import '../src/styles/index.css';
+      const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
+      const type = 'https://schema.fitko.de/fit-connect/events/reject-submission';
+      const session = {
+        apiVersion: new URLSearchParams(location.search).get('api') || 'v3',
+        sessionId: id(1),
+        environment: 'TEST',
+        connected: true,
+      };
+      const events = Array.from({ length: 25 }, (_, i) => ({
+        eventId: id(i + 10),
+        eventType: type,
+        issuer: 'synthetic-issuer',
+        issuedAt: new Date(Date.UTC(2026, 9, 29, 0, i)).toISOString(),
+        subjectType: 'submission',
+        subjectId: id(2),
+        header: '{"alg":"PS512","kid":"synthetic"}',
+        claims: JSON.stringify({
+          events: {
+            [type]: [
+              {
+                attachments: [{ attachmentId: id(i + 100), authenticationTag: `synthetic-tag-${i}` }],
+                problems: [
+                  {
+                    type: 'https://schema.fitko.de/fit-connect/events/problems/technical-error',
+                    title: 'Technical error',
+                    detail: `Falsches Metadatenschema ${i} <img src=x>`,
+                    instance: 'other',
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      }));
+      window.__eventOverview = { calls: [] };
+      window.__TAURI_INTERNALS__ = {
+        async invoke(command, args) {
+          window.__eventOverview.calls.push({ command, args });
+          const envelope = (data) => ({
+            apiVersion: session.apiVersion,
+            sessionId: session.sessionId,
+            environment: 'TEST',
+            data,
+          });
+          if (command === 'load_case_event_log')
+            return envelope({
+              logId: id(4),
+              caseId: id(3),
+              scope: 'case',
+              total: 25,
+              warnings: ['CONTENT_AUTHENTICATION_TAGS_NOT_COMPARED'],
+            });
+          if (command === 'list_case_event_log')
+            return envelope({
+              logId: id(4),
+              offset: args.offset,
+              total: 25,
+              events: events.slice(args.offset, args.offset + 5).map(({ header, claims, ...row }) => ({
+                ...row,
+                headerBytes: new TextEncoder().encode(header).length,
+                claimsBytes: new TextEncoder().encode(claims).length,
+              })),
+            });
+          if (command === 'read_event_log') {
+            const doc = events.find((e) => e.eventId === args.eventId)[args.part],
+              bytes = new TextEncoder().encode(doc),
+              chunk = bytes.slice(args.byteOffset, args.byteOffset + 24576);
+            return envelope({
+              logId: id(4),
+              eventId: args.eventId,
+              part: args.part,
+              byteOffset: args.byteOffset,
+              totalBytes: bytes.length,
+              chunk: btoa(String.fromCharCode(...chunk)),
+              complete: args.byteOffset + chunk.length === bytes.length,
+            });
+          }
+          if (command === 'discard_event_log') return envelope({ logId: id(4) });
+          throw 'invalid_input';
+        },
+      };
+      createApp({
+        setup: () => () =>
+          h(EventLogPanel, {
+            session,
+            visible: true,
+            target: { apiVersion: session.apiVersion, caseId: id(3) },
+          }),
+      }).mount('#app');
+    </script>
+  </body>
+</html>

@@ -1,3 +1,4 @@
+import { saveLocalFile } from '../local-download.js';
 import { readScannerReport } from '../scanner-report.js';
 import { caseGroups, filterCaseGroups, defaultCaseMessage } from '../case-groups.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
@@ -40,9 +41,7 @@ export function useCaseWorkspace(props, emit) {
   const attachments = computed(() => parts.value.filter((p) => p.kind === 'attachment'));
   const hasPlaintext = computed(() => parts.value.some((part) => part.kind === 'data'));
   let generation = 0,
-    controller,
-    downloadUrl,
-    downloadTimer;
+    controller;
   const bytesLabel = (size) => `${(size / 1024).toLocaleString('de-DE', { maximumFractionDigits: 1 })} KiB`;
   const when = (value) =>
     Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('de-DE') : 'Zeitpunkt nicht lesbar';
@@ -201,17 +200,7 @@ export function useCaseWorkspace(props, emit) {
       try {
         if (!current()) return;
         if (download) {
-          if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-          clearTimeout(downloadTimer);
-          downloadUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
-          const a = document.createElement('a');
-          a.href = downloadUrl;
-          a.download = (part.fileName || 'Datei').split(/[\\/]/).pop();
-          a.click();
-          downloadTimer = setTimeout(() => {
-            URL.revokeObjectURL(downloadUrl);
-            downloadUrl = null;
-          }, 30000);
+          await saveLocalFile(bytes, part.fileName || 'Datei', part.mimeType || 'application/octet-stream');
         } else {
           const result = await createPreview(bytes, {
             filename: part.fileName || 'Datei',
@@ -287,8 +276,6 @@ export function useCaseWorkspace(props, emit) {
   }
   onBeforeUnmount(() => {
     reset();
-    clearTimeout(downloadTimer);
-    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
   });
   return {
     records,

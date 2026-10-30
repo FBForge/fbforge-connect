@@ -14,6 +14,7 @@ const emit = defineEmits(['busy', 'activity', 'fatal', 'changed', 'receive']);
 const controller = useDestinationManager(props, emit);
 const {
   setupOpen,
+  existing,
   setupNotice,
   page,
   selected,
@@ -67,7 +68,7 @@ const {
         class="button secondary"
         :aria-pressed="!setupOpen"
         :disabled="disabled"
-        @click="setupOpen = false"
+        @click="existing"
       >
         Bestehende Destinations
       </button>

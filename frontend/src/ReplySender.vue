@@ -1,4 +1,5 @@
 <script setup>
+import ScanResult from './ScanResult.vue';
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import CopyValue from './CopyValue.vue';
@@ -261,7 +262,9 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
         Antwort prüfen und vorbereiten
       </button>
     </form>
-    <p v-if="working" role="status">Antwortaktion läuft …</p>
+    <p v-if="working" role="status">
+      Antwortaktion läuft. Bei aktiviertem Virenscan werden die Fachdaten und Anlagen geprüft …
+    </p>
     <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
     <ActionNotice
       v-if="error"
@@ -343,6 +346,7 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
           <dt>Antwortinhalt</dt>
           <dd>{{ prepared.summary.mimeType }} · {{ prepared.summary.dataBytes }} Bytes</dd>
         </dl>
+        <ScanResult :status="prepared.scanStatus" :attachments="prepared.summary.attachments" outgoing />
         <p v-if="prepared.summary.processMessage">
           Prozess: {{ prepared.summary.processMessage.processModelId }} · Nachricht:
           {{ prepared.summary.processMessage.messageId }}

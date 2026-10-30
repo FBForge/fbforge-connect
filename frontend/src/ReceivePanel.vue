@@ -1,4 +1,5 @@
 <script setup>
+import ScanResult from './ScanResult.vue';
 import { warning, label, bytesLabel } from './receive/presentation.ts';
 import { isReceiveFailure } from './receive/failures.js';
 import { canPreview } from './submission-preview.js';
@@ -183,6 +184,7 @@ defineExpose({
         </div>
       </details>
       <p v-if="pending" role="status">{{ action }} …</p>
+      <ScanResult v-if="pending && action.includes('prüfen')" pending />
       <ActionNotice
         v-if="error"
         ref="errorNotice"
@@ -235,6 +237,7 @@ defineExpose({
         <DocumentationLink :topic="reply ? 'replies' : 'problems'">Hilfe zu diesem Problem</DocumentationLink>
       </ActionNotice>
       <template v-if="proof">
+        <ScanResult :warnings="proof.warnings" :attachments="attachments" />
         <div class="verification-stages" aria-label="Prüfstatus">
           <p><span class="status-badge ok">Entschlüsselung und Integrität geprüft</span></p>
           <p>

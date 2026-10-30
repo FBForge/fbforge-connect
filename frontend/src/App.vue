@@ -4,7 +4,6 @@ import {
   shallowRef,
   provide,
   computed,
-  watch,
   nextTick,
   onMounted,
   onBeforeUnmount,
@@ -13,21 +12,25 @@ import {
 import { environmentKey } from './environments.js';
 import { useEnvironmentSwitch } from './app/useEnvironmentSwitch.js';
 import { useDiagnostics } from './app/useDiagnostics.js';
+import { useWindowTitle } from './app/useWindowTitle.js';
 import { useTheme } from './app/useTheme.ts';
 import { useConnections } from './app/useConnections.js';
+import { useCaseReopening } from './app/useCaseReopening.js';
 import { useReceiveTabs } from './app/useReceiveTabs.js';
 import { useApplicationUpdates } from './app/useApplicationUpdates.js';
 import { navigation } from './app/navigation.js';
 import ConnectionDialog from './app/ConnectionDialog.vue';
 import DiagnosticsView from './app/DiagnosticsView.vue';
 import InfoView from './app/InfoView.vue';
+import { provideScannerMonitor } from './app/useScannerMonitor.js';
+import ScannerActivity from './app/ScannerActivity.vue';
+import SaveFeedback from './app/SaveFeedback.vue';
 import AppIcon from './AppIcon.vue';
 import ApplicationChrome from './app/ApplicationChrome.vue';
-import DocumentationLink from './DocumentationLink.vue';
+import WorkspaceHeading from './app/WorkspaceHeading.vue';
 import { createSchemaSourceAccess, schemaSourceAccessKey } from './schema-source-access.js';
 import StartWorkspace from './StartWorkspace.vue';
 import { version } from '../../package.json';
-import { productName } from './product.js';
 import { errorMessage } from './diagnostics.js';
 import DestinationKeys from './DestinationKeys.vue';
 const ProcessWorkspace = defineAsyncComponent(() => import('./ProcessWorkspace.vue'));
@@ -38,16 +41,12 @@ import SubmissionBrowser from './SubmissionBrowser.vue';
 import EventLogPanel from './EventLogPanel.vue';
 import CaseWorkspace from './CaseWorkspace.vue';
 const ApplicationHelp = defineAsyncComponent(() => import('./ApplicationHelp.vue'));
+const MalwareScannerSettings = defineAsyncComponent(() => import('./integration/MalwareScannerSettings.vue'));
 const TestTools = defineAsyncComponent(() => import('./TestTools.vue'));
 const testDraft = shallowRef(null);
-const toolsOpened = ref(false);
+const toolsOpened = ref(false),
+  scannerOpened = ref(false);
 const receiveTarget = shallowRef(null);
-function reopenCase(record) {
-  receiveTab.value = 'submissions';
-  selectedDestination.value = record.destinationId;
-  receiveTarget.value = { ...record, requestId: crypto.randomUUID() };
-  void navigate('Empfangen');
-}
 import ReplyBrowser from './ReplyBrowser.vue';
 import { createCaseWorkspace, caseWorkspaceKey } from './case-context.js';
 const caseRecords = shallowRef([]);
@@ -64,13 +63,7 @@ provide(processWorkspaceKey, processWorkspace);
 const section = ref('Start');
 const apiVersion = ref('v3');
 const environment = ref('TEST');
-watch(
-  environment,
-  (value) => {
-    document.title = `${productName} · FIT-Connect ${value}`;
-  },
-  { immediate: true },
-);
+useWindowTitle(environment);
 provide(environmentKey, environment);
 const { theme, preference, setPreference } = useTheme();
 const destinationSetup = ref(null);
@@ -98,6 +91,7 @@ const {
   refreshStorageStatus,
   showConnection,
 } = connections;
+provideScannerMonitor(activeSession);
 provide(
   schemaSourceAccessKey,
   createSchemaSourceAccess(() => activeSession.value),
@@ -127,6 +121,9 @@ const diagnostics = useDiagnostics({
   refreshStorageStatus,
 });
 const { results, events, trace, reportJson, addEvent, probe, exportReport, clearHistory } = diagnostics;
+function recordActivity(event) {
+  addEvent(event.api, event.action, event.status, event.started, event.role);
+}
 const currentView = computed(() => navigation.find((item) => item.name === section.value));
 const receiveBrowser = ref(null);
 const { receiveTab, selectReceiveTab, receiveTabKey } = useReceiveTabs({
@@ -134,6 +131,7 @@ const { receiveTab, selectReceiveTab, receiveTabKey } = useReceiveTabs({
   busy,
   receiveBrowser,
 });
+const reopenCase = useCaseReopening({ receiveTab, selectedDestination, receiveTarget, navigate });
 const updates = useApplicationUpdates({ busy, receiveBrowser, sessions, fatal });
 const changeEnvironment = useEnvironmentSwitch({
   busy,
@@ -167,6 +165,7 @@ async function navigate(name) {
   scrollPositions.set(section.value, workspace.value?.scrollTop || 0);
   section.value = name;
   if (name === 'Testwerkzeuge') toolsOpened.value = true;
+  if (name === 'Virenscan') scannerOpened.value = true;
   await nextTick();
   if (workspace.value) workspace.value.scrollTop = scrollPositions.get(name) || 0;
   viewHeading.value?.focus({ preventScroll: true });
@@ -210,31 +209,7 @@ onBeforeUnmount(() => {
       @navigate="navigate"
     />
     <div class="app-workspace">
-      <div class="workspace-heading" role="region" aria-label="Aktueller Arbeitsbereich">
-        <div>
-          <h1 ref="viewHeading" tabindex="-1">{{ section }}</h1>
-          <p>{{ currentView.description }}</p>
-        </div>
-        <DocumentationLink
-          v-if="
-            ['Senden', 'Empfangen', 'Event Log', 'Destinations', 'Prozesse', 'Testwerkzeuge'].includes(
-              section,
-            )
-          "
-          :topic="
-            {
-              Senden: 'send',
-              Empfangen: 'receive',
-              'Event Log': 'events',
-              Destinations: 'destinations',
-              Prozesse: 'processes',
-              Testwerkzeuge: 'tools',
-            }[section]
-          "
-        >
-          Anleitung
-        </DocumentationLink>
-      </div>
+      <WorkspaceHeading ref="viewHeading" :section="section" :description="currentView.description" />
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div :key="environment" class="workspace-content">
           <div
@@ -260,7 +235,9 @@ onBeforeUnmount(() => {
           <div
             v-if="
               !activeSession &&
-              !['Start', 'Diagnose', 'Info', 'Prozesse', 'Hilfe', 'Testwerkzeuge'].includes(section)
+              !['Start', 'Diagnose', 'Info', 'Prozesse', 'Hilfe', 'Testwerkzeuge', 'Virenscan'].includes(
+                section,
+              )
             "
             class="connection-notice"
           >
@@ -277,6 +254,11 @@ onBeforeUnmount(() => {
             </button>
           </div>
           <p v-if="error" class="status-badge error" role="alert">{{ error }}</p>
+          <SaveFeedback />
+          <ScannerActivity
+            :visible="['Senden', 'Empfangen'].includes(section)"
+            @open="navigate('Virenscan')"
+          />
           <StartWorkspace
             v-if="section === 'Start'"
             :session="activeSession"
@@ -297,7 +279,7 @@ onBeforeUnmount(() => {
             :busy="busy"
             @busy="resourceBusy"
             @event-log="openEventLog"
-            @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
+            @activity="recordActivity"
             @fatal="fatal"
           />
           <ProcessWorkspace
@@ -313,7 +295,7 @@ onBeforeUnmount(() => {
               }
             "
             @busy="resourceBusy"
-            @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
+            @activity="recordActivity"
             @fatal="fatal"
           />
           <DestinationManager
@@ -321,7 +303,7 @@ onBeforeUnmount(() => {
             :session="activeSession"
             :busy="busy"
             @busy="resourceBusy"
-            @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
+            @activity="recordActivity"
             @fatal="fatal"
             @changed="keyRevision++"
             @receive="
@@ -370,9 +352,7 @@ onBeforeUnmount(() => {
               :session="activeSession"
               :busy="busy"
               @busy="resourceBusy"
-              @activity="
-                (event) => addEvent(event.api, event.action, event.status, event.started, event.role)
-              "
+              @activity="recordActivity"
               @fatal="fatal"
               @destination="(id) => (selectedDestination = id)"
               @invalidate="keyRevision++"
@@ -390,9 +370,7 @@ onBeforeUnmount(() => {
               @receive-start="replyRevision++"
               @event-log="openEventLog"
               @busy="resourceBusy"
-              @activity="
-                (event) => addEvent(event.api, event.action, event.status, event.started, event.role)
-              "
+              @activity="recordActivity"
               @fatal="fatal"
             />
           </div>
@@ -407,16 +385,23 @@ onBeforeUnmount(() => {
           />
           <ApplicationHelp v-if="section === 'Hilfe'" />
           <TestTools
-            @scanner-changed="
-              submissionRevision++;
-              replyRevision++;
-            "
             :session="activeSession"
             @busy="resourceBusy"
             v-if="toolsOpened"
             v-show="section === 'Testwerkzeuge'"
             :busy="busy"
             @send="openTestDraft"
+          />
+          <MalwareScannerSettings
+            v-if="scannerOpened"
+            v-show="section === 'Virenscan'"
+            :session="activeSession"
+            :busy="busy"
+            @busy="resourceBusy"
+            @changed="
+              submissionRevision++;
+              replyRevision++;
+            "
           />
           <EventLogPanel
             :known-targets="caseRecords"
@@ -426,7 +411,7 @@ onBeforeUnmount(() => {
             :target="eventTarget"
             :visible="section === 'Event Log'"
             @busy="resourceBusy"
-            @activity="(event) => addEvent(event.api, event.action, event.status, event.started, event.role)"
+            @activity="recordActivity"
             @fatal="fatal"
           />
           <div
@@ -444,9 +429,7 @@ onBeforeUnmount(() => {
               :receive-revision="replyRevision"
               @receive-start="submissionRevision++"
               @busy="resourceBusy"
-              @activity="
-                (event) => addEvent(event.api, event.action, event.status, event.started, event.role)
-              "
+              @activity="recordActivity"
               @fatal="fatal"
             />
           </div>

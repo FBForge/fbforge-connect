@@ -1,4 +1,4 @@
-# Goal 0.3.0: Prozessantworten und eigene JSON-Kanalschemas
+# Goal 0.3.0: Prozessantworten und eigene JSON-Antwortschemas
 
 Arbeitsbranch: `feature/process-channels-0.3.0`, ausgehend von `release/0.3.0`.
 Nach erfolgreichen Prüfungen in den Release-Branch integrieren, Historie erhalten.
@@ -15,7 +15,7 @@ Kein PR, Main-Merge, Tag oder Deployment.
   oder anhand vereinbarter Kennungen hinzufügen. Maximal 16, keine Duplikate,
   Schemahinweise müssen passen. Beim Wechsel des Antwortschemas die Liste leeren.
   Empfänger dürfen weiterhin nur tatsächlich angebotene Prozessantworten senden.
-- Unter „Testwerkzeuge → Kanalschemas“ einfache JSON-Schemas erstellen: ID mit
+- Unter „Testwerkzeuge → Antwortschemas“ einfache JSON-Schemas erstellen: ID mit
   Version, Bezeichnung, Beschreibung, editierbare Statuswerte und bis zu 32
   Zusatzfelder. Text, Zahl, Ganzzahl, Ja/Nein, Datum, Datum/Uhrzeit und Textliste;
   Pflichtangaben konfigurierbar. Keine XSD-Erstellung und kein BPMN-Editor.

@@ -15,6 +15,7 @@ fn main() {
             "download_application_update",
             "cancel_application_update",
             "install_application_update",
+            "save_local_file",
             "begin_message_export",
             "export_message",
             "finish_message_export",
