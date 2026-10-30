@@ -1,7 +1,8 @@
 <script setup>
 import { useId } from 'vue';
 import { canPreview } from './submission-preview.js';
-defineProps({ parts: { type: Array, default: () => [] }, disabled: Boolean });
+import { attachmentScanStatus } from './scanner-report.js';
+defineProps({ parts: { type: Array, default: () => [] }, warnings: Array, disabled: Boolean });
 defineEmits(['inspect', 'download']);
 const size = (bytes) => `${(bytes / 1024).toLocaleString('de-DE', { maximumFractionDigits: 1 })} KiB`;
 const id = useId();
@@ -19,6 +20,18 @@ const id = useId();
           <strong :id="`${id}-${index}`">{{ part.fileName || 'Anlage' }}</strong>
           <p v-if="part.description">{{ part.description }}</p>
           <p>{{ part.mimeType }} · {{ size(part.totalBytes) }}</p>
+          <p class="attachment-scan-result">
+            <span class="status-badge" :class="attachmentScanStatus(warnings) === 'passed' ? 'ok' : 'warn'">
+              <span v-if="attachmentScanStatus(warnings) === 'passed'" aria-hidden="true">✓</span>
+              {{
+                attachmentScanStatus(warnings) === 'passed'
+                  ? 'Virenscan: kein Fund'
+                  : attachmentScanStatus(warnings) === 'not_configured'
+                    ? 'Nicht auf Schadsoftware geprüft'
+                    : 'Kein bestätigter Virenscan'
+              }}
+            </span>
+          </p>
         </div>
         <div class="client-actions">
           <button

@@ -11,7 +11,7 @@ angeben, keine Zugangsdaten, privaten Schlüssel oder echten Antragsdaten.
 ## Datenspeicherung
 
 Zugänge und Schlüssel bleiben standardmäßig in der Sitzung. Optional gespeicherte
-Profile, Schlüssel, Vorgänge, Destination-Vorlagen und Konfigurationshistorie schützt Windows-DPAPI für das Benutzerkonto.
+Profile, Schlüssel, Vorgänge, gespeicherte Testpakete und Testabläufe, Destination-Vorlagen und Konfigurationshistorie schützt Windows-DPAPI für das Benutzerkonto. Vorgänge gespeicherter Profile werden standardmäßig dauerhaft aufbewahrt. Die Aufbewahrung lässt sich pro Profil und API abwählen.
 Tokens werden nicht gespeichert; Profilsicherungen enthalten weder Vorgänge noch die getrennten Profil-Arbeitsdaten.
 
 Downloads, exportierte Testpakete, Abläufe, Vorlagen und Vergleichsberichte sind unverschlüsselt.

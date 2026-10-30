@@ -67,9 +67,6 @@ const {
       >
         Fiktive Beispieldaten erzeugen
       </button>
-      <button class="button secondary" type="button" :disabled="disabled || !schema" @click="loadLabels">
-        Schema-Beschriftungen laden
-      </button>
     </div>
     <p v-if="exampleNotice" class="small-note" role="status">{{ exampleNotice }}</p>
     <DraftDataPreview
@@ -82,6 +79,24 @@ const {
       :disabled="disabled"
       @request-schema="!schemaDocument && loadLabels()"
     >
+      <template #schema-actions>
+        <div class="client-actions">
+          <button
+            class="button secondary"
+            type="button"
+            :disabled="disabled || !schema"
+            aria-describedby="send-form-labels-help"
+            @click="loadLabels"
+          >
+            Formularbeschriftungen laden
+          </button>
+        </div>
+        <p id="send-form-labels-help" class="small-note">
+          Lädt Feldnamen, Beschreibungen und Pflichtfeldangaben aus dem ausgewählten Schema für die
+          Formularansicht. Ihre Fachdaten werden nicht verändert oder übertragen.
+        </p>
+        <p v-if="schemaDocument" class="small-note" role="status">Schema für die Formularansicht geladen.</p>
+      </template>
       <label v-if="!dataFile" for="send-data">
         Inhalt
         <textarea id="send-data" v-model="dataText" rows="8" required spellcheck="false"></textarea>

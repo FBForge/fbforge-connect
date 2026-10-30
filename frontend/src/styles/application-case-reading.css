@@ -87,7 +87,8 @@
   margin: 0;
 }
 .document-aside .application-attachment-list li {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   padding: 12px 0;
   border: 0;
   border-bottom: 1px solid var(--line);
@@ -99,8 +100,22 @@
 .document-aside .application-attachment-list:focus-visible {
   outline-offset: -2px;
 }
-.document-aside .application-attachment-list .client-actions {
-  flex-shrink: 1;
+.document-attachments .attachment-scan-result {
+  margin-top: 10px;
+}
+.document-attachments .attachment-scan-result .status-badge {
+  white-space: normal;
+}
+.workspace-content .document-aside .application-attachment-list .client-actions,
+.workspace-content .document-next-actions > .client-actions {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+.document-aside .client-actions > .button {
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .document-next-actions {
   flex-shrink: 0;
@@ -117,10 +132,6 @@
 }
 .document-return {
   margin-top: 16px;
-}
-.document-next-actions .client-actions {
-  align-items: stretch;
-  flex-direction: column;
 }
 .document-main .received-application {
   border: 0;

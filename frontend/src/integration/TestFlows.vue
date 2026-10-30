@@ -1,6 +1,7 @@
 <script setup>
 import { ref, shallowRef, computed, watch } from 'vue';
 import FileDropInput from '../FileDropInput.vue';
+import SavedTestFlows from './SavedTestFlows.vue';
 import { invoke } from '../native.js';
 import { useEnvironment } from '../environments.js';
 const environment = useEnvironment();
@@ -223,6 +224,7 @@ async function verify() {
       gegebenenfalls Antwort. FBForge Connect prüft die Ergebnisse anhand der entschlüsselten lokalen
       Nachrichten. Senden, Antworten und Empfangsbestätigungen bleiben Ihre einzeln bestätigten Aktionen.
     </p>
+    <SavedTestFlows :flow="flow" :busy="busy || pending" @open="show" @busy="emit('busy', $event)" />
     <FileDropInput
       id="test-flow-file"
       label="Testpaket oder Testablauf öffnen"

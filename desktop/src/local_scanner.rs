@@ -207,27 +207,24 @@ pub fn cancel_local_scanner_operation(state: State<'_, LocalScanner>) {
 }
 async fn approve(
     app: &tauri::AppHandle,
-    title: &str,
-    message: &str,
-    button: &str,
+    notice: crate::scanner_consent::Confirmation,
 ) -> Result<(), &'static str> {
     let window = app
         .get_webview_window("main")
         .ok_or("resource_unavailable")?;
-    let (app, title, message, button) = (
-        app.clone(),
-        title.to_string(),
-        message.to_string(),
-        button.to_string(),
-    );
+    let app = app.clone();
     let accepted = tauri::async_runtime::spawn_blocking(move || {
         app.dialog()
-            .message(message)
+            .message(notice.message)
             .parent(&window)
-            .title(title)
-            .kind(MessageDialogKind::Warning)
+            .title(notice.title)
+            .kind(if notice.warning {
+                MessageDialogKind::Warning
+            } else {
+                MessageDialogKind::Info
+            })
             .buttons(MessageDialogButtons::OkCancelCustom(
-                button,
+                notice.button.into(),
                 "Abbrechen".into(),
             ))
             .blocking_show()
@@ -284,7 +281,7 @@ pub async fn install_local_scanner(
     #[cfg(windows)]
     {
         let paths = if online {
-            approve(&app, "Lokalen ClamAV herunterladen?", "Die festgelegte ClamAV-Version wird von GitHub geladen und kryptografisch geprüft. Anschließend lädt FreshClam offizielle Virensignaturen von ClamAV. Diese Dienste erhalten Ihre Netzwerkadresse, keine FIT-Connect-Inhalte oder Zugangsdaten. ClamAV läuft nur lokal für FBForge Connect.\n\nJetzt herunterladen und einrichten?", "Scanner herunterladen").await?;
+            approve(&app, crate::scanner_consent::download()).await?;
             vec![]
         } else {
             pick_files(&app, "Geprüftes ClamAV-Komponentenpaket auswählen", false).await?
@@ -326,7 +323,7 @@ pub async fn update_local_scanner_database(
         )
         .await?
     } else {
-        approve(&app, "Virensignaturen aktualisieren?", "FreshClam lädt offizielle Signaturdatenbanken von ClamAV. FIT-Connect-Inhalte werden nicht übertragen. Eine fehlgeschlagene Aktualisierung ersetzt keinen gültigen Bestand.", "Signaturen aktualisieren").await?;
+        approve(&app, crate::scanner_consent::update()).await?;
         vec![]
     };
     perform(app.clone(), "updating-database", move |_, _, runtime| {
@@ -345,7 +342,7 @@ pub async fn local_scanner_preferences(
     automatic_updates: bool,
 ) -> Result<View, &'static str> {
     if automatic_updates {
-        approve(&app, "Automatische Signaturupdates erlauben?", "Beim Start von FBForge Connect darf FreshClam höchstens einmal täglich offizielle ClamAV-Signaturen aktualisieren. Dafür werden externe ClamAV-Server kontaktiert. Dokumente und FIT-Connect-Zugangsdaten werden nicht übertragen.", "Automatische Updates erlauben").await?;
+        approve(&app, crate::scanner_consent::automatic_updates()).await?;
     }
     perform(app.clone(), "saving", move |_, _, runtime| {
         runtime.preferences.automatic_updates = automatic_updates;

@@ -1,3 +1,12 @@
+// The list contains only released attachments. Blocked files are reported separately.
+export function attachmentScanStatus(warnings) {
+  if (!Array.isArray(warnings)) return 'unknown';
+  const passed = warnings.includes('MALWARE_SCAN_PASSED') || warnings.includes('MALWARE_ATTACHMENT_BLOCKED');
+  const notConfigured = warnings.includes('MALWARE_SCAN_NOT_CONFIGURED');
+  if (passed && notConfigured) return 'unknown';
+  return passed ? 'passed' : notConfigured ? 'not_configured' : 'unknown';
+}
+
 export function checkedBlockedAttachments(value) {
   if (
     !Array.isArray(value) ||

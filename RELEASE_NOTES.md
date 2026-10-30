@@ -2,6 +2,11 @@
 
 ## 0.3.0 (in Entwicklung)
 
+- Vorgänge gespeicherter Profile unter Windows standardmäßig dauerhaft aufbewahren. Eine abgewählte Aufbewahrung bleibt für das jeweilige Profil und die API gespeichert. Ohne gespeichertes Profil bleibt die Ablage auf die Sitzung begrenzt.
+- Testabläufe mit ihrem Testpaket in einer geschützten lokalen Sammlung speichern, nach einem Neustart öffnen und mit Bestätigung löschen. Laufende Testergebnisse werden dabei nicht übernommen.
+- Empfangsaktionen und Anlagenknöpfe gleich breit ausrichten. Virenscan-Ergebnisse direkt an jeder Anlage ausweisen. Fundmeldungen beim Versand hervorheben und mit passenden nächsten Schritten erklären.
+- Formularbeschriftungen bei der Formularansicht erklären und laden. Bestätigungen für lokale Scanner-Einrichtung, Aktivierung und Signaturupdates mit passenden Titeln und kürzeren Texten vereinheitlichen.
+
 - Formulare, Dropdowns und Checkboxen mit einheitlichen Abständen, breiten mehrzeiligen Feldern und lesbaren Auswahltexten. Testpakete und Abläufe sind gemeinsam gruppiert. Der Assistent heißt „Antwortschemas“.
 - Virenscan direkt in der Navigation und mit sichtbarem Status beim Senden und Empfangen. Tatsächlich geprüfte Anlagen und Scan-Ergebnisse werden ausdrücklich ausgewiesen. Signaturaktualisierungen bleiben nach einem Seitenwechsel sichtbar und abbrechbar, ohne die übrigen Arbeitsbereiche zu sperren.
 - Einzeldownloads und lokale Exporte verwenden in der Desktop-Anwendung den nativen Speichern-Dialog. Der Benutzer-Downloadordner wird vorgeschlagen. Erfolg, Abbruch und Schreibfehler bleiben sichtbar. Das Empfangsergebnis bleibt nach einem Speicherfehler nutzbar.

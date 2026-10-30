@@ -3,12 +3,12 @@ export const receiveFailures = Object.freeze({
   malware_detected: {
     title: 'Malwarescanner meldet einen Fund',
     message:
-      'Der eingerichtete Scanner meldet einen Fund. Inhalte werden nicht zur Vorschau, Annahme oder zum Export freigegeben. Prüfen Sie die Meldung an Ihrer Scanner-Gegenstelle. Eine begründete manuelle Ablehnung bleibt möglich; es wird nichts automatisch angenommen oder abgelehnt.',
+      'Der eingerichtete Scanner meldet einen Fund. Die Inhaltsprüfung wurde gestoppt. Die Nachricht bleibt für Vorschau, Annahme und Download gesperrt. Sie können die Einreichung mit einer Begründung manuell ablehnen. Es wurde nichts automatisch angenommen oder abgelehnt.',
   },
   malware_scan_failed: {
     title: 'Malwareprüfung nicht abgeschlossen',
     message:
-      'Der eingerichtete Scanner konnte die Inhalte nicht eindeutig freigeben. Prüfen Sie Erreichbarkeit und Konfiguration der Scanner-Gegenstelle. Inhalte bleiben gesperrt. Sie können erneut prüfen oder begründet manuell ablehnen; es erfolgt kein automatischer Empfangsabschluss.',
+      'Der eingerichtete Scanner konnte die Inhalte nicht eindeutig freigeben. Prüfen Sie Erreichbarkeit, Signaturstand und Einstellungen unter „Virenscan“. Inhalte bleiben gesperrt. Sie können erneut prüfen oder begründet manuell ablehnen. Es erfolgt kein automatischer Empfangsabschluss.',
   },
   receive_response_invalid: {
     title: 'API-Antwort nicht lesbar',

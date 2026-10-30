@@ -368,6 +368,7 @@ defineExpose({
             </div>
             <AttachmentList
               :parts="attachments"
+              :warnings="proof.warnings"
               :disabled="disabled"
               @inspect="inspect"
               @download="inspect($event, true)"

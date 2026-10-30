@@ -45,3 +45,6 @@ pub mod scanner_install;
 
 #[path = "../src/file_save_store.rs"]
 pub mod file_save_store;
+
+#[path = "../src/scanner_consent.rs"]
+pub mod scanner_consent;

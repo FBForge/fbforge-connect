@@ -148,7 +148,13 @@
         parts,
         records: [...records],
         calls: [],
-        persistent: false,
+        preferences: { a: !new URLSearchParams(location.search).has('sessionOnly'), b: true },
+        get persistent() {
+          return !new URLSearchParams(location.search).has('unsaved') && this.preferences[this.scope];
+        },
+        set persistent(value) {
+          this.preferences[this.scope] = value;
+        },
         failedRead: false,
         delayRead: false,
         releaseRead: null,
@@ -176,7 +182,7 @@
             return envelope({
               records: [...data],
               persistent: state.persistent,
-              canPersist: true,
+              canPersist: !new URLSearchParams(location.search).has('unsaved'),
               storageError: null,
             });
           if (args.operation === 'storage') {
@@ -185,7 +191,7 @@
             return envelope({
               records: [...data],
               persistent: state.persistent,
-              canPersist: true,
+              canPersist: !new URLSearchParams(location.search).has('unsaved'),
               storageError: null,
             });
           }

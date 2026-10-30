@@ -49,6 +49,7 @@
         emitted: null,
         wrong: false,
         failScanConfig: false,
+        savedFlows: {},
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
@@ -96,6 +97,30 @@
                 (row) => row.id !== request.id,
               );
             return structuredClone(fixture.workspace);
+          }
+          if (command === 'test_library' && args.request.action.startsWith('flow_')) {
+            const { action, id: flowId, flow } = args.request;
+            if (action === 'flow_save') {
+              fixture.savedFlows[flowId] = structuredClone(flow);
+              return {
+                id: flowId,
+                name: flow.name,
+                stepCount: flow.steps.length,
+                caseCount: flow.pack.cases.length,
+              };
+            }
+            if (action === 'flow_list')
+              return Object.entries(fixture.savedFlows).map(([id, flow]) => ({
+                id,
+                name: flow.name,
+                stepCount: flow.steps.length,
+                caseCount: flow.pack.cases.length,
+              }));
+            if (action === 'flow_delete') {
+              delete fixture.savedFlows[flowId];
+              return null;
+            }
+            return structuredClone(fixture.savedFlows[flowId]);
           }
           if (command === 'test_library')
             return args.request.action === 'list'

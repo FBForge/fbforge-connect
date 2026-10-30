@@ -88,6 +88,7 @@ async function open() {
         {{ loading ? 'Vorschau wird geladen …' : 'Formularansicht' }}
       </button>
     </div>
+    <slot name="schema-actions" />
     <div v-show="!preview" class="draft-data-editor"><slot /></div>
     <p v-if="notice" class="small-note" role="status">{{ notice }}</p>
     <div v-if="preview" class="draft-inline-preview" aria-label="Lokale Fachdatenansicht">

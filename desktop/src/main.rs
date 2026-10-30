@@ -24,6 +24,7 @@ mod profile_workspace;
 mod profile_workspace_store;
 mod profiles;
 mod protocol;
+mod scanner_consent;
 mod scanner_package;
 mod scanner_process;
 mod scanner_runtime;

@@ -1,7 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { checkedLocalScanner, scannerError } from '../frontend/src/local-scanner.js';
-import { checkedBlockedAttachments, readScannerReport } from '../frontend/src/scanner-report.js';
+import {
+  checkedBlockedAttachments,
+  readScannerReport,
+  attachmentScanStatus,
+} from '../frontend/src/scanner-report.js';
+
+test('attachment scan badges require completed proof and never treat missing or conflicting results as clean', () => {
+  assert.equal(attachmentScanStatus(['MALWARE_SCAN_PASSED']), 'passed');
+  assert.equal(attachmentScanStatus(['MALWARE_ATTACHMENT_BLOCKED']), 'passed');
+  assert.equal(attachmentScanStatus(['MALWARE_SCAN_NOT_CONFIGURED']), 'not_configured');
+  for (const warnings of [undefined, [], ['OTHER'], ['MALWARE_SCAN_PASSED', 'MALWARE_SCAN_NOT_CONFIGURED']])
+    assert.equal(attachmentScanStatus(warnings), 'unknown');
+});
 
 const status = () => ({
   installed: true,

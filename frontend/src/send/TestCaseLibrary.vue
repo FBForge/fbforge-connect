@@ -182,6 +182,10 @@ defineExpose({ saveDraft, saveNotice, saveError, pending });
         Testfall laden
       </button>
     </div>
+    <p class="small-note">
+      Gespeicherte Testpakete bleiben nach einem Neustart erhalten. Die lokale Sammlung ist für Ihr
+      Windows-Benutzerkonto verschlüsselt und unabhängig vom verbundenen FIT-Connect-Profil.
+    </p>
     <details>
       <summary ref="managementSummary">
         {{ entries.length ? 'Testpakete importieren, exportieren und löschen' : 'Testpaket importieren' }}
