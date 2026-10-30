@@ -83,11 +83,16 @@ export async function keySetup(page, fixture, api) {
   );
 }
 
-export async function localTools(page) {
-  await navigate(page, 'Testwerkzeuge');
+export async function openTestPackage(page) {
+  await page.getByRole('button', { name: 'Testpakete', exact: true }).click();
   await page.getByRole('button', { name: 'Fiktives Testpaket öffnen', exact: true }).click();
   await page.locator('#test-case-choice').waitFor();
   check((await page.locator('#test-case-choice option').count()) > 0, 'live_ui_test_pack_empty');
+}
+
+export async function localTools(page) {
+  await navigate(page, 'Testwerkzeuge');
+  await openTestPackage(page);
   await page.getByRole('button', { name: 'Schema-Vergleich', exact: true }).click();
   await page.getByRole('button', { name: 'Fiktiven Beispielvergleich öffnen', exact: true }).click();
   await page.locator('.comparison-result-heading').waitFor();

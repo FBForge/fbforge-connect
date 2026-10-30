@@ -1,5 +1,17 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { openTestPackage } from '../../scripts/live-ui/local-tools.mjs';
+test('live acceptance opens the test package explicitly after the remembered scanner tab', async ({
+  page,
+}) => {
+  await open(page);
+  await openTestPackage(page);
+  await expect(page.locator('#test-case-choice')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Testpakete', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
 async function open(page, api = 'v3') {
   await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
   await page.getByRole('button', { name: 'Malwarescanner', exact: true }).click();

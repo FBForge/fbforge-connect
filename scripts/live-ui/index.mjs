@@ -20,6 +20,7 @@ import {
 } from './readback.mjs';
 import { localTools, ownDestination, keySetup, auditScreen, localScannerReady } from './local-tools.mjs';
 import { downloadMessage } from './downloads.mjs';
+import { scannerProblemAcceptance } from './scanner.mjs';
 import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 
 export async function exerciseDesktopUI(fixture) {
@@ -88,6 +89,8 @@ export async function exerciseDesktopUI(fixture) {
     await auditScreen(page);
     stage = 'workspaces';
     await otherAreas(page);
+    stage = 'scanner_problem_acceptance';
+    await scannerProblemAcceptance(desktop, fixture);
     console.log(
       `Real installed desktop UI acceptance completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
     );
@@ -106,7 +109,7 @@ export async function exerciseDesktopUI(fixture) {
     }
     // Only fixed source locations, never Playwright's argument values or page contents.
     const location =
-      /live-ui[\\/](?:exchange|desktop|index|readback|downloads|local-tools)\.mjs:\d+:\d+/.exec(
+      /live-ui[\\/](?:exchange|desktop|index|readback|downloads|local-tools|scanner)\.mjs:\d+:\d+/.exec(
         error.stack || '',
       )?.[0];
     const diagnostic = /^live_ui_[a-z_]+$/.test(error.message || '') ? error.message : 'ui_driver_error';

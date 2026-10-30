@@ -1,4 +1,5 @@
-// Test-only ICAP peer backed by the actual ClamAV process. No public listener or production relay.
+// Test-only loopback peer. The caller supplies real ClamAV or an explicit controlled verdict.
+// Never bundled, exposed publicly or used as a production scanner/relay.
 import { createServer } from 'node:net';
 import { once } from 'node:events';
 export async function startIcapTestService(scan) {

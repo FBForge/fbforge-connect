@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview)
+param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview, [switch]$AttachmentReview, [switch]$ScannerReview)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 trap {
@@ -67,6 +67,14 @@ function Invoke-Button($Root, [string]$Name) {
     $button.SetFocus()
     $pattern = $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
     $pattern.Invoke()
+}
+if ($AttachmentReview -or $ScannerReview) {
+    $title = if ($AttachmentReview) { 'Mit gesperrten Anlagen annehmen?' } else { 'Eigene Scanner-Gegenstelle verwenden?' }
+    $action = if ($AttachmentReview) { 'Mit Anlagenproblemen annehmen' } else { 'Scanner aktivieren' }
+    $notice = Wait-Ui { Find-Dialog $title } 'ui_scanner_warning_missing'
+    Invoke-Button $notice $(if ($Cancel) { 'Abbrechen' } else { $action })
+    Write-Output 'Native scanner-review confirmation handled'
+    exit 0
 }
 if ($SchemaReview) {
     $notice = Wait-Ui { Find-Dialog 'Trotz Schemaabweichungen annehmen?' } 'ui_schema_warning_missing'
