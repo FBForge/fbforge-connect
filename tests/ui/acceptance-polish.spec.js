@@ -129,6 +129,23 @@ for (const [width, theme] of [
         }),
       ).toBe(true);
     }
+    expect(
+      await select.evaluate((el) => {
+        const s = getComputedStyle(el);
+        const light = (color) => {
+          const c = color
+            .match(/[\d.]+/g)
+            .slice(0, 3)
+            .map(Number)
+            .map((v) => v / 255)
+            .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+          return c.reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+        };
+        const a = light(s.borderTopColor),
+          b = light(s.backgroundColor);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      }),
+    ).toBeGreaterThanOrEqual(3);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   });

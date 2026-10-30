@@ -110,3 +110,22 @@
 .scan-progress p {
   margin: 0;
 }
+
+/* Interactive boundaries need more contrast than decorative separators. */
+:root
+  :is(.workspace-content, .tool-dialog, .tool-section)
+  :is(
+    input:not(
+      [type='checkbox'],
+      [type='radio'],
+      [type='file'],
+      [type='hidden'],
+      [type='submit'],
+      [type='button']
+    ),
+    select,
+    textarea
+  ),
+:root .workspace-content .switch input {
+  border-color: var(--control-line);
+}
