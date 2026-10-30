@@ -94,6 +94,13 @@ try {
   await button('Fiktiven Beispielvergleich öffnen').click();
   await expect(page.locator('.schema-change-list')).toContainText('Jetzt ein Pflichtfeld');
   await capture('schema-comparison');
+  await button('Kanalschemas').click();
+  await page.getByRole('heading', { name: 'Eigene JSON-Kanalschemas erstellen', exact: true }).waitFor();
+  await capture('channel-schemas');
+  await capture(
+    'channel-schema-export',
+    page.getByRole('heading', { name: 'Ergebnis und Verwendung', exact: true }),
+  );
   await button('Start').click();
   await button('Verbindung herstellen').click();
   await expect(page.getByRole('dialog')).toBeVisible();

@@ -10,6 +10,7 @@ const emit = defineEmits(['busy', 'activity', 'fatal', 'send', 'event-log']);
 const controller = useProcessWorkspace(props, emit);
 const {
   model,
+  mapping,
   xml,
 
   selectedId,
@@ -108,10 +109,24 @@ const {
             @click="select(row.elementId)"
           >
             {{ row.label }} · {{ labels[row.direction] }} · {{ row.elementId }}
+            <small
+              v-for="entry in mapping.entries.filter((item) => item.bpmnMessageId === row.bpmnMessageId)"
+              :key="entry.bpmnMessageId"
+              class="process-message-mapping"
+            >
+              {{ entry.messageId }} · {{ entry.processModelId }}
+              <span v-if="entry.schemaUri">· {{ entry.mimeType }} · {{ entry.schemaUri }}</span>
+            </small>
           </button>
         </li>
       </ul>
       <p v-if="!filtered.length">Keine auswählbaren Nachrichten gefunden.</p>
+      <p class="small-note">
+        {{ mapping.entries.length }} von {{ model.messages.length }} Nachrichten haben eine übernommene
+        FIT-Connect-Zuordnung. Diese stehen bei der Destination-Konfiguration und beim Zusammenstellen
+        erlaubter Prozessantworten direkt zur Auswahl. Schemahinweise müssen zum tatsächlichen Angebot passen;
+        eine Zuordnung führt keinen Prozess aus.
+      </p>
       <details class="process-model-identity">
         <summary>Modellidentität und Zuordnung</summary>
         <p>

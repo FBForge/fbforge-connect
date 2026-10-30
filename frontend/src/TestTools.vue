@@ -4,14 +4,17 @@ import TestPackages from './TestPackages.vue';
 const MalwareScannerSettings = defineAsyncComponent(() => import('./integration/MalwareScannerSettings.vue'));
 const TestFlows = defineAsyncComponent(() => import('./integration/TestFlows.vue'));
 const SchemaComparison = defineAsyncComponent(() => import('./SchemaComparison.vue'));
+const ChannelSchemaDesigner = defineAsyncComponent(() => import('./integration/ChannelSchemaDesigner.vue'));
 defineProps({ busy: Boolean, session: Object });
 const emit = defineEmits(['send', 'busy', 'scanner-changed']);
 const mode = ref('packages');
 const comparisonOpened = ref(false);
 const flowsOpened = ref(false);
+const schemasOpened = ref(false);
 watch(mode, (value) => {
   if (value === 'flows') flowsOpened.value = true;
   if (value === 'comparison') comparisonOpened.value = true;
+  if (value === 'schemas') schemasOpened.value = true;
 });
 </script>
 <template>
@@ -22,6 +25,7 @@ watch(mode, (value) => {
           { id: 'packages', title: 'Testpakete' },
           { id: 'comparison', title: 'Schema-Vergleich' },
           { id: 'flows', title: 'Testabläufe' },
+          { id: 'schemas', title: 'Kanalschemas' },
           { id: 'scanner', title: 'Malwarescanner' },
         ]"
         :key="tool.id"
@@ -50,6 +54,7 @@ watch(mode, (value) => {
     />
     <TestPackages v-show="mode === 'packages'" :busy="busy" @send="emit('send', $event)" />
     <SchemaComparison v-if="comparisonOpened" v-show="mode === 'comparison'" />
+    <ChannelSchemaDesigner v-if="schemasOpened" v-show="mode === 'schemas'" :disabled="busy" />
   </div>
 </template>
 

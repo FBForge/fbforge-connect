@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kanalschemas · ausschließlich fiktive UI-Testdaten</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <main id="app" class="workspace-content"></main>
+    <script type="module">
+      import { createApp, h, ref, provide } from 'vue';
+      import ChannelSchemaDesigner from '../src/integration/ChannelSchemaDesigner.vue';
+      import DestinationOffers from '../src/DestinationOffers.vue';
+      import { processWorkspaceKey, createProcessWorkspace } from '../src/process-context.js';
+      import '../src/styles/index.css';
+      window.__channelFixture = { offers: null, calls: [] };
+      window.__TAURI_INTERNALS__ = {
+        invoke(command) {
+          window.__channelFixture.calls.push(command);
+          throw new Error('No native or network operations in this local fixture');
+        },
+      };
+      createApp({
+        setup() {
+          const offers = ref({
+            publicServices: [
+              {
+                identifier: 'urn:de:fim:leika:leistung:99000000000000',
+                regions: ['DE'],
+                submissionSchemas: [{ schemaUri: 'urn:test:request', mimeType: 'application/json' }],
+              },
+            ],
+            processMessages: [],
+          });
+          const workspace = createProcessWorkspace();
+          workspace.messages.value = [
+            {
+              processModelId: 'urn:test:process:1',
+              messageId: 'request-more',
+              label: 'Nachforderung',
+              schemaUri: 'urn:test:reply',
+              mimeType: 'application/json',
+            },
+          ];
+          provide(processWorkspaceKey, workspace);
+          return () => [
+            h('h1', 'Lokale Schema-Erstellung · synthetische Testdaten'),
+            h(ChannelSchemaDesigner),
+            h(DestinationOffers, {
+              modelValue: offers.value,
+              prefix: 'authoring',
+              'onUpdate:modelValue': (value) => {
+                offers.value = value;
+                window.__channelFixture.offers = value;
+              },
+            }),
+          ];
+        },
+      }).mount('#app');
+    </script>
+  </body>
+</html>

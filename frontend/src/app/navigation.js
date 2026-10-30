@@ -41,7 +41,7 @@ export const navigation = [
     name: 'Testwerkzeuge',
     group: 'Werkzeuge und Verwaltung',
     icon: 'tools',
-    description: 'Testfälle lokal wiederverwenden und Änderungen an JSON-Schemata und XSDs vergleichen.',
+    description: 'Testfälle wiederverwenden, JSON-Kanalschemas erstellen und Schemata vergleichen.',
   },
   {
     name: 'Hilfe',

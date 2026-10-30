@@ -1,7 +1,6 @@
 import { snapshotSendDraft } from './draft-snapshot.ts';
 import { useSendSteps } from './useSendSteps.js';
 import { inject, ref, shallowRef, computed, watch, nextTick } from 'vue';
-import { processWorkspaceKey } from '../process-context.js';
 import { caseWorkspaceKey } from '../case-context.js';
 import { useSchemaSourceAccess } from '../schema-source-access.js';
 import { loadSendDestination } from '../sender-options.js';
@@ -15,7 +14,6 @@ import { explain, diagnosticLabels } from './messages.js';
 // Owns the editable send draft and its reactive invalidation rules.
 export function useSubmissionSender(props, emit) {
   const storageWarning = ref('');
-  const processWorkspace = inject(processWorkspaceKey, null);
   const caseWorkspace = inject(caseWorkspaceKey, null);
   const target = ref(''),
     source = ref(''),
@@ -149,6 +147,13 @@ export function useSubmissionSender(props, emit) {
     replySchema.value = value?.replySchemas[0]?.schemaUri || '';
     replyMime.value = value?.replySchemas[0]?.mimeType || 'application/json';
   });
+  watch(
+    [replySchema, replyMime],
+    () => {
+      offeredProcessMessages.value = [];
+    },
+    { flush: 'sync' },
+  );
   watch(selectedProcess, (value) => {
     modelId.value = value?.processModelId || '';
     messageId.value = value?.messageId || '';
@@ -177,25 +182,6 @@ export function useSubmissionSender(props, emit) {
       service.value = value.services[0]?.identifier || '';
       processChoice.value = 0;
     });
-  }
-  function addReplyMessage() {
-    const selected = processWorkspace?.selection.value;
-    if (!selected) return;
-    if (
-      selected.schemaUri &&
-      (selected.schemaUri !== replySchema.value || selected.mimeType !== replyMime.value)
-    ) {
-      error.value = 'Das Schema der BPMN-Antwortnachricht passt nicht zum gewählten Antwortschema.';
-      return;
-    }
-    const row = { processModelId: selected.processModelId, messageId: selected.messageId };
-    if (
-      offeredProcessMessages.value.length < 16 &&
-      !offeredProcessMessages.value.some(
-        (item) => item.processModelId === row.processModelId && item.messageId === row.messageId,
-      )
-    )
-      offeredProcessMessages.value = [...offeredProcessMessages.value, row];
   }
   async function applyProcessDraft() {
     const draft = props.processDraft;
@@ -479,13 +465,11 @@ export function useSubmissionSender(props, emit) {
     createExample,
     checkData,
     addValidationSchemas,
-    processWorkspace,
     offeredProcessMessages,
     offerReplies,
     replySchema,
     replyMime,
     replyOptions,
-    addReplyMessage,
     addFiles,
     prepared,
     dialog,

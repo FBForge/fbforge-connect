@@ -31,7 +31,7 @@ import { productName } from './product.js';
 import { errorMessage } from './diagnostics.js';
 import DestinationKeys from './DestinationKeys.vue';
 const ProcessWorkspace = defineAsyncComponent(() => import('./ProcessWorkspace.vue'));
-import { processWorkspaceKey } from './process-context.js';
+import { processWorkspaceKey, createProcessWorkspace } from './process-context.js';
 import DestinationManager from './DestinationManager.vue';
 import SubmissionSender from './SubmissionSender.vue';
 import SubmissionBrowser from './SubmissionBrowser.vue';
@@ -54,15 +54,13 @@ const caseRecords = shallowRef([]);
 const caseWorkspace = createCaseWorkspace((records) => (caseRecords.value = records));
 provide(caseWorkspaceKey, caseWorkspace);
 const processDraft = shallowRef(null),
-  processContext = shallowRef(null),
-  processSelection = shallowRef(null);
-provide(processWorkspaceKey, {
-  selection: processSelection,
-  showContext: (context) => {
-    processContext.value = { ...context, requestId: crypto.randomUUID() };
-    void navigate('Prozesse');
-  },
+  processContext = shallowRef(null);
+const processWorkspace = createProcessWorkspace((context) => {
+  processContext.value = { ...context, requestId: crypto.randomUUID() };
+  void navigate('Prozesse');
 });
+const processSelection = processWorkspace.selection;
+provide(processWorkspaceKey, processWorkspace);
 const section = ref('Start');
 const apiVersion = ref('v3');
 const environment = ref('TEST');

@@ -10,7 +10,7 @@
     <script type="module">
       import { createApp, ref, shallowRef, provide, h } from 'vue';
       import ProcessWorkspace from '../src/ProcessWorkspace.vue';
-      import { processWorkspaceKey } from '../src/process-context.js';
+      import { processWorkspaceKey, createProcessWorkspace } from '../src/process-context.js';
       import '../src/styles/index.css';
       import '../src/styles/index.css';
       import '../src/styles/index.css';
@@ -50,10 +50,11 @@
       createApp({
         setup() {
           const busy = ref(false),
-            context = shallowRef(null),
-            selection = shallowRef(null);
+            context = shallowRef(null);
           fixture.showContext = (value) => (context.value = value);
-          provide(processWorkspaceKey, { selection });
+          const workspace = createProcessWorkspace();
+          fixture.catalog = () => workspace.messages.value;
+          provide(processWorkspaceKey, workspace);
           return () =>
             h('main', { class: 'workspace-content' }, [
               h('p', 'SYNTHETISCHE TESTDATEN · kein FIT-Connect-Zugriff'),

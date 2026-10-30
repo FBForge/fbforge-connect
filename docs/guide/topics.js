@@ -348,9 +348,11 @@ export const helpTopics = [
     steps: [
       'Öffnen Sie „Prozesse“ und laden Sie eine BPMN-Datei per Drag-and-drop oder Dateiauswahl. Das mitgelieferte Beispiel ist ausschließlich für fiktive Tests gedacht.',
       'Wählen Sie einen unterstützten Nachrichtenbezug direkt im Diagramm oder über die zugängliche Auswahlliste. Prüfen Sie die ermittelte Prozessmodell-ID und Nachrichten-ID.',
+      'Die Nachrichtenliste zeigt übernommene FIT-Connect-Kennungen und Schemahinweise. Bei eigenen Modellen zuerst die vereinbarten Kennungen unter „Vereinbarte FIT-Connect-Zuordnung“ übernehmen. Diese Zuordnungen stehen anschließend direkt beim Bearbeiten von Destination-Prozessnachrichten zur Auswahl; die Vorschau und Bestätigung der Serveränderung bleiben erforderlich.',
       'Suchen Sie nach Destinations, die diesen Nachrichtenbezug unterstützen. Wählen Sie optional eine Region. Die Suche verwendet den aktuellen nativen Bearer-Zugang.',
       'Übernehmen Sie eine passende Destination und den Nachrichtenbezug in den Versand. Prüfen Sie die Zuordnung erneut in der Versandzusammenfassung.',
       'Bei eingegangenen Prozessnachrichten können Sie den Nachrichtenbezug im geladenen BPMN-Modell anzeigen lassen. Antwortnachrichten müssen zum angebotenen Prozessbezug passen.',
+      'Im Versand unter „Anlagen & Antwortkanal“ aktivieren Sie Antworten und wählen das angebotene Schema. Bei API v3 fügen Sie mehrere erlaubte Prozessantworten direkt aus dem geladenen Modell oder anhand vereinbarter Kennungen hinzu. Es sind höchstens 16 eindeutige Nachrichten möglich. Schemahinweise müssen passen; bei einem Wechsel des Antwortschemas wird die Prozessantwortliste geleert und muss neu zusammengestellt werden.',
     ],
     examples: [
       {
@@ -494,7 +496,7 @@ export const helpTopics = [
   },
   {
     id: 'tools',
-    title: 'Testpakete und Schema-Vergleich',
+    title: 'Testpakete, Kanalschemas und Schema-Vergleich',
     section: 'Testwerkzeuge',
     image: 'test-packages',
     caption:
@@ -509,6 +511,16 @@ export const helpTopics = [
         caption:
           'Lokaler Vergleich zweier JSON-Schemata mit sichtbaren Änderungen an Pflichtfeldern und Auswahlwerten.',
       },
+      {
+        image: 'channel-schemas',
+        caption:
+          'Eigene fachliche Statusmeldungen und Nachforderungen als JSON-Schema mit bearbeitbaren Feldern definieren.',
+      },
+      {
+        image: 'channel-schema-export',
+        caption:
+          'Schema, fiktives Beispiel und bearbeitbaren Entwurf getrennt exportieren; beide Seiten benötigen dieselbe Definition.',
+      },
     ],
     intro:
       'Testpakete und Schema-Vergleich funktionieren lokal. Zum tatsächlichen Senden und Empfangen wechseln Sie in die gewohnten geführten Abläufe.',
@@ -519,6 +531,10 @@ export const helpTopics = [
       'Einen eigenen Versandentwurf speichern Sie im dritten Versandabschnitt unter „Entwurf als Testfall wiederverwenden“. Vergeben Sie einen Namen. „Testfall speichern“ legt ihn geschützt in der lokalen Windows-Sammlung ab. Oben in „Senden“ wählen Sie ihn unter „Meine Testfälle“ direkt aus. „Testfall laden“ prüft nach Ihrer Bestätigung das Empfängerangebot und ersetzt den Entwurf. Unter „Testpakete importieren, exportieren und löschen“ verwalten Sie die Sammlung. Das Paket übernimmt keine Verbindung, privaten Schlüssel, Destination IDs oder bisherigen Nachrichtenkennungen. Im Werkzeug können Sie mehrere gespeicherte Pakete unter „Weitere Testfälle hinzufügen“ zusammenführen und das gemeinsame Paket speichern.',
       'Wechseln Sie zu „Schema-Vergleich“. Ziehen Sie die bisherige und die neue JSON-Schema- oder XSD-Datei in die beschrifteten Dateifelder. Prüfen Sie das Schemaformat und wählen Sie „Schemata vergleichen“. Der Beispielvergleich zeigt den Ablauf mit fiktiven Dateien.',
       'Die Ergebnisliste nennt hinzugefügte, entfernte und geänderte Struktureinträge. Suchen Sie nach einem Feld oder öffnen Sie dessen bisherige und neue Regeln. „Vergleich speichern“ exportiert den Bericht als JSON.',
+      'Unter „Kanalschemas“ definieren Sie ein eigenes JSON-Antwortschema. Tragen Sie eine vereinbarte HTTPS- oder URN-Kennung mit Version, Bezeichnung und fachliche Statuswerte ein. Ergänzen Sie Felder und deren Datentypen und Pflichtangaben. Vorlagen für Statusmitteilungen und Nachforderungen ersetzen den aktuellen Entwurf; speichern Sie ihn vorher, wenn Sie ihn behalten möchten.',
+      '„JSON-Schema herunterladen“ exportiert die Definition, „Fiktives Beispiel herunterladen“ passende Beispieldaten und „Schemaentwurf speichern“ die bearbeitbaren Einstellungen. Den gespeicherten Entwurf können Sie später wieder öffnen. Der einfache Assistent importiert keine beliebigen vorhandenen JSON-Schemata zur Bearbeitung und entfernt deshalb keine unbekannten Regeln aus solchen Dateien.',
+      'Bei der Empfängerleistung hinterlegen Sie die Kennung als unterstütztes Antwortschema. In der Destination-Einrichtung und -Verwaltung lässt sie sich aus der JSON-Schemadatei übernehmen. Dies lädt die Datei nicht hoch; die Konfigurationsänderung wird separat bestätigt. Der Sender lädt die aktuellen Leistungen neu und bietet genau dieses Schema als Antwortkanal an. Ein Dateiimport im Versand umgeht das Empfängerangebot nicht.',
+      'Stellen Sie die Schemadatei beiden Seiten lokal zur Verfügung oder veröffentlichen Sie sie selbst unter einer passenden HTTPS-Adresse. FIT-Connect überträgt die Kennung, nicht automatisch die Definition. Eine URN ist keine Downloadadresse. Beim Antworten laden Sie das passende lokale Antwortschema und prüfen den Inhalt; empfangene Antworten werden mit derselben Definition geprüft. Eine fachliche Statusmeldung ersetzt keine technische Annahme oder Ablehnung.',
     ],
     notes: [
       'Exportierte Testpakete sind unverschlüsselte Dateien. Die lokale Sammlung wird mit dem Windows-Benutzerkonto verschlüsselt und bleibt nach einem Neustart verfügbar. Sie ist unabhängig vom Verbindungsprofil. Maximal 32 Pakete und insgesamt 64 MiB. Verwenden Sie nur fiktive Testdaten und prüfen Sie den Inhalt vor dem Teilen.',

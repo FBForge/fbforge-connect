@@ -1,0 +1,124 @@
+{
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "urn:fbforge:connect:reply:status:1",
+    "title": "Fachliche Statusmitteilung",
+    "description": "Vereinbartes Antwortschema für fiktive Integrationsdaten.",
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "title": "Fachlicher Status",
+        "enum": ["eingegangen", "in_bearbeitung", "abgeschlossen"]
+      },
+      "field0": {
+        "type": "string",
+        "title": "Test string",
+        "maxLength": 2000
+      },
+      "field1": {
+        "type": "integer",
+        "title": "Test integer"
+      },
+      "field2": {
+        "type": "number",
+        "title": "Test number"
+      },
+      "field3": {
+        "type": "boolean",
+        "title": "Test boolean"
+      },
+      "field4": {
+        "type": "string",
+        "title": "Test date",
+        "maxLength": 2000,
+        "format": "date"
+      },
+      "field5": {
+        "type": "string",
+        "title": "Test date-time",
+        "maxLength": 2000,
+        "format": "date-time"
+      },
+      "field6": {
+        "type": "array",
+        "title": "Test string-array",
+        "items": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "maxItems": 50
+      }
+    },
+    "required": ["status", "field0", "field1", "field2", "field3", "field4", "field5", "field6"],
+    "additionalProperties": false
+  },
+  "example": {
+    "status": "eingegangen",
+    "field0": "Fiktive Mitteilung",
+    "field1": 1,
+    "field2": 1.5,
+    "field3": true,
+    "field4": "2030-01-15",
+    "field5": "2030-01-15T10:00:00Z",
+    "field6": ["Fiktive Unterlage"]
+  },
+  "offer": {
+    "schemaUri": "urn:fbforge:connect:reply:status:1",
+    "mimeType": "application/json"
+  },
+  "draft": {
+    "format": "fbforge-connect-channel-schema",
+    "version": 1,
+    "definition": {
+      "schemaUri": "urn:fbforge:connect:reply:status:1",
+      "title": "Fachliche Statusmitteilung",
+      "description": "Vereinbartes Antwortschema für fiktive Integrationsdaten.",
+      "statuses": ["eingegangen", "in_bearbeitung", "abgeschlossen"],
+      "fields": [
+        {
+          "name": "field0",
+          "title": "Test string",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "field1",
+          "title": "Test integer",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "name": "field2",
+          "title": "Test number",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "field3",
+          "title": "Test boolean",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "name": "field4",
+          "title": "Test date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "field5",
+          "title": "Test date-time",
+          "type": "date-time",
+          "required": true
+        },
+        {
+          "name": "field6",
+          "title": "Test string-array",
+          "type": "string-array",
+          "required": true
+        }
+      ]
+    }
+  }
+}

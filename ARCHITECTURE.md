@@ -66,6 +66,10 @@ BPMN-Element-IDs werden nicht als FIT-Connect-Kennungen verwendet. Eigene Modell
 
 `processModelId` darf auch an der Nachricht stehen. Schemahinweise sind optional, erfordern aber URI und MIME-Typ. Zuordnungsdateien sind an den SHA-256 des Modells gebunden. Replies verwenden nur die Bezüge und Schemata des geprüften Antwortkanals. Beispiel: `frontend/src/examples/test-process.bpmn`.
 
+Übernommene Modellzuordnungen stehen über `process-context.js` als öffentliche lokale Nachrichtenliste zur Verfügung. Destination-Angebote und erlaubte Prozessantworten übernehmen sie ausdrücklich. Manuelle Antwortkennungen werden begrenzt und auf Duplikate geprüft; sie erweitern keine native Berechtigung. Ein anderes Antwortschema verwirft die bisherige Prozessantwortliste.
+
+`channel-schemas.js` erzeugt begrenzte JSON-Schemas (Draft 2020-12), fiktive Daten und einen versionierten bearbeitbaren Entwurf vollständig lokal. Exportdateien werden nur auf Benutzeraktion erstellt. Dateihilfen übernehmen Schema-Kennungen in die vorhandenen Konfigurationswege; der Versand akzeptiert nur aktuell angebotene Kennungen. Keine automatische Veröffentlichung, kein Schemahost und keine neue Netzwerkfreigabe. Die eigentliche Inhaltsprüfung bleibt in beiden SDK-Adaptern.
+
 ## Tests
 
 SDK-Tests prüfen Verschlüsselung und Rundläufe. Frontend- und native Tests die Verträge und Kontextbindung. Browser-Fixtures werden nicht ausgeliefert. DPAPI, Installation und Upgrades werden unter Windows geprüft. Reale Austausche auf FIT-Connect TEST. Befehle stehen in [CONTRIBUTING.md](CONTRIBUTING.md).

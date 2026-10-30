@@ -12,6 +12,7 @@ import { searchProcessDestinations } from '../process-discovery.js';
 import { processWorkspaceKey } from '../process-context.js';
 import { errorMessage } from '../diagnostics.js';
 import { resetsSessions } from '../sessions.js';
+import { mappedMessages } from '../process-messages.js';
 
 // Owns process workspace state and its session-bound lifecycle.
 export function useProcessWorkspace(props, emit) {
@@ -39,6 +40,13 @@ export function useProcessWorkspace(props, emit) {
   );
   const currentMapping = computed(() =>
     mapping.value?.entries.find((row) => row.bpmnMessageId === selected.value?.bpmnMessageId),
+  );
+  watch(
+    [model, mapping],
+    () => {
+      if (workspace?.messages) workspace.messages.value = mappedMessages(model.value, mapping.value);
+    },
+    { immediate: true, flush: 'sync' },
   );
   const filtered = computed(
     () =>

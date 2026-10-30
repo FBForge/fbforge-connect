@@ -3,6 +3,28 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dropFiles } from './drop-files.js';
 
+test('the shared process catalog exposes committed mappings and clears after an invalid replacement', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/process-workspace.html');
+  await page.getByRole('button', { name: 'Fiktiven Demo-Prozess öffnen', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.__processFixture.catalog().length)).toBe(4);
+  const previous = await page.locator('#bpmn-message-id').inputValue();
+  await page.locator('#bpmn-message-id').fill('changed-message');
+  expect((await page.evaluate(() => window.__processFixture.catalog()))[0].messageId).toBe(previous);
+  await page.getByRole('button', { name: 'Kennungszuordnung übernehmen', exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.__processFixture.catalog()[0].messageId))
+    .toBe('changed-message');
+  await page.getByText('Anderes BPMN-Modell öffnen', { exact: true }).click();
+  await page
+    .locator('#bpmn-file')
+    .setInputFiles({ name: 'bad.bpmn', mimeType: 'application/xml', buffer: Buffer.from('<invalid>') });
+  await expect(page.getByRole('alert')).toBeVisible();
+  expect(await page.evaluate(() => window.__processFixture.catalog())).toEqual([]);
+  expect(await page.evaluate(() => window.__processFixture.calls)).toEqual([]);
+});
+
 test('BPMN loading restores visible keyboard focus', async ({ page }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/process-workspace.html');
   await page.getByRole('button', { name: 'Fiktiven Demo-Prozess öffnen', exact: true }).focus();
