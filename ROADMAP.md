@@ -11,7 +11,9 @@ Die Version bündelt die vereinfachten Abläufe für Windows x64:
 - Geschützte Vorgangsablage und Testfall-Sammlung, wiederverwendbare Testpakete und lokaler Schema-Vergleich.
 - Zentral gepflegte Web-Anleitung, aktuelle Bilder und dokumentierte Build- und Release-Abläufe.
 
-Die Freigabe benötigt die v2/v3-Regression, Tastatur-/NVDA- und Skalierungsprüfungen sowie ein unabhängig geprüftes signiertes Windows-Upgrade. Details stehen in [RELEASING.md](RELEASING.md).
+Version 0.2.0 ist veröffentlicht. Die zugehörigen Änderungen stehen in
+[RELEASE_NOTES.md](RELEASE_NOTES.md#020). Der Ablauf für kommende Veröffentlichungen
+steht in [RELEASING.md](RELEASING.md).
 
 ## Goal 0.3.0: Wiederholbare Integrationsabläufe und sicherer Betrieb
 

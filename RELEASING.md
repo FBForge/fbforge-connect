@@ -49,8 +49,9 @@ wird Rebase-Merge verwendet. Dabei ändern sich Commit-IDs; deshalb wird der ent
 Main-Stand vor Signierung und Tag erneut exakt validiert. Merge-Verknüpfungen aus den
 Arbeitsbranches werden nicht in die lineare Main-Historie übernommen.
 
-Die aktiven Regeln verlangen erfolgreiche Statusprüfungen sowie CodeQL- und
-Code-Quality-Ergebnisse. Lösch- und Force-Push-Sperren bleiben eingeschaltet.
+Bei der Übernahme die im Repository konfigurierten Branchregeln einschließlich
+Status-, CodeQL- und Code-Quality-Prüfungen beachten. Lösch- und Force-Push-Sperren
+nicht für den Release umgehen.
 Veröffentlichte Historie und Tags bleiben unverändert. Falls Main inzwischen weitere
 Änderungen enthält, werden diese vor der abschließenden Abnahme integriert.
 
@@ -62,6 +63,29 @@ Versionsdateien und Versionshinweise vor der letzten Abnahme fertigstellen. Ein 
 Danach keine Änderungen mehr in den zu veröffentlichenden Stand aufnehmen.
 
 ## 3. Exakten Stand auf Main validieren und signieren
+
+### Signier-Runner einmalig einrichten
+
+1. Einen eigenen Windows-x64-Runner mit Label `fbforge-signing` unter einem separaten
+   Windows-Benutzer einrichten. Buildwerkzeuge, Windows SDK und lokalen Signaturdienst
+   installieren. Den Runner interaktiv starten, nicht als Dienst. Das Zertifikat
+   muss im Zertifikatspeicher dieses Benutzers verfügbar sein.
+2. Das GitHub-Environment `windows-signing` mit `FBForge` als einzigem Required
+   Reviewer einrichten. „Prevent self-review“ bleibt ausgeschaltet, damit der
+   Eigentümer seinen eigenen Lauf freigeben kann.
+3. Repository-Variablen `WINDOWS_SIGNING_THUMBPRINT` und `WINDOWS_TIMESTAMP_URL`
+   setzen: öffentlicher Zertifikatsfingerabdruck ohne Leerzeichen und RFC-3161-
+   Zeitstempelserver. Keine Zugangsdaten oder TOTP-Geheimnisse in GitHub speichern.
+4. Den passenden privaten Update-Schlüssel und dessen Passwort nach
+   [BUILDING.md](BUILDING.md#update-signierung-einmalig-einrichten) lokal bereitstellen.
+   Den bereits hinterlegten öffentlichen Projekt-Prüfschlüssel beibehalten.
+
+Externe Fork-PR-Workflows benötigen eine manuelle Freigabe und dürfen niemals auf
+dem Signier-Runner ausgeführt werden. Den Runner ausschließlich für den manuellen
+Signierjob verwenden und außerhalb der Signierung anhalten. GitHub bietet manuelle
+Workflows erst an, wenn deren Definition im Default-Branch liegt.
+
+### Für jeden Release
 
 1. Den vollständigen Commit-SHA auf Main festhalten und die normalen `Checks` abwarten.
 2. `Windows release validation` manuell auf Main starten. Für den Upgrade-Test unter `upgrade_run`
@@ -122,9 +146,11 @@ oder bewusst abbrechen, niemals eine noch verwendete Paketquelle entfernen.
 
 ## Update-Pakete ab 0.3.0
 
-Vor dem ersten offiziellen Build den eigenen Update-Schlüssel nach [BUILDING.md](BUILDING.md)
-einrichten und den öffentlichen Schlüssel committen. Ein fehlender oder falscher
-Schlüssel ist ein Freigabeblocker. Der private Schlüssel und sein Passwort bleiben
+Der öffentliche Projekt-Prüfschlüssel ist bereits in `desktop/update-public-key.txt`
+hinterlegt. Vor der Signierung den dazugehörigen privaten Schlüssel nach
+[BUILDING.md](BUILDING.md#update-signierung-einmalig-einrichten) auf dem Signierrechner
+bereitstellen; für einen Build keinen neuen Schlüssel erzeugen. Ein fehlender oder
+falscher Schlüssel ist ein Freigabeblocker. Der private Schlüssel und sein Passwort bleiben
 auf dem interaktiven Signierrechner und werden nicht als Release-Artefakt hochgeladen.
 
 Der Signierjob erstellt die zusätzliche Tauri-Signatur **nach** der abschließenden
@@ -142,13 +168,18 @@ als neueste Version veröffentlicht werden. Danach die öffentliche URL
 und den darin verlinkten, signierten Installer prüfen. Kein separates Neusignieren
 oder Neubauen nach der Kandidatenprüfung.
 
-Vor der 0.3.0-Freigabe ein echtes Update vom installierten Vorgänger prüfen:
+Vor der 0.3.0-Freigabe den integrierten Update-Ablauf gesondert prüfen:
 Hinweis, Download, Abbruch, ungültige Signatur, offene Aktionen, gesicherte Profile,
-NSIS-Update, Neustart und erneute Anmeldung. Dieser erste manuelle Installationsschritt
-bleibt für Versionen ohne eingebauten Updater erforderlich. Die vorhandene Prüfung
-von Neuinstallation und Upgrade ersetzt die Bedienung des Updaters nicht.
+NSIS-Update, Neustart und erneute Anmeldung. Dafür sind eine ältere Testinstallation
+mit eingebautem Updater und ein neueres, zur Version passend signiertes Paket
+erforderlich; Testaufbau und Ergebnis dokumentieren. Version 0.2.0 hat keinen
+Updater und kann diesen Ablauf nicht prüfen. Das Upgrade von 0.2.0 erfolgt durch
+manuelles Installieren und prüft Installer sowie Profilerhalt. Diese Abnahme
+ersetzt die Bedienung des integrierten Updaters nicht.
 
-Das Schlüssel-Skript kann auch aus einem WSL-UNC-Checkout in Windows-PowerShell aufgerufen werden: `./scripts/setup-update-signing.ps1` ohne Projektpfad als Argument. Es startet die exakt gepinnte Windows-Tauri-CLI aus einem lokalen temporären Verzeichnis, damit CMD weder am UNC-Arbeitsverzeichnis noch an Linux-`node_modules` scheitert. `-KeyPath` bezeichnet ausschließlich eine neue lokale Datei außerhalb des Repositorys; standardmäßig liegt sie unter `%LOCALAPPDATA%\FBForge\signing\connect-updater.key`. Vorhandene Schlüssel werden nicht überschrieben.
+Die einmalige Schlüsselerzeugung einschließlich Aufruf aus einem WSL-UNC-Checkout
+ist ausschließlich in [BUILDING.md](BUILDING.md#update-signierung-einmalig-einrichten)
+beschrieben. Bereits vorhandene private Schlüssel werden nicht überschrieben.
 
 ## Optionale Scanner-Komponente ab 0.3.0
 

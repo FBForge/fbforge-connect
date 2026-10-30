@@ -69,12 +69,26 @@ Der erste Rust-Build und das Laden der WebView2-Dateien können einige Minuten d
 
 Der öffentliche Projekt-Prüfschlüssel ist in `desktop/update-public-key.txt` hinterlegt. Für normale Entwicklungsbuilds keinen neuen Schlüssel erzeugen. Nur der Projekteigentümer richtet das dauerhafte Schlüsselpaar ein oder plant eine Schlüsselrotation. Ein Build ohne gültigen Prüfschlüssel deaktiviert den Updater erkennbar; der manuelle Download bleibt verfügbar.
 
+Diese Datei ist die gemeinsame Quelle für die Anwendung, den Signierablauf und die
+unabhängige Paketprüfung. Der Schlüsselwert wird nicht zusätzlich in der Dokumentation
+oder `tauri.conf.json` gepflegt. Bei der Erzeugung entsteht außerdem die öffentliche
+Datei `connect-updater.key.pub` neben dem privaten Schlüssel auf dem Signierrechner;
+das Skript kopiert deren Inhalt in die Repository-Datei. Beide öffentlichen Kopien
+sind beabsichtigt. Die private `.key`-Datei bleibt außerhalb des Repositorys.
+
 Der Projekteigentümer erzeugt das dauerhafte Schlüsselpaar **auf dem Windows-
 Signierrechner**. Für die einmalige Ersteinrichtung aus dem Checkout ausführen:
 
 ```powershell
 .\scripts\setup-update-signing.ps1
 ```
+
+Diese einmalige Schlüsselerzeugung funktioniert auch aus einem WSL-UNC-Checkout
+in Windows-PowerShell, ohne zusätzlichen Projektpfad als Argument. Das Skript
+startet die festgelegte Windows-Tauri-CLI aus einem lokalen temporären Verzeichnis;
+es verwendet weder WSL-`node_modules` noch einen UNC-Arbeitsordner für CMD.
+`-KeyPath` bezeichnet ausschließlich eine neue private Schlüsseldatei auf einem
+lokalen Windows-Laufwerk außerhalb des Repositorys.
 
 Ein nicht leeres Passwort vergeben. Standardpfad des privaten Schlüssels:
 `%LOCALAPPDATA%\FBForge\signing\connect-updater.key`. Das Skript überschreibt
