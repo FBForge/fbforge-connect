@@ -27,7 +27,8 @@ impl Runtime {
         self.save()
     }
     pub fn commit(&mut self, stage: PathBuf) -> Result<(), &'static str> {
-        let checked = verify_databases(&stage.join("engine"), &stage.join("database"));
+        let checked =
+            verify_databases(&stage.join("engine"), &stage.join("database"), &self.cancel);
         if let Err(error) = checked {
             let _ = fs::remove_dir_all(stage);
             return Err(error);
@@ -97,7 +98,7 @@ impl Runtime {
                 "scanner_update_failed"
             }
         })?;
-        verify_databases(&engine, &database)
+        verify_databases(&engine, &database, &self.cancel)
     }
     pub fn import_databases(&mut self, paths: &[PathBuf]) -> Result<(), &'static str> {
         let spec = package::verify_engine(&self.current().join("engine"))?;
@@ -178,7 +179,7 @@ impl Runtime {
                     "scanner_update_failed"
                 }
             })?;
-            verify_databases(&engine, &database)?;
+            verify_databases(&engine, &database, &self.cancel)?;
             let old = current.join("database.previous");
             let was_ready = self.status().ready;
             self.stop();

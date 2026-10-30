@@ -6,11 +6,18 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
-    io::{Read, Write},
-    net::{Ipv4Addr, SocketAddrV4, TcpListener, TcpStream},
+    io::Read,
     path::{Path, PathBuf},
-    process::{Command, Stdio},
-    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
+    process::Command,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
+#[cfg(windows)]
+use std::{
+    io::Write,
+    net::{Ipv4Addr, SocketAddrV4, TcpListener, TcpStream},
+    process::Stdio,
+    time::Instant,
 };
 
 #[derive(Default, Deserialize, Serialize)]
@@ -100,7 +107,14 @@ pub fn database_header(path: &Path) -> Result<(u64, u64), &'static str> {
     }
     Ok((version, created))
 }
-pub fn verify_databases(engine: &Path, database: &Path) -> Result<(), &'static str> {
+pub fn verify_databases(
+    engine: &Path,
+    database: &Path,
+    cancel: &std::sync::atomic::AtomicBool,
+) -> Result<(), &'static str> {
+    if cancel.load(std::sync::atomic::Ordering::SeqCst) {
+        return Err("content_cancelled");
+    }
     package::verify_engine(engine)?;
     for name in package::DATABASES {
         let file = database.join(name);
@@ -121,7 +135,7 @@ pub fn verify_databases(engine: &Path, database: &Path) -> Result<(), &'static s
         if !meta.is_file() || meta.file_type().is_symlink() || meta.len() > 65536 {
             return Err("scanner_database_invalid");
         }
-        scanner_process::output(
+        scanner_process::output_with_cancel(
             Command::new(engine.join("sigtool.exe"))
                 .current_dir(engine)
                 .arg("--verify")
@@ -129,14 +143,39 @@ pub fn verify_databases(engine: &Path, database: &Path) -> Result<(), &'static s
                 .arg("--cvdcertsdir")
                 .arg(engine.join("certs")),
             Duration::from_secs(30),
+            cancel,
         )
-        .map_err(|_| "scanner_database_invalid")?;
+        .map_err(|error| {
+            if error == "content_cancelled" {
+                error
+            } else {
+                "scanner_database_invalid"
+            }
+        })?;
     }
     Ok(())
+}
+fn clear_temporary(root: &Path) -> Result<(), &'static str> {
+    match fs::remove_dir_all(root.join("temporary")) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err("scanner_install_failed"),
+    }
 }
 impl Runtime {
     pub fn open(root: PathBuf) -> Result<Self, &'static str> {
         fs::create_dir_all(&root).map_err(failure)?;
+        // Recover interrupted two-rename swaps before inspecting or using any executable/database.
+        for (previous, current) in [
+            ("previous", "current"),
+            ("preferences.previous", "preferences.json"),
+            ("current/database.previous", "current/database"),
+        ] {
+            if !root.join(current).exists() && root.join(previous).exists() {
+                fs::rename(root.join(previous), root.join(current)).map_err(failure)?;
+            }
+        }
+        clear_temporary(&root)?;
         let prefs = root.join("preferences.json");
         let preferences = if prefs.exists() {
             let bytes = fs::read(&prefs).map_err(failure)?;
@@ -209,6 +248,7 @@ impl Runtime {
     pub fn stop(&mut self) {
         self.port = None;
         self.process.take();
+        let _ = clear_temporary(&self.root);
     }
     pub fn enable(&mut self, enabled: bool) -> Result<Option<u16>, &'static str> {
         if !enabled {
@@ -240,7 +280,7 @@ impl Runtime {
         let current = self.current();
         let engine = current.join("engine");
         let database = current.join("database");
-        verify_databases(&engine, &database)?;
+        verify_databases(&engine, &database, &self.cancel)?;
         let listener = TcpListener::bind(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 0))
             .map_err(|_| "scanner_start_failed")?;
         let port = listener
@@ -282,6 +322,7 @@ impl Runtime {
         Err("scanner_start_failed")
     }
 }
+#[cfg(windows)]
 fn ping(port: u16) -> bool {
     (|| {
         let mut socket = TcpStream::connect_timeout(
@@ -323,6 +364,45 @@ pub fn freshclam_configuration(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn interrupted_swaps_recover_and_only_owned_temporary_files_are_removed() {
+        let root = unique(&std::env::temp_dir(), "fbforge-scanner-recovery");
+        fs::create_dir_all(root.join("previous/database.previous")).unwrap();
+        fs::write(root.join("previous/database.previous/retained"), b"fixture").unwrap();
+        fs::write(root.join("unrelated"), b"keep").unwrap();
+        fs::write(
+            root.join("preferences.previous"),
+            r#"{"enabled":false,"automaticUpdates":false,"lastUpdate":null,"updateFailed":false}"#,
+        )
+        .unwrap();
+        fs::create_dir(root.join("temporary")).unwrap();
+        fs::write(root.join("temporary/old-fixture"), b"fictitious bytes").unwrap();
+        let mut runtime = Runtime::open(root.clone()).unwrap();
+        assert_eq!(
+            fs::read(root.join("current/database/retained")).unwrap(),
+            b"fixture"
+        );
+        assert!(root.join("preferences.json").exists());
+        assert!(!root.join("temporary").exists());
+        assert_eq!(fs::read(root.join("unrelated")).unwrap(), b"keep");
+        fs::create_dir(root.join("temporary")).unwrap();
+        fs::write(root.join("temporary/session-fixture"), b"fictitious bytes").unwrap();
+        runtime.stop();
+        assert!(!root.join("temporary").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn cancelled_database_verification_never_starts_an_unavailable_helper() {
+        let cancelled = std::sync::atomic::AtomicBool::new(true);
+        assert_eq!(
+            verify_databases(
+                Path::new("missing-engine"),
+                Path::new("missing-database"),
+                &cancelled
+            ),
+            Err("content_cancelled")
+        );
+    }
     #[test]
     fn automatic_update_limit_includes_failed_attempts_and_retains_old_preferences() {
         let mut preferences: Preferences = serde_json::from_str(

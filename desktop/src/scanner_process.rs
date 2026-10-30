@@ -73,6 +73,7 @@ impl Drop for OwnedProcess {
 }
 
 /// Bounded helper output, no shell and no inherited stdin. A timeout kills our helper and its job.
+#[cfg(all(test, unix))]
 pub fn output(command: &mut Command, timeout: Duration) -> Result<String, &'static str> {
     output_with_cancel(command, timeout, &std::sync::atomic::AtomicBool::new(false))
 }
@@ -81,6 +82,9 @@ pub fn output_with_cancel(
     timeout: Duration,
     cancel: &std::sync::atomic::AtomicBool,
 ) -> Result<String, &'static str> {
+    if cancel.load(std::sync::atomic::Ordering::SeqCst) {
+        return Err("content_cancelled");
+    }
     command.stdout(Stdio::piped()).stderr(Stdio::null());
     let mut process = OwnedProcess::spawn(command)?;
     let mut pipe = process.child.stdout.take().ok_or("scanner_start_failed")?;
@@ -193,6 +197,16 @@ pub fn owns_port(_pid: u32, _port: u16) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn cancellation_prevents_even_attempting_to_spawn_the_helper() {
+        let cancelled = std::sync::atomic::AtomicBool::new(true);
+        let mut command = Command::new("nonexistent-fbforge-scanner-helper.exe");
+        assert_eq!(
+            output_with_cancel(&mut command, Duration::from_secs(1), &cancelled),
+            Err("content_cancelled")
+        );
+    }
+
     #[cfg(windows)]
     #[test]
     fn loopback_listener_is_bound_to_its_actual_process_not_an_arbitrary_pid() {
