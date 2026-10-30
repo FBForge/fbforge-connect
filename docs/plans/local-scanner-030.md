@@ -91,7 +91,10 @@ vorbereiteten unveränderlichen Inhalt binden. Auch Antworten berücksichtigen.
   Freigaben; Profil-/Umgebungs-/API-Wechsel darf kein Ergebnis übernehmen.
 - Receipts: Fund automatisch im signierten Accept-Problem referenziert; native
   Bestätigung erforderlich; Abbruch sendet nichts; keine Sammelannahme; signierte
-  Eventlogs nach realem TEST-Accept prüfen. Keine EICAR-Übermittlung in STAGE/PROD.
+  Eventlogs nach realem TEST-Accept prüfen. Dafür einen kontrollierten ICAP-Befund
+  für eine harmlose Anlage verwenden und den exakten Problemtyp/Anlagenbezug unter
+  v2/v3 aus den verifizierten Claims lesen. Die echte EICAR-Erkennung separat lokal
+  prüfen; dieser TEST-Lauf übermittelt keine EICAR-Datei.
 - Versand/Antwort: saubere unveränderte Bytes erfolgreich; Fund/Timeout verhindert
   jeden schreibenden Netzaufruf; kein Replay bei ungewissem Ausgang.
 - Native Pakettests: gültiges Paket, falsche Version/Architektur/Signatur/Hash,
@@ -110,7 +113,8 @@ Website-Nginx-/Deploymentprüfungen aktualisieren. Erst dann Integration in 0.3.
 
 ## Umsetzungsstand und verbleibende Freigaben
 
-Implementiert auf `feature/local-scanner-0.3.0`: native Komponentenverwaltung,
+Auf `feature/local-scanner-0.3.0` implementiert und nach bestandener Abnahme in
+`release/0.3.0` integriert: native Komponentenverwaltung,
 vier Scanner-Modi, optionale Setup-Komponente, offizielle Engine-/CVD-Prüfung,
 Offline-Import und bewusste FreshClam-Updates, Prozessbindung an die App,
 Anlagenberichte, signierte Accept-Probleme und ausgehende Scan-Grenze.
@@ -120,13 +124,18 @@ Signaturdatenbank, saubere Text-/PDF-Dateien und EICAR; tatsächlicher Java-Host
 über INSTREAM und einen an die echte Engine angeschlossenen lokalen ICAP-Peer.
 Browser prüft gesperrte Anlage, verbleibende Inhalte, kein Vollarchiv,
 Einzelannahme, Abbruch und keine automatische Sammelannahme.
-Die vollständigen automatischen Prüfungen und die echte Windows-Installation
-werden vor Integration ausgewertet. Ein Protokoll-Peer ist keine Abnahme eines
-konkreten externen ICAP-Produkts.
+Vollständige Java-, native und Browser-Regressionen sind bestanden. Die echte
+Windows-Abnahme umfasst Setup mit und ohne Komponente, Erhalt der Auswahl beim
+Upgrade, Offline-Übernahme, Prozessstart/-ende sowie Tastatur und NVDA. Der echte
+TEST-Nachrichtenfluss mit lokalem ClamAV ist für v2/v3 einschließlich Antworten,
+Empfangsbestätigungen, Exporten und Event Logs bestanden. Zusätzlich bestätigt
+der Zustelldienst die ausdrückliche Annahme mit kontrolliertem ICAP-Anlagenbefund;
+die verifizierten signierten Claims enthalten genau den erwarteten Problemtyp
+und Anlagenbezug. Dabei wurde keine EICAR-Datei versendet. Ein Protokoll-Peer ist
+keine Abnahme eines konkreten externen ICAP-Produkts.
 
-Freigabegates: Windows-Paketinstallation mit und ohne Komponente einschließlich
-Upgrade/Prozessende; eigener realer TEST-Nachrichtenfluss mit aktiviertem Scanner;
-abschließend signierte Installation und Update nach dem Main-Merge im gesonderten
-Release-Prozess. Kein automatisches Veröffentlichen und kein PR. Testzahlen und
+Vor Veröffentlichung bleiben der eigene fachliche Abnahmetest sowie signierte
+Installation und Update des endgültigen Release-Stands nach dem Main-Merge im
+gesonderten Release-Prozess. Kein automatisches Veröffentlichen und kein PR. Testzahlen und
 Lauf-IDs gehören zum Abnahmebericht, nicht als dauerhafte Erfolgsgarantie in die
 Produktbeschreibung.

@@ -188,6 +188,17 @@ einen lokalen, an diese Engine angeschlossenen ICAP-Testdienst geprüft. Das ist
 keine Zertifizierung fremder ICAP-Produkte. EICAR ist ein ungefährlicher
 standardisierter Erkennungstest, keine allgemeine Sicherheitsgarantie.
 
+Der manuelle Workflow `Real TEST exchange acceptance` installiert bei
+`local_scanner=true` die optionale Komponente aus dem angegebenen erfolgreichen
+Windows-Validierungslauf. Er prüft den echten v2/v3-Nachrichtenfluss mit lokalem
+ClamAV. Ein zusätzlicher, ausschließlich lokaler ICAP-Testdienst meldet für eine
+festgelegte harmlose Anlage einen kontrollierten Befund: Die übrigen Inhalte
+bleiben lesbar, das Vollarchiv bleibt gesperrt und die ausdrücklich bestätigte
+Einzelannahme muss genau diesen Anlagenbezug im signierten Event Log enthalten.
+Dieser Interoperabilitätstest verschickt keine EICAR-Datei und ersetzt den oben
+beschriebenen echten Erkennungstest nicht. Er benötigt die eingerichteten
+TEST-Zugangsdaten und verändert ausschließlich seine eigene Test-Destination.
+
 Der rein lesende Workflow `Check ClamAV upstream release` meldet wöchentlich oder
 bei manuellem Start eine neuere offizielle Engine-Version. Er installiert oder
 veröffentlicht nichts. Ein Engine-Update erfordert neue geprüfte Hashes, Quellen
