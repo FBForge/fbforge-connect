@@ -57,6 +57,9 @@ Freigabe erforderlich; dieser Roadmap-Eintrag aktiviert keine Updates.
 
 ### Vereinbarter Umfang auf `release/0.3.0`
 
+- Prozessnachrichten komfortabler verwenden: übernommene Modellzuordnungen direkt in Destination-Angebote und mehrere erlaubte Prozessantworten übernehmen; vereinbarte Antwortkennungen auch ohne BPMN-Datei erfassen. Keine Prozess-Engine und kein BPMN-Editor.
+- Eigene JSON-Kanalschemas für fachliche Statusmeldungen und Nachforderungen mit editierbaren Feldern erstellen. Schema, fiktive Daten und bearbeitbaren Entwurf exportieren; Kennung in die Destination-/Antwortkanal-Konfiguration übernehmen. Keine automatische Veröffentlichung und kein Umgehen tatsächlicher Antwortangebote.
+
 - Empfang: Alter aus geprüften Bereitstellungsereignissen, Filter ab drei/neun Tagen, älteste zuerst und nächste Einreichung. Unbekannte Zeitpunkte nicht aus dem lokalen Abrufdatum ableiten; technische Abhol- und Löschfristen von fachlichen Fristen unterscheiden.
 - Ungewissen Versand anhand bekannter Case-/Submission-ID lesend mit signierten Serverereignissen abgleichen. Fehlende Ereignisse nicht als Beweis für einen fehlenden Versand ausgeben; keine automatische Wiederholung.
 - Zertifikatswarnungen bei abgelaufenen Zertifikaten sowie 30/90 Tagen Vorlauf. Keine automatische Schlüsselrotation.

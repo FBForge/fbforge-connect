@@ -3,6 +3,7 @@ import CertifiedKeyImport from './destinations/CertifiedKeyImport.vue';
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import { demoSchemas, downloadDemoSchema } from './demo-data.js';
+import SchemaIdentifierFile from './SchemaIdentifierFile.vue';
 import { useDestinationSetup } from './destinations/useDestinationSetup.js';
 const props = defineProps({ session: Object, busy: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'created', 'changed', 'receive']);
@@ -246,6 +247,14 @@ const {
             <input id="setup-reply-schema" v-model="replySchema" maxlength="4096" />
             <small>Eintragen, wenn der Testantrag Antworten über FIT-Connect anbieten soll.</small>
           </label>
+          <SchemaIdentifierFile
+            v-if="addressing === 'service'"
+            id="setup-reply-file"
+            :context-key="`${session?.sessionId}/${addressing}/${service}`"
+            :disabled="disabled"
+            label="Antwortschema-Kennung aus JSON-Datei übernehmen"
+            @select="(uri) => (replySchema = uri)"
+          />
         </div>
       </fieldset>
       <p v-if="wizardStep === 2 && kind === 'C'">

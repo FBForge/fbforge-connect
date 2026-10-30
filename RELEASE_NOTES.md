@@ -2,6 +2,9 @@
 
 ## 0.3.0 (in Entwicklung)
 
+- Prozessantworten direkt aus übernommenen Modellzuordnungen oder vereinbarten Kennungen zusammenstellen. Schemahinweise, Duplikate und Limits prüfen; Modellzuordnungen auch beim Bearbeiten von Destination-Prozessnachrichten übernehmen.
+- Lokaler JSON-Kanalschema-Assistent für fachliche Statusmitteilungen und Nachforderungen: editierbare Felder, Pflichtangaben und Statuswerte; Schema-, Beispiel- und Entwurfsexport mit Wiederimport. Schema-Kennungen aus Dateien in die Konfiguration übernehmen; der Versand bleibt an das aktuelle Antwortangebot des Empfängers gebunden.
+
 - Empfang mit Alter aus geprüften Serverereignissen, Filtern und „Nächste Einreichung öffnen“. Technische Abholfristen und unbekannte Zeitpunkte ausdrücklich anzeigen.
 - Ungewissen Versand mit bekannten Nachrichtenkennungen lesend gegen signierte Serverereignisse prüfen; keine automatische Wiederholung.
 - Zertifikatswarnungen mit 30/90 Tagen Vorlauf. Empfänger-Favoriten und zuletzt verwendete Destinations geschützt im Profil speichern.

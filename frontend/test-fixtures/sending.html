@@ -11,7 +11,8 @@
     <div id="app"></div>
     <script type="module">
       import { testLibraryFixture } from './test-library-fixture.js';
-      import { createApp, h, ref } from 'vue';
+      import { createApp, h, ref, provide } from 'vue';
+      import { processWorkspaceKey, createProcessWorkspace } from '../src/process-context.js';
       import SubmissionSender from '../src/SubmissionSender.vue';
       import '../src/styles/index.css';
       import '../src/styles/index.css';
@@ -39,6 +40,9 @@
                     identifier: 'urn:test:service',
                     name: 'Fiktive Testleistung',
                     submissionSchemas: [{ schemaUri: 'urn:test:antrag', mimeType: 'application/json' }],
+                    replyChannels: {
+                      fitConnect: { processStandards: ['urn:fbforge:connect:reply:status:1'] },
+                    },
                   },
                 ],
               }),
@@ -107,6 +111,7 @@
             });
           }
           if (command === 'prepare_send') {
+            window.__sendFixture.preparedDocument = JSON.parse(args.sendDocument);
             const { contentId, attachments, ...draft } = JSON.parse(args.sendDocument);
             current = {
               attemptId: crypto.randomUUID(),
@@ -149,6 +154,24 @@
       };
       createApp({
         setup() {
+          const workspace = createProcessWorkspace();
+          workspace.messages.value = [
+            {
+              processModelId: 'urn:test:process:1',
+              messageId: 'request-more',
+              label: 'Nachforderung',
+              schemaUri: 'urn:fbforge:connect:reply:status:1',
+              mimeType: 'application/json',
+            },
+            {
+              processModelId: 'urn:test:process:1',
+              messageId: 'wrong-schema',
+              label: 'Abweichendes Schema',
+              schemaUri: 'urn:test:other',
+              mimeType: 'application/json',
+            },
+          ];
+          provide(processWorkspaceKey, workspace);
           return () =>
             h('main', { class: 'page client-page' }, [
               h('section', { class: 'tool-section' }, [

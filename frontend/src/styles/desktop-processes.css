@@ -30,6 +30,12 @@
   text-align: start;
   width: 100%;
 }
+.process-message-mapping {
+  display: block;
+  margin-top: 0.35rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
 .bpmn-message-list button[aria-pressed='true'] {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

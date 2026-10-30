@@ -1,8 +1,11 @@
 <script setup>
 import FileDropInput from '../FileDropInput.vue';
+import ProcessRepliesEditor from './ProcessRepliesEditor.vue';
+import SchemaIdentifierFile from '../SchemaIdentifierFile.vue';
+import { ref, watch } from 'vue';
+const schemaError = ref('');
 const props = defineProps({ controller: Object, session: Object, visible: Boolean });
 const {
-  processWorkspace,
   offeredProcessMessages,
   offerReplies,
   replySchema,
@@ -10,10 +13,23 @@ const {
   attachments,
   sendStep,
   replyOptions,
-  addReplyMessage,
+  schemaContext,
   disabled,
   addFiles,
 } = props.controller;
+watch([replyOptions, replySchema], () => (schemaError.value = ''));
+function selectReplySchema(uri) {
+  const match = replyOptions.value.find(
+    (item) => item.schemaUri === uri && (!item.mimeType || item.mimeType === 'application/json'),
+  );
+  schemaError.value = match
+    ? ''
+    : 'Diese Schema-Kennung wird von der gewählten Empfängerleistung noch nicht als Antwortschema angeboten. Zuerst dort hinterlegen und die Leistungen neu laden.';
+  if (match) {
+    replySchema.value = uri;
+    replyMime.value = 'application/json';
+  }
+}
 </script>
 <template>
   <fieldset v-show="sendStep === 2" data-send-step="2" :disabled="disabled">
@@ -25,34 +41,6 @@ const {
     <p v-if="!replyOptions.length" class="small-note">
       Für die gewählte Leistung ist kein unterstütztes Antwortschema hinterlegt.
     </p>
-    <div v-if="offerReplies && session?.apiVersion === 'v3'">
-      <h4>Angebotene Prozessantworten (optional)</h4>
-      <p>
-        Nur ausdrücklich angebotene Nachrichten dürfen als Prozess-Reply zurückkommen. Im Prozessbereich
-        zuerst die gewünschte Antwort auswählen. Für mehrere Nachrichten nacheinander übernehmen. Dafür wird
-        Metadatenversion 3 benötigt.
-      </p>
-      <button
-        class="button secondary"
-        type="button"
-        :disabled="!processWorkspace?.selection.value || offeredProcessMessages.length >= 16"
-        @click="addReplyMessage"
-      >
-        BPMN-Auswahl als erlaubte Antwort hinzufügen
-      </button>
-      <ul>
-        <li v-for="(item, index) in offeredProcessMessages" :key="`${item.processModelId}/${item.messageId}`">
-          {{ item.processModelId }} · {{ item.messageId }}
-          <button
-            type="button"
-            class="button secondary"
-            @click="offeredProcessMessages = offeredProcessMessages.filter((_, i) => i !== index)"
-          >
-            Antwortnachricht {{ index + 1 }} entfernen
-          </button>
-        </li>
-      </ul>
-    </div>
     <div v-if="offerReplies" class="client-fields">
       <label for="send-reply-schema">
         Antwortschema
@@ -70,6 +58,23 @@ const {
         </select>
       </label>
     </div>
+    <template v-if="offerReplies">
+      <SchemaIdentifierFile
+        id="send-reply-schema-file"
+        :context-key="schemaContext"
+        :disabled="disabled"
+        label="Angebotenes Antwortschema aus JSON-Datei auswählen"
+        @select="selectReplySchema"
+      />
+      <p v-if="schemaError" role="alert">{{ schemaError }}</p>
+      <ProcessRepliesEditor
+        v-if="session?.apiVersion === 'v3'"
+        v-model="offeredProcessMessages"
+        :schema-uri="replySchema"
+        :mime-type="replyMime"
+        :disabled="disabled"
+      />
+    </template>
     <p v-if="offerReplies" class="small-note">
       Das SDK erzeugt einen eigenen Antwortschlüssel. Bei aktiviertem Profil wird er vor dem Versand geschützt
       gesichert und kann nach einem Neustart wiederhergestellt werden. Ohne Profil gilt er nur für diese

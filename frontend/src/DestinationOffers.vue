@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue';
+import SchemaIdentifierFile from './SchemaIdentifierFile.vue';
+import MappedMessageSelect from './MappedMessageSelect.vue';
 const props = defineProps({
   modelValue: { type: Object, required: true },
   disabled: Boolean,
@@ -43,6 +45,14 @@ function add(group) {
 function schema(group, index, key, schemaIndex, field, value) {
   update((next) => (next[group][index][key][schemaIndex][field] = value));
 }
+function mapped(index, message) {
+  update((next) => {
+    next.processMessages[index].processModelId = message.processModelId;
+    next.processMessages[index].messageId = message.messageId;
+    if (message.schemaUri)
+      next.processMessages[index].schemas = [{ schemaUri: message.schemaUri, mimeType: message.mimeType }];
+  });
+}
 const csv = (value) =>
   value
     .split(',')
@@ -61,6 +71,12 @@ const csv = (value) =>
       <h4>{{ group.label }}</h4>
       <article v-for="(row, index) in modelValue[group.key]" :key="index" class="tool-section">
         <h5>{{ group.label }} · {{ index + 1 }}</h5>
+        <MappedMessageSelect
+          v-if="group.key === 'processMessages'"
+          :id="`${prefix}-${index}-mapped-message`"
+          :disabled="disabled"
+          @select="(message) => mapped(index, message)"
+        />
         <div class="client-fields">
           <label v-if="group.key === 'publicServices'" :for="`${prefix}-${group.key}-${index}-id`">
             Leistungskennung (LeiKa-URN)
@@ -173,6 +189,21 @@ const csv = (value) =>
             angebotenen Antwortkanal.
           </small>
         </label>
+        <SchemaIdentifierFile
+          v-if="group.key === 'publicServices'"
+          :id="`${prefix}-${index}-reply-file`"
+          :context-key="JSON.stringify(row)"
+          :disabled="disabled || (row.replyChannels?.fitConnect?.processStandards?.length || 0) >= 16"
+          label="Unterstütztes Antwortschema aus JSON-Datei ergänzen"
+          @select="
+            (uri) =>
+              update((next) => {
+                const entry = next.publicServices[index];
+                const current = entry.replyChannels?.fitConnect?.processStandards || [];
+                entry.replyChannels = { fitConnect: { processStandards: [...new Set([...current, uri])] } };
+              })
+          "
+        />
         <button
           type="button"
           class="button secondary"
