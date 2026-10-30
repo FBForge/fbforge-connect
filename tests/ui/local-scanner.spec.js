@@ -74,3 +74,25 @@ test('database age, readiness and automatic-update consent remain visible at nar
       .violations,
   ).toEqual([]);
 });
+
+test('stopping a connected local scanner also disables its Java scanner endpoint', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() =>
+    Object.assign(window.__integration.local, {
+      installed: true,
+      enabled: true,
+      ready: true,
+      databaseVersion: 28168,
+      databaseCreatedAt: 1793255040,
+      databaseAgeDays: 0,
+    }),
+  );
+  await page.getByRole('button', { name: 'Scanner-Einstellung anwenden', exact: true }).click();
+  await expect(page.getByText('Aktiv: Lokaler ClamAV', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Lokalen Scanner beenden', exact: true }).click();
+  await expect(page.getByText('Aktiv: Kein Scanner', { exact: true })).toBeVisible();
+  const calls = await page.evaluate(() => window.__integration.calls);
+  const configured = calls.filter((call) => call.command === 'configure_malware_scanner');
+  expect(configured.map((call) => call.args.configuration.kind)).toEqual(['local', 'off']);
+  expect(calls.some((call) => call.command === 'stop_local_scanner')).toBe(false);
+});

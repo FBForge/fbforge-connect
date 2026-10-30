@@ -2,8 +2,8 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { invoke } from '../native.js';
 import { checkedLocalScanner, scannerError } from '../local-scanner.js';
-const props = defineProps({ disabled: Boolean });
-const emit = defineEmits(['busy', 'changed']);
+const props = defineProps({ disabled: Boolean, connected: Boolean });
+const emit = defineEmits(['busy', 'changed', 'disable']);
 const status = ref(null),
   error = ref(''),
   pending = ref(false);
@@ -153,7 +153,7 @@ onBeforeUnmount(() => {
         class="button secondary"
         type="button"
         :disabled="disabled || pending || status?.busy"
-        @click="run('stop_local_scanner')"
+        @click="connected ? emit('disable') : run('stop_local_scanner')"
       >
         Lokalen Scanner beenden
       </button>

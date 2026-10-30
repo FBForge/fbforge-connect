@@ -80,6 +80,7 @@ const messages = {
 };
 const warning = (stage) =>
   ({
+    MALWARE_SCAN_PASSED: 'Der eingerichtete Scanner hat die Inhalte freigegeben.',
     MALWARE_ATTACHMENT_BLOCKED:
       'Anlagen wurden vom Virenscan gesperrt. Eine Annahme meldet diese Anlagen als Problem an FIT-Connect.',
     MALWARE_SCAN_NOT_CONFIGURED: 'Kein Malwarescan durchgeführt.',

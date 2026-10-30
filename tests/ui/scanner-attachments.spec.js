@@ -110,3 +110,23 @@ test('stored cases retain the blocked-file report and clean form without offerin
   await expect(page.locator('.document-attachments li')).toHaveCount(2);
   await expect(page.getByText('MALWARE_ATTACHMENT_BLOCKED', { exact: true })).toHaveCount(0);
 });
+
+test('clean scanner results remain human-readable in the acceptance dialog', async ({ page }) => {
+  await openBatch(page, { total: 1 });
+  await page.evaluate(() => {
+    const previous = window.__TAURI_INTERNALS__.invoke;
+    window.__TAURI_INTERNALS__.invoke = async (command, args) => {
+      const result = await previous(command, args);
+      if (['verify_submission', 'prepare_receipt'].includes(command))
+        result.data.warnings = ['MALWARE_SCAN_PASSED'];
+      return result;
+    };
+  });
+  await page.getByRole('button', { name: 'Öffnen und prüfen', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Annehmen', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Einreichung annehmen?', exact: true });
+  await expect(dialog).toContainText('Der eingerichtete Scanner hat die Inhalte freigegeben.');
+  await expect(dialog.getByText(/MALWARE_SCAN_PASSED/)).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+  expect(await page.evaluate(() => window.__batchFixture.writes)).toEqual([]);
+});
