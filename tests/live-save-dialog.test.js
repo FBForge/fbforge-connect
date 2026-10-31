@@ -31,3 +31,36 @@ if ((ConvertTo-SendKeysLiteral 'C:\\a\\{x}+[t](1)^%.txt') -cne 'C:\\a\\{{}x{}}{+
     assert.match(result.stdout, /directory checks passed/);
   },
 );
+test(
+  'native filename entry retries only an uncommitted edit and stops after three failures',
+  { skip: !shell },
+  () => {
+    const script = `
+$tokens=$null; $errors=$null
+$tree=[System.Management.Automation.Language.Parser]::ParseFile((Join-Path (Get-Location) 'scripts/live-ui/select-export-folder.ps1'),[ref]$tokens,[ref]$errors)
+$definition=$tree.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Set-VerifiedFileName'},$true)
+if (-not $definition) { throw 'verified_entry_missing' }
+. ([scriptblock]::Create($definition.Extent.Text))
+$state=@{ attempts=0 }
+Set-VerifiedFileName { $state.attempts++ } { $state.attempts -ge 2 }
+if ($state.attempts -ne 2) { throw 'delayed_entry_not_recovered' }
+$state.attempts=0
+Set-VerifiedFileName { $state.attempts++ } { $true }
+if ($state.attempts -ne 1) { throw 'confirmed_entry_repeated' }
+$state.attempts=0
+$denied=$false
+try { Set-VerifiedFileName { $state.attempts++ } { $false } } catch {
+  if ($_.Exception.Message -ne 'ui_file_name_not_applied') { throw }
+  $denied=$true
+}
+if (-not $denied -or $state.attempts -ne 3) { throw 'entry_retry_not_bounded' }
+'Verified native entry checks passed'
+`;
+    const result = spawnSync(shell, ['-NoProfile', '-NonInteractive', '-Command', script], {
+      encoding: 'utf8',
+      timeout: 30000,
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Verified native entry checks passed/);
+  },
+);

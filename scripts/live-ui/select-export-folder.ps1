@@ -74,6 +74,17 @@ function ConvertTo-SendKeysLiteral([string]$Value) {
         if ('+^%~(){}[]'.Contains([string]$_)) { '{' + $_ + '}' } else { [string]$_ }
     })
 }
+function Set-VerifiedFileName([scriptblock]$Apply, [scriptblock]$Matches) {
+    # Re-enter an uncommitted edit only. This never invokes Save or repeats an export.
+    for ($attempt = 0; $attempt -lt 3; $attempt++) {
+        & $Apply
+        for ($read = 0; $read -lt 5; $read++) {
+            if (& $Matches) { return }
+            Start-Sleep -Milliseconds 100
+        }
+    }
+    throw 'ui_file_name_not_applied'
+}
 function Test-DownloadsDirectory([string]$Actual, [string]$Expected, [string]$KnownFolderLabel) {
     if ([string]::IsNullOrWhiteSpace($Actual) -or [string]::IsNullOrWhiteSpace($Expected)) { return $false }
     if ($Actual.TrimEnd('\').Equals($Expected.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)) { return $true }
@@ -138,9 +149,17 @@ if ($SaveFile) {
         $null = Wait-Ui { ([System.Windows.Automation.AutomationElement]::FocusedElement.GetRuntimeId() -join ',') -eq $editRuntime } 'ui_file_name_focus_missing'
         # The common dialog can expose UIA SetValue without updating its selected file.
         # Real keystrokes notify the dialog, as a user's filename edit does.
-        Start-Sleep -Milliseconds 200
-        [System.Windows.Forms.SendKeys]::SendWait('^a' + (ConvertTo-SendKeysLiteral $destination))
-        $null = Wait-Ui { $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -eq $destination } 'ui_file_name_not_applied'
+        Set-VerifiedFileName {
+            $null = [ExportWindowFocus]::SetForegroundWindow($handle)
+            $edit.SetFocus()
+            $null = Wait-Ui {
+                [ExportWindowFocus]::GetForegroundWindow() -eq $handle -and
+                ([System.Windows.Automation.AutomationElement]::FocusedElement.GetRuntimeId() -join ',') -eq $editRuntime
+            } 'ui_file_name_focus_missing'
+            [System.Windows.Forms.SendKeys]::SendWait('^a')
+            Start-Sleep -Milliseconds 100
+            [System.Windows.Forms.SendKeys]::SendWait((ConvertTo-SendKeysLiteral $destination))
+        } { $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -eq $destination }
         $shell.SendKeys('{TAB}')
         Start-Sleep -Milliseconds 200
         $button = Wait-Ui {
