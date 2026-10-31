@@ -45,50 +45,53 @@ export async function exerciseDesktopUI(fixture) {
       'live_ui_api_switch_failed',
     );
     console.log('Real desktop UI: v2/v3 switch with actual credentials and no re-entry passed');
-    for (const api of ['v3', 'v2']) {
-      stage = `${api}_sender_profile`;
-      await connectProfile(page, senders[api]);
-      stage = `${api}_json_send`;
-      const message = await sendSubmission(page, fixture, api);
-      stage = `${api}_receiver_profile`;
-      await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === api).id);
-      stage = `${api}_private_key_import`;
-      await keySetup(page, fixture, api);
-      stage = `${api}_json_receive`;
-      await openSubmission(page, fixture, message);
-      if (api === 'v3') {
-        stage = 'received_screen_accessibility';
-        await auditScreen(page);
-        stage = 'transferred_pdf_preview';
-        await previewPdf(page);
-        stage = 'submission_download';
-        await downloadMessage(desktop, fixture, message);
+    const focused = process.env.FBFORGE_UI_REVIEW_ONLY === 'true';
+    if (!focused) {
+      for (const api of ['v3', 'v2']) {
+        stage = `${api}_sender_profile`;
+        await connectProfile(page, senders[api]);
+        stage = `${api}_json_send`;
+        const message = await sendSubmission(page, fixture, api);
+        stage = `${api}_receiver_profile`;
+        await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === api).id);
+        stage = `${api}_private_key_import`;
+        await keySetup(page, fixture, api);
+        stage = `${api}_json_receive`;
+        await openSubmission(page, fixture, message);
+        if (api === 'v3') {
+          stage = 'received_screen_accessibility';
+          await auditScreen(page);
+          stage = 'transferred_pdf_preview';
+          await previewPdf(page);
+          stage = 'submission_download';
+          await downloadMessage(desktop, fixture, message);
+        }
+        stage = `${api}_reply_accept_event_log`;
+        await replyAndAccept(desktop, fixture, message, api === 'v2');
+        stage = `${api}_sender_restore_reply_receive`;
+        await connectProfile(page, senders[api]);
+        await receiveReply(desktop, fixture, message, api === 'v3');
+        stage = `${api}_local_case`;
+        await caseWorkspace(page, message);
       }
-      stage = `${api}_reply_accept_event_log`;
-      await replyAndAccept(desktop, fixture, message, api === 'v2');
-      stage = `${api}_sender_restore_reply_receive`;
-      await connectProfile(page, senders[api]);
-      await receiveReply(desktop, fixture, message, api === 'v3');
-      stage = `${api}_local_case`;
-      await caseWorkspace(page, message);
+      stage = 'bulk_fixture_send';
+      await connectProfile(page, senders.v3);
+      const valid = await sendSubmission(page, fixture);
+      const invalid = await sendSubmission(page, fixture, 'v3', false, true);
+      const manual = await sendSubmission(page, fixture, 'v3', false, true);
+      await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
+      stage = 'bulk_schema_safety';
+      await bulkReceive(desktop, fixture, valid, invalid);
+      stage = 'schema_failure_manual_acceptance';
+      await acceptInvalid(desktop, fixture, manual);
+      stage = 'schema_failure_manual_rejection';
+      await rejectInvalid(page, fixture, invalid);
+      stage = 'destination_management';
+      await ownDestination(page, fixture);
+      stage = 'local_tools';
+      await localTools(page);
+      await auditScreen(page);
     }
-    stage = 'bulk_fixture_send';
-    await connectProfile(page, senders.v3);
-    const valid = await sendSubmission(page, fixture);
-    const invalid = await sendSubmission(page, fixture, 'v3', false, true);
-    const manual = await sendSubmission(page, fixture, 'v3', false, true);
-    await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
-    stage = 'bulk_schema_safety';
-    await bulkReceive(desktop, fixture, valid, invalid);
-    stage = 'schema_failure_manual_acceptance';
-    await acceptInvalid(desktop, fixture, manual);
-    stage = 'schema_failure_manual_rejection';
-    await rejectInvalid(page, fixture, invalid);
-    stage = 'destination_management';
-    await ownDestination(page, fixture);
-    stage = 'local_tools';
-    await localTools(page);
-    await auditScreen(page);
     stage = 'review_030';
     await review030(desktop, fixture, senders);
     stage = 'workspaces';
@@ -98,7 +101,7 @@ export async function exerciseDesktopUI(fixture) {
     stage = 'runtime_030';
     await reviewRuntime(desktop, fixture);
     console.log(
-      `Real installed desktop UI acceptance completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
+      `Real installed desktop UI ${focused ? 'focused review' : 'full acceptance'} completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
     );
   } catch (error) {
     if (desktop) {

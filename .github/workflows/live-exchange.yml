@@ -16,6 +16,10 @@ on:
         description: Install optional local ClamAV and scan the real desktop TEST exchange
         type: boolean
         default: true
+      review_only:
+        description: Focus installed UI on new 0.3 functions, full native TEST exchange still runs
+        type: boolean
+        default: false
       ui_probe:
         description: Diagnose validated installed UI startup without credentials or TEST writes
         type: boolean
@@ -77,6 +81,7 @@ jobs:
       - name: Exercise real TEST exchange with fictitious data
         if: inputs.ui_probe != true
         env:
+          FBFORGE_UI_REVIEW_ONLY: ${{ inputs.review_only }}
           SENDERID: ${{ secrets.SENDERID }}
           SENDERSECRET: ${{ secrets.SENDERSECRET }}
           SENDERDEST: ${{ secrets.SENDERDEST }}
