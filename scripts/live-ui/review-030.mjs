@@ -7,7 +7,7 @@ import { navigate, connectProfile, sendSubmission, openSubmission, replyAndAccep
 import { receiveReply } from './readback.mjs';
 import { nativeFile } from './downloads.mjs';
 import { reviewProcessAndInbox, reviewShortcuts } from './review-runtime.mjs';
-import { reviewAuthoring, reviewProfile } from './review-authoring.mjs';
+import { reviewProfile } from './review-authoring.mjs';
 
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 const flowPanel = (page) => page.locator('[aria-labelledby="test-flows-title"]');
@@ -289,8 +289,6 @@ export async function review030(desktop, fixture, senders) {
   await connectProfile(desktop.page, senders.v3);
   console.log('Live 0.3 acceptance: real profile maintenance started');
   await reviewProfile(desktop, fixture);
-  console.log('Live 0.3 acceptance: schema authoring and custom reply started');
-  await reviewAuthoring(desktop, fixture, senders);
   await connectProfile(desktop.page, senders.v3);
   console.log('Live 0.3 acceptance: protected collections and real flow started');
   await reviewShortcuts(desktop.page, fixture);

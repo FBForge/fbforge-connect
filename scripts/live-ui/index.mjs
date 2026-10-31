@@ -23,6 +23,7 @@ import { downloadMessage } from './downloads.mjs';
 import { scannerProblemAcceptance } from './scanner.mjs';
 import { reviewRuntime } from './review-runtime.mjs';
 import { review030 } from './review-030.mjs';
+import { reviewAuthoring } from './review-authoring.mjs';
 import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 
 export async function exerciseDesktopUI(fixture) {
@@ -100,6 +101,9 @@ export async function exerciseDesktopUI(fixture) {
     await scannerProblemAcceptance(desktop, fixture);
     stage = 'runtime_030';
     await reviewRuntime(desktop, fixture);
+    stage = 'custom_schema_reply';
+    console.log('Live 0.3 acceptance: schema authoring and custom reply started');
+    await reviewAuthoring(desktop, fixture, senders);
     console.log(
       `Real installed desktop UI ${focused ? 'focused review' : 'full acceptance'} completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
     );
