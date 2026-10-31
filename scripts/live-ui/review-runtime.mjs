@@ -102,3 +102,22 @@ export async function reviewRuntime(desktop, fixture) {
   await page.getByText('Scanner bereit', { exact: true }).waitFor({ timeout: 90000 });
   console.log('Real desktop UI: local scanner returned to readiness with a verified signature database');
 }
+export async function reviewSignatureCancellation(desktop, fixture) {
+  const page = desktop.page;
+  await navigate(page, 'Virenscan');
+  await page.getByText('Scanner bereit', { exact: true }).waitFor();
+  await nativeSignatureUpdate(desktop, fixture, () => button(page, 'Signaturen aktualisieren').click());
+  const progress = page.getByRole('progressbar', { name: 'Scanner-Aktionsfortschritt', exact: true });
+  await progress.waitFor();
+  await button(page, 'Vorgang abbrechen').click();
+  await until(async () => !(await progress.isVisible()), 'live_ui_signature_cancel_stuck', 90000);
+  await page.getByRole('alert').filter({ hasText: 'abgebrochen' }).waitFor();
+  await page.getByText('Scanner bereit', { exact: true }).waitFor({ timeout: 90000 });
+  await until(
+    async () => !(await button(page, 'Signaturen aktualisieren').isDisabled()),
+    'live_ui_cancel_left_scanner_locked',
+  );
+  console.log(
+    'Real installed desktop: actual FreshClam operation explicitly cancelled, cancellation acknowledged, action unlocked and verified scanner remained ready',
+  );
+}
