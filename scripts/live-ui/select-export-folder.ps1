@@ -120,12 +120,17 @@ if ($SaveFile) {
             Write-Output ('ui_file_diagnostic known_folder_available=' + (-not [string]::IsNullOrWhiteSpace($label)).ToString().ToLowerInvariant())
             throw 'ui_file_download_default_missing'
         }
-        $shell.SendKeys('{ESC}')
+        $nameEdit.SetFocus()
         $nameCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1001')
         $editCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
         $both = [System.Windows.Automation.AndCondition]::new($nameCondition, $editCondition)
         $edit = Wait-Ui { $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $both) } 'ui_file_name_control_missing'
-        $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue((Join-Path $target $FileName))
+        $destination = Join-Path $target $FileName
+        $edit.SetFocus()
+        $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($destination)
+        $null = Wait-Ui { $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -eq $destination } 'ui_file_name_not_applied'
+        $shell.SendKeys('{TAB}')
+        Start-Sleep -Milliseconds 200
         $button = Wait-Ui {
             foreach ($name in @('Save', 'Speichern')) {
                 $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $name)
@@ -133,7 +138,9 @@ if ($SaveFile) {
                 if ($element -and $element.Current.IsEnabled) { return $element }
             }
         } 'ui_file_save_missing'
+        $button.SetFocus()
         $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        $null = Wait-Ui { -not (Find-Dialog $DialogTitle) } 'ui_file_save_not_closed'
         Write-Output 'Native file save confirmed with Downloads default and owned output path'
         exit 0
     } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
