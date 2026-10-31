@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { navigate } from './exchange.mjs';
 import { check, until } from './desktop.mjs';
 import { writeFile, readFile } from 'node:fs/promises';
@@ -18,8 +19,7 @@ export async function auditScreen(page) {
 
 export async function localScannerReady(page) {
   if (process.env.FBFORGE_UI_SCANNER !== 'true') return;
-  await navigate(page, 'Testwerkzeuge');
-  await page.getByRole('button', { name: 'Virenscan', exact: true }).click();
+  await navigate(page, 'Virenscan');
   await until(
     async () => (await page.getByText('Aktiv: Lokaler ClamAV', { exact: true }).count()) === 1,
     'live_ui_local_scanner_not_selected',
@@ -158,7 +158,11 @@ export async function ownDestination(page, fixture) {
   );
   check(await edit.isVisible(), 'live_ui_management_hint_denied');
   await edit.click();
-  await page.getByRole('checkbox', { name: 'Organisationseinheit ändern', exact: true }).check();
+  check(
+    (await page.getByRole('checkbox', { name: 'Organisationseinheit ändern', exact: true }).count()) === 0,
+    'live_ui_single_edit_still_bulk',
+  );
+  const before = await fixture.readOwnedDestination?.();
   await page.locator('#manager-unit').fill(`${fixture.runName} UI verified`);
   await page.getByRole('button', { name: 'Änderungsvorschau erstellen', exact: true }).click();
   const preview = page.locator('[aria-labelledby="update-preview-title"]');
@@ -169,6 +173,22 @@ export async function ownDestination(page, fixture) {
     })
     .click();
   await preview.getByText('Abgeschlossen', { exact: true }).waitFor();
+  if (before) {
+    const after = await fixture.readOwnedDestination();
+    const oldContact = JSON.parse(before.contactJson),
+      newContact = JSON.parse(after.contactJson);
+    check(newContact.unit === `${fixture.runName} UI verified`, 'live_ui_contact_update_not_persisted');
+    delete oldContact.unit;
+    delete newContact.unit;
+    check(
+      isDeepStrictEqual(oldContact, newContact) &&
+        before.name === after.name &&
+        before.status === after.status &&
+        JSON.stringify(before.metadataVersions) === JSON.stringify(after.metadataVersions) &&
+        isDeepStrictEqual(JSON.parse(before.offersJson), JSON.parse(after.offersJson)),
+      'live_ui_single_edit_changed_other_fields',
+    );
+  }
   console.log(
     'Real desktop UI: owned destination detail, edit preview and explicit contact-field-only update passed',
   );

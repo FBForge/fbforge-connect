@@ -59,7 +59,14 @@ export async function switchApi(page, api) {
     'live_ui_api_switch_incomplete',
   );
 }
-export async function sendSubmission(page, fixture, api = 'v3', xml = false, invalid = false) {
+export async function sendSubmission(
+  page,
+  fixture,
+  api = 'v3',
+  xml = false,
+  invalid = false,
+  processMessage = false,
+) {
   await navigate(page, 'Senden');
   await switchApi(page, api);
   const next = page.getByRole('button', { name: 'Nächsten Test vorbereiten', exact: true });
@@ -89,13 +96,21 @@ export async function sendSubmission(page, fixture, api = 'v3', xml = false, inv
       }
     } else await source.fill(process.env.SENDERDEST);
   }
+  if (processMessage) {
+    const options = page.locator('.address-options');
+    if (!(await options.evaluate((el) => el.open))) await options.locator('summary').click();
+    await page.locator('#send-address').selectOption('process');
+    await page.locator('#send-process').selectOption('0');
+  }
   await page.getByRole('button', { name: 'Weiter: Fachdaten', exact: true }).click();
   const schema = page.locator('#send-schema');
-  const option = schema
-    .locator('option')
-    .filter({ hasText: xml ? /XML/ : /JSON/ })
-    .first();
-  await schema.selectOption(await option.getAttribute('value'));
+  if (await schema.evaluate((el) => el.tagName === 'SELECT')) {
+    const option = schema
+      .locator('option')
+      .filter({ hasText: xml ? /XML/ : /JSON/ })
+      .first();
+    await schema.selectOption(await option.getAttribute('value'));
+  }
   if (xml) {
     const path = join(fixture.directory, 'ui-schema.xsd');
     await writeFile(path, fixture.xmlSchema);
@@ -113,6 +128,13 @@ export async function sendSubmission(page, fixture, api = 'v3', xml = false, inv
           referenz: fixture.runName,
         });
   await page.locator('#send-data').fill(text);
+  if (!xml && !invalid) {
+    const labels = page.getByRole('button', { name: 'Formularbeschriftungen laden', exact: true });
+    if (await labels.isVisible()) {
+      await labels.click();
+      await page.getByText('Schema für die Formularansicht geladen.', { exact: true }).waitFor();
+    }
+  }
   if (invalid) {
     await page.getByText('Lokale Schemata und technische Optionen', { exact: true }).click();
     await page
@@ -146,7 +168,7 @@ export async function sendSubmission(page, fixture, api = 'v3', xml = false, inv
   console.log(
     `Real desktop UI: ${api} ${xml ? 'XML' : 'JSON'} schema check, attachment and one confirmed send passed`,
   );
-  return { submissionId, caseId, text, api, invalid };
+  return { submissionId, caseId, text, api, invalid, processMessage };
 }
 export async function openSubmission(page, fixture, message) {
   await navigate(page, 'Empfangen');
@@ -194,12 +216,18 @@ export async function replyAndAccept(desktop, fixture, message, saveBeforeAccept
   await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
   // Guided reply opening already loads the offered channel and then reveals this field.
   await page.locator('#reply-data').waitFor();
+  if (fixture.replySchemaFile) {
+    await page.getByText('Antwortschema und technische Optionen', { exact: true }).click();
+    await page.locator('#reply-schema-file').setInputFiles(fixture.replySchemaFile);
+    await page.locator('.reply-schema-options p').filter({ hasText: 'ui-antwort.schema.json' }).waitFor();
+  }
   await page.locator('#reply-data').fill(
-    JSON.stringify({
-      status: 'eingegangen',
-      nachricht: 'Fiktive Antwort aus der installierten Oberfläche.',
-      geschaeftszeichen: fixture.runName,
-    }),
+    fixture.replyData ||
+      JSON.stringify({
+        status: 'eingegangen',
+        nachricht: 'Fiktive Antwort aus der installierten Oberfläche.',
+        geschaeftszeichen: fixture.runName,
+      }),
   );
   await page.locator('[aria-labelledby="reply-send-title"] button[type=submit]').click();
   await page.getByRole('button', { name: 'Antwort jetzt senden', exact: true }).click();

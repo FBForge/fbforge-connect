@@ -50,6 +50,11 @@ export async function receiveReply(desktop, fixture, message, download = false) 
   await page.locator('#reply-lookup-case').fill(message.caseId);
   await page.locator('#reply-lookup-id').fill(message.replyId);
   await page.getByRole('button', { name: 'Antwort direkt öffnen', exact: true }).click();
+  if (fixture.replySchemaFile) {
+    await page.getByText(/^Lokale Fachdaten-Schemata/).click();
+    await page.locator('#reply-receive-schema-file').setInputFiles(fixture.replySchemaFile);
+    await page.locator('.receive-schema-list').waitFor();
+  }
   await page.getByRole('button', { name: 'Inhalte entschlüsseln und prüfen', exact: true }).click();
   await page.getByRole('heading', { name: 'Antwort lesen', exact: true }).waitFor();
   if (download) await downloadMessage(desktop, fixture, message, true);

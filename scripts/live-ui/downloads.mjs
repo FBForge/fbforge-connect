@@ -5,7 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { check, cleanEnvironment } from './desktop.mjs';
 import { errorMessage } from '../../frontend/src/diagnostics.js';
 
-export async function nativeFolder(desktop, fixture, operation, cancel = false, schemaReview = false) {
+export async function nativeFolder(
+  desktop,
+  fixture,
+  operation,
+  cancel = false,
+  schemaReview = false,
+  fileOptions = null,
+) {
   const folder = join(fixture.directory, 'desktop-ui', 'exports');
   await mkdir(folder, { recursive: true });
   const helper = spawn(
@@ -22,9 +29,13 @@ export async function nativeFolder(desktop, fixture, operation, cancel = false, 
       '-Folder',
       folder,
       ...(cancel ? ['-Cancel'] : []),
+      ...(fileOptions
+        ? ['-SaveFile', '-FileName', fileOptions.name, '-DialogTitle', fileOptions.title || 'Datei speichern']
+        : []),
       ...(schemaReview === true || schemaReview === 'schema' ? ['-SchemaReview'] : []),
       ...(schemaReview === 'attachment' ? ['-AttachmentReview'] : []),
       ...(schemaReview === 'scanner' ? ['-ScannerReview'] : []),
+      ...(schemaReview === 'scanner-update' ? ['-ScannerUpdate'] : []),
     ],
     { env: cleanEnvironment(), stdio: ['ignore', 'pipe', 'ignore'] },
   );
@@ -156,3 +167,18 @@ export const nativeAttachmentReview = (desktop, fixture, operation) =>
 
 export const nativeScannerReview = (desktop, fixture, operation) =>
   nativeFolder(desktop, fixture, operation, false, 'scanner');
+
+export async function nativeFile(
+  desktop,
+  fixture,
+  operation,
+  name,
+  cancel = false,
+  title = 'Datei speichern',
+) {
+  const folder = await nativeFolder(desktop, fixture, operation, cancel, false, { name, title });
+  return join(folder, name);
+}
+
+export const nativeSignatureUpdate = (desktop, fixture, operation) =>
+  nativeFolder(desktop, fixture, operation, false, 'scanner-update');

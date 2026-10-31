@@ -107,14 +107,14 @@ export async function createDesktop(directory, profiles) {
     }
   }
   const install = join(directory, 'desktop-ui', 'application');
-  let app,
+  let page,
+    app,
     browser,
     launchFailed = false,
     policyPort,
     ownsData = false,
     installed = false;
-  const close = async () => {
-    let policyCleanupFailed = false;
+  const stopApplication = async () => {
     if (browser) {
       let timer;
       try {
@@ -130,6 +130,13 @@ export async function createDesktop(directory, profiles) {
     }
     if (app?.pid && app.exitCode === null)
       spawnSync('taskkill.exe', ['/PID', String(app.pid), '/T', '/F'], { stdio: 'ignore' });
+    browser = null;
+    if (app && app.exitCode === null)
+      await until(async () => app.exitCode !== null, 'live_ui_app_stop_failed');
+  };
+  const close = async () => {
+    let policyCleanupFailed = false;
+    await stopApplication();
     if (policyPort) {
       const removed = testPolicy('disable', policyPort);
       policyCleanupFailed = Boolean(removed.error || removed.status !== 0);
@@ -169,43 +176,8 @@ export async function createDesktop(directory, profiles) {
       ],
       { env: cleanEnvironment(), stdio: 'ignore', timeout: 15000 },
     );
-  try {
-    await mkdir(join(directory, 'desktop-ui'), { recursive: true });
-    const setup = spawnSync(
-      process.env.FBFORGE_UI_INSTALLER,
-      ['/S', `/SCANNER=${useScanner ? 1 : 0}`, `/D=${install}`],
-      {
-        env: cleanEnvironment(),
-        stdio: 'ignore',
-        timeout: 120000,
-      },
-    );
-    check(!setup.error && setup.status === 0, 'live_ui_install_failed');
-    installed = true;
-    ownsData = true;
-    await mkdir(profileRoot, { recursive: true });
-    for (const profile of profiles) {
-      const input = Buffer.from(JSON.stringify(profile.document));
-      try {
-        const saved = spawnSync(profile.bridge, ['save', profileRoot, profile.id], {
-          env: cleanEnvironment(),
-          input,
-          stdio: ['pipe', 'ignore', 'ignore'],
-          timeout: 30000,
-        });
-        check(!saved.error && saved.status === 0, 'live_ui_profile_fixture_failed');
-      } finally {
-        input.fill(0);
-      }
-    }
-    const server = createServer();
-    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const port = server.address().port;
-    await new Promise((resolve) => server.close(resolve));
-    policyPort = port;
-    const configured = testPolicy('enable', port);
-    check(!configured.error && configured.status === 0, 'live_ui_test_policy_setup_failed');
-    console.log('Real desktop UI: per-application debugging configuration prepared for isolated hosted test');
+  async function launch() {
+    const port = policyPort;
     const env = cleanEnvironment();
     // The debugging endpoint exists only in this owned CI process, on loopback.
     env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = `--remote-debugging-port=${port} --remote-debugging-address=127.0.0.1`;
@@ -244,7 +216,7 @@ export async function createDesktop(directory, profiles) {
       throw error;
     }
     browser = await chromium.connectOverCDP(endpoint, { timeout: 30000 });
-    const page = await until(
+    page = await until(
       async () =>
         browser
           .contexts()[0]
@@ -266,7 +238,60 @@ export async function createDesktop(directory, profiles) {
       (await page.locator('.app-topbar .build-tag').innerText()).trim() === process.env.FBFORGE_UI_VERSION,
       'live_ui_version_mismatch',
     );
-    return { page, close, app };
+  }
+  try {
+    await mkdir(join(process.env.USERPROFILE, 'Downloads'), { recursive: true });
+    await mkdir(join(directory, 'desktop-ui'), { recursive: true });
+    const setup = spawnSync(
+      process.env.FBFORGE_UI_INSTALLER,
+      ['/S', `/SCANNER=${useScanner ? 1 : 0}`, `/D=${install}`],
+      {
+        env: cleanEnvironment(),
+        stdio: 'ignore',
+        timeout: 120000,
+      },
+    );
+    check(!setup.error && setup.status === 0, 'live_ui_install_failed');
+    installed = true;
+    ownsData = true;
+    await mkdir(profileRoot, { recursive: true });
+    for (const profile of profiles) {
+      const input = Buffer.from(JSON.stringify(profile.document));
+      try {
+        const saved = spawnSync(profile.bridge, ['save', profileRoot, profile.id], {
+          env: cleanEnvironment(),
+          input,
+          stdio: ['pipe', 'ignore', 'ignore'],
+          timeout: 30000,
+        });
+        check(!saved.error && saved.status === 0, 'live_ui_profile_fixture_failed');
+      } finally {
+        input.fill(0);
+      }
+    }
+    const server = createServer();
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const port = server.address().port;
+    await new Promise((resolve) => server.close(resolve));
+    policyPort = port;
+    const configured = testPolicy('enable', port);
+    check(!configured.error && configured.status === 0, 'live_ui_test_policy_setup_failed');
+    console.log('Real desktop UI: per-application debugging configuration prepared for isolated hosted test');
+    await launch();
+    return {
+      get page() {
+        return page;
+      },
+      get app() {
+        return app;
+      },
+      close,
+      async restart() {
+        await stopApplication();
+        launchFailed = false;
+        await launch();
+      },
+    };
   } catch (error) {
     await close();
     throw error;

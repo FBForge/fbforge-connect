@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview, [switch]$AttachmentReview, [switch]$ScannerReview)
+param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview, [switch]$AttachmentReview, [switch]$ScannerReview, [switch]$ScannerUpdate, [switch]$SaveFile, [string]$FileName, [string]$DialogTitle = 'Datei speichern')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 trap {
@@ -67,6 +67,60 @@ function Invoke-Button($Root, [string]$Name) {
     $button.SetFocus()
     $pattern = $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
     $pattern.Invoke()
+}
+if ($SaveFile) {
+    if (-not $FileName -or [IO.Path]::GetFileName($FileName) -ne $FileName -or $FileName -match '[\\/:]') { throw 'ui_file_name_denied' }
+    if ($DialogTitle -notin @('Datei speichern', 'Geschütztes Profil sichern')) { throw 'ui_file_title_denied' }
+    $dialog = Wait-Ui { Find-Dialog $DialogTitle } 'ui_file_dialog_missing'
+    $handle = [IntPtr]$dialog.Current.NativeWindowHandle
+    $null = [ExportWindowFocus]::SetForegroundWindow($handle)
+    $null = Wait-Ui { [ExportWindowFocus]::GetForegroundWindow() -eq $handle } 'ui_file_focus_missing'
+    if ($Cancel) {
+        $button = Wait-Ui {
+            foreach ($name in @('Cancel', 'Abbrechen')) {
+                $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $name)
+                $element = $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+                if ($element -and $element.Current.IsEnabled) { return $element }
+            }
+        } 'ui_file_cancel_missing'
+        $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Write-Output 'Native file save cancelled'
+        exit 0
+    }
+    $shell = New-Object -ComObject WScript.Shell
+    try {
+        # Check the real default before supplying the owned output path.
+        $shell.SendKeys('^l')
+        $address = Wait-Ui {
+            $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
+            if ($focused.Current.ProcessId -eq $ApplicationId -and $focused.Current.ControlType -eq [System.Windows.Automation.ControlType]::Edit) { return $focused }
+        } 'ui_file_address_missing'
+        $initial = $address.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
+        $expected = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads'
+        if (-not $initial.TrimEnd('\').Equals($expected.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)) { throw 'ui_file_download_default_missing' }
+        $shell.SendKeys('{ESC}')
+        $nameCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1001')
+        $editCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
+        $both = [System.Windows.Automation.AndCondition]::new($nameCondition, $editCondition)
+        $edit = Wait-Ui { $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $both) } 'ui_file_name_control_missing'
+        $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue((Join-Path $target $FileName))
+        $button = Wait-Ui {
+            foreach ($name in @('Save', 'Speichern')) {
+                $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $name)
+                $element = $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+                if ($element -and $element.Current.IsEnabled) { return $element }
+            }
+        } 'ui_file_save_missing'
+        $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Write-Output 'Native file save confirmed with Downloads default and owned output path'
+        exit 0
+    } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
+}
+if ($ScannerUpdate) {
+    $notice = Wait-Ui { Find-Dialog 'Virensignaturen aktualisieren?' } 'ui_signature_warning_missing'
+    Invoke-Button $notice 'Signaturen aktualisieren'
+    Write-Output 'Native signature-update confirmation handled'
+    exit 0
 }
 if ($AttachmentReview -or $ScannerReview) {
     $title = if ($AttachmentReview) { 'Mit gesperrten Anlagen annehmen?' } else { 'Eigene Scanner-Gegenstelle verwenden?' }
