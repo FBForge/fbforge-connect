@@ -111,3 +111,42 @@ test('stopping a connected local scanner also disables its Java scanner endpoint
   expect(configured.map((call) => call.args.configuration.kind)).toEqual(['local', 'off']);
   expect(calls.some((call) => call.command === 'stop_local_scanner')).toBe(false);
 });
+
+for (const [kind, label] of [
+  ['local', 'Lokaler ClamAV'],
+  ['icap', 'Eigener ICAP-Dienst'],
+]) {
+  test(`a preloaded scanner configuration stays active when opening settings (${kind})`, async ({ page }) => {
+    await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=v3&monitor=${kind}`);
+    await expect
+      .poll(() => page.evaluate(() => window.__integration.monitorConfiguration()?.kind))
+      .toBe(kind);
+    await page.getByRole('button', { name: 'Virenscan', exact: true }).click();
+    await expect(page.getByText(`Aktiv: ${label}`, { exact: true })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Verfahren', exact: true })).toHaveValue(kind);
+    expect(
+      await page.evaluate(() =>
+        window.__integration.calls.some((call) => call.command === 'configure_malware_scanner'),
+      ),
+    ).toBe(false);
+  });
+}
+test('a changed session replaces the cached scanner status without an implicit reconfiguration', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=v3&monitor=local');
+  await expect
+    .poll(() => page.evaluate(() => window.__integration.monitorConfiguration()?.kind))
+    .toBe('local');
+  await page.getByRole('button', { name: 'Virenscan', exact: true }).click();
+  await expect(page.getByText('Aktiv: Lokaler ClamAV', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window.__integration.scanner = { kind: 'off', host: '', port: 0, service: '' }));
+  await page.getByRole('button', { name: 'Anderes Profil', exact: true }).click();
+  await expect(page.getByText('Aktiv: Kein Scanner', { exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Verfahren', exact: true })).toHaveValue('off');
+  expect(
+    await page.evaluate(() =>
+      window.__integration.calls.some((call) => call.command === 'configure_malware_scanner'),
+    ),
+  ).toBe(false);
+});

@@ -17,6 +17,7 @@
       import CertificateResults from '../src/destinations/CertificateResults.vue';
       import SendReconciliation from '../src/integration/SendReconciliation.vue';
       import { environmentKey } from '../src/environments.js';
+      import { provideScannerMonitor } from '../src/app/useScannerMonitor.js';
       import pack from '../src/examples/integration.fctest.json';
       import '../src/styles/index.css';
       const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
@@ -253,6 +254,20 @@
           watch(mode, (value) => {
             if (value === 'scanner') scannerOpened.value = true;
           });
+          const monitored = new URLSearchParams(location.search).get('monitor');
+          if (['local', 'icap'].includes(monitored)) {
+            fixture.scanner = { kind: monitored, host: '127.0.0.1', port: 3310, service: '/scan' };
+            Object.assign(fixture.local, {
+              installed: true,
+              ready: true,
+              enabled: true,
+              databaseVersion: 28168,
+              databaseCreatedAt: 1793255040,
+              databaseAgeDays: 0,
+            });
+            const monitor = provideScannerMonitor(session);
+            fixture.monitorConfiguration = () => monitor.configuration.value;
+          }
           fixture.isBusy = () => busy.value;
           return {
             session,

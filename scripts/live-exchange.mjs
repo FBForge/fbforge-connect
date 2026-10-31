@@ -689,6 +689,7 @@ try {
       signingKid: receiptSigningKid,
       runName,
       receiverProfiles,
+      readOwnedDestination: () => receiverV3.call('load_managed_destination', { destinationId: destination }),
       ...scannerFixture({
         openSender: (api) => openNativeSession('sender', api),
         receiver: (api) => (api === 'v3' ? receiverV3 : receiverV2),
