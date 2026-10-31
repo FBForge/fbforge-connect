@@ -2,7 +2,7 @@
 import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { nativeFile } from './downloads.mjs';
-import { openTestPackage } from './local-tools.mjs';
+import { openTestPackage, localScannerReady } from './local-tools.mjs';
 import { navigate } from './exchange.mjs';
 import { createDesktop, check, until } from './desktop.mjs';
 const directory = await mkdtemp(join(process.env.RUNNER_TEMP, 'fbforge-ui-probe-'));
@@ -11,6 +11,7 @@ try {
   check(Boolean(process.env.FBFORGE_UI_INSTALLER), 'live_ui_validated_installer_required');
   desktop = await createDesktop(directory, []);
   console.log('Validated installed desktop UI bootstrap passed without credentials or TEST writes');
+  await localScannerReady(desktop.page, false);
   await navigate(desktop.page, 'Testwerkzeuge');
   await openTestPackage(desktop.page);
   const exported = await nativeFile(

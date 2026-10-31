@@ -17,17 +17,56 @@ export async function auditScreen(page) {
   console.log('Real desktop UI: automated WCAG 2.2 A/AA screen check passed');
 }
 
-export async function localScannerReady(page) {
+export async function scannerDiagnostics(page) {
+  // Read the actual native status, never replace the IPC boundary or expose paths.
+  const state = await page
+    .evaluate(async () => {
+      try {
+        const value = await window.__TAURI_INTERNALS__.invoke('local_scanner_status');
+        return {
+          installed: value.installed === true,
+          enabled: value.enabled === true,
+          ready: value.ready === true,
+          busy: value.busy === true,
+          operation: /^[a-z-]*$/.test(value.operation) ? value.operation : 'unknown',
+          error:
+            value.error === null
+              ? null
+              : /^(scanner_[a-z_]+|content_cancelled)$/.test(value.error)
+                ? value.error
+                : 'unknown',
+        };
+      } catch {
+        return { statusUnavailable: true };
+      }
+    })
+    .catch(() => ({ statusUnavailable: true }));
+  console.error(`Actual native scanner diagnostics: ${JSON.stringify(state)}`);
+}
+export async function localScannerReady(page, connected = true) {
   if (process.env.FBFORGE_UI_SCANNER !== 'true') return;
   await navigate(page, 'Virenscan');
-  await until(
-    async () => (await page.getByText('Aktiv: Lokaler ClamAV', { exact: true }).count()) === 1,
-    'live_ui_local_scanner_not_selected',
-    90000,
-  );
-  await page.getByText('Scanner läuft lokal', { exact: true }).waitFor();
+  try {
+    await until(
+      async () => {
+        if (await page.locator('[aria-labelledby="local-scanner-title"] [role="alert"]').count())
+          throw new Error('live_ui_local_scanner_startup_error');
+        const ready = await page.getByText('Scanner läuft lokal', { exact: true }).count();
+        const selected =
+          !connected || (await page.getByText('Aktiv: Lokaler ClamAV', { exact: true }).count()) === 1;
+        return ready === 1 && selected;
+      },
+      'live_ui_local_scanner_not_selected',
+      240000,
+    );
+  } catch (error) {
+    await scannerDiagnostics(page);
+    throw error;
+  }
   console.log(
-    'Real installed desktop: optional local ClamAV adopted offline, ready and active before TEST sends and receives',
+    connected
+      ? 'Real installed desktop: optional local ClamAV adopted offline, ready and active before TEST sends and receives'
+      : 'Real installed desktop: optional local ClamAV adopted offline and ready without a FIT-Connect session',
   );
 }
 

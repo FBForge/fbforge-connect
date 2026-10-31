@@ -71,6 +71,8 @@ jobs:
         run: node scripts/load-live-ui-candidate.mjs
       - name: Diagnose installed desktop UI bootstrap without TEST credentials
         if: inputs.ui_probe == true
+        env:
+          FBFORGE_UI_SCANNER: ${{ inputs.local_scanner }}
         run: node scripts/live-ui/probe.mjs
       - name: Exercise real TEST exchange with fictitious data
         if: inputs.ui_probe != true
