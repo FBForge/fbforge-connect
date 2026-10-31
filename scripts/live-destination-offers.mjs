@@ -43,6 +43,24 @@ export async function probeReplyOffers({ receiver, destination, runName, report 
       'live_offers_preview_invalid',
     );
     const result = await receiver.call('execute_destination_update', { attemptId: preview.attemptId });
+    if (result.status !== 'completed') {
+      const actual = await receiver
+        .call('load_managed_destination', { destinationId: destination })
+        .catch(() => null);
+      const offers = actual ? JSON.parse(actual.offersJson) : null;
+      const expected = { ...original, publicServices };
+      const first = offers?.publicServices.find((item) => item.identifier === publicServices[0].identifier);
+      report(
+        `Real owned offer diagnostics: ${JSON.stringify({
+          status: /^[a-z_]+$/.test(result.status) ? result.status : 'unknown',
+          error: /^[a-z_]+$/.test(result.changes?.[0]?.error || '') ? result.changes[0].error : null,
+          readbackMatchesRequested: isDeepStrictEqual(canonical(offers), canonical(expected)),
+          differingServiceFields: ['identifier', 'regions', 'submissionSchemas', 'replyChannels'].filter(
+            (key) => !isDeepStrictEqual(canonical(first?.[key]), canonical(publicServices[0][key])),
+          ),
+        })}`,
+      );
+    }
     check(
       result.status === 'completed' && result.changes.length === 1 && result.changes[0].status === 'updated',
       'live_offers_update_not_confirmed',
