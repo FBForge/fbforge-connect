@@ -16,7 +16,7 @@ async function testTools(page, tab) {
   await button(page, 'Testfälle und Abläufe').click();
   await button(page, tab).click();
 }
-async function fixturePack(fixture) {
+export async function fixturePack(fixture) {
   const pack = JSON.parse(
     await readFile(new URL('../../frontend/src/examples/integration.fctest.json', import.meta.url), 'utf8'),
   );
@@ -24,8 +24,7 @@ async function fixturePack(fixture) {
   pack.cases = [pack.cases[0]];
   const item = pack.cases[0];
   item.name = 'Echter TEST-Versand mit fiktiven Daten';
-  item.receipt = 'none';
-  item.reply = null;
+  item.receipt = 'accept';
   item.request.data = JSON.stringify({
     antragstellendePerson: { vorname: 'Erika', nachname: 'Musterfrau' },
     anliegen: 'Fiktiver UI-Test ohne echte Personendaten',
@@ -101,7 +100,7 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   await testTools(page, 'Testabläufe');
   await checkStep(page);
   await page.getByRole('heading', { name: `Eingang prüfen: ${pack.cases[0].name}`, exact: true }).waitFor();
-  const progress = flowPanel(page).getByText('Schritt 2 von 3 · 1 erfolgreich geprüft', { exact: true });
+  const progress = flowPanel(page).getByText('Schritt 2 von 6 · 1 erfolgreich geprüft', { exact: true });
   await progress.waitFor();
   await button(page, 'Neuen Durchlauf starten').click();
   const dialog = page.getByRole('dialog', { name: 'Durchlauf neu starten?', exact: true });
@@ -134,14 +133,19 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   await testTools(page, 'Testabläufe');
   await checkStep(page);
   await checkStep(page);
+  await openSubmission(page, fixture, message);
+  await replyAndAccept(desktop, fixture, message);
+  await testTools(page, 'Testabläufe');
+  await checkStep(page);
+  await checkStep(page);
+  await connectProfile(page, senders.v3);
+  await receiveReply(desktop, fixture, message);
+  await testTools(page, 'Testabläufe');
+  await checkStep(page);
   await page.getByText('Alle Schritte dieses Testablaufs sind geprüft.', { exact: true }).waitFor();
   await button(page, 'Neuen Durchlauf starten').click();
   await button(page, 'Ergebnisse zurücksetzen und neu starten').click();
-  await flowPanel(page).getByText('Schritt 1 von 3 · 0 erfolgreich geprüft', { exact: true }).waitFor();
-  await openSubmission(page, fixture, message);
-  await replyAndAccept(desktop, fixture, message);
-  await connectProfile(page, senders.v3);
-  await receiveReply(desktop, fixture, message);
+  await flowPanel(page).getByText('Schritt 1 von 6 · 0 erfolgreich geprüft', { exact: true }).waitFor();
   console.log(
     'Real desktop UI: saved test flow advanced using exact real sent/received data and attachments, cancellation preserved progress, exported evidence matched, explicit restart reset it',
   );
@@ -210,6 +214,15 @@ export async function setRetention(input, enabled) {
     'live_ui_retention_save_pending',
   );
 }
+export async function savedCaseValue(choice, packName) {
+  return choice.evaluateAll(
+    (selects, name) =>
+      Array.from(selects[0]?.options || []).find(
+        (option) => option.parentElement?.getAttribute('label') === name,
+      )?.value || null,
+    packName,
+  );
+}
 async function durability(desktop, fixture, senders, pack, message) {
   let page = desktop.page;
   await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
@@ -249,7 +262,7 @@ async function durability(desktop, fixture, senders, pack, message) {
   await button(page, 'Gespeicherte Abläufe laden').click();
   await page
     .getByRole('combobox', { name: 'Gespeicherten Ablauf auswählen', exact: true })
-    .selectOption({ label: `${pack.name} · 3 Schritte` });
+    .selectOption({ label: `${pack.name} · 6 Schritte` });
   await button(page, 'Gespeicherten Ablauf öffnen').click();
   await button(page, 'Durchlauf starten').waitFor();
   await button(page, 'Gespeicherten Ablauf löschen').click();
@@ -273,8 +286,8 @@ async function durability(desktop, fixture, senders, pack, message) {
   const library = page.locator('.test-case-library');
   const choice = library.locator('#send-library-choice');
   await choice.waitFor();
-  const saved = choice.locator('option').filter({ hasText: pack.name }).first();
-  await choice.selectOption(await saved.getAttribute('value'));
+  const saved = await until(() => savedCaseValue(choice, pack.name), 'live_ui_saved_package_choice_missing');
+  await choice.selectOption(saved);
   await library.getByText('Testpakete importieren, exportieren und löschen', { exact: true }).click();
   await library.getByRole('button', { name: 'Testpaket löschen', exact: true }).click();
   await page
@@ -282,9 +295,7 @@ async function durability(desktop, fixture, senders, pack, message) {
     .getByRole('button', { name: 'Endgültig löschen', exact: true })
     .click();
   await until(
-    async () =>
-      (await choice.count()) === 0 ||
-      !(await choice.locator('option').filter({ hasText: pack.name }).count()),
+    async () => (await savedCaseValue(choice, pack.name)) === null,
     'live_ui_package_delete_failed',
   );
   console.log(
@@ -302,7 +313,13 @@ export async function review030(desktop, fixture, senders) {
   await connectProfile(desktop.page, senders.v3);
   const pack = await fixturePack(fixture);
   const path = await savePack(desktop, fixture, pack);
-  const message = await flowReview(desktop, fixture, senders, path, pack);
+  const message = await flowReview(
+    desktop,
+    { ...fixture, replyData: pack.cases[0].reply.data },
+    senders,
+    path,
+    pack,
+  );
   console.log('Live 0.3 acceptance: actual process restart and durable readback started');
   await durability(desktop, fixture, senders, pack, message);
 }
