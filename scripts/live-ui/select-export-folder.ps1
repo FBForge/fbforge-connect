@@ -99,7 +99,14 @@ if ($SaveFile) {
         $nameCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1001')
         $editCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
         $both = [System.Windows.Automation.AndCondition]::new($nameCondition, $editCondition)
-        $nameEdit = Wait-Ui { $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $both) } 'ui_file_name_control_missing'
+        $nameEdit = Wait-Ui {
+            foreach ($name in @('File name:', 'File name', 'Dateiname:', 'Dateiname')) {
+                $labelCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $name)
+                $labeledEdit = [System.Windows.Automation.AndCondition]::new($labelCondition, $editCondition)
+                $candidate = $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $labeledEdit)
+                if ($candidate -and $candidate.Current.IsEnabled -and -not $candidate.Current.IsOffscreen) { return $candidate }
+            }
+        } 'ui_file_name_control_missing'
         $nameRuntime = $nameEdit.GetRuntimeId() -join ','
         $shell.SendKeys('^l')
         Start-Sleep -Milliseconds 200
@@ -120,11 +127,7 @@ if ($SaveFile) {
             Write-Output ('ui_file_diagnostic known_folder_available=' + (-not [string]::IsNullOrWhiteSpace($label)).ToString().ToLowerInvariant())
             throw 'ui_file_download_default_missing'
         }
-        $nameEdit.SetFocus()
-        $nameCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1001')
-        $editCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
-        $both = [System.Windows.Automation.AndCondition]::new($nameCondition, $editCondition)
-        $edit = Wait-Ui { $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $both) } 'ui_file_name_control_missing'
+        $edit = $nameEdit
         $destination = Join-Path $target $FileName
         $edit.SetFocus()
         $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($destination)

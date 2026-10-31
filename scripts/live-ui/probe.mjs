@@ -46,6 +46,9 @@ try {
       expectedBasename: outputs.includes('native-save-probe.json'),
       originalBasename: outputs.includes('testpaket.fctest.json'),
       saveReported: feedback?.includes('Datei gespeichert:') || false,
+      savedExpectedName: feedback?.includes('native-save-probe.json') || false,
+      savedOriginalName: feedback?.includes('testpaket.fctest.json') || false,
+      savedOwnedDirectory: feedback?.includes(join(directory, 'desktop-ui', 'exports')) || false,
       cancelled: feedback?.includes('Speichern abgebrochen.') || false,
       pending: feedback?.includes('Speicherort auswählen') || false,
       error: await desktop?.page
