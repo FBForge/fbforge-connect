@@ -34,6 +34,28 @@ Vor dem Release auf dem Windows-Zielgerät prüfen:
 - Die in der Anwendung verlinkte [0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start)
   vor der Veröffentlichung auf der Website bereitstellen und ihre Links im Browser prüfen.
 
+Die Windows-Workflows können diese Prüfung mit den hinterlegten TEST-Zugängen ausführen.
+Zuerst `Windows release validation` für den vollständigen Branch-Commit starten. Danach
+`Real TEST exchange acceptance` auf demselben Branch mit `confirm_test_writes=true`,
+`local_scanner=true` und der erfolgreichen Lauf-ID als `validation_run` starten. Der
+Lauf mit `validation_run` installiert genau den unabhängig geprüften Kandidaten
+und bedient dessen echte WebView2-Oberfläche samt nativen Dialogen. Bleibt der
+Produktcode unverändert, kann
+derselbe validierte Installer mit einem korrigierten Abnahmetreiber erneut geprüft
+werden. Nach Änderungen am Produkt ist die Windows-Validierung zu wiederholen.
+Ohne `validation_run` wird nur der native Kern geprüft, keine installierte
+Desktop-Oberfläche.
+
+Der Live-Lauf verwendet fiktive Inhalte und eine eigens angelegte TEST-Destination.
+Er protokolliert ihre Deaktivierung und die serverseitige Löschfrist. Zugangsdaten,
+Schlüssel und geschützte Sicherungen werden nicht als Artefakte hochgeladen.
+`ui_probe=true` prüft separat App-Start, optionalen Scanner und native Dateiexporte
+ohne Zugangsdaten und TEST-Schreibzugriffe. Mit `local_scanner=true` prüft die Probe
+auch den ausdrücklichen Abbruch eines echten FreshClam-Signaturupdates.
+`review_only=true` begrenzt die echte
+UI-Prüfung auf die neuen 0.3-Funktionen. Beide Modi ersetzen keine vollständige
+Live-Abnahme.
+
 Live-Tests bevorzugt in TEST ausführen. Produktive Schreibaktionen einzeln und bewusst bestätigen.
 Automatisierte Tests ersetzen weder eine fachliche Prüfung noch eine formale Sicherheitszertifizierung.
 

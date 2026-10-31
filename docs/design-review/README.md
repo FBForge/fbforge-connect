@@ -36,6 +36,90 @@ echten FIT-Connect-Zugängen, nativen Dateidialogen und installiertem Scanner.
 Die aktuelle bebilderte Anleitung wird aus `docs/guide/` exportiert. Die frühere
 Bewertung unten bleibt als historische Ausgangslage für 0.2.0 erhalten.
 
+## Live-Prüfung für 0.3.0 am 31. Oktober 2026
+
+Status: automatisierte Live-Abnahme in TEST bestanden. Die
+[Windows-Validierung 41226794001](https://github.com/FBForge/fbforge-connect/actions/runs/41226794001)
+prüfte den Produktstand `fc050678d084b0a259b902e445cca6502fa940f7`.
+Der [vollständige Live-Lauf 41233271432](https://github.com/FBForge/fbforge-connect/actions/runs/41233271432)
+verwendete genau dessen Installer und den Abnahmetreiber `0bb2336`.
+Einzelne frühere Läufe scheiterten an den unten dokumentierten Produktfehlern oder
+an der nativen Dialog-Automation. Erst der vollständige abschließende Lauf ist grün.
+
+Die installierte Windows-App wurde über ihre echte WebView2-Oberfläche und native
+Dialoge mit den hinterlegten TEST-Zugängen bedient. Die native Grenze wurde nicht
+ersetzt. Alle Inhalte waren fiktiv. Änderungen betrafen eine eigens angelegte
+TEST-Destination. Schlüssel und Profilsicherungen blieben im temporären
+Windows-Benutzerbereich und wurden nicht als Artefakte hochgeladen.
+
+Zwei zusätzliche Produktfehler wurden gefunden und mit Regressionen korrigiert:
+
+| Befund | Korrektur | Nachweis |
+| --- | --- | --- |
+| L01: Geladener Scanner wird beim Öffnen als ausgeschaltet angezeigt | Der gemeinsame Scanner-Monitor behält die Zustandsführung. Das Öffnen überschreibt seine geladene Konfiguration nicht. | Drei zuvor fehlgeschlagene Oberflächenfälle für lokalen Scanner, ICAP und Profilwechsel. Danach 27 gezielte Fälle grün. Commit `b1b29d3`. |
+| L02: Gespeicherte Antwortschemas bleiben als ungewiss angezeigt | Die Bestätigung vergleicht unterstützte Schemakennungen und Leistungen unabhängig von der normalisierten Reihenfolge. Tatsächliche Abweichungen und Wiederholungssperren bleiben erhalten. | Regressionen für Reihenfolge, mehrere Leistungen, fehlende, ersetzte und doppelte Kennungen. 18 gezielte Verwaltungstests grün. Echte API-Rücklesung und anschließend die Schema-Verwendung in der installierten App bestanden. Commit `fc05067`. |
+
+Die Scanner-Aufnahmen [Hell](images/scanner-state-light.png) und
+[Dunkel](images/scanner-state-dark.png) zeigen die tatsächliche Vue-Komponente mit
+fiktiven Daten. Sie sind keine Aufnahmen der Sitzung mit echten Zugangsdaten.
+
+Im vollständigen Live-Lauf bestanden:
+
+- Native JSON- und XML-Nachrichten mit Anlagen und Antworten über v2/v3, auch
+  fragmentierter XML-Versand mit 5 MiB, signierte Event Logs, Annahme und Ablehnung,
+  Schlüsselrotation sowie Beschränkung auf die Absender-Destination über beide APIs.
+- Installierte Oberfläche: Anmeldung, geschützte Profile, API-Wechsel, Versand,
+  Entschlüsselung, PDF-Vorschau, Antworten, Empfangsbestätigungen und Vorgänge.
+  Schemafehler bleiben lesbar. Sammelannahme verarbeitet nur gültige Nachrichten.
+  Manuelle Abweichungsannahme und begründete Ablehnung wurden ausdrücklich bestätigt.
+- Native Datei- und Ordnerdialoge mit Downloadordner als Vorgabe, sichtbarer
+  Abbruchmeldung und bytegenauen Einzel- und Gesamtexporten. Der Testtreiber wartet
+  auf gespeicherte Dateien und bestätigt die Dateinameneingabe vor dem Speichern.
+- Profilbearbeitung mit Fokus-Rückgabe, geschützte Sicherung, Überschreibschutz,
+  Löschen und Wiederherstellen ausschließlich des eigenen Testprofils.
+- Echte Prozessnachrichten, signiertes Eingangsalter, Altersfilter, älteste zuerst,
+  Favoriten sowie alle sechs Ablauf-Schritte anhand tatsächlicher Nachrichten und
+  Anlagen. Abbruch erhält Ergebnisse, Export und bewusstes Zurücksetzen funktionieren.
+- Vollständiger App-Neustart mit geschützten Testpaketen, Ablaufdefinitionen,
+  gespeicherten Vorgängen und profilbezogener Speicherpräferenz. Anschließendes
+  ausdrückliches Löschen der Testpaket- und Ablaufsammlung funktionierte.
+- Hell, Dunkel, Systemdarstellung, Fokus-Rückgabe und Navigation aller Arbeitsbereiche.
+- Offline eingerichteter lokaler ClamAV bei echten Nachrichten. Kontrollierte harmlose
+  ICAP-Funde über v2/v3 sperren genau die betroffene Anlage. Eine ausdrücklich bestätigte
+  Annahme enthält das passende signierte Anlagenproblem. Es wurde kein EICAR an
+  FIT-Connect übertragen.
+- Echter FreshClam-Signaturupdate mit weiter bedienbarer Versandseite und Rückkehr
+  zum bereiten Scanner. Die Aktualisierung war beim Zurückkehren bereits abgeschlossen.
+  Die separate [Windows-Probe 41234366430](https://github.com/FBForge/fbforge-connect/actions/runs/41234366430)
+  mit Treiber `8c461fe` brach zusätzlich eine echte laufende Aktualisierung gezielt ab.
+  Abbruchmeldung, wieder bedienbare Aktion und weiterhin bereiter Scanner mit gültigem
+  Signaturbestand bestanden. Diese Probe benötigt keine TEST-Zugänge oder Schreibzugriffe.
+- Eigene Antwortschemas: Schema, Beispiel und bearbeitbarer Entwurf exportiert,
+  Entwurf wieder importiert, Kennung nur am eigenen Zustellpunkt registriert und
+  echte Antwort damit gesendet, geprüft, empfangen und bestätigt.
+- Echte GitHub-Updatesuche. Der noch fehlende Release-Feed wird als
+  `update_feed_unavailable` angezeigt und bietet keine ungeprüfte Installation an.
+
+Die temporäre Destination `edf3e725-6614-4dd0-a594-b60e654bc506` wurde nach dem Lauf
+deaktiviert. FIT-Connect erlaubt ihre Löschung frühestens am
+30. November 2026 um 19:24:18 UTC. Die Deaktivierung und Löschfristen früherer
+Versuchsläufe stehen ebenfalls in deren Aktionsprotokollen.
+
+Zusätzlich bestanden lokal 233 Oberflächenfälle und 317 Skripttests einschließlich
+PowerShell ohne übersprungene Fälle. Die
+[reguläre CI 41233271440](https://github.com/FBForge/fbforge-connect/actions/runs/41233271440)
+bestand mit 276 Java- und 61 Windows-Kernfällen. Unter Ubuntu überspringt sie drei
+PowerShell-Fälle und einen Browserfall, die lokal zusätzlich bestanden.
+Diese Zahlen beschreiben ausgeführte Tests, keine vollständige Testabdeckung.
+
+Offene Freigabepunkte: STAGE/PROD wurden mit diesen TEST-Zugängen nicht abgenommen.
+Die öffentliche 0.3-Hilfe liefert vor ihrer Veröffentlichung noch 404. Die
+Installation eines neueren signierten Releases ist separat zu prüfen, sobald ein
+entsprechendes Updatepaket veröffentlicht ist. Das Nachladen der Scanner-Komponente
+bei der erstmaligen Online-Einrichtung ist durch diesen Offline-Start ebenfalls
+nicht als Live-Nachweis abgedeckt. Die Tests ersetzen keine manuelle Usability- oder
+formale Sicherheitszertifizierung.
+
 ## Historischer Review für 0.2.0
 
 Stand: 28. Oktober 2026 · Quelle: `369d6f5` · Arbeitsbranch: `design/review`.

@@ -53,9 +53,10 @@ blockieren sie. Gespeicherte Schlüssel werden vorher gesichert; ungespeicherte
 Entwürfe und Sitzungsschlüssel müssen Sie selbst sichern.
 
 Ohne Prüfschlüssel bleibt der Updater deaktiviert. Der private Schlüssel bleibt
-außerhalb des Repositorys; Verlust oder Kompromittierung erfordert einen eigenen
-Migrationsablauf. Schlüssel-Einrichtung und echte Windows-Update-Abnahme stehen vor
-der Freigabe an. Details: [BUILDING.md](BUILDING.md) und [RELEASING.md](RELEASING.md).
+außerhalb des Repositorys. Verlust oder Kompromittierung erfordert einen eigenen
+Migrationsablauf. Der öffentliche Projekt-Prüfschlüssel ist hinterlegt. Die echte
+Windows-Update-Abnahme mit dem signierten Release steht vor der Freigabe an.
+Details: [BUILDING.md](BUILDING.md) und [RELEASING.md](RELEASING.md).
 
 ## Abhängigkeiten und bekannte Befunde
 
@@ -63,6 +64,13 @@ JavaScript, Java, Rust, JDK und WebView2 werden getrennt geprüft. Lockfiles und
 Actions-Versionen sind festgelegt. Der Abgleich vom 27. Oktober 2026 nutzte npm-Audit
 und OSV/RustSec für Rust und Maven. Am 29. Oktober wurden zusätzlich 48 neue
 Rust-Paketversionen gegen OSV geprüft, ohne Meldungen. Das ersetzt keine Systemprüfung.
+
+Der npm-Abgleich vom 31. Oktober 2026 meldet keine bekannten Schwachstellen in den
+Laufzeitabhängigkeiten. `GHSA-g3hv-75wg-m249` betrifft `minimatch` im Entwicklungs-
+und Prüfwerkzeugbaum. npm führt dafür 13 moderate Einträge entlang der abhängigen
+Pakete, aber keine korrigierte Version auf. Der Befund beschreibt Ressourcenverbrauch
+bei speziell präparierten Glob-Mustern. Er betrifft keine Laufzeitfunktion der
+Windows-App. Vor der Veröffentlichung den Werkzeugbaum erneut prüfen.
 
 Bouncy Castle `bcprov`, `bcpkix` und `bcutil` sind auf 1.86 festgelegt. Damit sind die
 zuvor gemeldeten CVEs CVE-2025-14813, CVE-2026-0636, CVE-2026-5588, CVE-2026-8763 und
