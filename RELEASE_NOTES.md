@@ -2,6 +2,8 @@
 
 ## 0.3.0 (in Entwicklung)
 
+- Beim Speichern unterstützter Antwortschemas eine normalisierte Reihenfolge der Destination API korrekt bestätigen. Fehlende, zusätzliche oder veränderte Schemakennungen bleiben Abweichungen. Schreibaktionen werden nicht automatisch wiederholt.
+
 - Die Virenscan-Einstellungen übernehmen einen bereits geladenen Scannerstatus korrekt. Das Öffnen der Seite zeigt einen aktiven Scanner nicht mehr fälschlich als ausgeschaltet. Ein Profilwechsel lädt weiterhin die passende Konfiguration.
 
 - Testabläufe zeigen den aktuellen Schritt zuerst, erklären die jeweils nötige Aktion und verlangen vor dem Verwerfen von Prüfergebnissen eine Bestätigung. Ergebnisse vorher exportieren oder den Neustart abbrechen.
