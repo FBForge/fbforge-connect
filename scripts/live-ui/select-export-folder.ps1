@@ -141,6 +141,7 @@ if ($SaveFile) {
         $button.SetFocus()
         $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         $null = Wait-Ui { -not (Find-Dialog $DialogTitle) } 'ui_file_save_not_closed'
+        Write-Output ('ui_file_diagnostic expected_file_exists=' + (Test-Path -LiteralPath $destination -PathType Leaf).ToString().ToLowerInvariant())
         Write-Output 'Native file save confirmed with Downloads default and owned output path'
         exit 0
     } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }

@@ -1,5 +1,5 @@
 // Bootstrap diagnosis before any credentials are entered or TEST resources created.
-import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { nativeFile } from './downloads.mjs';
 import { openTestPackage } from './local-tools.mjs';
@@ -34,6 +34,26 @@ try {
     'Real installed desktop native file-save preflight passed with Downloads default and exact owned output file, without credentials or TEST writes',
   );
 } catch (error) {
+  // This probe never authenticates. Report fixed classifications, not UI text or paths.
+  const feedback = await desktop?.page
+    .locator('.save-feedback')
+    .innerText()
+    .catch(() => '');
+  const outputs = await readdir(join(directory, 'desktop-ui', 'exports')).catch(() => []);
+  console.error(
+    `Native save preflight: ${JSON.stringify({
+      outputFiles: outputs.length,
+      expectedBasename: outputs.includes('native-save-probe.json'),
+      originalBasename: outputs.includes('testpaket.fctest.json'),
+      saveReported: feedback?.includes('Datei gespeichert:') || false,
+      cancelled: feedback?.includes('Speichern abgebrochen.') || false,
+      pending: feedback?.includes('Speicherort auswählen') || false,
+      error: await desktop?.page
+        .locator('.save-feedback.error')
+        .count()
+        .catch(() => 0),
+    })}`,
+  );
   console.error(/^live_ui_[a-z_]+$/.test(error.message || '') ? error.message : 'live_ui_bootstrap_failed');
   process.exitCode = 1;
 } finally {
