@@ -75,7 +75,7 @@ Der erste Rust-Build und das Laden der WebView2-Dateien können einige Minuten d
 
 ### Update-Signierung einmalig einrichten
 
-Der öffentliche Projekt-Prüfschlüssel ist in `desktop/update-public-key.txt` hinterlegt. Für normale Entwicklungsbuilds keinen neuen Schlüssel erzeugen. Nur der Projekteigentümer richtet das dauerhafte Schlüsselpaar ein oder plant eine Schlüsselrotation. Ein Build ohne gültigen Prüfschlüssel deaktiviert den Updater erkennbar; der manuelle Download bleibt verfügbar.
+Der öffentliche Projekt-Prüfschlüssel ist in `desktop/update-public-key.txt` hinterlegt. Für normale Entwicklungsbuilds keinen neuen Schlüssel erzeugen. Nur der Projekteigentümer richtet das dauerhafte Schlüsselpaar ein oder plant eine Schlüsselrotation. Solange das letzte veröffentlichte Release noch keine `latest.json` enthält, meldet die Updatesuche die fehlenden Update-Informationen. Eine fehlende Authenticode-Signatur des lokalen Entwicklungsbuilds ist dafür nicht die Ursache. Ein Build ohne gültigen Prüfschlüssel deaktiviert den Updater erkennbar; der manuelle Download bleibt verfügbar.
 
 Diese Datei ist die gemeinsame Quelle für die Anwendung, den Signierablauf und die
 unabhängige Paketprüfung. Der Schlüsselwert wird nicht zusätzlich in der Dokumentation

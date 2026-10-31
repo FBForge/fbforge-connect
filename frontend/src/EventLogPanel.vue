@@ -1,4 +1,5 @@
 <script setup>
+import EventDetails from './events/EventDetails.vue';
 import CopyValue from './CopyValue.vue';
 
 import ContentPreview from './ContentPreview.vue';
@@ -14,6 +15,7 @@ const emit = defineEmits(['busy', 'activity', 'fatal']);
 const controller = useEventLogPanel(props, emit);
 const {
   diagnostic,
+  eventDetails,
   recent,
   mode,
   replyId,
@@ -196,6 +198,7 @@ const {
             Aussteller:
             <code>{{ event.issuer }}</code>
           </p>
+          <EventDetails :details="eventDetails[event.eventId]" :pending="pending" />
           <div class="client-actions">
             <button
               class="button secondary"

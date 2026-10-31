@@ -1,4 +1,5 @@
 <script setup>
+import ScanResult from './ScanResult.vue';
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import CopyValue from './CopyValue.vue';
@@ -97,6 +98,27 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
     <form v-if="target" class="send-form" @submit.prevent="prepare">
       <fieldset :disabled="disabled">
         <legend>Antwort</legend>
+        <div class="client-fields">
+          <label v-if="target.schemas.length > 1" for="reply-schema">
+            Angebotenes Antwortschema
+            <select id="reply-schema" v-model="choice">
+              <option v-for="(item, index) in target.schemas" :key="index" :value="index">
+                {{ item.schemaUri }}{{ item.mimeType ? ` · ${item.mimeType}` : '' }}
+              </option>
+            </select>
+          </label>
+          <label v-if="!selected?.mimeType" for="reply-mime">
+            Antwortformat
+            <select id="reply-mime" v-model="mime">
+              <option value="application/json">JSON</option>
+              <option value="application/xml">XML</option>
+            </select>
+          </label>
+          <p v-else>
+            Antwortformat:
+            <strong>{{ format === 'application/json' ? 'JSON' : 'XML' }}</strong>
+          </p>
+        </div>
         <div class="client-actions">
           <button ref="exampleButton" class="button secondary" type="button" @click="loadSchema(true)">
             Fiktiven Antwortentwurf erzeugen
@@ -128,26 +150,8 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
           :disabled="disabled"
           :context-key="schemaContext"
         />
-        <div class="client-fields">
-          <label v-if="target.schemas.length > 1" for="reply-schema">
-            Angebotenes Antwortschema
-            <select id="reply-schema" v-model="choice">
-              <option v-for="(item, index) in target.schemas" :key="index" :value="index">
-                {{ item.schemaUri }}{{ item.mimeType ? ` · ${item.mimeType}` : '' }}
-              </option>
-            </select>
-          </label>
-          <label v-if="!selected?.mimeType" for="reply-mime">
-            Antwortformat
-            <select id="reply-mime" v-model="mime">
-              <option value="application/json">JSON</option>
-              <option value="application/xml">XML</option>
-            </select>
-          </label>
-          <p v-else>
-            Antwortformat:
-            <strong>{{ format === 'application/json' ? 'JSON' : 'XML' }}</strong>
-          </p>
+        <details :open="Boolean(file)">
+          <summary>Antwortinhalt aus Datei übernehmen</summary>
           <FileDropInput
             id="reply-data-file"
             label="Fachdaten aus Datei (optional)"
@@ -155,7 +159,7 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
             :disabled="disabled"
             @files="(files) => (file = files[0] || null)"
           />
-        </div>
+        </details>
         <details ref="schemaOptions" class="reply-schema-options">
           <summary>Antwortschema und technische Optionen</summary>
           <CopyValue v-if="selected" label="Antwortschema" :value="selected.schemaUri" />
@@ -261,7 +265,9 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
         Antwort prüfen und vorbereiten
       </button>
     </form>
-    <p v-if="working" role="status">Antwortaktion läuft …</p>
+    <p v-if="working" role="status">
+      Antwortaktion läuft. Bei aktiviertem Virenscan werden die Fachdaten und Anlagen geprüft …
+    </p>
     <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
     <ActionNotice
       v-if="error"
@@ -343,6 +349,7 @@ defineExpose({ begin, hasDraft, discardDraft: reset });
           <dt>Antwortinhalt</dt>
           <dd>{{ prepared.summary.mimeType }} · {{ prepared.summary.dataBytes }} Bytes</dd>
         </dl>
+        <ScanResult :status="prepared.scanStatus" :attachments="prepared.summary.attachments" outgoing />
         <p v-if="prepared.summary.processMessage">
           Prozess: {{ prepared.summary.processMessage.processModelId }} · Nachricht:
           {{ prepared.summary.processMessage.messageId }}

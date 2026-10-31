@@ -6,8 +6,7 @@ import { nativeAttachmentReview, nativeScannerReview } from './downloads.mjs';
 
 async function configure(desktop, fixture, kind, port) {
   const { page } = desktop;
-  await navigate(page, 'Testwerkzeuge');
-  await page.getByRole('button', { name: 'Malwarescanner', exact: true }).click();
+  await navigate(page, 'Virenscan');
   await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption(kind);
   if (kind === 'icap') {
     await page.getByRole('textbox', { name: 'Host', exact: true }).fill('127.0.0.1');

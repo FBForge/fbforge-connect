@@ -1,3 +1,4 @@
+import { destinationEditChanges } from './edit-changes.js';
 import { cancelledProductionAction } from '../environments.js';
 import { ref, computed, watch, nextTick } from 'vue';
 import { invoke } from '../native.js';
@@ -47,28 +48,25 @@ export function useDestinationManager(props, emit) {
     () => props.session?.apiVersion === 'v3' && page.value?.canManageDestinations !== false && !denied.value,
   );
   const locked = computed(() => preview.value?.status === 'uncertain');
-  const changes = computed(() => ({
-    ...(offersEnabled.value && selected.value.length === 1 ? offers.value : {}),
-    ...(nameEnabled.value ? { name: name.value } : {}),
-    ...(statusEnabled.value ? { status: status.value } : {}),
-    ...(versionsEnabled.value
-      ? {
-          metadataVersions: versions.value
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean),
-        }
-      : {}),
-    ...(Object.values(contacts.value).some((v) => v.enabled)
-      ? {
-          contactInformation: Object.fromEntries(
-            Object.entries(contacts.value)
-              .filter(([, v]) => v.enabled)
-              .map(([key, v]) => [key, v.value || null]),
-          ),
-        }
-      : {}),
-  }));
+  const changes = computed(() =>
+    destinationEditChanges({
+      baseline:
+        selected.value.length === 1 && detail.value?.destinationId === selected.value[0].destinationId
+          ? detail.value
+          : null,
+      name: name.value,
+      status: status.value,
+      versions: versions.value,
+      contacts: contacts.value,
+      offers: offers.value,
+      enabled: {
+        name: nameEnabled.value,
+        status: statusEnabled.value,
+        versions: versionsEnabled.value,
+        offers: offersEnabled.value,
+      },
+    }),
+  );
   const labels = {
     publicServices: 'Leistungen und Antwortschemata',
     processMessages: 'Prozessnachrichten',
@@ -209,6 +207,12 @@ export function useDestinationManager(props, emit) {
     target.value?.focus();
     target.value?.scrollIntoView({ block: 'start' });
   }
+  async function existing() {
+    if (disabled.value) return;
+    setupOpen.value = false;
+    await back();
+    if (!page.value) await search();
+  }
   async function back() {
     view.value = 'list';
     await nextTick();
@@ -244,7 +248,8 @@ export function useDestinationManager(props, emit) {
       selected.value = [row];
       preview.value = null;
       name.value = result.name || '';
-      nameEnabled.value = true;
+      nameEnabled.value = false;
+      status.value = result.status;
       versions.value = result.metadataVersions.join(', ');
       statusEnabled.value = false;
       versionsEnabled.value = false;
@@ -265,6 +270,15 @@ export function useDestinationManager(props, emit) {
     view.value = 'edit';
     await show(editHeading);
   }
+  function prefillSingle() {
+    if (selected.value.length === 1 && detail.value?.destinationId === selected.value[0].destinationId) {
+      name.value = detail.value.name || '';
+      status.value = detail.value.status;
+      versions.value = detail.value.metadataVersions.join(', ');
+      for (const [key, field] of Object.entries(contacts.value))
+        field.value = detail.value.contact[key] || '';
+    }
+  }
   function applyTemplate(value) {
     if (disabled.value || locked.value) return;
     if (
@@ -277,6 +291,7 @@ export function useDestinationManager(props, emit) {
     }
     error.value = '';
     resetFields();
+    prefillSingle();
     if (Object.hasOwn(value, 'name')) {
       nameEnabled.value = true;
       name.value = value.name;
@@ -377,6 +392,7 @@ export function useDestinationManager(props, emit) {
   }
   return {
     setupOpen,
+    existing,
     setupNotice,
     page,
     selected,

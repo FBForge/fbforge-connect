@@ -252,7 +252,15 @@ export async function prepareReply(invoke, session, proof, draft, dataFile, atta
     const document = JSON.stringify({ ...snapshot, contentId: data.contentId, attachments: staged });
     if (new TextEncoder().encode(document).byteLength > 24 * 1024) throw new Error('invalid_submission');
     const response = await requestResource(invoke, active, 'prepare_reply', { replyDocument: document });
-    if (!exact(response, ['attempt', 'summary'])) fail();
+    if (
+      !exact(response, [
+        'attempt',
+        'summary',
+        ...(response.scanStatus === undefined ? [] : ['scanStatus']),
+      ]) ||
+      (response.scanStatus !== undefined && !['passed', 'not_configured'].includes(response.scanStatus))
+    )
+      fail();
     approved = state(response.attempt);
     const expected = {
       ...snapshot,
@@ -271,6 +279,7 @@ export async function prepareReply(invoke, session, proof, draft, dataFile, atta
       fail();
     preparedResult = Object.freeze({
       attempt: approved,
+      scanStatus: response.scanStatus,
       summary: Object.freeze({
         ...response.summary,
         processMessage:

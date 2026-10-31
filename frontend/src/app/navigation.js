@@ -41,7 +41,13 @@ export const navigation = [
     name: 'Testwerkzeuge',
     group: 'Werkzeuge und Verwaltung',
     icon: 'tools',
-    description: 'Testfälle wiederverwenden, JSON-Kanalschemas erstellen und Schemata vergleichen.',
+    description: 'Testfälle und Abläufe verwalten, Antwortschemas erstellen und Schemata vergleichen.',
+  },
+  {
+    name: 'Virenscan',
+    group: 'Werkzeuge und Verwaltung',
+    icon: 'shield',
+    description: 'Virenschutz einrichten, Bereitschaft prüfen und Signaturen aktualisieren.',
   },
   {
     name: 'Hilfe',

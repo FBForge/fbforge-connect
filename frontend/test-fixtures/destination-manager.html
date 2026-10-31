@@ -27,7 +27,7 @@
           {
             destinationId: id,
             name: i ? 'Fachverfahren Süd' : 'Onlinedienst Nord',
-            status: 'active',
+            status: options.has('draft') ? 'draft' : 'active',
             type: 'A',
             contactInformation: {
               legalName: 'Testorganisation',
@@ -40,7 +40,7 @@
             publicServices: [],
             processMessages: [],
             metadataVersions: ['2.0.0'],
-            possibleNextStatus: ['inactive'],
+            possibleNextStatus: options.has('draft') ? ['active'] : ['inactive'],
           },
         ]),
       );

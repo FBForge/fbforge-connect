@@ -9,6 +9,8 @@ mod test_library_command;
 use documentation::open_documentation;
 mod case_store;
 mod cases;
+mod file_save_store;
+mod file_saves;
 mod message_export_store;
 mod message_export_stream;
 mod message_exports;
@@ -22,6 +24,7 @@ mod profile_workspace;
 mod profile_workspace_store;
 mod profiles;
 mod protocol;
+mod scanner_consent;
 mod scanner_package;
 mod scanner_process;
 mod scanner_runtime;
@@ -61,6 +64,7 @@ fn main() {
         .manage(EngineState::default())
         .manage(local_scanner::LocalScanner::default())
         .manage(message_exports::MessageExports::default())
+        .manage(file_saves::FileSaves::default())
         .invoke_handler(tauri::generate_handler![
             application_updates::application_update_status,
             application_updates::open_update_download,
@@ -68,6 +72,7 @@ fn main() {
             application_updates::download_application_update,
             application_updates::cancel_application_update,
             application_updates::install_application_update,
+            file_saves::save_local_file,
             message_exports::begin_message_export,
             message_exports::export_message,
             message_exports::finish_message_export,

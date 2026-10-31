@@ -10,6 +10,7 @@
     <script type="module">
       import { createApp, ref, h } from 'vue';
       import { productName } from '../src/product.js';
+      import SaveFeedback from '../src/app/SaveFeedback.vue';
       import ReceivePanel from '../src/ReceivePanel.vue';
       import SubmissionBrowser from '../src/SubmissionBrowser.vue';
       import ReplyBrowser from '../src/ReplyBrowser.vue';
@@ -40,6 +41,7 @@
         '<?xml version="1.0"?><a:antrag xmlns:a="urn:test:antrag" nummer="9007199254740993"><a:antragsteller><a:vorname>Erika</a:vorname><a:nachname>Musterfrau</a:nachname><a:adresse><a:strasse>Teststraße 7</a:strasse><a:ort>Teststadt</a:ort></a:adresse></a:antragsteller><a:anliegen status="neu">Ein <a:art>Testantrag</a:art> mit Anlagen.</a:anliegen><a:kind>Alex</a:kind><a:kind>Robin</a:kind></a:antrag>';
       const fixture = (window.__applicationFixture = {
         uploaded: new Map(),
+        activities: [],
         replyWrites: 0,
         replyState: null,
         nextContent: 20,
@@ -354,6 +356,7 @@
                     ]),
                     h('main', { class: 'workspace-scroll', style: 'grid-column:1;grid-row:2' }, [
                       h('div', { class: 'workspace-content' }, [
+                        h(SaveFeedback),
                         h('div', { style: { display: eventTarget.value ? 'none' : 'block' } }, [
                           h(
                             new URLSearchParams(location.search).has('browser')
@@ -368,6 +371,7 @@
                               busy: busy.value,
                               keyRevision: keys.value,
                               onBusy: (value) => (busy.value = value),
+                              onActivity: (value) => fixture.activities.push(value),
                               onEventLog: (value) => (eventTarget.value = value),
                             },
                           ),

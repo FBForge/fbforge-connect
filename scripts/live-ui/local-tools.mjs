@@ -19,7 +19,7 @@ export async function auditScreen(page) {
 export async function localScannerReady(page) {
   if (process.env.FBFORGE_UI_SCANNER !== 'true') return;
   await navigate(page, 'Testwerkzeuge');
-  await page.getByRole('button', { name: 'Malwarescanner', exact: true }).click();
+  await page.getByRole('button', { name: 'Virenscan', exact: true }).click();
   await until(
     async () => (await page.getByText('Aktiv: Lokaler ClamAV', { exact: true }).count()) === 1,
     'live_ui_local_scanner_not_selected',
@@ -84,6 +84,7 @@ export async function keySetup(page, fixture, api) {
 }
 
 export async function openTestPackage(page) {
+  await page.getByRole('button', { name: 'Testfälle und Abläufe', exact: true }).click();
   await page.getByRole('button', { name: 'Testpakete', exact: true }).click();
   await page.getByRole('button', { name: 'Fiktives Testpaket öffnen', exact: true }).click();
   await page.locator('#test-case-choice').waitFor();

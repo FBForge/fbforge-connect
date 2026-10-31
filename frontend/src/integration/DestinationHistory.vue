@@ -41,7 +41,7 @@ async function load() {
     <p>
       Bis zu 100 aktuelle Änderungsvorgänge aus FBForge Connect, mit Vorher-/Nachher-Werten, geschützt mit
       Windows-DPAPI für dieses Profil, diese Umgebung und API. Änderungen anderer Anwendungen sind hier nicht
-      enthalten. „uncertain“ bedeutet: Ergebnis nicht sicher gespeichert oder bestätigt; vor Wiederholung
+      enthalten. „uncertain“ bedeutet: Ergebnis nicht sicher gespeichert oder bestätigt. Vor Wiederholung
       Serverzustand prüfen.
     </p>
     <button class="button secondary" type="button" :disabled="busy || pending || !session" @click="load">

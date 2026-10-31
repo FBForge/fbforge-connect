@@ -71,7 +71,11 @@ function Invoke-Button($Root, [string]$Name) {
 if ($AttachmentReview -or $ScannerReview) {
     $title = if ($AttachmentReview) { 'Mit gesperrten Anlagen annehmen?' } else { 'Eigene Scanner-Gegenstelle verwenden?' }
     $action = if ($AttachmentReview) { 'Mit Anlagenproblemen annehmen' } else { 'Scanner aktivieren' }
-    $notice = Wait-Ui { Find-Dialog $title } 'ui_scanner_warning_missing'
+    $notice = Wait-Ui {
+        $dialog = Find-Dialog $title
+        if (-not $dialog -and $ScannerReview) { $dialog = Find-Dialog 'Lokalen Virenscan aktivieren?' }
+        return $dialog
+    } 'ui_scanner_warning_missing'
     Invoke-Button $notice $(if ($Cancel) { 'Abbrechen' } else { $action })
     Write-Output 'Native scanner-review confirmation handled'
     exit 0

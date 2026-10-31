@@ -9,7 +9,8 @@
     <div id="app"></div>
     <script type="module">
       import { createApp } from 'vue/dist/vue.esm-bundler.js';
-      import { ref, provide } from 'vue';
+      import { ref, provide, watch } from 'vue';
+      import MalwareScannerSettings from '../src/integration/MalwareScannerSettings.vue';
       import TestTools from '../src/TestTools.vue';
       import DestinationTemplates from '../src/integration/DestinationTemplates.vue';
       import InboxAges from '../src/integration/InboxAges.vue';
@@ -48,6 +49,8 @@
         emitted: null,
         wrong: false,
         failScanConfig: false,
+        savedFlows: {},
+        savedPacks: JSON.parse(localStorage.getItem('fixture-test-packs') || '{}'),
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
@@ -60,11 +63,12 @@
             fixture.rejectLocal?.('content_cancelled');
             return;
           }
-          if (command === 'install_local_scanner') {
+          if (command === 'install_local_scanner' || command === 'update_local_scanner_database') {
             if (fixture.localFailure) throw fixture.localFailure;
             if (fixture.holdLocalInstall) {
               fixture.local.busy = true;
-              fixture.local.operation = 'downloading';
+              fixture.local.operation =
+                command === 'install_local_scanner' ? 'downloading' : 'updating-database';
               fixture.local.downloadedBytes = 1000000;
               await new Promise((resolve, reject) => {
                 fixture.finishLocal = resolve;
@@ -95,10 +99,53 @@
               );
             return structuredClone(fixture.workspace);
           }
-          if (command === 'test_library')
-            return args.request.action === 'list'
-              ? [{ id: id(7), name: pack.name, cases: pack.cases.map(({ id, name }) => ({ id, name })) }]
-              : structuredClone(pack);
+          if (command === 'test_library' && args.request.action.startsWith('flow_')) {
+            const { action, id: flowId, flow } = args.request;
+            if (action === 'flow_save') {
+              fixture.savedFlows[flowId] = structuredClone(flow);
+              return {
+                id: flowId,
+                name: flow.name,
+                stepCount: flow.steps.length,
+                caseCount: flow.pack.cases.length,
+              };
+            }
+            if (action === 'flow_list')
+              return Object.entries(fixture.savedFlows).map(([id, flow]) => ({
+                id,
+                name: flow.name,
+                stepCount: flow.steps.length,
+                caseCount: flow.pack.cases.length,
+              }));
+            if (action === 'flow_delete') {
+              delete fixture.savedFlows[flowId];
+              return null;
+            }
+            return structuredClone(fixture.savedFlows[flowId]);
+          }
+          if (command === 'test_library') {
+            const { action, id: packId, pack: value } = args.request;
+            const summary = (id, pack) => ({
+              id,
+              name: pack.name,
+              cases: pack.cases.map(({ id, name }) => ({ id, name })),
+            });
+            if (action === 'save') {
+              fixture.savedPacks[packId] = structuredClone(value);
+              localStorage.setItem('fixture-test-packs', JSON.stringify(fixture.savedPacks));
+              return summary(packId, value);
+            }
+            if (action === 'list')
+              return [
+                summary(id(7), pack),
+                ...Object.entries(fixture.savedPacks).map(([id, pack]) => summary(id, pack)),
+              ];
+            if (action === 'delete') {
+              delete fixture.savedPacks[packId];
+              return null;
+            }
+            return structuredClone(fixture.savedPacks[packId] || pack);
+          }
           const envelope = (data) => ({
             apiVersion: args.apiVersion,
             sessionId: args.sessionId,
@@ -182,7 +229,14 @@
         },
       };
       createApp({
-        components: { TestTools, DestinationTemplates, InboxAges, CertificateResults, SendReconciliation },
+        components: {
+          MalwareScannerSettings,
+          TestTools,
+          DestinationTemplates,
+          InboxAges,
+          CertificateResults,
+          SendReconciliation,
+        },
         setup() {
           const environment = ref('TEST');
           provide(environmentKey, environment);
@@ -193,11 +247,17 @@
               connected: true,
             }),
             mode = ref('tools'),
+            scannerOpened = ref(false),
             busy = ref(false),
             rows = ref([]);
+          watch(mode, (value) => {
+            if (value === 'scanner') scannerOpened.value = true;
+          });
+          fixture.isBusy = () => busy.value;
           return {
             session,
             mode,
+            scannerOpened,
             busy,
             rows,
             fixture,
@@ -218,7 +278,7 @@
             },
           };
         },
-        template: `<main class="tool-section"><h1>Integrationstests 0.3</h1><nav class="client-actions"><button @click="mode='tools'">Werkzeuge</button><button @click="mode='templates'">Vorlagen</button><button @click="mode='ages'">Eingang</button><button @click="mode='certificates'">Zertifikate</button><button @click="mode='send'">Versand</button><button @click="changeSession">Anderes Profil</button></nav><TestTools v-show="mode==='tools'" :session="session" :busy="busy" @busy="busy=$event" @send="fixture.emitted=$event"/><DestinationTemplates v-if="mode==='templates'" :session="session" :changes="{name:'Vorlage'}" @apply="fixture.applied=$event"/><InboxAges v-if="mode==='ages'" :session="session" :items="items" @rows="rows=$event" @busy="busy=$event"/><p v-if="mode==='ages'" data-testid="age-result">{{rows.map(row=>row.submissionId+':'+row.collection?.ageDays).join(' | ')}}</p><CertificateResults v-if="mode==='certificates'" :keys="expiry"/><SendReconciliation v-if="mode==='send'" :session="session" :outcome="outcome" :busy="busy" @busy="busy=$event"/></main>`,
+        template: `<main class="tool-section"><h1>Integrationstests 0.3</h1><nav class="client-actions"><button @click="mode='tools'">Werkzeuge</button><button @click="mode='scanner'">Virenscan</button><button @click="mode='templates'">Vorlagen</button><button @click="mode='ages'">Eingang</button><button @click="mode='certificates'">Zertifikate</button><button @click="mode='send'">Versand</button><button @click="changeSession">Anderes Profil</button></nav><TestTools v-show="mode==='tools'" :session="session" :busy="busy" @busy="busy=$event" @send="fixture.emitted=$event"/><MalwareScannerSettings v-if="scannerOpened" v-show="mode==='scanner'" :session="session" :busy="busy" @busy="busy=$event"/><DestinationTemplates v-if="mode==='templates'" :session="session" :changes="{name:'Vorlage'}" @apply="fixture.applied=$event"/><InboxAges v-if="mode==='ages'" :session="session" :items="items" @rows="rows=$event" @busy="busy=$event"/><p v-if="mode==='ages'" data-testid="age-result">{{rows.map(row=>row.submissionId+':'+row.collection?.ageDays).join(' | ')}}</p><CertificateResults v-if="mode==='certificates'" :keys="expiry"/><SendReconciliation v-if="mode==='send'" :session="session" :outcome="outcome" :busy="busy" @busy="busy=$event"/></main>`,
       }).mount('#app');
     </script>
   </body>

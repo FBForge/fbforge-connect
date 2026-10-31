@@ -181,7 +181,10 @@ final class SessionReplies {
                 version.wireValue(),
                 id,
                 IntegrationEnvironment.current().name(),
-                new PreparedReply(attempt, draft.summary()));
+                new PreparedReply(
+                        attempt,
+                        draft.summary(),
+                        this.state.scanners.containsKey(id) ? "passed" : "not_configured"));
     }
 
     Data<?> replySend(ApiVersion version, String id, String command, String attemptId) {

@@ -51,6 +51,9 @@
       },
       "nsis": {
         "installMode": "currentUser",
+        "languages": ["German"],
+        "installerIcon": "icons/app.ico",
+        "uninstallerIcon": "icons/app.ico",
         "template": "installer/installer.nsi",
         "installerHooks": "installer/compatibility.nsh"
       }

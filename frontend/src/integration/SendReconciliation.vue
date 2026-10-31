@@ -44,7 +44,7 @@ async function check() {
   <section v-if="outcome?.status === 'uncertain'" aria-label="Versand mit Server abgleichen">
     <p v-if="!outcome.submissionId || !outcome.caseId">
       Es liegt keine vollständige Nachrichtenkennung vor. Ein eindeutiger Serverabgleich ist deshalb nicht
-      möglich. Bitte mit der Gegenstelle klären; nicht automatisch erneut senden.
+      möglich. Bitte mit der Gegenstelle klären. Nicht automatisch erneut senden.
     </p>
     <button
       v-else

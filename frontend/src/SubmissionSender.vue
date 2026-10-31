@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import ActionNotice from './ActionNotice.vue';
 import SaveTestCase from './send/SaveTestCase.vue';
 import TestCaseLibrary from './send/TestCaseLibrary.vue';
 import SendConfirmation from './send/SendConfirmation.vue';
@@ -179,7 +180,7 @@ const {
     />
     <p v-if="progress" role="status">{{ progress }}</p>
     <p v-if="storageWarning" role="status">{{ storageWarning }}</p>
-    <p v-if="error" role="alert">{{ error }}</p>
+    <ActionNotice v-if="error" title="Aktion fehlgeschlagen" :message="error" />
     <DocumentationLink v-if="error" topic="problems">Hilfe zum Versandproblem</DocumentationLink>
     <div v-if="outcome" role="status">
       <p>

@@ -32,5 +32,9 @@ export const messages = {
 };
 export function explain(cause) {
   const code = typeof cause === 'string' ? cause : cause?.message;
+  if (code === 'malware_detected')
+    return 'Der Virenscanner meldet einen Fund in den Fachdaten oder einer Anlage. Die Antwort wurde blockiert. Entfernen oder ersetzen Sie die betroffene Datei und prüfen Sie den Antwortentwurf erneut.';
+  if (code === 'malware_scan_failed')
+    return 'Die Antwort konnte nicht vollständig auf Schadsoftware geprüft werden und bleibt blockiert. Prüfen Sie Erreichbarkeit, Signaturstand und Einstellungen unter „Virenscan“ und bereiten Sie die Antwort erneut vor.';
   return typeof code === 'string' && Object.hasOwn(messages, code) ? messages[code] : errorMessage(cause);
 }

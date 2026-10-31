@@ -93,7 +93,7 @@ async function load() {
       </label>
     </div>
     <p class="small-note">
-      Technische Abholfrist: grundsätzlich 14 Tage ab Bereitstellung; danach nicht mehr abrufbar, endgültige
+      Technische Abholfrist: grundsätzlich 14 Tage ab Bereitstellung. Danach nicht mehr abrufbar, endgültige
       Löschung nach 21 Tagen. Das sind keine fachlichen Bearbeitungsfristen. Sortierung und Filter gelten für
       die geladene Seite.
     </p>

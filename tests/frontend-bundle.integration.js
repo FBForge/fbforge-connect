@@ -93,10 +93,8 @@ test(
       await expect(page.locator('dialog[open]')).not.toContainText('Lizenztexte werden geladen.');
       await page.locator('dialog[open]').getByRole('button', { name: 'Schließen', exact: true }).click();
       await page.getByRole('button', { name: 'Testwerkzeuge', exact: true }).click();
-      await page.getByRole('button', { name: 'Kanalschemas', exact: true }).click();
-      await expect(
-        page.getByRole('heading', { name: 'Eigene JSON-Kanalschemas erstellen', exact: true }),
-      ).toBeVisible();
+      await page.getByRole('button', { name: 'Antwortschemas', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Antwortschema erstellen', exact: true })).toBeVisible();
       const download = page.waitForEvent('download');
       await page.getByRole('button', { name: 'JSON-Schema herunterladen', exact: true }).click();
       const schema = JSON.parse(await readFile(await (await download).path(), 'utf8'));

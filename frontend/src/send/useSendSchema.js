@@ -32,7 +32,7 @@ export function useSendSchema({ props, act, draft, view, state, selection }) {
       processModelId: addressing.value === 'process' ? modelId.value : '',
       messageId: addressing.value === 'process' ? messageId.value : '',
     };
-    await act('Schema-Beschriftungen laden', async () => {
+    await act('Formularbeschriftungen laden', async () => {
       const document = await withSchemaSourceAccess(
         () =>
           loadSendSchema(invoke, active, destination, {

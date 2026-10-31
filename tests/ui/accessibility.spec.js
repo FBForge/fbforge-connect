@@ -27,6 +27,8 @@ test('main workspaces support keyboard navigation, reflow and automated accessib
     'Destinations',
     'Prozesse',
     'Event Log',
+    'Testwerkzeuge',
+    'Virenscan',
     'Info',
   ]) {
     await page.getByRole('button', { name, exact: true }).click();

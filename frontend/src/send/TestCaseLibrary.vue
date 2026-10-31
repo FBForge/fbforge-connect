@@ -86,8 +86,8 @@ function saveDraft(name, exportOnly = false) {
     const pack = await props.createPack(name.trim());
     if (!pack) return;
     if (exportOnly) {
-      downloadLocal(serializeTestPack(pack), 'testfall.fctest.json');
-      notice.value = 'Testfall als unverschlüsselte Datei exportiert.';
+      if (await downloadLocal(serializeTestPack(pack), 'testfall.fctest.json'))
+        notice.value = 'Testfall als unverschlüsselte Datei exportiert.';
     } else await store(pack);
   }, 'save');
 }
@@ -182,6 +182,10 @@ defineExpose({ saveDraft, saveNotice, saveError, pending });
         Testfall laden
       </button>
     </div>
+    <p class="small-note">
+      Gespeicherte Testpakete bleiben nach einem Neustart erhalten. Die lokale Sammlung ist für Ihr
+      Windows-Benutzerkonto verschlüsselt und unabhängig vom verbundenen FIT-Connect-Profil.
+    </p>
     <details>
       <summary ref="managementSummary">
         {{ entries.length ? 'Testpakete importieren, exportieren und löschen' : 'Testpaket importieren' }}

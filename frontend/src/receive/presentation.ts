@@ -20,3 +20,7 @@ export const bytesLabel = (value: number): string =>
     : value < 1024 * 1024
       ? `${(value / 1024).toFixed(1)} KiB`
       : `${(value / 1024 / 1024).toFixed(1)} MiB`;
+
+export function generalWarnings(warnings: string[]) {
+  return warnings.filter((code) => !['MALWARE_SCAN_NOT_CONFIGURED', 'MALWARE_SCAN_PASSED'].includes(code));
+}

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
+import SavedTestPackages from './integration/SavedTestPackages.vue';
 import FileDropInput from './FileDropInput.vue';
 import StructuredData from './StructuredData.vue';
 import ServiceLabel from './ServiceLabel.vue';
@@ -99,6 +100,9 @@ function selectCase(event) {
   if (saveExpectations()) selection.value = index;
   else event.target.value = String(selection.value);
 }
+function createPack() {
+  return saveExpectations() ? structuredClone(pack.value) : null;
+}
 function download() {
   if (saveExpectations()) downloadLocal(serializeTestPack(pack.value), 'testpaket.fctest.json');
 }
@@ -126,6 +130,12 @@ onBeforeUnmount(() => revision++);
       Pakete sind unverschlüsselte Dateien. Verwenden Sie fiktive Testdaten. Zugangsdaten, private Schlüssel
       und bisherige Nachrichtenkennungen werden nicht aus Ihrer Verbindung übernommen.
     </p>
+    <SavedTestPackages
+      :has-pack="Boolean(pack)"
+      :disabled="disabled"
+      :create-pack="createPack"
+      @open="show"
+    />
     <details :open="!pack">
       <summary>{{ pack ? 'Anderes Paket öffnen oder Beispiel laden' : 'Testpaket laden' }}</summary>
       <FileDropInput
@@ -146,7 +156,8 @@ onBeforeUnmount(() => revision++);
     <template v-if="pack && current">
       <h3 ref="heading" tabindex="-1">{{ pack.name }}</h3>
       <p>
-        {{ pack.cases.length }} {{ pack.cases.length === 1 ? 'Testfall' : 'Testfälle' }} · Nur lokal geöffnet
+        {{ pack.cases.length }} {{ pack.cases.length === 1 ? 'Testfall' : 'Testfälle' }} · Änderungen vor dem
+        Schließen speichern oder exportieren
       </p>
       <label for="test-case-choice">
         Testfall auswählen
@@ -161,7 +172,7 @@ onBeforeUnmount(() => revision++);
           Als Versandentwurf öffnen
         </button>
         <button class="button secondary" type="button" :disabled="disabled" @click="download">
-          Testpaket speichern
+          Testpaket exportieren
         </button>
       </div>
       <details>

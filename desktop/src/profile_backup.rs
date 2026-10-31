@@ -5,7 +5,7 @@ use crate::{
     vault::{read_bounded, ProfileSummary, Vault, MAX_BACKUP_BYTES},
     EngineState,
 };
-use tauri::State;
+use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 #[tauri::command]
@@ -30,13 +30,16 @@ pub async fn export_profile_backup(
     }
     let protected = profiles::vault(&app)?.backup(&profile_id)?;
     tauri::async_runtime::spawn_blocking(move || {
-        let selected = app
+        let mut dialog = app
             .dialog()
             .file()
             .set_title("Geschütztes Profil sichern")
             .add_filter("Geschütztes Profil", &["fctest-profile"])
-            .set_file_name("test-profil.fctest-profile")
-            .blocking_save_file();
+            .set_file_name("test-profil.fctest-profile");
+        if let Ok(directory) = app.path().download_dir() {
+            dialog = dialog.set_directory(directory);
+        }
+        let selected = dialog.blocking_save_file();
         let Some(selected) = selected else {
             return Ok(false);
         };

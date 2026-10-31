@@ -35,6 +35,7 @@ test('test packages and schema comparisons work offline and remain available acr
   await button(page, 'Start').click();
   await button(page, 'Testwerkzeuge').click();
   await expect(page.locator('.schema-change-list')).toContainText('Jetzt ein Pflichtfeld');
+  await button(page, 'Testfälle und Abläufe').click();
   await button(page, 'Testpakete').click();
   await expect(page.getByRole('combobox', { name: 'Testfall auswählen', exact: true })).toHaveValue('0');
   expect(
@@ -75,6 +76,10 @@ test('a test package is imported only after confirmation and a matching current 
     window.__offerMatches = true;
     window.__TAURI_INTERNALS__.invoke = (command, args) => {
       window.__toolsCalls.push(command);
+      if (command === 'save_local_file') {
+        window.__exportedTestPack = new TextDecoder().decode(args);
+        return Promise.resolve('C:\\Users\\Test\\Downloads\\testfall.fctest.json');
+      }
       if (command === 'load_send_destination')
         return Promise.resolve({
           apiVersion: args.apiVersion,
@@ -131,9 +136,9 @@ test('a test package is imported only after confirmation and a matching current 
   ).toBeChecked();
   await page.getByText('Entwurf als Testfall wiederverwenden', { exact: true }).click();
   await page.locator('#send-test-name').fill('Fiktiver Integrationstest');
-  const download = page.waitForEvent('download');
   await button(page, 'Entwurf als Testpaket exportieren').click();
-  const saved = JSON.parse(await readFile(await (await download).path(), 'utf8'));
+  await expect(page.locator('.save-feedback')).toContainText('Datei gespeichert');
+  const saved = JSON.parse(await page.evaluate(() => window.__exportedTestPack));
   expect(saved.cases[0].request.data).toEqual(example.cases[0].request.data);
   expect(saved.cases[0].request.attachments).toEqual(example.cases[0].request.attachments);
   expect(saved.cases[0].request.replyOffer).toEqual(example.cases[0].request.replyOffer);

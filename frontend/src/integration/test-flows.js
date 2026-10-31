@@ -9,6 +9,19 @@ export const flowSteps = Object.freeze({
   reply: 'Antwort senden',
   check_reply: 'Antwort prüfen',
 });
+export const flowStepHints = Object.freeze({
+  send: 'Öffnen Sie den Testfall als Versandentwurf und senden Sie ihn. Laden Sie anschließend die lokalen Ergebnisse.',
+  receive:
+    'Öffnen und entschlüsseln Sie die Einreichung im Empfang. Laden Sie anschließend die lokalen Ergebnisse.',
+  compare:
+    'Prüfen Sie die empfangene Einreichung im Empfang und laden Sie anschließend die lokalen Ergebnisse zum Inhaltsvergleich.',
+  receipt:
+    'Nehmen Sie die Einreichung im Empfang wie erwartet an oder lehnen Sie sie ab. Laden Sie danach die lokalen Ergebnisse.',
+  reply:
+    'Verfassen und senden Sie die erwartete Antwort im Empfang. Laden Sie anschließend die lokalen Ergebnisse.',
+  check_reply:
+    'Öffnen und entschlüsseln Sie die Antwort im Empfang. Laden Sie anschließend die lokalen Ergebnisse.',
+});
 const stepsFor = (item) => [
   'send',
   'receive',

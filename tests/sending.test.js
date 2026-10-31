@@ -77,13 +77,14 @@ test('preparing uploads bytes, confirms native summary and releases staging with
         contentId: content,
         attachments: [],
       });
-      return envelope({ attempt: identity, summary });
+      return envelope({ attempt: identity, summary, scanStatus: 'passed' });
     }
     assert.equal(command, 'discard_content');
     return envelope({ contentId: content });
   };
   const result = await prepareSend(invoke, session, draft, new Blob(['{}']), []);
   assert.equal(result.attempt.attemptId, attempt);
+  assert.equal(result.scanStatus, 'passed');
   assert.deepEqual(calls, ['begin_content', 'append_content', 'prepare_send', 'discard_content']);
 });
 

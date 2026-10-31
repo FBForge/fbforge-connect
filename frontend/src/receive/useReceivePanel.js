@@ -1,3 +1,4 @@
+import { saveLocalFile, localSave } from '../local-download.js';
 import { label } from './presentation.ts';
 import { inject, ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { processWorkspaceKey } from '../process-context.js';
@@ -96,9 +97,7 @@ export function useReceivePanel(props, emit) {
   }
   let generation = 0,
     proofSession,
-    alive = true,
-    downloadUrl,
-    downloadTimer;
+    alive = true;
   function showError(cause) {
     diagnostic.value = diagnosticCode(cause);
     const message = Object.hasOwn(messages, diagnostic.value)
@@ -109,11 +108,6 @@ export function useReceivePanel(props, emit) {
   function closePreview() {
     disposePreview(preview.value);
     preview.value = null;
-  }
-  function clearDownload() {
-    clearTimeout(downloadTimer);
-    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-    downloadUrl = null;
   }
   async function release(operation) {
     try {
@@ -129,7 +123,6 @@ export function useReceivePanel(props, emit) {
     generation++;
     controller.value?.abort();
     closePreview();
-    clearDownload();
     const previous = proof.value,
       owner = proofSession,
       reply = props.reply;
@@ -196,7 +189,8 @@ export function useReceivePanel(props, emit) {
     emit('busy', true);
     let status = 'Erfolgreich';
     try {
-      await operation(active, current);
+      const result = await operation(active, current);
+      if (['Fehlgeschlagen', 'Abgebrochen'].includes(result)) status = result;
       if (!current()) status = 'Abgebrochen';
     } catch (cause) {
       const code = typeof cause === 'string' ? cause : cause?.message;
@@ -393,15 +387,12 @@ export function useReceivePanel(props, emit) {
           });
           if (!current()) return;
           if (download) {
-            clearDownload();
-            downloadUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = part.fileName || `Anlage-${part.attachmentId}.bin`;
-            document.body.append(link);
-            link.click();
-            link.remove();
-            downloadTimer = setTimeout(clearDownload, 30000);
+            const saved = await saveLocalFile(
+              bytes,
+              part.fileName || `${label(part)}.bin`,
+              part.mimeType || 'application/octet-stream',
+            );
+            return saved ? 'Erfolgreich' : localSave.value.error ? 'Fehlgeschlagen' : 'Abgebrochen';
           } else {
             const value = await createPreview(bytes, {
               filename: part.fileName || label(part),

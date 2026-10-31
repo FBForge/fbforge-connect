@@ -127,6 +127,16 @@
                 },
               ],
             });
+          if (command === 'read_event_log')
+            return envelope({
+              logId: id(7),
+              eventId: args.eventId,
+              part: args.part,
+              byteOffset: 0,
+              totalBytes: 2,
+              chunk: btoa('{}'),
+              complete: true,
+            });
           if (command === 'discard_event_log') return envelope({ logId: args.logId });
           throw 'invalid_input';
         },

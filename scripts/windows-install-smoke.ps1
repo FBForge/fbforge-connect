@@ -211,8 +211,7 @@ function Check-Installed([bool]$ExpectProfile) {
             Invoke-Named $window 'Verbindungsdialog schließen'
         }
         if (Test-Path -LiteralPath (Join-Path $taskInstall 'resources/scanner/component.zip')) {
-            Invoke-Named $window 'Testwerkzeuge'
-            Invoke-Named $window 'Malwarescanner'
+            Invoke-Named $window 'Virenscan'
             $null = Wait-Condition { Find-Named $window 'Scanner läuft lokal' } 'installed_scanner_not_ready' 90
             $clam = @(Get-CimInstance Win32_Process -Filter ("ParentProcessId = " + $script:taskApp.Id + " AND Name = 'clamd.exe'"))
             if ($clam.Count -ne 1 -or -not $clam[0].ExecutablePath.StartsWith($taskScannerRoot + '\', [StringComparison]::OrdinalIgnoreCase)) { throw 'installed_scanner_ownership_invalid' }

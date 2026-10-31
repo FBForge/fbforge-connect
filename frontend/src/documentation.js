@@ -13,7 +13,7 @@ export const documentationTopics = Object.freeze([
   { id: 'diagnostics', title: 'Technische Aufrufe verstehen' },
   { id: 'problems', title: 'Probleme verstehen und beheben' },
   { id: 'accessibility', title: 'Tastatur und Lesbarkeit' },
-  { id: 'tools', title: 'Testpakete, Kanalschemas und Schema-Vergleich' },
+  { id: 'tools', title: 'Testpakete, Antwortschemas und Schema-Vergleich' },
 ]);
 export function documentationUrl(topic = 'start') {
   if (!documentationTopics.some((item) => item.id === topic)) throw new Error('invalid_input');

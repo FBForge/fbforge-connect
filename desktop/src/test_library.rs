@@ -18,6 +18,10 @@ pub enum LibraryRequest {
     Read { id: String },
     Save { id: String, pack: Pack },
     Delete { id: String },
+    FlowList {},
+    FlowRead { id: String },
+    FlowSave { id: String, flow: flows::Flow },
+    FlowDelete { id: String },
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -177,7 +181,7 @@ impl TestLibrary {
         files.sort_by(|a, b| a.0.cmp(&b.0));
         Ok(files)
     }
-    fn read(&self, id: &str) -> Result<Pack, &'static str> {
+    fn read_document(&self, id: &str) -> Result<Value, &'static str> {
         let path = self.path(id)?;
         let meta = fs::symlink_metadata(&path).map_err(|_| "vault_unavailable")?;
         if !meta.is_file() || meta.len() > 8 * 1024 * 1024 {
@@ -193,14 +197,60 @@ impl TestLibrary {
             return Err("vault_invalid");
         }
         let mut plain = protection::transform_with_purpose(&encrypted, false, &Self::purpose(id))?;
-        let pack = serde_json::from_slice::<Pack>(&plain).map_err(|_| "test_pack_invalid");
+        let pack = serde_json::from_slice::<Value>(&plain).map_err(|_| "test_pack_invalid");
         plain.fill(0);
-        let pack = pack?;
+        pack
+    }
+    fn read(&self, id: &str) -> Result<Pack, &'static str> {
+        let pack: Pack =
+            serde_json::from_value(self.read_document(id)?).map_err(|_| "test_pack_invalid")?;
         pack.validate()?;
         Ok(pack)
     }
+    fn save_document(&self, id: &str, document: &Value) -> Result<(), &'static str> {
+        let destination = self.path(id)?;
+        let mut plain = serde_json::to_vec(document).map_err(|_| "test_pack_invalid")?;
+        if plain.len() > MAX_PACK {
+            plain.fill(0);
+            return Err("test_pack_limit");
+        }
+        let encrypted = protection::transform_with_purpose(&plain, true, &Self::purpose(id));
+        plain.fill(0);
+        let encrypted = encrypted?;
+        let files = self.files()?;
+        if files.iter().any(|(saved, _)| saved == id) {
+            return Err("test_library_conflict");
+        }
+        if files.len() >= MAX_ENTRIES
+            || files.iter().map(|(_, size)| size).sum::<u64>() + encrypted.len() as u64 > MAX_STORE
+        {
+            return Err("vault_limit");
+        }
+        fs::create_dir_all(&self.0).map_err(|_| "vault_unavailable")?;
+        let temp = destination.with_extension("pending");
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temp)
+            .map_err(|_| "vault_unavailable")?;
+        let result = (|| {
+            file.write_all(&encrypted)
+                .and_then(|_| file.sync_all())
+                .map_err(|_| "vault_unavailable")?;
+            drop(file);
+            protection::replace(&temp, &destination)
+        })();
+        if result.is_err() {
+            let _ = fs::remove_file(&temp);
+        }
+        result
+    }
     pub fn execute(&self, request: LibraryRequest) -> Result<Value, &'static str> {
         match request {
+            LibraryRequest::FlowList {}
+            | LibraryRequest::FlowRead { .. }
+            | LibraryRequest::FlowSave { .. }
+            | LibraryRequest::FlowDelete { .. } => flows::execute(self, request),
             LibraryRequest::List {} => self
                 .files()?
                 .iter()
@@ -215,46 +265,11 @@ impl TestLibrary {
                 Ok(Value::Null)
             }
             LibraryRequest::Save { id, pack } => {
-                let destination = self.path(&id)?;
                 pack.validate()?;
-                let mut plain = serde_json::to_vec(&pack).map_err(|_| "test_pack_invalid")?;
-                if plain.len() > MAX_PACK {
-                    plain.fill(0);
-                    return Err("test_pack_limit");
-                }
-                let encrypted =
-                    protection::transform_with_purpose(&plain, true, &Self::purpose(&id));
-                plain.fill(0);
-                let encrypted = encrypted?;
-                let files = self.files()?;
-                if files.iter().any(|(saved, _)| saved == &id) {
-                    return Err("test_library_conflict");
-                }
-                if files.len() >= MAX_ENTRIES
-                    || files.iter().map(|(_, size)| size).sum::<u64>() + encrypted.len() as u64
-                        > MAX_STORE
-                {
-                    return Err("vault_limit");
-                }
-                fs::create_dir_all(&self.0).map_err(|_| "vault_unavailable")?;
-                let temp = destination.with_extension("pending");
-                let mut file = fs::OpenOptions::new()
-                    .write(true)
-                    .create_new(true)
-                    .open(&temp)
-                    .map_err(|_| "vault_unavailable")?;
-                let result = (|| {
-                    file.write_all(&encrypted)
-                        .and_then(|_| file.sync_all())
-                        .map_err(|_| "vault_unavailable")?;
-                    drop(file);
-                    protection::replace(&temp, &destination)
-                })();
-                // Remove only the staging file created by this save operation.
-                if result.is_err() {
-                    let _ = fs::remove_file(&temp);
-                }
-                result?;
+                self.save_document(
+                    &id,
+                    &serde_json::to_value(&pack).map_err(|_| "test_pack_invalid")?,
+                )?;
                 Ok(pack.summary(&id))
             }
         }
@@ -264,3 +279,6 @@ impl TestLibrary {
 #[cfg(test)]
 #[path = "test_library_tests.rs"]
 mod tests;
+
+#[path = "test_flow_library.rs"]
+mod flows;

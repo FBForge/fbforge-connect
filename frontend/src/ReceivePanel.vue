@@ -1,5 +1,6 @@
 <script setup>
-import { warning, label, bytesLabel } from './receive/presentation.ts';
+import ScanResult from './ScanResult.vue';
+import { warning, label, bytesLabel, generalWarnings } from './receive/presentation.ts';
 import { isReceiveFailure } from './receive/failures.js';
 import { canPreview } from './submission-preview.js';
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
@@ -183,6 +184,7 @@ defineExpose({
         </div>
       </details>
       <p v-if="pending" role="status">{{ action }} …</p>
+      <ScanResult v-if="pending && action.includes('prüfen')" pending />
       <ActionNotice
         v-if="error"
         ref="errorNotice"
@@ -235,6 +237,7 @@ defineExpose({
         <DocumentationLink :topic="reply ? 'replies' : 'problems'">Hilfe zu diesem Problem</DocumentationLink>
       </ActionNotice>
       <template v-if="proof">
+        <ScanResult :warnings="proof.warnings" :attachments="attachments" />
         <div class="verification-stages" aria-label="Prüfstatus">
           <p><span class="status-badge ok">Entschlüsselung und Integrität geprüft</span></p>
           <p>
@@ -255,8 +258,8 @@ defineExpose({
           </p>
           <p><span class="status-badge info">Fachliche Prüfung: manuell offen</span></p>
         </div>
-        <ul v-if="proof.warnings.length">
-          <li v-for="stage in proof.warnings" :key="stage">{{ warning(stage) }}</li>
+        <ul v-if="generalWarnings(proof.warnings).length">
+          <li v-for="stage in generalWarnings(proof.warnings)" :key="stage">{{ warning(stage) }}</li>
         </ul>
         <details class="verification-explanation">
           <summary>Was wurde geprüft?</summary>
@@ -365,6 +368,7 @@ defineExpose({
             </div>
             <AttachmentList
               :parts="attachments"
+              :warnings="proof.warnings"
               :disabled="disabled"
               @inspect="inspect"
               @download="inspect($event, true)"

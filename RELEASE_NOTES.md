@@ -2,24 +2,41 @@
 
 ## 0.3.0 (in Entwicklung)
 
-- Windows-Installer-Builds bereiten ein fehlendes optionales Scanner-Paket automatisch vor dem Rust-Build vor; eine fehlgeschlagene Vorbereitung stoppt den Ablauf. Entwicklungsstarts und Debug-Builds bleiben ohne automatischen Scanner-Download.
+- Testabläufe zeigen den aktuellen Schritt zuerst, erklären die jeweils nötige Aktion und verlangen vor dem Verwerfen von Prüfergebnissen eine Bestätigung. Ergebnisse vorher exportieren oder den Neustart abbrechen.
+- Bearbeitete Testpakete direkt in der gemeinsamen geschützten Sammlung speichern und nach einem Neustart wieder öffnen. Der unverschlüsselte Dateiexport ist getrennt beschriftet.
+- Kompaktere Antwortschema-Felder, Exporte vor der ausführlichen Anleitung und Signaturupdates vor seltenen Scanner-Verwaltungsaktionen. Antwortformat und optionale Dateiübernahme logisch anordnen.
+- Profile in einem schmalen Ersatzdialog bearbeiten. Die Anmeldung bleibt auch im kleinen Fenster erreichbar. Formularbeschriftungen nach dem Laden mit kurzem Status und einer Aktion zum Neuladen anzeigen.
+- Einzelne Destinations direkt bearbeiten und nur tatsächlich geänderte Felder vorbereiten. Sammeländerungen behalten ihre ausdrückliche Feldauswahl. Ereignisse zeigen Ablehnungsgründe zuerst mit kürzeren Bezeichnungen. Doppelte allgemeine Scan-Hinweise entfallen, die Ergebnisse pro Anlage bleiben sichtbar.
+
+- Vorgänge gespeicherter Profile unter Windows standardmäßig dauerhaft aufbewahren. Eine abgewählte Aufbewahrung bleibt für das jeweilige Profil und die API gespeichert. Ohne gespeichertes Profil bleibt die Ablage auf die Sitzung begrenzt.
+- Testabläufe mit ihrem Testpaket in einer geschützten lokalen Sammlung speichern, nach einem Neustart öffnen und mit Bestätigung löschen. Laufende Testergebnisse werden dabei nicht übernommen.
+- Empfangsaktionen und Anlagenknöpfe gleich breit ausrichten. Virenscan-Ergebnisse direkt an jeder Anlage ausweisen. Fundmeldungen beim Versand hervorheben und mit passenden nächsten Schritten erklären.
+- Formularbeschriftungen bei der Formularansicht erklären und laden. Bestätigungen für lokale Scanner-Einrichtung, Aktivierung und Signaturupdates mit passenden Titeln und kürzeren Texten vereinheitlichen.
+
+- Formulare, Dropdowns und Checkboxen mit einheitlichen Abständen, breiten mehrzeiligen Feldern und lesbaren Auswahltexten. Testpakete und Abläufe sind gemeinsam gruppiert. Der Assistent heißt „Antwortschemas“.
+- Virenscan direkt in der Navigation und mit sichtbarem Status beim Senden und Empfangen. Tatsächlich geprüfte Anlagen und Scan-Ergebnisse werden ausdrücklich ausgewiesen. Signaturaktualisierungen bleiben nach einem Seitenwechsel sichtbar und abbrechbar, ohne die übrigen Arbeitsbereiche zu sperren.
+- Einzeldownloads und lokale Exporte verwenden in der Desktop-Anwendung den nativen Speichern-Dialog. Der Benutzer-Downloadordner wird vorgeschlagen. Erfolg, Abbruch und Schreibfehler bleiben sichtbar. Das Empfangsergebnis bleibt nach einem Speicherfehler nutzbar.
+- Event-Log-Details einschließlich Anlagen, Authentifizierungstags und Problemen direkt in der Übersicht. Originaldokumente bleiben zusätzlich erreichbar.
+- „Bestehende Destinations“ lädt die Übersicht und führt aus der Detailansicht zurück. Fehlende veröffentlichte Update-Informationen werden von Netzwerk- und Signaturfehlern unterschieden. Update-Downloads unterstützen die gleiche Größenbegrenzung wie der native Kern.
+
+- Windows-Installer-Builds bereiten ein fehlendes optionales Scanner-Paket automatisch vor dem Rust-Build vor. Eine fehlgeschlagene Vorbereitung stoppt den Ablauf. Entwicklungsstarts und Debug-Builds bleiben ohne automatischen Scanner-Download.
 - Lizenztexte und Destination-Werkzeuge in eigene Frontend-Pakete aufgeteilt. Eine zusätzliche Produktionsprüfung kontrolliert Paketgrößen und die Ausführung der gebauten Oberfläche.
 
 - Prozessantworten direkt aus übernommenen Modellzuordnungen oder vereinbarten Kennungen zusammenstellen. Schemahinweise, Duplikate und Limits prüfen; Modellzuordnungen auch beim Bearbeiten von Destination-Prozessnachrichten übernehmen.
-- Lokaler JSON-Kanalschema-Assistent für fachliche Statusmitteilungen und Nachforderungen: editierbare Felder, Pflichtangaben und Statuswerte; Schema-, Beispiel- und Entwurfsexport mit Wiederimport. Schema-Kennungen aus Dateien in die Konfiguration übernehmen; der Versand bleibt an das aktuelle Antwortangebot des Empfängers gebunden.
+- Lokaler Assistent für JSON-Antwortschemas für fachliche Statusmitteilungen und Nachforderungen: editierbare Felder, Pflichtangaben und Statuswerte; Schema-, Beispiel- und Entwurfsexport mit Wiederimport. Schema-Kennungen aus Dateien in die Konfiguration übernehmen. Der Versand bleibt an das aktuelle Antwortangebot des Empfängers gebunden.
 
 - Empfang mit Alter aus geprüften Serverereignissen, Filtern und „Nächste Einreichung öffnen“. Technische Abholfristen und unbekannte Zeitpunkte ausdrücklich anzeigen.
-- Ungewissen Versand mit bekannten Nachrichtenkennungen lesend gegen signierte Serverereignisse prüfen; keine automatische Wiederholung.
+- Ungewissen Versand mit bekannten Nachrichtenkennungen lesend gegen signierte Serverereignisse prüfen. Keine automatische Wiederholung.
 - Zertifikatswarnungen mit 30/90 Tagen Vorlauf. Empfänger-Favoriten und zuletzt verwendete Destinations geschützt im Profil speichern.
 - Destination-Vorlagen mit Import, Export und Feldvergleich. Profil-, umgebungs- und API-gebundene Windows-DPAPI-Historie für Konfigurationsänderungen einschließlich ungewissem Ausgang.
 - Wiederholbare Testabläufe ergänzen Testfälle: Versand, Eingang, Inhalts-/Anlagenvergleich, erwartete Bestätigung und Antwort anhand lokaler Nachrichten prüfen; Definition und Durchlaufergebnis exportieren.
 - Optionaler lokaler ClamAV 1.5.4 im Windows-Setup, offline nachinstallierbares Komponentenpaket und bewusste Online-Einrichtung. Geprüfte offizielle Engine-Dateien, signierte Virendatenbanken, sichtbarer Signaturstand und zustimmungspflichtige FreshClam-Updates. Eigene ClamAV-/ICAP-Gegenstellen bleiben auswählbar.
-- Metadaten, Fachdaten und Anlagen beim Empfang sowie vor Versand und Antwort scannen. Betroffene Anlagen bleiben gesperrt; geprüfte übrige Inhalte bleiben lesbar. Einzelannahmen mit Anlagenproblemen benötigen zusätzliche Bestätigung und melden die Kennungen im signierten Accept. Sammelannahme und vollständiger Originalexport bleiben dafür gesperrt. Unvollständige Scans bleiben blockierend. Kein gehosteter Dienst, Sanitizing oder zusätzliche Quarantäne.
+- Metadaten, Fachdaten und Anlagen beim Empfang scannen. Vor Versand und Antwort werden Fachdaten und Anlagen geprüft. Betroffene Anlagen bleiben gesperrt. Geprüfte übrige Inhalte bleiben lesbar. Einzelannahmen mit Anlagenproblemen benötigen zusätzliche Bestätigung und melden die Kennungen im signierten Accept. Sammelannahme und vollständiger Originalexport bleiben dafür gesperrt. Unvollständige Scans bleiben blockierend. Kein gehosteter Dienst, Sanitizing oder zusätzliche Quarantäne.
 
 - Integrierte Updates für Windows x64: automatische, abschaltbare Suche und manuelle Suche unter „Info“, Hinweis auf neue stabile GitHub-Releases, Downloadfortschritt und abbrechbarer Download.
-- Installer erst nach erfolgreicher Paket- und Versionssignaturprüfung sowie nativer Bestätigung starten. Laufende Aktionen und offene Exporte blockieren die Installation; gespeicherte Schlüssel werden vor dem Beenden gesichert.
+- Installer erst nach erfolgreicher Paket- und Versionssignaturprüfung sowie nativer Bestätigung starten. Laufende Aktionen und offene Exporte blockieren die Installation. Gespeicherte Schlüssel werden vor dem Beenden gesichert.
 - Release-Paket um Update-Signatur und `latest.json` ergänzen. Der öffentliche Prüfschlüssel ist hinterlegt. Vor der Freigabe müssen der private Schlüssel am Signier-Runner eingerichtet und ein echtes signiertes Windows-Update abgenommen werden. Entwicklungspakete ohne Prüfschlüssel bieten weiterhin den manuellen Download.
-- Die erste Version mit Updater muss einmal manuell installiert werden; ältere Versionen erhalten diese Funktion nicht nachträglich.
+- Die erste Version mit Updater muss einmal manuell installiert werden. Ältere Versionen erhalten diese Funktion nicht nachträglich.
 
 ### Übernommene Fehlerkorrekturen aus 0.2.1
 
@@ -35,7 +52,7 @@
 - „Leistungsnamen aus FIM laden“ direkt bei der Verwaltungsleistung anzeigen, vor der Prozessnachricht und der Absender-Destination. Tastaturreihenfolge und Rückmeldungen bleiben bei der zugehörigen Auswahl.
 - Leistungskennungen ohne Namen in der Auswahl vollständig anzeigen, einschließlich URN-Präfix. Ein erfolgloser FIM-Abruf verändert die Kennung nicht.
 - Eine eindeutige HTTP-401/403-Ablehnung beim erstmaligen Ankündigen einer Einreichung als fehlgeschlagen anzeigen. Unklare Antworten und Fehler nach einer möglichen Anlage bleiben ungewiss.
-- Nach einem ungewissen Versand einen neuen Entwurf ohne erneute Profilanmeldung ermöglichen. Vorher sind Prüfung und ausdrückliche Bestätigung des Doppelversandrisikos erforderlich. Der ursprüngliche Versuch und seine Kennungen bleiben erhalten; es gibt keine automatische Wiederholung.
+- Nach einem ungewissen Versand einen neuen Entwurf ohne erneute Profilanmeldung ermöglichen. Vorher sind Prüfung und ausdrückliche Bestätigung des Doppelversandrisikos erforderlich. Der ursprüngliche Versuch und seine Kennungen bleiben erhalten. Es gibt keine automatische Wiederholung.
 
 ## 0.2.0
 

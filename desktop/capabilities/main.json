@@ -1,9 +1,7 @@
 {
   "identifier": "main",
   "description": "Only the bundled main window may run diagnostics or manage sessions in the selected FIT-Connect environment.",
-  "windows": [
-    "main"
-  ],
+  "windows": ["main"],
   "permissions": [
     "allow-application-update-status",
     "allow-open-update-download",
@@ -110,6 +108,7 @@
     "allow-open-documentation",
     "allow-select-environment",
     "allow-test-library",
+    "allow-save-local-file",
     "allow-begin-message-export",
     "allow-export-message",
     "allow-finish-message-export",

@@ -203,7 +203,7 @@ test('malformed IPC metadata, unknown fields and oversized progress are rejected
     { version: 'https://evil' },
     { notes: 'x'.repeat(12001) },
     { downloaded: -1 },
-    { downloaded: 200 * 1024 * 1024 },
+    { downloaded: 512 * 1024 * 1024 + 1 },
     { total: 1, downloaded: 2 },
     { phase: 'available' },
     { url: 'https://evil' },
@@ -238,4 +238,29 @@ test('an old current status cannot disguise a failed fresh check as success', as
   await controller.check();
   assert.equal(controller.state.phase, 'idle');
   assert.equal(controller.state.code, 'update_network_failed');
+});
+
+test('bundled-scanner installer sizes are supported up to the native 512 MiB bound', () => {
+  assert.equal(
+    validateUpdateStatus({
+      ...available,
+      phase: 'downloading',
+      downloaded: 200 * 1024 * 1024,
+      total: 400 * 1024 * 1024,
+    }).total,
+    400 * 1024 * 1024,
+  );
+  assert.throws(() => validateUpdateStatus({ ...available, total: 512 * 1024 * 1024 + 1 }));
+});
+test('a missing published updater feed has a distinct recoverable message', async () => {
+  const controller = createUpdateController(async (command) => {
+    if (command === 'check_application_update') throw 'update_feed_unavailable';
+    return idle;
+  }, options);
+  await controller.check();
+  assert.equal(controller.state.code, 'update_feed_unavailable');
+  assert.match(controller.state.error, /noch keine Informationen/);
+  assert.doesNotMatch(controller.state.error, /Signatur.*ungültig/);
+  assert.equal(controller.state.working, false);
+  assert.notEqual(controller.state.phase, 'current');
 });

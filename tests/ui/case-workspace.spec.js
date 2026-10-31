@@ -91,7 +91,7 @@ test('case workspace is keyboard reachable, accessible and reflows at 200 percen
 test('failed durable opt-in keeps session copies and reflects the native preference before retry', async ({
   page,
 }) => {
-  await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html?sessionOnly=1');
   await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
   await page.evaluate(() => (window.__caseFixture.failStorage = true));
   await page.getByText('Aufbewahrung: aktuelle Sitzung', { exact: true }).click();
@@ -112,6 +112,45 @@ test('failed durable opt-in keeps session copies and reflects the native prefere
     page.getByText(
       'Vorhandene Vorgänge sind geschützt gespeichert. Neue Vorgänge werden ebenfalls gesichert.',
       { exact: true },
+    ),
+  ).toBeVisible();
+});
+
+test('saved profiles default to protected retention and remember an opt-out without changing another profile', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  await page.getByText('Geschützte Aufbewahrung aktiv', { exact: true }).click();
+  const choice = page.getByRole('checkbox', {
+    name: 'Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren',
+    exact: true,
+  });
+  await expect(choice).toBeChecked();
+  const copyCount = await page.evaluate(() => window.__caseFixture.scopes.a.length);
+  await choice.uncheck();
+  await expect(page.getByText('Aufbewahrung: aktuelle Sitzung', { exact: true })).toBeVisible();
+  await expect(choice).not.toBeChecked();
+  await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
+  await expect(choice).toBeChecked();
+  await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
+  await expect(choice).not.toBeChecked();
+  expect(await page.evaluate(() => window.__caseFixture.scopes.a.length)).toBe(copyCount);
+});
+
+test('unsaved connections show session-only storage and cannot enable durable retention', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html?unsaved=1');
+  await page.getByText('Aufbewahrung: aktuelle Sitzung', { exact: true }).click();
+  const choice = page.getByRole('checkbox', {
+    name: 'Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren',
+    exact: true,
+  });
+  await expect(choice).not.toBeChecked();
+  await expect(choice).toBeDisabled();
+  await expect(
+    page.getByText(
+      'Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Windows-Speicher.',
     ),
   ).toBeVisible();
 });

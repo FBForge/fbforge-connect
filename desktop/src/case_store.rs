@@ -34,28 +34,28 @@ impl CaseStore {
     pub fn enabled(&self) -> Result<bool, &'static str> {
         let path = self.root.join("settings");
         if !path.try_exists().map_err(|_| "vault_unavailable")? {
-            return Ok(false);
+            return Ok(cfg!(windows));
         }
         let protected = crate::vault::read_bounded(&path, MAX_BLOCK)?;
         let mut plain = protection::transform_with_purpose(&protected, false, &self.purpose)?;
-        let valid = plain == b"enabled-v1";
+        let enabled = match plain.as_slice() {
+            b"enabled-v1" => Ok(true),
+            b"disabled-v1" => Ok(false),
+            _ => Err("vault_invalid"),
+        };
         plain.fill(0);
-        if !valid {
-            return Err("vault_invalid");
-        }
-        Ok(true)
+        enabled
     }
     pub fn enable(&self, enabled: bool) -> Result<(), &'static str> {
-        fs::create_dir_all(&self.root).map_err(|_| "vault_unavailable")?;
         let path = self.root.join("settings");
-        if enabled {
-            let bytes = protection::transform_with_purpose(b"enabled-v1", true, &self.purpose)?;
-            crate::vault::write_protected(&path, &bytes)
-        } else if path.exists() {
-            fs::remove_file(path).map_err(|_| "vault_unavailable")
+        let value: &[u8] = if enabled {
+            b"enabled-v1"
         } else {
-            Ok(())
-        }
+            b"disabled-v1"
+        };
+        let bytes = protection::transform_with_purpose(value, true, &self.purpose)?;
+        fs::create_dir_all(&self.root).map_err(|_| "vault_unavailable")?;
+        crate::vault::write_protected(&path, &bytes)
     }
     pub fn records(&self) -> Result<Vec<Value>, &'static str> {
         if !self.root.try_exists().map_err(|_| "vault_unavailable")? {
@@ -310,6 +310,45 @@ mod tests {
     const RECORD: &str = "22222222-2222-4222-8222-222222222222";
     const PART: &str = "33333333-3333-4333-8333-333333333333";
     const REVISION: &str = "44444444-4444-4444-8444-444444444444";
+    #[cfg(windows)]
+    #[test]
+    fn persistence_defaults_on_and_explicit_opt_out_survives_restart_with_profile_isolation() {
+        let root = std::env::temp_dir().join(format!(
+            "connect-retention-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let store = CaseStore::new(root.clone(), PROFILE, "v2").unwrap();
+        assert!(store.enabled().unwrap());
+        assert!(!root.exists());
+        store.enable(false).unwrap();
+        let encrypted = fs::read(store.root.join("settings")).unwrap();
+        assert_ne!(encrypted, b"disabled-v1");
+        drop(store);
+        let reopened = CaseStore::new(root.clone(), PROFILE, "v2").unwrap();
+        assert!(!reopened.enabled().unwrap());
+        assert!(CaseStore::new(root.clone(), PROFILE, "v3")
+            .unwrap()
+            .enabled()
+            .unwrap());
+        assert!(CaseStore::new(root.clone(), RECORD, "v2")
+            .unwrap()
+            .enabled()
+            .unwrap());
+        reopened.enable(true).unwrap();
+        assert!(CaseStore::new(root.clone(), PROFILE, "v2")
+            .unwrap()
+            .enabled()
+            .unwrap());
+        let mut corrupt = encrypted;
+        corrupt[0] ^= 1;
+        fs::write(reopened.root.join("settings"), corrupt).unwrap();
+        assert!(reopened.enabled().is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn identity_paths_and_scope_are_fixed() {
         assert!(CaseStore::new(PathBuf::from("."), "../elsewhere", "v3").is_err());
@@ -364,7 +403,7 @@ mod tests {
                 .as_nanos()
         ));
         let store = CaseStore::new(root.clone(), PROFILE, "v3").unwrap();
-        assert!(!store.enabled().unwrap());
+        assert!(store.enabled().unwrap());
         store.enable(true).unwrap();
         saved(&store);
         let encrypted = fs::read(store.path(RECORD).unwrap()).unwrap();

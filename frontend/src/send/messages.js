@@ -1,6 +1,10 @@
 import { testPackError } from '../test-packs.js';
 import { errorMessage } from '../diagnostics.js';
 const messages = {
+  malware_detected:
+    'Der Virenscanner meldet einen Fund in den Fachdaten oder einer Anlage. Der Versand wurde blockiert. Entfernen oder ersetzen Sie die betroffene Datei und prüfen Sie den Entwurf erneut. Es wurde keine Einreichung angekündigt.',
+  malware_scan_failed:
+    'Die Dateien konnten nicht vollständig auf Schadsoftware geprüft werden. Der Versand wurde blockiert. Prüfen Sie Erreichbarkeit, Signaturstand und Einstellungen unter „Virenscan“ und bereiten Sie den Versand erneut vor.',
   invalid_submission:
     'Bitte Adressierung, Fachdaten, Schema und Anlagen prüfen. Höchstens 32 MiB je Datei und 64 MiB insgesamt.',
   data_format_invalid:

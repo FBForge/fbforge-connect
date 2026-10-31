@@ -46,7 +46,9 @@ pub async fn begin_message_export(
             .parent(&window).title("Nachrichten herunterladen").kind(MessageDialogKind::Warning)
             .buttons(MessageDialogButtons::OkCancelCustom("Zielordner wählen".into(), "Abbrechen".into())).blocking_show();
         if !confirmed { return Ok(None); }
-        dialog_app.dialog().file().set_parent(&window).set_title("Zielordner für Nachrichten").blocking_pick_folder()
+        let mut dialog = dialog_app.dialog().file().set_parent(&window).set_title("Zielordner für Nachrichten");
+        if let Ok(directory) = dialog_app.path().download_dir() { dialog = dialog.set_directory(directory); }
+        dialog.blocking_pick_folder()
             .map(|file| file.into_path().map_err(|_| "export_failed")).transpose()
     }).await.map_err(|_| "export_failed")??;
     let Some(path) = path else {

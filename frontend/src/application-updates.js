@@ -9,6 +9,9 @@ const phases = new Set([
   'installing',
 ]);
 const messages = Object.freeze({
+  update_feed_unavailable:
+    'Für das aktuelle GitHub-Release sind noch keine Informationen für automatische Updates veröffentlicht. Prüfen Sie die verfügbaren Downloads auf GitHub. Es wurde nichts installiert.',
+  update_rate_limited: 'GitHub begrenzt die Update-Abfragen gerade. Bitte versuchen Sie es später erneut.',
   update_network_failed:
     'Die Updatesuche oder der Download ist fehlgeschlagen. Prüfen Sie die Internetverbindung und versuchen Sie es später erneut.',
   update_manifest_invalid:
@@ -43,11 +46,11 @@ export function validateUpdateStatus(value) {
     value.notes.length > 12000 ||
     !Number.isSafeInteger(value.downloaded) ||
     value.downloaded < 0 ||
-    value.downloaded > 160 * 1024 * 1024 ||
+    value.downloaded > 512 * 1024 * 1024 ||
     (value.total !== null &&
       (!Number.isSafeInteger(value.total) ||
         value.total < value.downloaded ||
-        value.total > 160 * 1024 * 1024)) ||
+        value.total > 512 * 1024 * 1024)) ||
     (['available', 'downloading', 'downloaded', 'installing'].includes(value.phase) && !value.version)
   )
     throw 'update_manifest_invalid';

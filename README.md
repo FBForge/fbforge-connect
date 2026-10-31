@@ -22,7 +22,7 @@ und werden zusätzlich bestätigt. Verwenden Sie für Tests fiktive Daten.
 2. Umgebung wählen und mit passenden Zugangsdaten verbinden.
 3. Einreichungen senden oder abrufen und prüfen.
 
-Für 0.3.0 werden integrierte Updates, wiederholbare Testabläufe, Empfang mit Altersübersicht, Destination-Vorlagen und geschützte Konfigurationshistorie, komfortablere Prozessantworten, eigene JSON-Kanalschemas und ein optional mitgelieferter lokaler ClamAV sowie eigene ClamAV-/ICAP-Scanner vorbereitet. Diese Funktionen sind noch nicht veröffentlicht.
+Für 0.3.0 werden integrierte Updates, wiederholbare Testabläufe, Empfang mit Altersübersicht, Destination-Vorlagen und geschützte Konfigurationshistorie, komfortablere Prozessantworten, eigene JSON-Antwortschemas und ein optional mitgelieferter lokaler ClamAV sowie eigene ClamAV-/ICAP-Scanner vorbereitet. Diese Funktionen sind noch nicht veröffentlicht.
 Details stehen in der [Roadmap](ROADMAP.md).
 
 [Anleitung mit Bildern](https://fbforge.de/connect/hilfe/0.3/start) ·

@@ -414,7 +414,7 @@ Function ScannerPage
   ${If} $ScannerDialog == error
     Abort
   ${EndIf}
-  ${NSD_CreateLabel} 0 0 100% 36u "ClamAV prüft Dateien lokal auf Ihrem Rechner. Engine und ein datierter offizieller Signaturbestand sind enthalten; für die Einrichtung ist kein Download erforderlich."
+  ${NSD_CreateLabel} 0 0 100% 36u "ClamAV prüft Dateien lokal auf Ihrem Rechner. Engine und ein datierter offizieller Signaturbestand sind enthalten. Für die Einrichtung ist kein Download erforderlich."
   Pop $0
   ${NSD_CreateCheckbox} 0 46u 100% 20u "Lokalen Virenscan mit ClamAV einrichten (optional)"
   Pop $ScannerCheckbox

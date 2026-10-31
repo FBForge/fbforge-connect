@@ -9,6 +9,16 @@ pub const ENDPOINT: &str =
 pub const MAX_MANIFEST: usize = 128 * 1024;
 pub const MAX_PACKAGE: usize = 512 * 1024 * 1024;
 
+/// Missing metadata is distinct from an unreachable server or an invalid signature.
+pub fn response_error(status: u16, manifest: bool) -> Option<&'static str> {
+    match status {
+        200..=299 => None,
+        404 if manifest => Some("update_feed_unavailable"),
+        429 => Some("update_rate_limited"),
+        _ => Some("update_network_failed"),
+    }
+}
+
 pub fn stable_version(text: &str) -> Result<Version, &'static str> {
     let version = Version::parse(text.strip_prefix('v').unwrap_or(text))
         .map_err(|_| "update_manifest_invalid")?;
@@ -97,6 +107,14 @@ mod tests {
     }
 
     use super::*;
+    #[test]
+    fn missing_manifest_is_not_a_network_or_signature_failure() {
+        assert_eq!(response_error(404, true), Some("update_feed_unavailable"));
+        assert_eq!(response_error(404, false), Some("update_network_failed"));
+        assert_eq!(response_error(429, true), Some("update_rate_limited"));
+        assert_eq!(response_error(503, true), Some("update_network_failed"));
+        assert_eq!(response_error(200, true), None);
+    }
     fn release(version: &str) -> Value {
         serde_json::json!({"version":version,"notes":"Fiktive Änderungen",
             "platforms":{"windows-x86_64":{"url":package_url(&Version::parse(version).unwrap()),"signature":"synthetic"}}})

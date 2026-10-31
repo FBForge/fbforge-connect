@@ -217,8 +217,17 @@ export async function prepareSend(invoke, session, draft, dataFile, attachments,
     }
     const document = JSON.stringify({ ...snapshot, contentId: data.contentId, attachments: files });
     if (new TextEncoder().encode(document).byteLength > 24 * 1024) throw new Error('invalid_submission');
+    options.onPhase?.('checking');
     const response = await requestResource(invoke, active, 'prepare_send', { sendDocument: document });
-    if (!exact(response, ['attempt', 'summary'])) fail();
+    if (
+      !exact(response, [
+        'attempt',
+        'summary',
+        ...(response.scanStatus === undefined ? [] : ['scanStatus']),
+      ]) ||
+      (response.scanStatus !== undefined && !['passed', 'not_configured'].includes(response.scanStatus))
+    )
+      fail();
     approved = state(response.attempt);
     if (approved.status !== 'prepared') fail();
     const expected = { ...snapshot, dataBytes: dataFile.size, attachments: fileSummaries };
@@ -227,7 +236,11 @@ export async function prepareSend(invoke, session, draft, dataFile, attachments,
       !sameJsonValue(response.summary, expected)
     )
       fail();
-    preparedResult = Object.freeze({ attempt: approved, summary: response.summary });
+    preparedResult = Object.freeze({
+      attempt: approved,
+      summary: response.summary,
+      scanStatus: response.scanStatus,
+    });
   } catch (error) {
     if (approved) {
       try {

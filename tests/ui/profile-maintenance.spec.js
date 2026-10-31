@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 
 test('profile-maintenance with synthetic native fixtures', async ({ browser }) => {
@@ -21,6 +21,19 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
   await page.getByRole('button', { name: 'Profilname oder Secret ändern', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Gespeichertes Profil bearbeiten', exact: true });
   await dialog.waitFor();
+  assert.equal(await page.locator('dialog[open]').count(), 1);
+  assert.ok((await dialog.boundingBox()).width <= 610);
+  await dialog.getByLabel('Profilname', { exact: true }).fill('Nicht speichern');
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true }).waitFor();
+  assert.equal(
+    await page
+      .getByRole('button', { name: 'Profilname oder Secret ändern', exact: true })
+      .evaluate((el) => el === document.activeElement),
+    true,
+  );
+  await page.getByRole('button', { name: 'Profilname oder Secret ändern', exact: true }).click();
+  await dialog.waitFor();
   await dialog.getByLabel('Profilname', { exact: true }).fill('Bauamt TEST neu');
   await dialog.locator('input[type=password]').fill('synthetic-new-secret');
   await page.evaluate(() => (window.__profilesFixture.failSecret = true));
@@ -32,6 +45,9 @@ test('profile-maintenance with synthetic native fixtures', async ({ browser }) =
   await dialog.locator('input[type=password]').fill('synthetic-new-secret');
   await dialog.getByRole('button', { name: 'Profil geschützt speichern', exact: true }).click();
   await dialog.waitFor({ state: 'hidden' });
+  await expect(
+    page.getByRole('button', { name: 'Profilname oder Secret ändern', exact: true }),
+  ).toBeFocused();
   assert.equal(await page.evaluate(() => window.__profilesFixture.profiles[0].name), 'Bauamt TEST neu');
   assert.equal(await page.locator('[id^=profile-edit-secret-]').inputValue(), '');
   await page.getByRole('button', { name: 'Geschützte Sicherung exportieren', exact: true }).click();

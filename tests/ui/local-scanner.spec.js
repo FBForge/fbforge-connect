@@ -5,6 +5,7 @@ test('live acceptance opens the test package explicitly after the remembered sca
   page,
 }) => {
   await open(page);
+  await page.getByRole('button', { name: 'Werkzeuge', exact: true }).click();
   await openTestPackage(page);
   await expect(page.locator('#test-case-choice')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Testpakete', exact: true })).toHaveAttribute(
@@ -14,7 +15,7 @@ test('live acceptance opens the test package explicitly after the remembered sca
 });
 async function open(page, api = 'v3') {
   await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
-  await page.getByRole('button', { name: 'Malwarescanner', exact: true }).click();
+  await page.getByRole('button', { name: 'Virenscan', exact: true }).click();
   await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('local');
   await expect(page.getByRole('heading', { name: 'Lokaler ClamAV', exact: true })).toBeVisible();
 }
@@ -101,6 +102,8 @@ test('stopping a connected local scanner also disables its Java scanner endpoint
   );
   await page.getByRole('button', { name: 'Scanner-Einstellung anwenden', exact: true }).click();
   await expect(page.getByText('Aktiv: Lokaler ClamAV', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Signaturen aktualisieren', exact: true })).toBeVisible();
+  await page.getByText('Komponente verwalten', { exact: true }).click();
   await page.getByRole('button', { name: 'Lokalen Scanner beenden', exact: true }).click();
   await expect(page.getByText('Aktiv: Kein Scanner', { exact: true })).toBeVisible();
   const calls = await page.evaluate(() => window.__integration.calls);

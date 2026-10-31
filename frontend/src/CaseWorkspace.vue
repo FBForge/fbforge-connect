@@ -78,8 +78,8 @@ const {
         <p class="small-note">
           {{
             persistent
-              ? 'Geschützt auf diesem Windows-Benutzerkonto gespeichert.'
-              : 'Standard: nur für die laufende Anwendungssitzung. Beim Beenden gehen ungespeicherte Kopien verloren.'
+              ? 'Vorgänge werden standardmäßig geschützt für dieses gespeicherte Profil aufbewahrt. Wenn Sie die Aufbewahrung abwählen, gelten neue Kopien nur für diese Sitzung.'
+              : 'Neue Vorgangskopien bleiben nur für die laufende Anwendungssitzung. Beim Beenden gehen ungespeicherte Kopien verloren.'
           }}
           Ein Profilwechsel löscht keine Sitzungskopien. Nach erneutem Verbinden mit demselben Zugang sind sie
           wieder sichtbar.
@@ -93,6 +93,10 @@ const {
           />
           Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren
         </label>
+        <p v-if="canPersist" class="small-note">
+          Ihre Auswahl wird für dieses Profil und diese API gespeichert. Bereits dauerhaft gespeicherte Kopien
+          bleiben bis zum Löschen erhalten.
+        </p>
         <p v-if="!canPersist" class="small-note">
           Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Windows-Speicher.
         </p>
@@ -329,6 +333,7 @@ const {
           </div>
           <AttachmentList
             :parts="attachments"
+            :warnings="selected.warnings"
             :disabled="disabled"
             @inspect="inspect"
             @download="inspect($event, true)"

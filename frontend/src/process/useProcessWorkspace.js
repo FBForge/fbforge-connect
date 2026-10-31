@@ -1,3 +1,4 @@
+import { downloadLocal } from '../local-download.js';
 import { ref, shallowRef, computed, watch, inject, nextTick } from 'vue';
 import { invoke } from '../native.js';
 import {
@@ -245,14 +246,12 @@ export function useProcessWorkspace(props, emit) {
   }
   function download() {
     if (!mapping.value) return;
-    const blob = new Blob([JSON.stringify(mapping.value, null, 2)], { type: 'application/json' }),
-      url = URL.createObjectURL(blob),
-      link = document.createElement('a');
-    link.href = url;
-    link.download = `bpmn-mapping-${model.value.sha256.slice(0, 12)}.json`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return downloadLocal(
+      JSON.stringify(mapping.value, null, 2),
+      `bpmn-mapping-${model.value.sha256.slice(0, 12)}.json`,
+    );
   }
+
   async function discover(offset = 0) {
     if (disabled.value || !connected.value || !currentMapping.value || mappingDirty.value) return;
     const active = { ...props.session },
