@@ -319,20 +319,24 @@ final class DestinationManagement {
                             .contains(field)) {
                         var projected = new JsonObject();
                         projected.add(field, result.get(field));
-                        if (!StrictJson.object(
+                        var returned =
+                                StrictJson.object(
                                         session.canonicalDestinationMutation(
                                                 "patch", projected.toString()),
-                                        65536)
-                                .equals(
-                                        StrictJson.object(
-                                                session.canonicalDestinationMutation(
-                                                        "patch",
-                                                        "{\""
-                                                                + field
-                                                                + "\":"
-                                                                + row.patch().get(field)
-                                                                + "}"),
-                                                65536))) throw error("invalid_resource");
+                                        65536);
+                        var intended =
+                                StrictJson.object(
+                                        session.canonicalDestinationMutation(
+                                                "patch",
+                                                "{\""
+                                                        + field
+                                                        + "\":"
+                                                        + row.patch().get(field)
+                                                        + "}"),
+                                        65536);
+                        if (!normalizedReplyStandards(returned)
+                                .equals(normalizedReplyStandards(intended)))
+                            throw error("invalid_resource");
                     } else if (!Objects.equals(row.patch().get(field), result.get(field)))
                         throw error("invalid_resource");
                 }
@@ -359,6 +363,33 @@ final class DestinationManagement {
                         uncertain ? "uncertain" : failed ? "partial" : "completed",
                         List.copyOf(rows));
         return state;
+    }
+
+    // Supported reply schemas are membership, not preference. Keep the dispatched request exact,
+    // but accept a server ordering change in this advertised list. Sorting preserves duplicates:
+    // missing, added or changed standards still fail verification and never cause an automatic
+    // retry.
+    private static JsonObject normalizedReplyStandards(JsonObject value) {
+        var copy = value.deepCopy();
+        if (!(copy.get("publicServices") instanceof JsonArray services)) return copy;
+        for (var service : services) {
+            if (!(service instanceof JsonObject object)
+                    || !(object.get("replyChannels") instanceof JsonObject channels)
+                    || !(channels.get("fitConnect") instanceof JsonObject fit)
+                    || !(fit.get("processStandards") instanceof JsonArray standards)) continue;
+            var sorted = new JsonArray();
+            standards.asList().stream()
+                    .sorted(Comparator.comparing(JsonElement::toString))
+                    .forEach(sorted::add);
+            fit.add("processStandards", sorted);
+        }
+        // Normalized reply lists also change a Service record's hash and thus SDK Set iteration.
+        var sortedServices = new JsonArray();
+        services.asList().stream()
+                .sorted(Comparator.comparing(JsonElement::toString))
+                .forEach(sortedServices::add);
+        copy.add("publicServices", sortedServices);
+        return copy;
     }
 
     private Preview finish(String id, String status, List<Change> rows, String code) {

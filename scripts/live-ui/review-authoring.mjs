@@ -5,6 +5,7 @@ import { check, until } from './desktop.mjs';
 import { navigate, connectProfile, sendSubmission, openSubmission, replyAndAccept } from './exchange.mjs';
 import { receiveReply } from './readback.mjs';
 import { nativeFile } from './downloads.mjs';
+import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 async function readSaved(path) {
   await until(
@@ -123,10 +124,50 @@ async function installOffer(page, fixture, path, uri) {
   );
   await button(page, 'Änderungsvorschau erstellen').click();
   await button(page, 'Diese Änderungen verbindlich in der gewählten Umgebung speichern').click();
-  await page
-    .locator('[aria-labelledby="update-preview-title"]')
-    .getByText('Abgeschlossen', { exact: true })
-    .waitFor();
+  const preview = page.locator('[aria-labelledby="update-preview-title"]');
+  try {
+    await preview.getByText('Abgeschlossen', { exact: true }).waitFor();
+  } catch (error) {
+    const label = await preview
+      .locator('h3')
+      .innerText()
+      .catch(() => '');
+    const known = {
+      'Zur Bestätigung': 'prepared',
+      Abgeschlossen: 'completed',
+      'Teilweise abgeschlossen': 'partial',
+      'Ausgang ungewiss': 'uncertain',
+      Fehlgeschlagen: 'failed',
+      'Zwischenzeitlich geändert': 'conflict',
+      'Vorschau abgelaufen': 'expired',
+      'Wird gespeichert': 'running',
+    };
+    const alerts = await page
+      .locator('[role="alert"]')
+      .allTextContents()
+      .catch(() => []);
+    const codes = [
+      ...new Set(
+        alerts.flatMap((text) =>
+          [...text.matchAll(/\(([a-z_]+)\)/g)].map((match) => diagnosticCode(match[1])),
+        ),
+      ),
+    ];
+    const actual = await fixture.readOwnedDestination().catch(() => null);
+    console.error(
+      `Owned offer update diagnostics: ${JSON.stringify({
+        status: known[label] || 'unknown',
+        codes,
+        readbackAvailable: Boolean(actual),
+        expectedOfferPersisted: actual
+          ? JSON.parse(actual.offersJson).publicServices.some((s) =>
+              s.replyChannels?.fitConnect?.processStandards?.includes(uri),
+            )
+          : false,
+      })}`,
+    );
+    throw error;
+  }
   const actual = JSON.parse((await fixture.readOwnedDestination()).offersJson);
   check(
     actual.publicServices.some((s) => s.replyChannels?.fitConnect?.processStandards?.includes(uri)),

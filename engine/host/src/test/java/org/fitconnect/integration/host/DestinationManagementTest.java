@@ -37,6 +37,7 @@ class DestinationManagementTest {
         final Map<String, JsonObject> documents = new HashMap<>();
         final List<String> calls = new ArrayList<>(), patches = new ArrayList<>();
         int denyAt = -1, uncertainAt = -1, deniedStatus = 403;
+        java.util.function.Consumer<JsonObject> normalizeResponse = value -> {};
 
         Remote() {
             for (String id : List.of(A, B))
@@ -99,6 +100,7 @@ class DestinationManagementTest {
             if (patches.size() == uncertainAt) throw new SessionException("resource_unavailable");
             var response = documents.get(id).deepCopy();
             response.addProperty("futureReadOnlyField", "retained by server");
+            normalizeResponse.accept(response);
             return new Response(200, response.toString());
         }
     }
