@@ -83,7 +83,10 @@ export async function reviewRuntime(desktop, fixture) {
   if (await progress.isVisible()) {
     await navigate(page, 'Senden');
     await page.locator('#send-target').waitFor();
-    check(!(await page.locator('#send-target').isDisabled()), 'live_ui_signature_update_blocked_sender');
+    await until(
+      async () => !(await page.locator('#send-target').isDisabled()),
+      'live_ui_signature_update_blocked_sender',
+    );
     await navigate(page, 'Virenscan');
     const cancel = button(page, 'Vorgang abbrechen');
     const cancelled = await cancel.isVisible();

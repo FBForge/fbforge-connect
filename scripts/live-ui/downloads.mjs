@@ -43,7 +43,7 @@ export async function nativeFolder(
   helper.stdout.on('data', (chunk) => {
     for (const line of chunk.toString('utf8').split(/\r?\n/)) {
       if (/^ui_[a-z_]+$/.test(line)) diagnostic = line;
-      if (/^ui_folder_diagnostic [a-z_]+=[0-9]+$/.test(line)) console.error(line);
+      if (/^ui_(?:folder|file)_diagnostic [a-z_]+=(?:[0-9]+|true|false)$/.test(line)) console.error(line);
     }
   });
   const completed = new Promise((resolve, reject) => {

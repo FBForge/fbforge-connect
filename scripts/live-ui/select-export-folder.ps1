@@ -68,6 +68,11 @@ function Invoke-Button($Root, [string]$Name) {
     $pattern = $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
     $pattern.Invoke()
 }
+function Test-DownloadsDirectory([string]$Actual, [string]$Expected, [string]$KnownFolderLabel) {
+    if ([string]::IsNullOrWhiteSpace($Actual) -or [string]::IsNullOrWhiteSpace($Expected)) { return $false }
+    if ($Actual.TrimEnd('\').Equals($Expected.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)) { return $true }
+    return (-not [string]::IsNullOrWhiteSpace($KnownFolderLabel) -and $Actual.Equals($KnownFolderLabel, [StringComparison]::OrdinalIgnoreCase))
+}
 if ($SaveFile) {
     if (-not $FileName -or [IO.Path]::GetFileName($FileName) -ne $FileName -or $FileName -match '[\\/:]') { throw 'ui_file_name_denied' }
     if ($DialogTitle -notin @('Datei speichern', 'Geschütztes Profil sichern')) { throw 'ui_file_title_denied' }
@@ -89,15 +94,32 @@ if ($SaveFile) {
     }
     $shell = New-Object -ComObject WScript.Shell
     try {
-        # Check the real default before supplying the owned output path.
+        # Known folders can be redirected and their address can be a shell display name.
+        # Wait for the address edit, not the previously focused file-name edit.
+        $nameCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1001')
+        $editCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
+        $both = [System.Windows.Automation.AndCondition]::new($nameCondition, $editCondition)
+        $nameEdit = Wait-Ui { $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $both) } 'ui_file_name_control_missing'
+        $nameRuntime = $nameEdit.GetRuntimeId() -join ','
         $shell.SendKeys('^l')
+        Start-Sleep -Milliseconds 200
         $address = Wait-Ui {
             $focused = [System.Windows.Automation.AutomationElement]::FocusedElement
-            if ($focused.Current.ProcessId -eq $ApplicationId -and $focused.Current.ControlType -eq [System.Windows.Automation.ControlType]::Edit) { return $focused }
+            if ($focused.Current.ProcessId -eq $ApplicationId -and $focused.Current.ControlType -eq [System.Windows.Automation.ControlType]::Edit -and ($focused.GetRuntimeId() -join ',') -ne $nameRuntime) { return $focused }
         } 'ui_file_address_missing'
         $initial = $address.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
         $expected = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads'
-        if (-not $initial.TrimEnd('\').Equals($expected.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)) { throw 'ui_file_download_default_missing' }
+        $label = ''
+        $folders = New-Object -ComObject Shell.Application
+        try {
+            $downloads = $folders.Namespace('shell:Downloads')
+            if ($downloads) { $expected = $downloads.Self.Path; $label = $downloads.Title }
+        } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($folders) }
+        if (-not (Test-DownloadsDirectory $initial $expected $label)) {
+            Write-Output ('ui_file_diagnostic address_is_absolute=' + [IO.Path]::IsPathRooted($initial).ToString().ToLowerInvariant())
+            Write-Output ('ui_file_diagnostic known_folder_available=' + (-not [string]::IsNullOrWhiteSpace($label)).ToString().ToLowerInvariant())
+            throw 'ui_file_download_default_missing'
+        }
         $shell.SendKeys('{ESC}')
         $nameCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1001')
         $editCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
