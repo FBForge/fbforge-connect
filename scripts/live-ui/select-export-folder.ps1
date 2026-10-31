@@ -24,6 +24,7 @@ $target = [IO.Path]::GetFullPath($Folder)
 if (-not $target.StartsWith($ownedRoot, [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $target -PathType Container)) { throw 'ui_folder_path_denied' }
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
+Add-Type -AssemblyName System.Windows.Forms
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -137,8 +138,8 @@ if ($SaveFile) {
         $null = Wait-Ui { ([System.Windows.Automation.AutomationElement]::FocusedElement.GetRuntimeId() -join ',') -eq $editRuntime } 'ui_file_name_focus_missing'
         # The common dialog can expose UIA SetValue without updating its selected file.
         # Real keystrokes notify the dialog, as a user's filename edit does.
-        $shell.SendKeys('^a')
-        $shell.SendKeys((ConvertTo-SendKeysLiteral $destination))
+        Start-Sleep -Milliseconds 200
+        [System.Windows.Forms.SendKeys]::SendWait('^a' + (ConvertTo-SendKeysLiteral $destination))
         $null = Wait-Ui { $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -eq $destination } 'ui_file_name_not_applied'
         $shell.SendKeys('{TAB}')
         Start-Sleep -Milliseconds 200
@@ -152,7 +153,6 @@ if ($SaveFile) {
         $button.SetFocus()
         $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         $null = Wait-Ui { -not (Find-Dialog $DialogTitle) } 'ui_file_save_not_closed'
-        Write-Output ('ui_file_diagnostic expected_file_exists=' + (Test-Path -LiteralPath $destination -PathType Leaf).ToString().ToLowerInvariant())
         Write-Output 'Native file save confirmed with Downloads default and owned output path'
         exit 0
     } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }

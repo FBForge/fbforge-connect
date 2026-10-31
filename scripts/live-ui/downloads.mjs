@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { check, cleanEnvironment } from './desktop.mjs';
+import { check, cleanEnvironment, until } from './desktop.mjs';
 import { errorMessage } from '../../frontend/src/diagnostics.js';
 
 export async function nativeFolder(
@@ -177,7 +177,16 @@ export async function nativeFile(
   title = 'Datei speichern',
 ) {
   const folder = await nativeFolder(desktop, fixture, operation, cancel, false, { name, title });
-  return join(folder, name);
+  const path = join(folder, name);
+  if (!cancel)
+    await until(
+      async () =>
+        readFile(path)
+          .then(() => true)
+          .catch(() => false),
+      'live_ui_native_saved_file_missing',
+    );
+  return path;
 }
 
 export const nativeSignatureUpdate = (desktop, fixture, operation) =>

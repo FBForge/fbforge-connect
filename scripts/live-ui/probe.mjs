@@ -30,8 +30,22 @@ try {
     JSON.parse(await readFile(exported, 'utf8')).format === 'fbforge-connect-testpack',
     'live_ui_native_save_probe_invalid',
   );
+  await desktop.page.getByRole('button', { name: 'Antwortschemas', exact: true }).click();
+  for (const [label, name] of [
+    ['JSON-Schema herunterladen', 'probe-schema.json'],
+    ['Fiktives Beispiel herunterladen', 'probe-example.json'],
+    ['Schemaentwurf speichern', 'probe-draft.json'],
+  ]) {
+    const path = await nativeFile(
+      desktop,
+      { directory },
+      () => desktop.page.getByRole('button', { name: label, exact: true }).click(),
+      name,
+    );
+    check(Boolean(JSON.parse(await readFile(path, 'utf8'))), 'live_ui_sequential_save_invalid');
+  }
   console.log(
-    'Real installed desktop native file-save preflight passed with Downloads default and exact owned output file, without credentials or TEST writes',
+    'Real installed desktop native file-save preflight passed with four sequential exports, Downloads default and exact owned output files, without credentials or TEST writes',
   );
 } catch (error) {
   // This probe never authenticates. Report fixed classifications, not UI text or paths.
