@@ -18,6 +18,9 @@ if (-not (Test-DownloadsDirectory 'c:\\users\\test\\downloads\\' 'C:\\Users\\Tes
 if (Test-DownloadsDirectory 'test-profil.fctest-profile' 'C:\\Users\\Test\\Downloads' 'Downloads') { throw 'filename_accepted_as_address' }
 if (Test-DownloadsDirectory 'C:\\OtherFolder' 'C:\\Users\\Test\\Downloads' 'Downloads') { throw 'wrong_folder_accepted' }
 if (Test-DownloadsDirectory '' 'C:\\Users\\Test\\Downloads' '') { throw 'empty_address_accepted' }
+$keyDefinition=$tree.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'ConvertTo-SendKeysLiteral'},$true)
+. ([scriptblock]::Create($keyDefinition.Extent.Text))
+if ((ConvertTo-SendKeysLiteral 'C:\\a\\{x}+[t](1)^%.txt') -cne 'C:\\a\\{{}x{}}{+}{[}t{]}{(}1{)}{^}{%}.txt') { throw 'send_keys_literal_invalid' }
 'Native save acceptance directory checks passed'
 `;
     const result = spawnSync(shell, ['-NoProfile', '-NonInteractive', '-Command', script], {

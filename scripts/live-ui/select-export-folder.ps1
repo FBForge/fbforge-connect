@@ -68,6 +68,11 @@ function Invoke-Button($Root, [string]$Name) {
     $pattern = $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
     $pattern.Invoke()
 }
+function ConvertTo-SendKeysLiteral([string]$Value) {
+    return -join @($Value.ToCharArray() | ForEach-Object {
+        if ('+^%~(){}[]'.Contains([string]$_)) { '{' + $_ + '}' } else { [string]$_ }
+    })
+}
 function Test-DownloadsDirectory([string]$Actual, [string]$Expected, [string]$KnownFolderLabel) {
     if ([string]::IsNullOrWhiteSpace($Actual) -or [string]::IsNullOrWhiteSpace($Expected)) { return $false }
     if ($Actual.TrimEnd('\').Equals($Expected.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)) { return $true }
@@ -96,9 +101,7 @@ if ($SaveFile) {
     try {
         # Known folders can be redirected and their address can be a shell display name.
         # Wait for the address edit, not the previously focused file-name edit.
-        $nameCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1001')
         $editCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
-        $both = [System.Windows.Automation.AndCondition]::new($nameCondition, $editCondition)
         $nameEdit = Wait-Ui {
             foreach ($name in @('File name:', 'File name', 'Dateiname:', 'Dateiname')) {
                 $labelCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $name)
@@ -130,7 +133,12 @@ if ($SaveFile) {
         $edit = $nameEdit
         $destination = Join-Path $target $FileName
         $edit.SetFocus()
-        $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($destination)
+        $editRuntime = $edit.GetRuntimeId() -join ','
+        $null = Wait-Ui { ([System.Windows.Automation.AutomationElement]::FocusedElement.GetRuntimeId() -join ',') -eq $editRuntime } 'ui_file_name_focus_missing'
+        # The common dialog can expose UIA SetValue without updating its selected file.
+        # Real keystrokes notify the dialog, as a user's filename edit does.
+        $shell.SendKeys('^a')
+        $shell.SendKeys((ConvertTo-SendKeysLiteral $destination))
         $null = Wait-Ui { $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -eq $destination } 'ui_file_name_not_applied'
         $shell.SendKeys('{TAB}')
         Start-Sleep -Milliseconds 200
