@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { exerciseDesktopUI } from './live-ui/index.mjs';
 import { probeSenderRestrictions } from './live-sender-restrictions.mjs';
 import { scannerFixture } from './live-scanner-fixture.mjs';
+import { probeReplyOffers } from './live-destination-offers.mjs';
 
 const requireCheck = (value, code = 'acceptance_check_failed') => {
   if (!value) throw new Error(code);
@@ -654,6 +655,8 @@ try {
   // Exchange again using the newly selected destination key, retaining the old keys.
   await exchange('v3', 'json');
   console.log('Native key rotation and exchange using the replacement key passed');
+  stage = 'destination_reply_offers';
+  await probeReplyOffers({ receiver: receiverV3, destination, runName });
   if (process.env.FBFORGE_UI_INSTALLER) {
     stage = 'desktop_ui';
     const receiverV2 = await openNativeSession('subscriber', 'v2');
