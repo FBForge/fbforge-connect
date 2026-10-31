@@ -202,12 +202,19 @@ async function retention(page, expected) {
   check((await input.isChecked()) === expected, 'live_ui_retention_preference_wrong');
   return input;
 }
+export async function setRetention(input, enabled) {
+  check((await input.isChecked()) !== enabled, 'live_ui_retention_already_selected');
+  await input.click();
+  await until(
+    async () => !(await input.isDisabled()) && (await input.isChecked()) === enabled,
+    'live_ui_retention_save_pending',
+  );
+}
 async function durability(desktop, fixture, senders, pack, message) {
   let page = desktop.page;
   await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
   const input = await retention(page, true);
-  await input.uncheck();
-  await until(async () => !(await input.isDisabled()), 'live_ui_retention_save_pending');
+  await setRetention(input, false);
   await desktop.restart();
   page = desktop.page;
   await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
@@ -217,8 +224,7 @@ async function durability(desktop, fixture, senders, pack, message) {
     async () => (await page.locator('.case-list .case-open').count()) === 1,
     'live_ui_durable_case_missing',
   );
-  await restored.check();
-  await until(async () => !(await restored.isDisabled()), 'live_ui_retention_restore_pending');
+  await setRetention(restored, true);
   await testTools(page, 'Testpakete');
   await button(page, 'Gespeicherte Testpakete laden').click();
   await page
