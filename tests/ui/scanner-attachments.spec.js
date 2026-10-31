@@ -80,6 +80,7 @@ test('stored cases retain the blocked-file report and clean form without offerin
   page,
 }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  await expect(page.getByRole('heading', { name: 'Meine Vorgänge', exact: true })).toBeVisible();
   await page.evaluate(() => {
     const state = window.__caseFixture;
     state.scopes.a[0].warnings = ['MALWARE_ATTACHMENT_BLOCKED'];

@@ -42,9 +42,12 @@ function load() {
     const result = await listTestFlows(invoke);
     if (alive) {
       entries.value = result;
-      notice.value = result.length
-        ? `${result.length} gespeicherte Abläufe.`
-        : 'Noch keine Abläufe gespeichert.';
+      notice.value =
+        result.length === 1
+          ? '1 gespeicherter Ablauf.'
+          : result.length
+            ? `${result.length} gespeicherte Abläufe.`
+            : 'Noch keine Abläufe gespeichert.';
     }
   });
 }
@@ -65,7 +68,7 @@ function open() {
     const result = await readTestFlow(invoke, choice.value);
     if (alive) {
       emit('open', result);
-      notice.value = 'Gespeicherter Ablauf geöffnet. Der nächste Durchlauf startet ohne alte Ergebnisse.';
+      notice.value = '';
     }
   });
 }
@@ -111,13 +114,20 @@ async function close(removeEntry = false) {
       </button>
     </div>
     <template v-if="entries.length">
-      <label :for="`${id}-choice`">Gespeicherten Ablauf auswählen</label>
-      <select :id="`${id}-choice`" v-model="choice" :disabled="busy || pending">
-        <option value="">Bitte auswählen</option>
-        <option v-for="entry in entries" :key="entry.id" :value="entry.id">
-          {{ entry.name }} · {{ entry.stepCount }} Schritte
-        </option>
-      </select>
+      <label :for="`${id}-choice`">
+        <span :id="`${id}-choice-label`">Gespeicherten Ablauf auswählen</span>
+        <select
+          :id="`${id}-choice`"
+          :aria-labelledby="`${id}-choice-label`"
+          v-model="choice"
+          :disabled="busy || pending"
+        >
+          <option value="">Bitte auswählen</option>
+          <option v-for="entry in entries" :key="entry.id" :value="entry.id">
+            {{ entry.name }} · {{ entry.stepCount }} Schritte
+          </option>
+        </select>
+      </label>
       <div class="client-actions">
         <button class="button secondary" type="button" :disabled="busy || pending || !selected" @click="open">
           Gespeicherten Ablauf öffnen

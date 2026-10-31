@@ -85,13 +85,13 @@ const {
             class="button secondary"
             type="button"
             :disabled="disabled || !schema"
-            aria-describedby="send-form-labels-help"
+            :aria-describedby="!schemaDocument ? 'send-form-labels-help' : undefined"
             @click="loadLabels"
           >
-            Formularbeschriftungen laden
+            {{ schemaDocument ? 'Formularbeschriftungen neu laden' : 'Formularbeschriftungen laden' }}
           </button>
         </div>
-        <p id="send-form-labels-help" class="small-note">
+        <p v-if="!schemaDocument" id="send-form-labels-help" class="small-note">
           Lädt Feldnamen, Beschreibungen und Pflichtfeldangaben aus dem ausgewählten Schema für die
           Formularansicht. Ihre Fachdaten werden nicht verändert oder übertragen.
         </p>

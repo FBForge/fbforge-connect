@@ -1,5 +1,5 @@
 <script setup>
-import { ref, shallowRef, computed, watch } from 'vue';
+import { ref, shallowRef, computed, watch, nextTick } from 'vue';
 import FileDropInput from '../FileDropInput.vue';
 import SavedTestFlows from './SavedTestFlows.vue';
 import { invoke } from '../native.js';
@@ -11,6 +11,7 @@ import { listTestLibrary, readTestLibrary } from '../test-library.js';
 import { listCases, caseParts, readCaseFile } from '../cases.js';
 import {
   flowSteps,
+  flowStepHints,
   flowFromPack,
   validateTestFlow,
   eligibleFlowRecord,
@@ -27,7 +28,19 @@ const flow = shallowRef(null),
   pending = ref(false),
   error = ref(''),
   notice = ref('');
-let generation = 0;
+const replacementFlow = shallowRef(null);
+const restartDialog = ref(null),
+  restartButton = ref(null),
+  stepHeading = ref(null);
+let generation = 0,
+  restartOpener;
+watch(
+  () => run.value?.results.length,
+  async () => {
+    await nextTick();
+    stepHeading.value?.focus();
+  },
+);
 const step = computed(() => flow.value?.steps[run.value?.results.length || 0]);
 const testCase = computed(() => flow.value?.pack.cases.find((item) => item.id === step.value?.caseId));
 const expectedMessage = computed(() =>
@@ -77,10 +90,17 @@ async function act(operation) {
   }
 }
 function show(value) {
+  if (run.value?.results.length) {
+    replacementFlow.value = value;
+    askRestart();
+  } else applyFlow(value);
+}
+function applyFlow(value) {
   flow.value = value;
   run.value = null;
   records.value = [];
   recordId.value = '';
+  notice.value = 'Ablauf geöffnet. Starten Sie einen neuen Durchlauf.';
 }
 function load(files) {
   return act(async (current) => {
@@ -106,6 +126,28 @@ function openLibrary() {
     if (current()) show(flowFromPack(pack));
   });
 }
+function askRestart() {
+  restartOpener = document.activeElement;
+  restartDialog.value.showModal();
+}
+function requestStart() {
+  replacementFlow.value = null;
+  if (run.value?.results.length) askRestart();
+  else start();
+}
+async function closeRestart(restart = false) {
+  restartDialog.value.close();
+  const replacement = replacementFlow.value;
+  replacementFlow.value = null;
+  if (restart) {
+    if (replacement) applyFlow(replacement);
+    else start();
+  } else {
+    await nextTick();
+    if (restartOpener?.isConnected) restartOpener.focus();
+    else restartButton.value?.focus();
+  }
+}
 function start() {
   if (!flow.value || !props.session || props.busy || pending.value) return;
   run.value = {
@@ -116,8 +158,7 @@ function start() {
     bindings: {},
   };
   records.value = [];
-  notice.value =
-    'Neuer Durchlauf gestartet. Bestehende Ergebnisse wurden zurückgesetzt. Schreibaktionen werden weiterhin einzeln bestätigt.';
+  notice.value = 'Durchlauf gestartet. Schreibaktionen werden weiterhin einzeln bestätigt.';
 }
 function loadRecords() {
   return act(async (current) => {
@@ -220,56 +261,18 @@ async function verify() {
   <section class="tool-section" aria-labelledby="test-flows-title">
     <h2 id="test-flows-title">Wiederholbare Testabläufe</h2>
     <p>
-      Ein Testfall bleibt ein Baustein. Ein Ablauf führt durch Senden, Eingang, Inhaltsvergleich und
-      gegebenenfalls Antwort. FBForge Connect prüft die Ergebnisse anhand der entschlüsselten lokalen
-      Nachrichten. Senden, Antworten und Empfangsbestätigungen bleiben Ihre einzeln bestätigten Aktionen.
+      Testfälle Schritt für Schritt durchführen und anhand lokaler Nachrichten prüfen. Senden, Antworten und
+      Empfangsbestätigungen bestätigen Sie weiterhin einzeln.
     </p>
-    <SavedTestFlows :flow="flow" :busy="busy || pending" @open="show" @busy="emit('busy', $event)" />
-    <FileDropInput
-      id="test-flow-file"
-      label="Testpaket oder Testablauf öffnen"
-      accept=".json,application/json"
-      :disabled="busy || pending"
-      @files="load"
-    />
-    <button class="button secondary" type="button" :disabled="busy || pending" @click="library">
-      Gespeicherte Testpakete laden
-    </button>
-    <div v-if="entries.length">
-      <label>
-        Testpaket
-        <select v-model="choice" :disabled="busy || pending">
-          <option value="">Bitte wählen</option>
-          <option v-for="entry in entries" :key="entry.id" :value="entry.id">{{ entry.name }}</option>
-        </select>
-      </label>
-      <button
-        class="button secondary"
-        type="button"
-        :disabled="busy || pending || !choice"
-        @click="openLibrary"
-      >
-        Ablauf aus Testpaket erstellen
-      </button>
-    </div>
     <template v-if="flow">
       <h3>{{ flow.name }}</h3>
-      <p>{{ flow.steps.length }} Schritte · {{ flow.pack.cases.length }} Testfälle</p>
-      <p class="small-note">
-        Exportierte Abläufe enthalten das unverschlüsselte Testpaket mit Fachdaten und Anlagen. Verwenden Sie
-        fiktive Testdaten. Der Export enthält keine Zugangsdaten oder privaten Schlüssel.
+      <p>
+        {{ flow.steps.length }} Schritte · {{ flow.pack.cases.length }}
+        {{ flow.pack.cases.length === 1 ? 'Testfall' : 'Testfälle' }}
       </p>
-      <div class="client-actions">
-        <button
-          class="button secondary"
-          type="button"
-          :disabled="busy || pending"
-          @click="downloadLocal(JSON.stringify(flow, null, 2), 'ablauf.fcflow.json')"
-        >
-          Ablauf exportieren
-        </button>
-        <button class="button" type="button" :disabled="busy || pending || !session" @click="start">
-          {{ run ? 'Neuen Durchlauf starten' : 'Durchlauf starten' }}
+      <div v-if="!run" class="client-actions">
+        <button class="button" type="button" :disabled="busy || pending || !session" @click="requestStart">
+          Durchlauf starten
         </button>
       </div>
       <p v-if="!session">Zum Durchführen bitte ein Profil verbinden.</p>
@@ -279,6 +282,78 @@ async function verify() {
           Schritt {{ Math.min(run.results.length + 1, flow.steps.length) }} von {{ flow.steps.length }} ·
           {{ run.results.length }} erfolgreich geprüft
         </p>
+        <section v-if="step">
+          <h3 ref="stepHeading" tabindex="-1">{{ flowSteps[step.type] }}: {{ testCase.name }}</h3>
+          <p>
+            Sie können passende Profile in derselben Umgebung verbinden. Angeboten werden nur Nachrichten
+            dieses Durchlaufs mit übereinstimmenden Kennungen.
+          </p>
+          <details v-if="expectedMessage">
+            <summary>Erwartete Fachdaten und Anlagen</summary>
+            <pre>{{ expectedMessage.data }}</pre>
+            <ul>
+              <li v-for="item in expectedMessage.attachments" :key="item.fileName">
+                {{ item.fileName }} · {{ item.mimeType }}
+              </li>
+            </ul>
+          </details>
+          <div class="client-actions">
+            <button
+              v-if="step.type === 'send'"
+              class="button secondary"
+              type="button"
+              :disabled="busy || pending"
+              @click="openDraft"
+            >
+              Testfall als Versandentwurf öffnen
+            </button>
+            <button
+              class="button secondary"
+              type="button"
+              :disabled="busy || pending || !session || session.environment !== run.environment"
+              @click="loadRecords"
+            >
+              Lokale Ergebnisse laden
+            </button>
+          </div>
+          <label v-if="candidates.length">
+            Nachricht für diesen Schritt
+            <select aria-label="Nachricht für diesen Schritt" v-model="recordId" :disabled="busy || pending">
+              <option value="">Bitte wählen</option>
+              <option v-for="record in candidates" :key="record.recordId" :value="record.recordId">
+                {{ record.title }} · {{ record.submissionId || record.replyId }} · {{ record.status }}
+              </option>
+            </select>
+          </label>
+          <p v-else>{{ flowStepHints[step.type] }}</p>
+          <div class="client-actions">
+            <button class="button" type="button" :disabled="busy || pending || !recordId" @click="verify">
+              Schritt anhand der Inhalte prüfen
+            </button>
+          </div>
+        </section>
+        <p v-else role="status">Alle Schritte dieses Testablaufs sind geprüft.</p>
+        <div class="client-actions">
+          <button
+            class="button secondary"
+            type="button"
+            :disabled="busy || pending"
+            @click="
+              downloadLocal(JSON.stringify({ ...run, bindings: undefined }, null, 2), 'testergebnis.json')
+            "
+          >
+            Durchlaufergebnis exportieren
+          </button>
+          <button
+            ref="restartButton"
+            class="button secondary"
+            type="button"
+            :disabled="busy || pending || !session"
+            @click="requestStart"
+          >
+            Neuen Durchlauf starten
+          </button>
+        </div>
         <details>
           <summary>Ablaufplan anzeigen</summary>
           <ol>
@@ -298,70 +373,96 @@ async function verify() {
             </li>
           </ol>
         </details>
-        <section v-if="step">
-          <h3>{{ flowSteps[step.type] }}: {{ testCase.name }}</h3>
-          <p>
-            Führen Sie die Aktion im entsprechenden Arbeitsbereich aus und kehren Sie hier zur Prüfung zurück.
-            Sie können dazu passende Profile in derselben Umgebung verbinden. Nur Nachrichten dieses
-            Durchlaufs mit übereinstimmenden Kennungen werden angeboten.
-          </p>
-          <details v-if="expectedMessage">
-            <summary>Erwartete Fachdaten und Anlagen</summary>
-            <pre>{{ expectedMessage.data }}</pre>
-            <ul>
-              <li v-for="item in expectedMessage.attachments" :key="item.fileName">
-                {{ item.fileName }} · {{ item.mimeType }}
-              </li>
-            </ul>
-          </details>
-          <button
-            v-if="step.type === 'send'"
-            class="button secondary"
-            type="button"
-            :disabled="busy || pending"
-            @click="openDraft"
-          >
-            Testfall als Versandentwurf öffnen
-          </button>
-          <button
-            class="button secondary"
-            type="button"
-            :disabled="busy || pending || !session || session.environment !== run.environment"
-            @click="loadRecords"
-          >
-            Lokale Ergebnisse laden
-          </button>
-          <label v-if="candidates.length">
-            Nachricht für diesen Schritt
-            <select aria-label="Nachricht für diesen Schritt" v-model="recordId" :disabled="busy || pending">
-              <option value="">Bitte wählen</option>
-              <option v-for="record in candidates" :key="record.recordId" :value="record.recordId">
-                {{ record.title }} · {{ record.submissionId || record.replyId }} · {{ record.status }}
-              </option>
-            </select>
-          </label>
-          <p v-else>
-            Keine passende lokale Nachricht geladen. Entschlüsseln und prüfen Sie den Eingang beziehungsweise
-            die Antwort zuerst im Empfang.
-          </p>
-          <button class="button" type="button" :disabled="busy || pending || !recordId" @click="verify">
-            Schritt anhand der Inhalte prüfen
-          </button>
-        </section>
-        <p v-else role="status">Alle Schritte dieses Testablaufs sind geprüft.</p>
+      </template>
+    </template>
+    <details :open="!run">
+      <summary>
+        {{ run ? 'Ablauf verwalten oder anderen Ablauf öffnen' : 'Ablauf öffnen und speichern' }}
+      </summary>
+      <SavedTestFlows :flow="flow" :busy="busy || pending" @open="show" @busy="emit('busy', $event)" />
+      <FileDropInput
+        id="test-flow-file"
+        label="Testpaket oder Testablauf öffnen"
+        accept=".json,application/json"
+        :disabled="busy || pending"
+        @files="load"
+      />
+      <button class="button secondary" type="button" :disabled="busy || pending" @click="library">
+        Gespeicherte Testpakete laden
+      </button>
+      <div v-if="entries.length">
+        <label>
+          Testpaket
+          <select aria-label="Testpaket" v-model="choice" :disabled="busy || pending">
+            <option value="">Bitte wählen</option>
+            <option v-for="entry in entries" :key="entry.id" :value="entry.id">{{ entry.name }}</option>
+          </select>
+        </label>
+        <button
+          class="button secondary"
+          type="button"
+          :disabled="busy || pending || !choice"
+          @click="openLibrary"
+        >
+          Ablauf aus Testpaket erstellen
+        </button>
+      </div>
+      <p v-if="flow" class="small-note">
+        Exportierte Abläufe enthalten unverschlüsselte Testdaten und Anlagen. Verwenden Sie fiktive Daten.
+      </p>
+      <div v-if="flow" class="client-actions">
         <button
           class="button secondary"
           type="button"
           :disabled="busy || pending"
-          @click="
-            downloadLocal(JSON.stringify({ ...run, bindings: undefined }, null, 2), 'testergebnis.json')
-          "
+          @click="downloadLocal(JSON.stringify(flow, null, 2), 'ablauf.fcflow.json')"
         >
-          Durchlaufergebnis exportieren
+          Ablauf exportieren
         </button>
-      </template>
-    </template>
+      </div>
+    </details>
+    <Teleport to="body">
+      <dialog
+        ref="restartDialog"
+        class="tool-dialog flow-restart-dialog"
+        aria-labelledby="flow-restart-title"
+        @cancel.prevent="closeRestart()"
+      >
+        <h2 id="flow-restart-title">
+          {{ replacementFlow ? 'Anderen Ablauf öffnen?' : 'Durchlauf neu starten?' }}
+        </h2>
+        <p>
+          Bisherige Prüfergebnisse werden zurückgesetzt. Exportieren Sie das Durchlaufergebnis vorher, wenn
+          Sie es behalten möchten.
+        </p>
+        <div class="client-actions">
+          <button class="button secondary" type="button" autofocus @click="closeRestart()">Abbrechen</button>
+          <button
+            class="button secondary"
+            type="button"
+            @click="
+              downloadLocal(JSON.stringify({ ...run, bindings: undefined }, null, 2), 'testergebnis.json')
+            "
+          >
+            Durchlaufergebnis exportieren
+          </button>
+          <button class="button" type="button" @click="closeRestart(true)">
+            {{
+              replacementFlow
+                ? 'Ergebnisse zurücksetzen und Ablauf öffnen'
+                : 'Ergebnisse zurücksetzen und neu starten'
+            }}
+          </button>
+        </div>
+      </dialog>
+    </Teleport>
     <p v-if="notice" role="status">{{ notice }}</p>
     <p v-if="error" role="alert">{{ error }}</p>
   </section>
 </template>
+
+<style scoped>
+.flow-restart-dialog {
+  max-width: 36rem;
+}
+</style>

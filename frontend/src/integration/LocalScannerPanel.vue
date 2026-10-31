@@ -136,52 +136,61 @@ onBeforeUnmount(() => {
     />
     <div class="client-actions">
       <button
-        class="button secondary"
-        type="button"
-        :disabled="disabled || pending || status?.busy"
-        @click="run('install_local_scanner', { online: true })"
-      >
-        Scanner online einrichten
-      </button>
-      <button
-        class="button secondary"
-        type="button"
-        :disabled="disabled || pending || status?.busy"
-        @click="run('install_local_scanner', { online: false })"
-      >
-        Lokales Scanner-Paket importieren
-      </button>
-      <button
         v-if="status?.installed"
-        class="button secondary"
+        class="button"
         type="button"
         :disabled="disabled || pending || status?.busy"
         @click="run('update_local_scanner_database', { offline: false })"
       >
         Signaturen aktualisieren
       </button>
-      <button
-        v-if="status?.installed"
-        class="button secondary"
-        type="button"
-        :disabled="disabled || pending || status?.busy"
-        @click="run('update_local_scanner_database', { offline: true })"
-      >
-        Signaturen aus Dateien importieren
-      </button>
-      <button
-        v-if="status?.enabled"
-        class="button secondary"
-        type="button"
-        :disabled="disabled || pending || status?.busy"
-        @click="connected ? emit('disable') : run('stop_local_scanner')"
-      >
-        Lokalen Scanner beenden
-      </button>
       <button v-if="status?.busy" class="button secondary" type="button" @click="cancel">
         Vorgang abbrechen
       </button>
     </div>
+    <details :open="status && !status.installed">
+      <summary>Komponente verwalten</summary>
+      <div class="client-actions">
+        <button
+          class="button secondary"
+          type="button"
+          :disabled="disabled || pending || status?.busy"
+          @click="run('install_local_scanner', { online: true })"
+        >
+          Scanner online einrichten
+        </button>
+        <button
+          class="button secondary"
+          type="button"
+          :disabled="disabled || pending || status?.busy"
+          @click="run('install_local_scanner', { online: false })"
+        >
+          Lokales Scanner-Paket importieren
+        </button>
+        <button
+          v-if="status?.installed"
+          class="button secondary"
+          type="button"
+          :disabled="disabled || pending || status?.busy"
+          @click="run('update_local_scanner_database', { offline: true })"
+        >
+          Signaturen aus Dateien importieren
+        </button>
+        <button
+          v-if="status?.enabled"
+          class="button secondary"
+          type="button"
+          :disabled="disabled || pending || status?.busy"
+          @click="connected ? emit('disable') : run('stop_local_scanner')"
+        >
+          Lokalen Scanner beenden
+        </button>
+      </div>
+      <p class="small-note">
+        Offline-Import benötigt main.cvd, daily.cvd und bytecode.cvd sowie die jeweils zugehörige .sign-Datei.
+        Herkunft und Signaturen werden geprüft. Ältere Datenbanken ersetzen keinen neueren Bestand.
+      </p>
+    </details>
     <label v-if="status?.installed" class="switch">
       <input
         type="checkbox"
@@ -191,10 +200,6 @@ onBeforeUnmount(() => {
       />
       <span>Offizielle Signaturen beim App-Start höchstens einmal täglich online aktualisieren</span>
     </label>
-    <p class="small-note">
-      Offline-Import benötigt main.cvd, daily.cvd und bytecode.cvd sowie die jeweils zugehörige .sign-Datei.
-      Herkunft und Signaturen werden geprüft. Ältere Datenbanken ersetzen keinen neueren Bestand.
-    </p>
     <p v-if="error || status?.error" class="action-notice error" role="alert">
       {{ error || scannerError(status.error) }}
     </p>

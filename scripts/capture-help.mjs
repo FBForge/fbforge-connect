@@ -99,7 +99,7 @@ try {
   await capture('channel-schemas');
   await capture(
     'channel-schema-export',
-    page.getByRole('heading', { name: 'Ergebnis und Verwendung', exact: true }),
+    page.getByRole('heading', { name: 'Schema exportieren', exact: true }),
   );
   await button('Start').click();
   await button('Verbindung herstellen').click();
@@ -430,7 +430,10 @@ try {
   await capture('test-flows', page.getByRole('heading', { name: 'Wiederholbare Testabläufe', exact: true }));
   await button('Virenscan').click();
   await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('clamav');
-  await capture('malware-scanner', page.getByRole('heading', { name: 'Virenscan', exact: true, level: 2 }));
+  await capture(
+    'malware-scanner',
+    page.getByRole('heading', { name: 'Scanner auswählen', exact: true, level: 2 }),
+  );
   await page.evaluate(() => {
     const previous = window.__TAURI_INTERNALS__.invoke;
     window.__TAURI_INTERNALS__.invoke = (command, args) =>

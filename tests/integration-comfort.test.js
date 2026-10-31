@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
   flowFromPack,
+  flowStepHints,
   validateTestFlow,
   compareTestContent,
   eligibleFlowRecord,
@@ -234,4 +235,18 @@ test('workspace operations bind to the connected session and handle unsaved prof
     profileWorkspace(async () => ({ templates: 'bad' }), session),
     /engine_protocol_error/,
   );
+});
+
+test('each flow step explains the correct next action rather than directing every step to reception', () => {
+  for (const [type, action] of Object.entries({
+    send: /Versandentwurf.*senden/,
+    receive: /Einreichung im Empfang/,
+    compare: /Inhaltsvergleich/,
+    receipt: /an oder lehnen Sie sie ab/,
+    reply: /Verfassen und senden.*Antwort/,
+    check_reply: /entschlüsseln Sie die Antwort/,
+  })) {
+    assert.match(flowStepHints[type], action);
+    assert.match(flowStepHints[type], /lokalen Ergebnisse/);
+  }
 });

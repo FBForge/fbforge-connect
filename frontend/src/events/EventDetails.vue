@@ -15,7 +15,7 @@ defineProps({ details: Object, pending: Boolean });
     </p>
     <dl v-else aria-label="Ereignisdetails" class="event-payload-fields">
       <template v-for="(row, index) in details.rows" :key="index">
-        <dt>{{ row.label }}</dt>
+        <dt :title="row.path">{{ row.label }}</dt>
         <dd>{{ row.value }}</dd>
       </template>
     </dl>

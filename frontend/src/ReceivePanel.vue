@@ -1,6 +1,6 @@
 <script setup>
 import ScanResult from './ScanResult.vue';
-import { warning, label, bytesLabel } from './receive/presentation.ts';
+import { warning, label, bytesLabel, generalWarnings } from './receive/presentation.ts';
 import { isReceiveFailure } from './receive/failures.js';
 import { canPreview } from './submission-preview.js';
 import SchemaSourceConsent from './SchemaSourceConsent.vue';
@@ -258,8 +258,8 @@ defineExpose({
           </p>
           <p><span class="status-badge info">Fachliche Prüfung: manuell offen</span></p>
         </div>
-        <ul v-if="proof.warnings.length">
-          <li v-for="stage in proof.warnings" :key="stage">{{ warning(stage) }}</li>
+        <ul v-if="generalWarnings(proof.warnings).length">
+          <li v-for="stage in generalWarnings(proof.warnings)" :key="stage">{{ warning(stage) }}</li>
         </ul>
         <details class="verification-explanation">
           <summary>Was wurde geprüft?</summary>

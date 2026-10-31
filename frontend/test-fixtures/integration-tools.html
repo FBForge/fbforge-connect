@@ -50,6 +50,7 @@
         wrong: false,
         failScanConfig: false,
         savedFlows: {},
+        savedPacks: JSON.parse(localStorage.getItem('fixture-test-packs') || '{}'),
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
@@ -122,10 +123,29 @@
             }
             return structuredClone(fixture.savedFlows[flowId]);
           }
-          if (command === 'test_library')
-            return args.request.action === 'list'
-              ? [{ id: id(7), name: pack.name, cases: pack.cases.map(({ id, name }) => ({ id, name })) }]
-              : structuredClone(pack);
+          if (command === 'test_library') {
+            const { action, id: packId, pack: value } = args.request;
+            const summary = (id, pack) => ({
+              id,
+              name: pack.name,
+              cases: pack.cases.map(({ id, name }) => ({ id, name })),
+            });
+            if (action === 'save') {
+              fixture.savedPacks[packId] = structuredClone(value);
+              localStorage.setItem('fixture-test-packs', JSON.stringify(fixture.savedPacks));
+              return summary(packId, value);
+            }
+            if (action === 'list')
+              return [
+                summary(id(7), pack),
+                ...Object.entries(fixture.savedPacks).map(([id, pack]) => summary(id, pack)),
+              ];
+            if (action === 'delete') {
+              delete fixture.savedPacks[packId];
+              return null;
+            }
+            return structuredClone(fixture.savedPacks[packId] || pack);
+          }
           const envelope = (data) => ({
             apiVersion: args.apiVersion,
             sessionId: args.sessionId,

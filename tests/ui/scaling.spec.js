@@ -26,6 +26,9 @@ test('reading and reply drafting tolerate increased text spacing at narrow width
   await page.locator('#reply-data').fill('{"status":"erhalten"}');
   expect(await noOverflow()).toBe(true);
   await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
+  const fileImport = page.getByText('Antwortinhalt aus Datei übernehmen', { exact: true });
+  await fileImport.focus();
+  await page.keyboard.press('Enter');
   await page.locator('#reply-data-file').focus();
   await expect(page.locator('#reply-data-file')).toBeFocused();
   expect(

@@ -261,9 +261,13 @@ const {
               : `${selected.length} Destinations gemeinsam bearbeiten`
           }}
         </h3>
-        <p>
+        <p v-if="selected.length > 1">
           Nur angehakte Felder werden geändert. Ein leeres angehaktes Kontaktfeld entfernt diesen Kontaktwert.
           Andere Einstellungen bleiben erhalten.
+        </p>
+        <p v-else>
+          Geänderte Felder werden in der Vorschau angezeigt. Ein geleertes Kontaktfeld entfernt den bisherigen
+          Wert.
         </p>
         <ul>
           <li v-for="row in selected" :key="row.destinationId">{{ row.name || row.destinationId }}</li>
@@ -275,35 +279,49 @@ const {
           @apply="applyTemplate"
         />
         <fieldset :disabled="disabled || locked">
-          <legend>Gemeinsame Änderungen</legend>
+          <legend>{{ selected.length === 1 ? 'Stammdaten' : 'Gemeinsame Änderungen' }}</legend>
           <div class="client-fields">
             <div>
-              <label class="destination-toggle">
+              <label v-if="selected.length > 1" class="destination-toggle">
                 <input v-model="nameEnabled" type="checkbox" />
                 Name ändern
               </label>
               <label for="manager-name">
-                Neuer Name / Vorlage
+                {{ selected.length === 1 ? 'Name' : 'Neuer Name / Vorlage' }}
                 <input
                   id="manager-name"
                   v-model="name"
                   type="text"
                   maxlength="256"
-                  :disabled="!nameEnabled"
+                  :disabled="selected.length > 1 && !nameEnabled"
                 />
               </label>
-              <small>
+              <small v-if="selected.length > 1">
                 Für Bulk-Edit z. B. „{name} – Test“. {name} übernimmt den bisherigen Namen jeder Destination.
               </small>
             </div>
             <div>
-              <label class="destination-toggle">
+              <label v-if="selected.length > 1" class="destination-toggle">
                 <input v-model="statusEnabled" type="checkbox" />
                 Status ändern
               </label>
               <label for="manager-status">
                 Neuer Status
-                <select id="manager-status" v-model="status" :disabled="!statusEnabled">
+                <select
+                  id="manager-status"
+                  v-model="status"
+                  :disabled="selected.length > 1 && !statusEnabled"
+                >
+                  <option
+                    v-if="selected.length === 1 && !['active', 'inactive'].includes(detail?.status)"
+                    :value="detail?.status"
+                  >
+                    {{
+                      { draft: 'Entwurf', created: 'Angelegt' }[detail?.status] ||
+                      detail?.status ||
+                      'Nicht gesetzt'
+                    }}
+                  </option>
                   <option value="inactive">Inaktiv</option>
                   <option value="active">Aktiv</option>
                 </select>
@@ -311,7 +329,7 @@ const {
               <small>Es werden nur die vom Server erlaubten Statuswechsel vorbereitet.</small>
             </div>
             <div>
-              <label class="destination-toggle">
+              <label v-if="selected.length > 1" class="destination-toggle">
                 <input v-model="versionsEnabled" type="checkbox" />
                 Metadatenversionen ändern
               </label>
@@ -322,7 +340,7 @@ const {
                   v-model="versions"
                   type="text"
                   maxlength="256"
-                  :disabled="!versionsEnabled"
+                  :disabled="selected.length > 1 && !versionsEnabled"
                 />
               </label>
               <small>
@@ -330,19 +348,19 @@ const {
               </small>
             </div>
             <div v-for="(field, key) in contacts" :key="key">
-              <label class="destination-toggle">
+              <label v-if="selected.length > 1" class="destination-toggle">
                 <input v-model="field.enabled" type="checkbox" />
                 {{ labels[key] }} ändern
               </label>
               <label :for="`manager-${key}`">
-                Neuer Wert
+                {{ selected.length === 1 ? labels[key] : 'Neuer Wert' }}
                 <textarea
                   v-if="key === 'address'"
                   :id="`manager-${key}`"
                   v-model="field.value"
                   maxlength="2048"
                   rows="3"
-                  :disabled="!field.enabled"
+                  :disabled="selected.length > 1 && !field.enabled"
                 ></textarea>
                 <input
                   v-else
@@ -350,7 +368,7 @@ const {
                   v-model="field.value"
                   type="text"
                   maxlength="256"
-                  :disabled="!field.enabled"
+                  :disabled="selected.length > 1 && !field.enabled"
                 />
               </label>
             </div>
@@ -363,6 +381,7 @@ const {
               detail.offers
             "
           >
+            <h4>Angebote</h4>
             <label class="destination-toggle">
               <input v-model="offersEnabled" type="checkbox" />
               Leistungen, Schemata und Prozessnachrichten bearbeiten

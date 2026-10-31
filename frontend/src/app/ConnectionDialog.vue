@@ -1,4 +1,5 @@
 <script setup>
+import { ref, provide } from 'vue';
 import { useEnvironment } from '../environments.js';
 const environment = useEnvironment();
 import AppIcon from '../AppIcon.vue';
@@ -40,6 +41,19 @@ const {
   removeProfile,
   retryProfileSave,
 } = props.connection;
+const profileEditorOpen = ref(false);
+provide('profile-editor-context', {
+  async suspend() {
+    profileEditorOpen.value = true;
+    connectionDialog.value.close();
+    // Let the native close event finish before opening the replacement modal.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  },
+  restore() {
+    connectionDialog.value.showModal();
+    profileEditorOpen.value = false;
+  },
+});
 </script>
 <template>
   <dialog
@@ -47,7 +61,7 @@ const {
     class="tool-dialog connection-dialog"
     aria-labelledby="session-title"
     @cancel.prevent="closeConnection"
-    @close="connectionClosed"
+    @close="!profileEditorOpen && connectionClosed()"
   >
     <div class="tool-section-heading">
       <div>
@@ -180,12 +194,10 @@ const {
           />
         </label>
         <p class="small-note">
-          Ohne Speichern gelten Zugangsdaten und Schlüssel nur für diese Sitzung. Mit Speichern bleiben auch
-          Antwortschlüssel für spätere Replies erhalten. Windows schützt sie für Ihr Benutzerkonto.
-          Zugangstokens werden nicht gespeichert. Das Secret wird nach der Übergabe aus dem Eingabefeld
-          geleert.
+          Ohne Speichern bleiben Zugangsdaten und Schlüssel nur für diese Sitzung erhalten. Gespeicherte
+          Profile schützt Windows für Ihr Benutzerkonto. Zugangstokens werden nicht gespeichert.
         </p>
-        <div class="client-actions">
+        <div class="client-actions connection-submit">
           <button class="button" type="submit" :disabled="busy || !clientId.trim() || !clientSecret.trim()">
             {{ activeSession ? 'Mit anderen Zugangsdaten anmelden' : 'Anmelden' }}
           </button>
@@ -294,3 +306,25 @@ const {
     </div>
   </dialog>
 </template>
+
+<style scoped>
+.connection-submit {
+  position: sticky;
+  bottom: -1px;
+  z-index: 1;
+  background: var(--surface);
+  padding-block: 12px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 600px), (max-height: 600px) {
+  .connection-dialog {
+    padding: 16px;
+  }
+  .connection-dialog p {
+    margin-block: 10px;
+  }
+  .manual-connection .client-fields {
+    gap: 0;
+  }
+}
+</style>

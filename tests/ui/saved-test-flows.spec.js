@@ -17,7 +17,10 @@ for (const api of ['v2', 'v3']) {
     await button(page, 'Ablauf lokal speichern').click();
     await expect(page.getByText(/wurde dauerhaft für Ihr Windows-Benutzerkonto gespeichert/)).toBeVisible();
     expect(await page.evaluate(() => Object.keys(window.__integration.savedFlows).length)).toBe(1);
+    await button(page, 'Gespeicherte Abläufe laden').click();
+    await expect(page.getByText('1 gespeicherter Ablauf.', { exact: true })).toBeVisible();
     await button(page, 'Durchlauf starten').click();
+    await page.getByText('Ablauf verwalten oder anderen Ablauf öffnen', { exact: true }).click();
     await button(page, 'Gespeicherten Ablauf öffnen').click();
     await expect(button(page, 'Durchlauf starten')).toBeVisible();
     await button(page, 'Gespeicherten Ablauf löschen').click();

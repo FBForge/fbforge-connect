@@ -85,6 +85,13 @@ test('form-label loading is grouped with the form view and preserves the draft w
   const preview = page.locator('.draft-data-preview');
   await preview.getByRole('button', { name: 'Formularbeschriftungen laden', exact: true }).click();
   await expect(preview).toContainText('Schema für die Formularansicht geladen');
+  await expect(
+    preview.getByRole('button', { name: 'Formularbeschriftungen laden', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    preview.getByRole('button', { name: 'Formularbeschriftungen neu laden', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('#send-form-labels-help')).toHaveCount(0);
   await expect(page.locator('#send-data')).toHaveValue(text);
   await button(page, 'Formularansicht').click();
   await expect(page.locator('.draft-inline-preview')).toContainText('Vorname');

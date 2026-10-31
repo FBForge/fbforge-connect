@@ -118,6 +118,33 @@ for (const api of ['v2', 'v3']) {
       page.getByRole('status').filter({ hasText: 'Alle Schritte dieses Testablaufs sind geprüft.' }),
     ).toBeVisible();
     await button(page, 'Neuen Durchlauf starten').click();
+    await expect(page.getByRole('dialog', { name: 'Durchlauf neu starten?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+    await expect(
+      page.getByText('Alle Schritte dieses Testablaufs sind geprüft.', { exact: true }),
+    ).toBeVisible();
+    await button(page, 'Neuen Durchlauf starten').click();
+    const restartDialog = page.getByRole('dialog', { name: 'Durchlauf neu starten?' });
+    const downloaded = page.waitForEvent('download');
+    await restartDialog.getByRole('button', { name: 'Durchlaufergebnis exportieren', exact: true }).click();
+    const result = JSON.parse(await readFile(await (await downloaded).path(), 'utf8'));
+    expect(result.results).toHaveLength(3);
+    expect(result.bindings).toBeUndefined();
+    await restartDialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+    await page.getByText('Ablauf verwalten oder anderen Ablauf öffnen', { exact: true }).click();
+    await page.locator('#test-flow-file').setInputFiles({
+      name: 'replacement.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({ ...pack, name: 'Anderer Ablauf' })),
+    });
+    await expect(page.getByRole('dialog', { name: 'Anderen Ablauf öffnen?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+    await expect(
+      page.getByText('Alle Schritte dieses Testablaufs sind geprüft.', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Anderer Ablauf', exact: true })).toHaveCount(0);
+    await button(page, 'Neuen Durchlauf starten').click();
+    await button(page, 'Ergebnisse zurücksetzen und neu starten').click();
     await expect(
       page.getByRole('heading', { name: `Einreichung senden: ${pack.cases[0].name}`, exact: true }),
     ).toBeVisible();

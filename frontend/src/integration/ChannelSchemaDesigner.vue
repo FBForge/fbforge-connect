@@ -150,7 +150,7 @@ async function save(kind) {
           </small>
         </label>
       </div>
-      <article v-for="(field, index) in definition.fields" :key="index" class="tool-section">
+      <article v-for="(field, index) in definition.fields" :key="index" class="schema-field">
         <h3>Angabe {{ index + 1 }}</h3>
         <div class="client-fields">
           <label :for="`channel-name-${index}`">
@@ -170,13 +170,15 @@ async function save(kind) {
             </select>
           </label>
         </div>
-        <label class="checkbox-label">
-          <input v-model="field.required" type="checkbox" />
-          Pflichtangabe
-        </label>
-        <button class="button secondary" @click="definition.fields.splice(index, 1)">
-          Angabe {{ index + 1 }} entfernen
-        </button>
+        <div class="client-actions">
+          <label class="checkbox-label">
+            <input v-model="field.required" type="checkbox" />
+            Pflichtangabe
+          </label>
+          <button class="button secondary" @click="definition.fields.splice(index, 1)">
+            Angabe {{ index + 1 }} entfernen
+          </button>
+        </div>
       </article>
       <button class="button secondary" :disabled="definition.fields.length >= 32" @click="add">
         Angabe hinzufügen
@@ -189,33 +191,8 @@ async function save(kind) {
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="notice" role="status">{{ notice }}</p>
     <template v-if="result">
-      <h3>Ergebnis und Verwendung</h3>
+      <h3>Schema exportieren</h3>
       <CopyValue label="Schema-Kennung" :value="result.schema.$id" />
-      <ol>
-        <li>
-          Schema und fiktives Beispiel exportieren. Den Entwurf zusätzlich speichern, um ihn später
-          weiterzubearbeiten.
-        </li>
-        <li>
-          Beim Empfänger die Kennung als unterstütztes Antwortschema der Leistung hinterlegen. In
-          „Destinations“ kann die Kennung aus der Schemadatei übernommen werden. Änderungen werden separat
-          bestätigt.
-        </li>
-        <li>
-          Der Sender lädt die aktualisierten Leistungen und wählt dieses Antwortschema für den Antwortkanal.
-          Für Prozessantworten zusätzlich die vereinbarten Nachrichtenkennungen anbieten.
-        </li>
-        <li>
-          Die Schema-Datei beiden Seiten lokal bereitstellen oder selbst unter der vereinbarten HTTPS-Adresse
-          veröffentlichen. Eine URN ist eine Kennung und keine Downloadadresse. FIT-Connect erhält die
-          Kennung, nicht automatisch diese Datei.
-        </li>
-      </ol>
-      <p>
-        Beim Antworten das passende lokale Antwortschema importieren und den Inhalt prüfen. Empfangene
-        Antworten mit derselben Definition prüfen. Es werden keine Destinations automatisch geändert und keine
-        Nachrichten versendet.
-      </p>
       <div class="client-actions">
         <button class="button" :disabled="disabled || reading" @click="save('schema')">
           JSON-Schema herunterladen
@@ -227,6 +204,34 @@ async function save(kind) {
           Schemaentwurf speichern
         </button>
       </div>
+      <details>
+        <summary>Antwortschema mit der Gegenstelle verwenden</summary>
+        <ol>
+          <li>
+            Schema und fiktives Beispiel exportieren. Den Entwurf zusätzlich speichern, um ihn später
+            weiterzubearbeiten.
+          </li>
+          <li>
+            Beim Empfänger die Kennung als unterstütztes Antwortschema der Leistung hinterlegen. In
+            „Destinations“ kann die Kennung aus der Schemadatei übernommen werden. Änderungen werden separat
+            bestätigt.
+          </li>
+          <li>
+            Der Sender lädt die aktualisierten Leistungen und wählt dieses Antwortschema für den Antwortkanal.
+            Für Prozessantworten zusätzlich die vereinbarten Nachrichtenkennungen anbieten.
+          </li>
+          <li>
+            Die Schema-Datei beiden Seiten lokal bereitstellen oder selbst unter der vereinbarten
+            HTTPS-Adresse veröffentlichen. Eine URN ist eine Kennung und keine Downloadadresse. FIT-Connect
+            erhält die Kennung, nicht automatisch diese Datei.
+          </li>
+        </ol>
+        <p>
+          Beim Antworten das passende lokale Antwortschema importieren und den Inhalt prüfen. Empfangene
+          Antworten mit derselben Definition prüfen. Es werden keine Destinations automatisch geändert und
+          keine Nachrichten versendet.
+        </p>
+      </details>
       <details>
         <summary>JSON-Schema ansehen</summary>
         <pre class="channel-schema-source" data-testid="channel-schema">{{
@@ -243,6 +248,26 @@ async function save(kind) {
   </section>
 </template>
 <style scoped>
+.schema-field {
+  border-top: 1px solid var(--line);
+  padding-block: 12px;
+}
+.schema-field h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.schema-field .client-fields {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(8rem, 0.6fr);
+}
+.schema-field .client-actions {
+  margin-block: 4px;
+}
+@media (max-width: 650px) {
+  .schema-field .client-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .channel-schema-source {
   max-height: 24rem;
   overflow: auto;

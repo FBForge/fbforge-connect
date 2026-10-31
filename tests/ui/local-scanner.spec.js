@@ -102,6 +102,8 @@ test('stopping a connected local scanner also disables its Java scanner endpoint
   );
   await page.getByRole('button', { name: 'Scanner-Einstellung anwenden', exact: true }).click();
   await expect(page.getByText('Aktiv: Lokaler ClamAV', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Signaturen aktualisieren', exact: true })).toBeVisible();
+  await page.getByText('Komponente verwalten', { exact: true }).click();
   await page.getByRole('button', { name: 'Lokalen Scanner beenden', exact: true }).click();
   await expect(page.getByText('Aktiv: Kein Scanner', { exact: true })).toBeVisible();
   const calls = await page.evaluate(() => window.__integration.calls);

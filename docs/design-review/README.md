@@ -1,5 +1,43 @@
 # Design-Review: FBForge Connect
 
+## Nachprüfung und Korrekturen für 0.3.0
+
+Stand: 31. Oktober 2026, Branch `release/0.3.0`. Die Nachprüfung des Ausgangsstands
+`439963c` ergab 14 Befunde. Die folgende Zuordnung hält ihre Umsetzung und die
+zugehörigen Regressionstests fest.
+
+| Befund | Umsetzung | Regression |
+| --- | --- | --- |
+| U01: Neustart verwirft Fortschritt | Bestätigung, Abbruch und Ergebnisexport. Auch ein anderer Ablauf ersetzt Ergebnisse erst nach Bestätigung. | `integration-comfort.spec.js` |
+| U02: Speichern war nur Dateiexport | Bearbeitete Pakete direkt in der gemeinsamen geschützten Sammlung speichern und nach erneutem Öffnen weiterverwenden. Export separat benannt. | `review-findings.spec.js`, bestehende native Sammlungstests |
+| U03: Falscher Hinweis beim Versandschritt | Eigene nächste Aktion für alle sechs Schrittarten. | `integration-comfort.spec.js`, `review-findings.spec.js` |
+| U04: Verwaltung vor laufender Aufgabe | Aktueller Schritt zuerst, Verwaltung darunter aufklappbar. Fokus folgt dem Schritt. | `review-findings.spec.js` |
+| U05: Abstände bei Auswahl und Aktionen | Beschriftung über dem Feld, gemeinsame Aktionsgruppen. | `review-findings.spec.js` |
+| U06: Langer Schema-Assistent | Kompakte Feldgruppen, Exporte vor aufklappbarer Verwendungsanleitung. | `review-findings.spec.js`, `channel-authoring.spec.js` |
+| U07: Scanner-Verwaltung gleich gewichtet | Signaturupdate direkt am Status, Einrichtung und Offline-Import unter „Komponente verwalten“. | `local-scanner.spec.js`, `review-findings.spec.js` |
+| U08: Verschachtelter großer Profileditor | Schmaler Ersatzdialog, nach Abbruch oder Speichern zurück zur vorherigen Auswahl. | `profile-maintenance.spec.js` |
+| U09: Wiederholte Scan-Hinweise und lange Antwortansicht | Doppelten allgemeinen Hinweis entfernen, Ergebnisse je Anlage erhalten. Format vor dem Inhalt, Dateiübernahme optional aufklappbar. | `receive-warning-presentation.test.js`, `review-findings.spec.js`, `scanner-feedback.spec.js` |
+| U10: Technische Ereignispfade | Gründe zuerst, kurze Problem- und Anlagenbezeichnungen. Originalpfade und verlustfreie Werte bleiben verfügbar. | `event-details.test.js`, `acceptance-polish.spec.js` |
+| U11: Einzelbearbeitung wie Sammeländerung | Direkte Felder mit Vergleich zum geladenen Stand. Nur Änderungen vorbereiten. Sammeländerungen behalten Feldauswahl. | `destination-edit-changes.test.js`, `review-findings.spec.js`, `destination-manager.spec.js` |
+| U12: Ladeaktion nach erfolgtem Laden | Kompakter Status und gezielt „Formularbeschriftungen neu laden“. | `scanner-feedback.spec.js` |
+| U13: Anmeldung im kleinen Fenster | Kompakter Text und erreichbare Aktionsleiste. | `review-findings.spec.js` |
+| U14: Singular | Ein Testfall, mehrere Testfälle. | `review-findings.spec.js` |
+
+Validierung: 227 Oberflächenfälle und 310 JavaScript-/Skripttests bestanden.
+Zusätzlich Produktionspaket mit Größenbudget und ausgeführter Navigation geprüft.
+Acht neue Detailaufnahmen in Hell, Dunkel und im kleinen Fenster ergaben keine
+JavaScript-Fehler, externen Abrufe oder automatisch erkannten WCAG-Verstöße.
+Die Website-Prüfung umfasst 24 Python- und 11 Kontakttests sowie 138
+Browser-Prüfungen. App- und Website-Anleitung verwenden dieselben 48 Bildquellen.
+
+Die Tests bedienen die tatsächlichen Vue-Komponenten in Chromium mit synthetischen
+Daten an der nativen Grenze. Sie ersetzen keinen Abnahmetest unter Windows mit
+echten FIT-Connect-Zugängen, nativen Dateidialogen und installiertem Scanner.
+Die aktuelle bebilderte Anleitung wird aus `docs/guide/` exportiert. Die frühere
+Bewertung unten bleibt als historische Ausgangslage für 0.2.0 erhalten.
+
+## Historischer Review für 0.2.0
+
 Stand: 28. Oktober 2026 · Quelle: `369d6f5` · Arbeitsbranch: `design/review`.
 
 ## Umsetzung für 0.2.0
