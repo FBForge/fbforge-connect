@@ -2,6 +2,8 @@
 
 ## 0.3.0 (in Entwicklung)
 
+- Die Virenscan-Einstellungen übernehmen einen bereits geladenen Scannerstatus korrekt. Das Öffnen der Seite zeigt einen aktiven Scanner nicht mehr fälschlich als ausgeschaltet. Ein Profilwechsel lädt weiterhin die passende Konfiguration.
+
 - Testabläufe zeigen den aktuellen Schritt zuerst, erklären die jeweils nötige Aktion und verlangen vor dem Verwerfen von Prüfergebnissen eine Bestätigung. Ergebnisse vorher exportieren oder den Neustart abbrechen.
 - Bearbeitete Testpakete direkt in der gemeinsamen geschützten Sammlung speichern und nach einem Neustart wieder öffnen. Der unverschlüsselte Dateiexport ist getrennt beschriftet.
 - Kompaktere Antwortschema-Felder, Exporte vor der ausführlichen Anleitung und Signaturupdates vor seltenen Scanner-Verwaltungsaktionen. Antwortformat und optionale Dateiübernahme logisch anordnen.
