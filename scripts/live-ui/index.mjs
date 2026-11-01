@@ -26,6 +26,7 @@ import {
   auditScreen,
   localScannerReady,
   onlineScannerSetup,
+  scannerDiagnostics,
 } from './local-tools.mjs';
 import { downloadMessage } from './downloads.mjs';
 import { scannerProblemAcceptance } from './scanner.mjs';
@@ -123,6 +124,7 @@ export async function exerciseDesktopUI(fixture) {
     );
   } catch (error) {
     if (desktop) {
+      if (stage === 'optional_local_scanner') await scannerDiagnostics(desktop.page);
       const values = await desktop.page
         .locator('[aria-labelledby="event-log-title"] .small-note code, .action-notice:visible code')
         .allTextContents()

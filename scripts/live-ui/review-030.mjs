@@ -97,18 +97,46 @@ async function checkStep(page) {
   await button(page, 'Schritt anhand der Inhalte prüfen').click();
 }
 async function flowReview(desktop, fixture, senders, path, pack) {
-  const page = desktop.page;
+  let page = desktop.page;
   await testTools(page, 'Testabläufe');
   await page.locator('#test-flow-file').setInputFiles(path);
   await button(page, 'Ablauf lokal speichern').click();
   await page.getByText(/wurde dauerhaft für Ihr Windows-Benutzerkonto gespeichert/).waitFor();
+  await page.locator('.flow-context summary').click();
+  await button(page, 'Passende Profile laden').click();
+  await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).selectOption(senders.v3);
+  await page
+    .getByRole('combobox', { name: 'Empfänger-Profil', exact: true })
+    .selectOption(fixture.receiverProfiles.find((p) => p.api === 'v3').id);
+  await page.getByLabel('Absender-Destination (API v3)', { exact: true }).fill(process.env.SENDERDEST);
+  await page.getByLabel('Empfangs-Destination', { exact: true }).fill(fixture.destination);
   await button(page, 'Durchlauf starten').click();
   const message = await sendSubmission(page, fixture);
   await testTools(page, 'Testabläufe');
   await checkStep(page);
   await page.getByRole('heading', { name: `Eingang prüfen: ${pack.cases[0].name}`, exact: true }).waitFor();
+  await flowPanel(page)
+    .getByText('Fortschritt für Ihr Windows-Benutzerkonto gespeichert', { exact: true })
+    .waitFor();
+  await desktop.restartGracefully();
+  page = desktop.page;
+  await connectProfile(page, senders.v3);
+  await testTools(page, 'Testabläufe');
+  await page.locator('.saved-flow-runs summary').click();
+  await page
+    .getByRole('combobox', { name: 'Durchlauf', exact: true })
+    .selectOption({ label: `${pack.name} · TEST · 1/6 Schritte` });
+  await button(page, 'Durchlauf fortsetzen').click();
+  await page.getByText(/^Durchlauf wiederhergestellt\./).waitFor();
   const progress = flowPanel(page).getByText('Schritt 2 von 6 · 1 erfolgreich geprüft', { exact: true });
   await progress.waitFor();
+  await page.getByText('Ablauf verwalten oder anderen Ablauf öffnen', { exact: true }).click();
+  await page.locator('.flow-context summary').click();
+  check(
+    (await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).inputValue()) === senders.v3 &&
+      (await page.getByLabel('Empfangs-Destination', { exact: true }).inputValue()) === fixture.destination,
+    'live_ui_flow_context_not_restored',
+  );
   await button(page, 'Neuen Durchlauf starten').click();
   const dialog = page.getByRole('dialog', { name: 'Durchlauf neu starten?', exact: true });
   await dialog.waitFor();
@@ -134,7 +162,8 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   );
   await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
   await progress.waitFor();
-  await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
+  await button(page, 'Zum Empfänger wechseln').click();
+  await page.getByRole('heading', { name: 'Empfangen', exact: true }).waitFor();
   await openSubmission(page, fixture, message);
   await singleFiles(desktop, fixture, message);
   await testTools(page, 'Testabläufe');
@@ -157,7 +186,7 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   await button(page, 'Ergebnisse zurücksetzen und neu starten').click();
   await flowPanel(page).getByText('Schritt 1 von 6 · 0 erfolgreich geprüft', { exact: true }).waitFor();
   console.log(
-    'Real desktop UI: saved test flow advanced using exact real sent/received data and attachments, cancellation preserved progress, exported evidence matched, explicit restart reset it',
+    'Real desktop UI: encrypted run and profile context survived normal window close, receiver shortcut and all real flow steps passed, exported evidence matched and explicit restart reset it',
   );
   return message;
 }

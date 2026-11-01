@@ -25,6 +25,10 @@
 - Virenscan direkt in der Navigation und Ergebnisse beim Senden/Empfangen je Anlage
   sichtbar. Signaturupdates bleiben beim Seitenwechsel bedienbar und abbrechbar.
   Geladene Scanner-Einstellungen werden beim Öffnen korrekt angezeigt.
+  Verspätete Statusantworten überschreiben keine laufenden Eingaben. Fortschritt
+  und Abbruch bleiben auch beim Wechsel des ausgewählten Verfahrens sichtbar.
+  Erfolgreiche Signaturdownloads werden nicht mehr wegen umfangreicher
+  FreshClam-Fortschrittsausgaben als fehlgeschlagen gemeldet.
 - Anlagenfunde sperren betroffene Dateien. Geprüfte übrige Inhalte bleiben lesbar.
   Ausdrücklich bestätigte Einzelannahme meldet die Anlagenprobleme signiert an
   FIT-Connect. Sammelannahme und vollständiger Export bleiben gesperrt.

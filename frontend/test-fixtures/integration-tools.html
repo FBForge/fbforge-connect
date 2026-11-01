@@ -301,6 +301,8 @@
             });
             const monitor = provideScannerMonitor(session);
             fixture.monitorConfiguration = () => monitor.configuration.value;
+            fixture.setMonitorConfiguration = (value) => (monitor.configuration.value = value);
+            fixture.monitorLocal = () => monitor.local.value;
           }
           fixture.isBusy = () => busy.value;
           return {

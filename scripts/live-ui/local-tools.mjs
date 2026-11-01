@@ -42,7 +42,21 @@ export async function scannerDiagnostics(page) {
       }
     })
     .catch(() => ({ statusUnavailable: true }));
-  console.error(`Actual native scanner diagnostics: ${JSON.stringify(state)}`);
+  const selected = await page
+    .getByRole('combobox', { name: 'Verfahren', exact: true })
+    .inputValue()
+    .catch(() => 'unavailable');
+  console.error(
+    `Actual native scanner diagnostics: ${JSON.stringify({
+      ...state,
+      procedure: ['off', 'local', 'clamav', 'icap'].includes(selected) ? selected : 'unavailable',
+      componentVisible: await page
+        .getByRole('heading', { name: 'Lokaler ClamAV', exact: true })
+        .isVisible()
+        .catch(() => false),
+    })}`,
+  );
+  return state;
 }
 export async function localScannerReady(page, connected = true) {
   if (process.env.FBFORGE_UI_SCANNER !== 'true') return;
@@ -234,24 +248,51 @@ export async function ownDestination(page, fixture) {
   );
 }
 
-export async function onlineScannerSetup(desktop, fixture) {
+export async function selectLocalScanner(page) {
+  await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('local');
+  await page.getByRole('heading', { name: 'Lokaler ClamAV', exact: true }).waitFor();
+}
+
+export async function onlineScannerSetup(desktop, fixture, connected = true) {
   if (process.env.FBFORGE_UI_SCANNER_ONLINE !== 'true') return;
   const { page } = desktop;
   await navigate(page, 'Virenscan');
+  if (connected) await selectLocalScanner(page);
   const install = page.getByRole('button', { name: 'Scanner online einrichten', exact: true });
   await nativeScannerInstall(desktop, fixture, () => install.click());
+  await until(
+    async () => {
+      const status = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('local_scanner_status'));
+      if (!status.busy && status.error) {
+        await scannerDiagnostics(page);
+        throw new Error('live_ui_online_scanner_initial_setup_failed');
+      }
+      return status.busy;
+    },
+    'live_ui_online_scanner_initial_setup_not_started',
+    30000,
+  );
   await page.getByRole('button', { name: 'Vorgang abbrechen', exact: true }).click();
   await until(async () => !(await install.isDisabled()), 'live_ui_online_scanner_cancel_stuck', 30000);
   await nativeScannerInstall(desktop, fixture, () => install.click());
   await until(
     async () => {
       const status = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('local_scanner_status'));
-      if (!status.busy && status.error) throw new Error('live_ui_online_scanner_setup_failed');
+      if (!status.busy && status.error) {
+        await scannerDiagnostics(page);
+        throw new Error('live_ui_online_scanner_setup_failed');
+      }
       return status.installed && !status.busy;
     },
     'live_ui_online_scanner_setup_timeout',
     360000,
   );
+  if (!connected) {
+    console.log(
+      'Real desktop UI: clean online component setup, cancellation and retry passed without a FIT-Connect session',
+    );
+    return;
+  }
   await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('local');
   await nativeScannerReview(desktop, fixture, () =>
     page.getByRole('button', { name: 'Scanner-Einstellung anwenden', exact: true }).click(),

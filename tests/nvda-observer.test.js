@@ -2,6 +2,56 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+const powershell =
+  process.env.FITCONNECT_TEST_PWSH || (process.platform === 'win32' ? 'powershell.exe' : null);
+test(
+  'NVDA fixture cleans its own scanner state after failure and preserves pre-existing user data',
+  { skip: !powershell },
+  () => {
+    const program = `
+$ErrorActionPreference = 'Stop'
+$tokens=$null; $errors=$null
+$tree=[System.Management.Automation.Language.Parser]::ParseFile((Join-Path (Get-Location) 'scripts/windows-accessibility-smoke.ps1'),[ref]$tokens,[ref]$errors)
+if ($errors.Count) { throw 'parser_error' }
+foreach ($name in @('Start-OwnedScannerFixture', 'Remove-OwnedScannerFixture')) {
+  $definition=$tree.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name},$true)
+  if (-not $definition) { throw 'fixture_function_missing' }
+  . ([scriptblock]::Create($definition.Extent.Text))
+}
+$taskScannerRoot=Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid().ToString('N'))
+$taskOwnsScanner=$false
+try {
+  New-Item -ItemType Directory -Path $taskScannerRoot | Out-Null
+  $sentinel=Join-Path $taskScannerRoot 'existing-user-data'
+  [IO.File]::WriteAllText($sentinel, 'preserve')
+  $rejected=$false
+  try { Start-OwnedScannerFixture } catch { $rejected=$_.Exception.Message -eq 'a11y_scanner_fixture_conflict' }
+  Remove-OwnedScannerFixture
+  if (-not $rejected -or $taskOwnsScanner -or [IO.File]::ReadAllText($sentinel) -ne 'preserve') { throw 'existing_data_changed' }
+  Remove-Item -LiteralPath $taskScannerRoot -Recurse -Force
+  try {
+    Start-OwnedScannerFixture
+    New-Item -ItemType Directory -Path $taskScannerRoot | Out-Null
+    [IO.File]::WriteAllText($sentinel, 'synthetic test state')
+    throw 'simulated_app_test_failure'
+  } catch {
+    if ($_.Exception.Message -ne 'simulated_app_test_failure') { throw }
+  } finally { Remove-OwnedScannerFixture }
+  if ((Test-Path -LiteralPath $taskScannerRoot) -or $taskOwnsScanner) { throw 'owned_state_not_cleaned' }
+  Start-OwnedScannerFixture
+  Remove-OwnedScannerFixture
+  'NVDA scanner isolation passed'
+} finally {
+  if (Test-Path -LiteralPath $taskScannerRoot) { Remove-Item -LiteralPath $taskScannerRoot -Recurse -Force }
+}
+`;
+    const result = execFileSync(powershell, ['-NoProfile', '-NonInteractive', '-Command', program], {
+      encoding: 'utf8',
+      timeout: 30000,
+    });
+    assert.match(result, /NVDA scanner isolation passed/);
+  },
+);
 test('NVDA observer retains the expanded keyboard journey and explicitly signals its bounded limit', () => {
   const source = fileURLToPath(new URL('../scripts/ci/nvda-capture.py', import.meta.url));
   const program = `

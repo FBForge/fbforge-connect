@@ -81,6 +81,7 @@ jobs:
         if: inputs.ui_probe == true
         env:
           FBFORGE_UI_SCANNER: ${{ inputs.local_scanner }}
+          FBFORGE_UI_SCANNER_ONLINE: ${{ inputs.online_scanner }}
         run: node scripts/live-ui/probe.mjs
       - name: Exercise real TEST exchange with fictitious data
         if: inputs.ui_probe != true

@@ -81,8 +81,19 @@ $taskApp = $null
 $taskNvda = $null
 $taskWindow = $null
 $taskInputActive = $false
+$taskScannerRoot = Join-Path $env:LOCALAPPDATA 'org.fitconnect.integration-client\scanner'
+$taskOwnsScanner = $false
 $checks = [Collections.Generic.List[object]]::new()
 
+function Start-OwnedScannerFixture {
+    if (Test-Path -LiteralPath $script:taskScannerRoot) { throw 'a11y_scanner_fixture_conflict' }
+    $script:taskOwnsScanner = $true
+}
+function Remove-OwnedScannerFixture {
+    if (-not $script:taskOwnsScanner) { return }
+    if (Test-Path -LiteralPath $script:taskScannerRoot) { Remove-Item -LiteralPath $script:taskScannerRoot -Recurse -Force }
+    $script:taskOwnsScanner = $false
+}
 function Wait-Check([scriptblock]$Check, [string]$Code, [int]$Seconds = 30) {
     $until = [DateTime]::UtcNow.AddSeconds($Seconds)
     do {
@@ -151,6 +162,7 @@ function Start-Clean([string]$Executable, [string]$Arguments = '') {
 }
 try {
     if (@(Get-Process -Name 'nvda','nvda_noUIAccess' -ErrorAction SilentlyContinue).Count) { throw 'existing_screen_reader_conflict' }
+    Start-OwnedScannerFixture
     $null = New-Item -ItemType Directory -Path (Join-Path $taskConfig 'scratchpad\globalPlugins') -Force
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'ci\nvda-capture.py') -Destination (Join-Path $taskConfig 'scratchpad\globalPlugins\fbforgeCapture.py')
     $config = @'
@@ -175,7 +187,7 @@ askedAllowUsageStats = True
 automaticUpdates = disabled
 '@
     [IO.File]::WriteAllText((Join-Path $taskConfig 'nvda.ini'), $config, [Text.UTF8Encoding]::new($false))
-    $setup = Start-Process -FilePath ([IO.Path]::GetFullPath($InstallerPath)) -ArgumentList ('/S /D=' + $taskInstall) -PassThru
+    $setup = Start-Process -FilePath ([IO.Path]::GetFullPath($InstallerPath)) -ArgumentList ('/S /SCANNER=0 /D=' + $taskInstall) -PassThru
     if (-not $setup.WaitForExit(120000) -or $setup.ExitCode -ne 0) { throw 'a11y_install_failed' }
     $binary = Join-Path $taskInstall 'fbforge-connect.exe'
     if ($ExpectedBinaryPath -and (Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedBinaryPath -Algorithm SHA256).Hash) { throw 'a11y_binary_revision_mismatch' }
@@ -264,5 +276,6 @@ automaticUpdates = disabled
         if (-not $uninstall.WaitForExit(120000)) { $uninstall.Kill() }
         $uninstall.Dispose()
     }
+    Remove-OwnedScannerFixture
     if (Test-Path -LiteralPath $taskRoot) { Remove-Item -LiteralPath $taskRoot -Recurse -Force }
 }

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { openTestPackage } from '../../scripts/live-ui/local-tools.mjs';
+import { openTestPackage, selectLocalScanner } from '../../scripts/live-ui/local-tools.mjs';
 test('live acceptance opens the test package explicitly after the remembered scanner tab', async ({
   page,
 }) => {
@@ -16,7 +16,10 @@ test('live acceptance opens the test package explicitly after the remembered sca
 async function open(page, api = 'v3') {
   await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
   await page.getByRole('button', { name: 'Virenscan', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('local');
+  await expect(
+    page.getByRole('button', { name: 'Scanner online einrichten', exact: true }),
+  ).not.toBeVisible();
+  await selectLocalScanner(page);
   await expect(page.getByRole('heading', { name: 'Lokaler ClamAV', exact: true })).toBeVisible();
 }
 for (const api of ['v2', 'v3']) {
@@ -53,6 +56,55 @@ test('cancel reaches native control while a scanner installation remains pending
     ),
   ).toBe(true);
   expect(await page.evaluate(() => window.__integration.local.installed)).toBe(false);
+});
+test('a late scanner configuration cannot hide a running installation or its cancel action', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=v3&monitor=icap');
+  await expect
+    .poll(() => page.evaluate(() => window.__integration.monitorConfiguration()?.kind))
+    .toBe('icap');
+  await page.getByRole('button', { name: 'Virenscan', exact: true }).click();
+  await page.evaluate(() => {
+    Object.assign(window.__integration.local, { installed: false, ready: false, enabled: false });
+    window.__integration.holdLocalInstall = true;
+  });
+  await selectLocalScanner(page);
+  await page.getByRole('button', { name: 'Scanner online einrichten', exact: true }).click();
+  const cancel = page.getByRole('button', { name: 'Vorgang abbrechen', exact: true });
+  await expect(cancel).toBeVisible();
+  await page.evaluate(() =>
+    window.__integration.setMonitorConfiguration({ kind: 'off', host: '', port: 0, service: '' }),
+  );
+  await expect(page.getByRole('combobox', { name: 'Verfahren', exact: true })).toHaveValue('local');
+  await expect(cancel).toBeVisible();
+  await cancel.click();
+  await expect(page.getByRole('alert')).toContainText('abgebrochen');
+});
+test('switching the selected procedure keeps a running local operation cancellable', async ({ page }) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=v3&monitor=icap');
+  await expect
+    .poll(() => page.evaluate(() => window.__integration.monitorConfiguration()?.kind))
+    .toBe('icap');
+  await page.getByRole('button', { name: 'Virenscan', exact: true }).click();
+  await page.evaluate(() => {
+    Object.assign(window.__integration.local, { installed: false, ready: false, enabled: false });
+    window.__integration.holdLocalInstall = true;
+  });
+  await selectLocalScanner(page);
+  await page.getByRole('button', { name: 'Scanner online einrichten', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.__integration.monitorLocal()?.busy)).toBe(true);
+  await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('off');
+  const cancel = page.getByRole('button', { name: 'Vorgang abbrechen', exact: true });
+  await expect(cancel).toBeVisible();
+  await cancel.click();
+  await expect.poll(() => page.evaluate(() => window.__integration.local.busy)).toBe(false);
+  expect(
+    await page.evaluate(
+      () =>
+        window.__integration.calls.filter((call) => call.command === 'cancel_local_scanner_operation').length,
+    ),
+  ).toBe(1);
 });
 test('database age, readiness and automatic-update consent remain visible at narrow widths', async ({
   page,

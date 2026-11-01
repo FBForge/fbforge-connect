@@ -11,6 +11,19 @@ use std::{
     process::Command,
     time::Duration,
 };
+
+fn freshclam_command(engine: &Path, configuration: &Path) -> Result<Command, &'static str> {
+    let mut command = Command::new(engine.join("freshclam.exe"));
+    // FreshClam's progress output can exceed the bounded helper pipe even on success.
+    // The native operation state supplies UI progress, so retain only errors here.
+    command
+        .current_dir(engine)
+        .arg("--quiet")
+        .arg("--config-file")
+        .arg(configuration);
+    crate::network_settings::downloader(&mut command)?;
+    Ok(command)
+}
 impl Runtime {
     pub fn install_offline(&mut self, archive: &Path) -> Result<(), &'static str> {
         let stage = unique(&self.root, "install");
@@ -84,12 +97,7 @@ impl Runtime {
         )
         .map_err(failure)?;
         scanner_process::output_with_cancel(
-            crate::network_settings::downloader(
-                Command::new(engine.join("freshclam.exe"))
-                    .current_dir(&engine)
-                    .arg("--config-file")
-                    .arg(&conf),
-            )?,
+            &mut freshclam_command(&engine, &conf)?,
             Duration::from_secs(240),
             &self.cancel,
         )
@@ -167,12 +175,7 @@ impl Runtime {
             )
             .map_err(failure)?;
             scanner_process::output_with_cancel(
-                crate::network_settings::downloader(
-                    Command::new(engine.join("freshclam.exe"))
-                        .current_dir(&engine)
-                        .arg("--config-file")
-                        .arg(&conf),
-                )?,
+                &mut freshclam_command(&engine, &conf)?,
                 Duration::from_secs(240),
                 &self.cancel,
             )
@@ -228,4 +231,62 @@ fn database_names(directory: &Path) -> Result<Vec<String>, &'static str> {
         ));
     }
     Ok(names)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn freshclam_progress_does_not_turn_success_into_a_bounded_output_failure() {
+        let root = std::env::temp_dir().join(format!(
+            "fbforge-freshclam-output-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&root).unwrap();
+        let executable = root.join("freshclam.exe");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::write(&executable, "#!/bin/sh\nfor option do\n  if [ \"$option\" = \"--quiet\" ]; then exit 0; fi\ndone\nhead -c 70000 /dev/zero\n").unwrap();
+            fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
+        }
+        #[cfg(windows)]
+        {
+            let powershell = PathBuf::from(std::env::var_os("SystemRoot").unwrap())
+                .join("System32/WindowsPowerShell/v1.0/powershell.exe");
+            let mut compiler = Command::new(powershell);
+            compiler.args(["-NoProfile", "-NonInteractive", "-Command", "Add-Type -TypeDefinition 'using System; public class FreshclamFixture { public static int Main(string[] args) { if (Array.IndexOf(args, \"--quiet\") < 0) Console.Write(new string((char)120, 70000)); return 0; } }' -OutputType ConsoleApplication -OutputAssembly $env:FBFC_TEST_HELPER"])
+                .env("FBFC_TEST_HELPER", &executable);
+            scanner_process::output_with_cancel(
+                &mut compiler,
+                Duration::from_secs(30),
+                &std::sync::atomic::AtomicBool::new(false),
+            )
+            .unwrap();
+        }
+        let cancelled = std::sync::atomic::AtomicBool::new(false);
+        assert_eq!(
+            scanner_process::output_with_cancel(
+                &mut Command::new(&executable),
+                Duration::from_secs(10),
+                &cancelled,
+            ),
+            Err("scanner_scan_failed")
+        );
+        let mut configured = freshclam_command(&root, &root.join("freshclam.conf")).unwrap();
+        assert_eq!(
+            scanner_process::output_with_cancel(
+                &mut configured,
+                Duration::from_secs(10),
+                &cancelled,
+            ),
+            Ok(String::new())
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
 }
