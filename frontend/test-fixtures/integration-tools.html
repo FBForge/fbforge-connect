@@ -100,6 +100,40 @@
               );
             return structuredClone(fixture.workspace);
           }
+          if (command === 'list_profiles')
+            return [1, 2].map((n) => ({
+              profileId: id(70 + n),
+              name: n === 1 ? 'Fiktiver Sender' : 'Fiktiver Empfänger',
+              clientId: 'synthetic-' + n,
+              apiVersion: new URLSearchParams(location.search).get('api') || 'v2',
+              environment: 'TEST',
+              role: 'online-service',
+              keyCount: 0,
+              available: true,
+            }));
+          if (command === 'test_library' && args.request.action.startsWith('run_')) {
+            const { action, id: runId, document } = args.request;
+            const runs = JSON.parse(localStorage.getItem('fixture-test-runs') || '{}');
+            if (action === 'run_save') {
+              runs[runId] = document;
+              localStorage.setItem('fixture-test-runs', JSON.stringify(runs));
+              return null;
+            }
+            if (action === 'run_list')
+              return Object.entries(runs).map(([id, value]) => ({
+                id,
+                name: value.flow.name,
+                environment: value.run.environment,
+                passed: value.run.results.length,
+                total: value.flow.steps.length,
+              }));
+            if (action === 'run_read') return runs[runId];
+            if (action === 'run_delete') {
+              delete runs[runId];
+              localStorage.setItem('fixture-test-runs', JSON.stringify(runs));
+              return null;
+            }
+          }
           if (command === 'test_library' && args.request.action.startsWith('flow_')) {
             const { action, id: flowId, flow } = args.request;
             if (action === 'flow_save') {
@@ -293,7 +327,7 @@
             },
           };
         },
-        template: `<main class="tool-section"><h1>Integrationstests 0.3</h1><nav class="client-actions"><button @click="mode='tools'">Werkzeuge</button><button @click="mode='scanner'">Virenscan</button><button @click="mode='templates'">Vorlagen</button><button @click="mode='ages'">Eingang</button><button @click="mode='certificates'">Zertifikate</button><button @click="mode='send'">Versand</button><button @click="changeSession">Anderes Profil</button></nav><TestTools v-show="mode==='tools'" :session="session" :busy="busy" @busy="busy=$event" @send="fixture.emitted=$event"/><MalwareScannerSettings v-if="scannerOpened" v-show="mode==='scanner'" :session="session" :busy="busy" @busy="busy=$event"/><DestinationTemplates v-if="mode==='templates'" :session="session" :changes="{name:'Vorlage'}" @apply="fixture.applied=$event"/><InboxAges v-if="mode==='ages'" :session="session" :items="items" @rows="rows=$event" @busy="busy=$event"/><p v-if="mode==='ages'" data-testid="age-result">{{rows.map(row=>row.submissionId+':'+row.collection?.ageDays).join(' | ')}}</p><CertificateResults v-if="mode==='certificates'" :keys="expiry"/><SendReconciliation v-if="mode==='send'" :session="session" :outcome="outcome" :busy="busy" @busy="busy=$event"/></main>`,
+        template: `<main class="tool-section"><h1>Integrationstests 0.3</h1><nav class="client-actions"><button @click="mode='tools'">Werkzeuge</button><button @click="mode='scanner'">Virenscan</button><button @click="mode='templates'">Vorlagen</button><button @click="mode='ages'">Eingang</button><button @click="mode='certificates'">Zertifikate</button><button @click="mode='send'">Versand</button><button @click="changeSession">Anderes Profil</button></nav><TestTools v-show="mode==='tools'" :session="session" :busy="busy" @busy="busy=$event" @send="fixture.emitted=$event" @context="fixture.context=$event"/><MalwareScannerSettings v-if="scannerOpened" v-show="mode==='scanner'" :session="session" :busy="busy" @busy="busy=$event"/><DestinationTemplates v-if="mode==='templates'" :session="session" :changes="{name:'Vorlage'}" @apply="fixture.applied=$event"/><InboxAges v-if="mode==='ages'" :session="session" :items="items" @rows="rows=$event" @busy="busy=$event"/><p v-if="mode==='ages'" data-testid="age-result">{{rows.map(row=>row.submissionId+':'+row.collection?.ageDays).join(' | ')}}</p><CertificateResults v-if="mode==='certificates'" :keys="expiry"/><SendReconciliation v-if="mode==='send'" :session="session" :outcome="outcome" :busy="busy" @busy="busy=$event"/></main>`,
       }).mount('#app');
     </script>
   </body>

@@ -52,6 +52,9 @@ def main():
         scanner = module_from_spec(spec)
         spec.loader.exec_module(scanner)
         files.update(scanner.download_distribution(run_id, commit))
+        offline_archive, _, offline_manifest = download_candidate(run_id, commit, version=version, offline=True)
+        require(offline_manifest['sha256'] != checksum, 'offline_installer_matches_online')
+        files[f'FBForge-Connect_{version}_windows-x64-offline.zip'] = offline_archive
     with tempfile.TemporaryDirectory(prefix="fbforge-candidate-") as temporary:
         for name, content in files.items():
             # Recheck before every write; reject a published or retargeted draft.

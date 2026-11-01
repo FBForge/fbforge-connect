@@ -161,6 +161,20 @@ Setup mit/ohne Komponente, Upgrade-Auswahl, Nachinstallation, Signaturimport/-up
 und Prozessende prüfen. EICAR nur lokal oder in einer ausdrücklich eigenen
 TEST-Konstellation verwenden. Der kontrollierte Live-ICAP-Test versendet kein EICAR.
 
+Die Windows-Validierung vor dem Signieren mit `offline: true` starten. Das
+Signiertor verlangt beide erfolgreich geprüften Installer-Artefakte.
+
+Der Signierlauf erzeugt außerdem einen vollständigen Offline-WebView2-Installer.
+Er wird getrennt installiert und geprüft. `windows-alpha-signed-offline-setup`
+enthält den geprüften Offline-Kandidaten. Der Entwurf erhält ihn als
+`FBForge-Connect_<Version>_windows-x64-offline.zip`. Die automatische Aktualisierung
+verwendet weiterhin das normale Setup. Kein unsigniertes Offline-Artefakt veröffentlichen.
+
+Die nativen Updater-Transporttests verwenden eine ausschließlich lokale Test-CA,
+eine fiktive signierte Datei und dieselbe Produktionsprüfung. Sie prüfen echten
+HTTPS-Download, Versionsbindung und Abbruch vor den Antwort-Headern. Die Datei ist
+nicht ausführbar. Das ersetzt nicht die Installation des endgültigen signierten Pakets.
+
 ## Anleitung, Website und Aufräumen
 
 Exporte nach [CONTRIBUTING.md](CONTRIBUTING.md#anleitung-pflegen) erzeugen. Die

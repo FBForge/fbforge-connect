@@ -2,23 +2,50 @@
 import { ref, shallowRef, computed, watch, nextTick } from 'vue';
 import FileDropInput from '../FileDropInput.vue';
 import SavedTestFlows from './SavedTestFlows.vue';
+import SavedRunControls from './SavedRunControls.vue';
+import TestDifferences from './TestDifferences.vue';
+import FlowRestartDialog from './FlowRestartDialog.vue';
+import TestFlowContext from './TestFlowContext.vue';
+import { useSavedTestRuns } from './useSavedTestRuns.js';
+import { useFlowVerification } from './useFlowVerification.js';
 import { invoke } from '../native.js';
 import { useEnvironment } from '../environments.js';
 const environment = useEnvironment();
 import { downloadLocal } from '../local-download.js';
 import { parseTestPack, TEST_PACK_BYTES } from '../test-packs.js';
 import { listTestLibrary, readTestLibrary } from '../test-library.js';
-import { listCases, caseParts, readCaseFile } from '../cases.js';
+import { listCases } from '../cases.js';
 import {
   flowSteps,
   flowStepHints,
   flowFromPack,
   validateTestFlow,
   eligibleFlowRecord,
-  compareTestContent,
 } from './test-flows.js';
 const props = defineProps({ session: Object, busy: Boolean });
-const emit = defineEmits(['send', 'busy']);
+const emit = defineEmits(['send', 'busy', 'context']);
+const persistence = useSavedTestRuns();
+const context = ref({
+  senderProfileId: '',
+  receiverProfileId: '',
+  apiVersion: props.session?.apiVersion || 'v3',
+  sourceDestination: '',
+  receiverDestination: '',
+});
+const differences = ref([]);
+async function restoreRun() {
+  return act(async () => {
+    const document = await persistence.read();
+    if (document.run.environment !== environment.value) throw new Error();
+    flow.value = document.flow;
+    context.value = document.context;
+    run.value = document.run;
+    records.value = [];
+    recordId.value = '';
+    notice.value =
+      'Durchlauf wiederhergestellt. Bisherige Ergebnisse sind historische Prüfungen. Laden und prüfen Sie die Nachricht für den nächsten Schritt erneut. Es wird nichts automatisch gesendet.';
+  });
+}
 const flow = shallowRef(null),
   run = ref(null),
   entries = ref([]),
@@ -28,6 +55,14 @@ const flow = shallowRef(null),
   pending = ref(false),
   error = ref(''),
   notice = ref('');
+watch(
+  [() => run.value, context],
+  () => {
+    void persistence.save(flow.value, run.value, context.value);
+  },
+  { deep: true },
+);
+
 const replacementFlow = shallowRef(null);
 const restartDialog = ref(null),
   restartButton = ref(null),
@@ -76,6 +111,7 @@ async function act(operation) {
   const stamp = generation;
   pending.value = true;
   error.value = '';
+  differences.value = [];
   notice.value = '';
   emit('busy', true);
   try {
@@ -170,92 +206,25 @@ function loadRecords() {
   });
 }
 function openDraft() {
-  if (testCase.value && !props.busy && !pending.value) emit('send', structuredClone(testCase.value));
+  if (testCase.value && !props.busy && !pending.value)
+    emit('send', {
+      ...structuredClone(testCase.value),
+      receiverDestination: context.value.receiverDestination,
+    });
 }
-async function verify() {
-  const selected = candidates.value.find((item) => item.recordId === recordId.value),
-    activeStep = step.value,
-    expected = testCase.value,
-    activeRun = run.value;
-  if (!selected || !activeStep || !activeRun) return;
-  return act(async (current) => {
-    const session = { ...props.session };
-    if (session.environment !== activeRun.environment) throw new Error();
-    const parts = await caseParts(invoke, session, selected.recordId);
-    const data = parts.find((part) => part.kind === 'data');
-    if (!data || data.totalBytes > 512 * 1024) throw new Error();
-    let bytes;
-    try {
-      bytes = await readCaseFile(invoke, session, selected.recordId, data);
-      const reply = ['reply', 'check_reply'].includes(activeStep.type),
-        message = reply ? expected.reply : expected.request;
-      const matches =
-        message &&
-        data.mimeType === message.mimeType &&
-        compareTestContent(
-          new TextDecoder('utf-8', { fatal: true }).decode(bytes),
-          message.data,
-          message.mimeType,
-        );
-      if (!current() || run.value !== activeRun) return;
-      if (!matches) {
-        error.value = 'Die Fachdaten entsprechen nicht dem erwarteten Testfall. Der Schritt bleibt offen.';
-        return;
-      }
-      if (parts.filter((part) => part.kind === 'attachment').length !== message.attachments.length) {
-        error.value = 'Die Anzahl der Anlagen stimmt nicht mit dem Testfall überein.';
-        return;
-      }
-      if (
-        activeStep.type === 'receipt' &&
-        selected.status !== (expected.receipt === 'accept' ? 'accepted' : 'rejected')
-      ) {
-        error.value = 'Der Empfang wurde nicht wie im Testfall erwartet bestätigt.';
-        return;
-      }
-      // Compare attachment bytes too, including names and types; no arbitrary equality checkbox.
-      for (const expectedAttachment of message.attachments) {
-        const part = parts.find(
-          (p) =>
-            p.kind === 'attachment' &&
-            p.fileName === expectedAttachment.fileName &&
-            p.mimeType === expectedAttachment.mimeType,
-        );
-        if (!part) throw new Error();
-        let actual;
-        try {
-          actual = await readCaseFile(invoke, session, selected.recordId, part);
-          const wanted = atob(expectedAttachment.base64);
-          if (actual.length !== wanted.length || actual.some((b, i) => b !== wanted.charCodeAt(i)))
-            throw new Error();
-        } finally {
-          actual?.fill(0);
-        }
-      }
-      if (!current() || run.value !== activeRun) return;
-      activeRun.bindings[activeStep.caseId] = {
-        caseId: selected.caseId,
-        submissionId: selected.submissionId || activeRun.bindings[activeStep.caseId]?.submissionId,
-        ...(selected.replyId ? { replyId: selected.replyId } : {}),
-      };
-      activeRun.results.push({
-        step: activeStep.type,
-        testCaseId: activeStep.caseId,
-        recordId: selected.recordId,
-        caseId: selected.caseId,
-        submissionId: selected.submissionId,
-        replyId: selected.replyId,
-        checkedAt: new Date().toISOString(),
-        status: 'passed',
-      });
-      records.value = [];
-      recordId.value = '';
-      notice.value = 'Schritt anhand der lokalen Nachricht und erwarteter Inhalte erfolgreich geprüft.';
-    } finally {
-      bytes?.fill(0);
-    }
-  });
-}
+const verify = useFlowVerification({
+  props,
+  candidates,
+  recordId,
+  step,
+  testCase,
+  run,
+  records,
+  differences,
+  error,
+  notice,
+  act,
+});
 </script>
 <template>
   <section class="tool-section" aria-labelledby="test-flows-title">
@@ -284,10 +253,6 @@ async function verify() {
         </p>
         <section v-if="step">
           <h3 ref="stepHeading" tabindex="-1">{{ flowSteps[step.type] }}: {{ testCase.name }}</h3>
-          <p>
-            Sie können passende Profile in derselben Umgebung verbinden. Angeboten werden nur Nachrichten
-            dieses Durchlaufs mit übereinstimmenden Kennungen.
-          </p>
           <details v-if="expectedMessage">
             <summary>Erwartete Fachdaten und Anlagen</summary>
             <pre>{{ expectedMessage.data }}</pre>
@@ -298,6 +263,23 @@ async function verify() {
             </ul>
           </details>
           <div class="client-actions">
+            <button
+              v-if="context.senderProfileId || context.receiverProfileId"
+              class="button secondary"
+              :disabled="busy || pending"
+              @click="
+                emit('context', {
+                  ...context,
+                  side: ['send', 'check_reply'].includes(step.type) ? 'sender' : 'receiver',
+                  step: step.type,
+                })
+              "
+            >
+              {{
+                ['send', 'check_reply'].includes(step.type) ? 'Zum Sender wechseln' : 'Zum Empfänger wechseln'
+              }}
+            </button>
+
             <button
               v-if="step.type === 'send'"
               class="button secondary"
@@ -379,6 +361,23 @@ async function verify() {
       <summary>
         {{ run ? 'Ablauf verwalten oder anderen Ablauf öffnen' : 'Ablauf öffnen und speichern' }}
       </summary>
+      <SavedRunControls
+        :persistence="persistence"
+        :environment="environment"
+        :busy="busy"
+        :pending="pending"
+        @restore="restoreRun"
+        @select="persistence.selected.value = $event"
+        @remove="act(() => persistence.remove())"
+      />
+      <TestFlowContext
+        v-if="flow"
+        v-model:context="context"
+        :environment="environment"
+        :disabled="busy || pending"
+        :side="''"
+        @open="emit('context', { ...$event, step: step?.type })"
+      />
       <SavedTestFlows :flow="flow" :busy="busy || pending" @open="show" @busy="emit('busy', $event)" />
       <FileDropInput
         id="test-flow-file"
@@ -421,41 +420,10 @@ async function verify() {
         </button>
       </div>
     </details>
-    <Teleport to="body">
-      <dialog
-        ref="restartDialog"
-        class="tool-dialog flow-restart-dialog"
-        aria-labelledby="flow-restart-title"
-        @cancel.prevent="closeRestart()"
-      >
-        <h2 id="flow-restart-title">
-          {{ replacementFlow ? 'Anderen Ablauf öffnen?' : 'Durchlauf neu starten?' }}
-        </h2>
-        <p>
-          Bisherige Prüfergebnisse werden zurückgesetzt. Exportieren Sie das Durchlaufergebnis vorher, wenn
-          Sie es behalten möchten.
-        </p>
-        <div class="client-actions">
-          <button class="button secondary" type="button" autofocus @click="closeRestart()">Abbrechen</button>
-          <button
-            class="button secondary"
-            type="button"
-            @click="
-              downloadLocal(JSON.stringify({ ...run, bindings: undefined }, null, 2), 'testergebnis.json')
-            "
-          >
-            Durchlaufergebnis exportieren
-          </button>
-          <button class="button" type="button" @click="closeRestart(true)">
-            {{
-              replacementFlow
-                ? 'Ergebnisse zurücksetzen und Ablauf öffnen'
-                : 'Ergebnisse zurücksetzen und neu starten'
-            }}
-          </button>
-        </div>
-      </dialog>
-    </Teleport>
+    <p v-if="persistence.status.value" class="small-note" role="status">{{ persistence.status.value }}</p>
+    <p v-if="persistence.error.value" role="alert">{{ persistence.error.value }}</p>
+    <TestDifferences :differences="differences" />
+    <FlowRestartDialog ref="restartDialog" :replacement="replacementFlow" :run="run" @close="closeRestart" />
     <p v-if="notice" role="status">{{ notice }}</p>
     <p v-if="error" role="alert">{{ error }}</p>
   </section>

@@ -213,7 +213,7 @@ export async function queryEventLog(page, fixture, message, reply = false) {
     `Real desktop UI: authenticated signed ${reply ? 'reply' : 'submission'} and case event-log queries passed`,
   );
 }
-export async function replyAndAccept(desktop, fixture, message, saveBeforeAccept = false) {
+export async function sendReplyAfterReceive(desktop, fixture, message) {
   const { page } = desktop;
   await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
   // Guided reply opening already loads the offered channel and then reveals this field.
@@ -235,6 +235,9 @@ export async function replyAndAccept(desktop, fixture, message, saveBeforeAccept
   await page.getByRole('button', { name: 'Antwort jetzt senden', exact: true }).click();
   await page.getByRole('button', { name: 'Reply ID kopieren', exact: true }).waitFor();
   message.replyId = await copyValue(page, 'Reply ID');
+}
+export async function acceptReceived(desktop, fixture, message, saveBeforeAccept = false) {
+  const { page } = desktop;
   await page.getByRole('button', { name: 'Annehmen', exact: true }).click();
   const dialog = page.locator('dialog[aria-labelledby="receipt-confirm-title"]');
   const key = page.locator('#receipt-key');
@@ -258,9 +261,14 @@ export async function replyAndAccept(desktop, fixture, message, saveBeforeAccept
   }
   await page.getByText('Annahme von FIT-Connect bestätigt', { exact: true }).waitFor();
   if (folder) await verifyDownload(folder, message);
-  console.log('Real desktop UI: actual reply send and explicit submission acceptance passed');
-  await queryEventLog(page, fixture, message);
 }
+export async function replyAndAccept(desktop, fixture, message, saveBeforeAccept = false) {
+  await acceptReceived(desktop, fixture, message, saveBeforeAccept);
+  await sendReplyAfterReceive(desktop, fixture, message);
+  console.log('Real desktop UI: accepted the submission before composing and sending the case reply');
+  await queryEventLog(desktop.page, fixture, message);
+}
+
 export async function otherAreas(page) {
   for (const name of [
     'Start',

@@ -16,6 +16,10 @@ on:
         description: Install optional local ClamAV and scan the real desktop TEST exchange
         type: boolean
         default: true
+      online_scanner:
+        description: Exercise clean online scanner setup, cancel and retry before TEST exchange
+        type: boolean
+        default: false
       review_only:
         description: Focus installed UI on new 0.3 functions, full native TEST exchange still runs
         type: boolean
@@ -88,5 +92,6 @@ jobs:
           SUBSCRIBERID: ${{ secrets.SUBSCRIBERID }}
           SUBSCRIBERSECRET: ${{ secrets.SUBSCRIBERSECRET }}
           FBFORGE_UI_SCANNER: ${{ inputs.local_scanner }}
+          FBFORGE_UI_SCANNER_ONLINE: ${{ inputs.online_scanner }}
         run: node scripts/live-exchange.mjs
       # No artifact upload: protected checkpoint files stay in RUNNER_TEMP and are removed by the harness.

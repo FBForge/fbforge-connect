@@ -110,7 +110,7 @@ def run(args,**kwargs):
 r.dispatch(env,run)
 args,kwargs=calls[0]
 assert args[4]=='repos/FBForge/fbforge-connect/actions/workflows/windows.yml/dispatches'
-assert json.loads(kwargs['input'])=={'ref':'main','inputs':{'expected_commit':commit}}
+assert json.loads(kwargs['input'])=={'ref':'main','inputs':{'expected_commit':commit,'offline':True}}
 assert 'sign-windows' not in str(args) and 'attach-candidate' not in str(args)
 manual=dict(env,GITHUB_EVENT_NAME='workflow_dispatch',RELEASE_EXPECTED_COMMIT=commit)
 r.verify(manual); r.verify(dict(manual,RELEASE_EXPECTED_COMMIT=''))

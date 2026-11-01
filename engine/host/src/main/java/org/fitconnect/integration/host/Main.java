@@ -5,6 +5,7 @@ import java.nio.file.Path;
 
 public final class Main {
     public static void main(String[] args) {
+        org.fitconnect.integration.contract.NetworkProxy.initialize();
         if (args.length != 0) System.exit(2);
         org.fitconnect.integration.contract.IntegrationEnvironment.current();
         // SDK output must never corrupt the protocol stream or disclose diagnostics to the UI.

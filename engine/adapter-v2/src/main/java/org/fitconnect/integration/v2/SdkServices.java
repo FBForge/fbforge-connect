@@ -63,6 +63,7 @@ final class SdkServices {
                         false);
         config =
                 ApplicationConfig.builder()
+                        .httpConfig(SdkNetwork.http())
                         .activeEnvironment(selected.getEnvironmentName())
                         .environments(Map.of(selected.getEnvironmentName(), environment))
                         .attachmentChunkingConfig(

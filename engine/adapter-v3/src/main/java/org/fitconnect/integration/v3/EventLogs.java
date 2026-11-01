@@ -37,8 +37,7 @@ final class EventLogs {
             if (caseId == null || source == null || workspace == null)
                 throw new SessionException("invalid_input");
             var env = SdkEnvironment.current();
-            var settings =
-                    dev.fitko.fitconnect.sdk.config.settings.SdkSettings.withDefaultSettings();
+            var settings = SdkNetwork.settings().build();
             var headers = new dev.fitko.fitconnect.rest.client.services.auth.RequestHeaders(auth);
             var base = IntegrationEnvironment.current().submissionApi();
             var limiter = new dev.fitko.fitconnect.core.common.concurrent.ConcurrencyLimiter(1);
@@ -133,8 +132,7 @@ final class EventLogs {
                     || source == null
                     || workspace == null) throw new SessionException("invalid_input");
             var env = SdkEnvironment.current();
-            var settings =
-                    dev.fitko.fitconnect.sdk.config.settings.SdkSettings.withDefaultSettings();
+            var settings = SdkNetwork.settings().build();
             var headers = new dev.fitko.fitconnect.rest.client.services.auth.RequestHeaders(auth);
             var base = IntegrationEnvironment.current().submissionApi();
             var limiter = new dev.fitko.fitconnect.core.common.concurrent.ConcurrencyLimiter(1);

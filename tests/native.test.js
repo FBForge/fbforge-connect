@@ -80,6 +80,7 @@ test('scanner status and cancellation stay responsive during installation withou
     receive = invoke('verify_submission'),
     cleanup = invoke('discard_received');
   await Promise.resolve();
+  assert.equal(await invoke('lookup_service_names'), 'lookup_service_names');
   assert.equal(await invoke('local_scanner_status'), 'local_scanner_status');
   assert.equal(await invoke('cancel_local_scanner_operation'), 'cancel_local_scanner_operation');
   assert.ok(!calls.includes('discard_received'));

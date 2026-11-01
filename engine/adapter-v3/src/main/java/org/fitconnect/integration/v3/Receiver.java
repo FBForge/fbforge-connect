@@ -5,7 +5,6 @@ import dev.fitko.fitconnect.core.common.concurrent.ConcurrencyLimiter;
 import dev.fitko.fitconnect.rest.client.services.auth.*;
 import dev.fitko.fitconnect.rest.client.services.submission.impl.*;
 import dev.fitko.fitconnect.sdk.config.credentials.*;
-import dev.fitko.fitconnect.sdk.config.settings.SdkSettings;
 import dev.fitko.fitconnect.sdk.schema.SchemaResolver;
 import dev.fitko.fitconnect.sdk.services.attachment.impl.AttachmentTransferService;
 import dev.fitko.fitconnect.sdk.services.eventlog.EventLogService;
@@ -177,7 +176,7 @@ final class Receiver {
                     observedReplyTags) {
         var http = new ReceiverTransport(read, schemas);
         var env = SdkEnvironment.current();
-        var settings = SdkSettings.withDefaultSettings();
+        var settings = SdkNetwork.settings().build();
         var headers = new RequestHeaders(auth);
         var limiter = new ConcurrencyLimiter(1);
         var base = IntegrationEnvironment.current().submissionApi();

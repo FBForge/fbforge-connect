@@ -129,3 +129,13 @@
 :root .workspace-content .switch input {
   border-color: var(--control-line);
 }
+
+/* Related settings share a row when space allows and keep labels above controls. */
+.settings-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0 16px;
+}
+.settings-fields > fieldset {
+  min-width: 0;
+}

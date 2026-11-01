@@ -75,8 +75,7 @@ final class ReplyReceipts {
                                     request.replyId(), ((RejectReply) body).problems());
             var token = checkedToken(request, acknowledgement);
             var env = SdkEnvironment.current();
-            var settings =
-                    dev.fitko.fitconnect.sdk.config.settings.SdkSettings.withDefaultSettings();
+            var settings = SdkNetwork.settings().build();
             var validation =
                     new dev.fitko.fitconnect.sdk.services.validation.ValidationService(
                             settings.validationConfig(),

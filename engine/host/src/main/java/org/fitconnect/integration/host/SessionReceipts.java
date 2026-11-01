@@ -309,8 +309,9 @@ final class SessionReceipts {
                     receipt.status(),
                     receipt.action(),
                     false);
-            if (receipt.status().equals("confirmed"))
-                this.state.receiveFlow.invalidateReceived(entry);
+            // Acceptance removes the remote submission, not the case or its verified reply channel.
+            // Keep the local snapshot until the user leaves or explicitly discards it.
+            if (receipt.status().equals("confirmed")) this.state.pendingReceipts.remove(id);
         } else if (command.equals("cancel_receipt")) entry.receipts().cancel(attemptId);
         else if (!command.equals("receipt_state")) throw new SessionException("invalid_input");
         var state = entry.receipts().state();

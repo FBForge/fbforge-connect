@@ -73,7 +73,9 @@ test('guided start routes to the test task and help without performing an exchan
   expect(
     await page.evaluate(() =>
       window.__startCommands.every((command) =>
-        ['list_profiles', 'application_update_status', 'local_scanner_status'].includes(command),
+        ['list_profiles', 'application_update_status', 'local_scanner_status', 'network_settings'].includes(
+          command,
+        ),
       ),
     ),
   ).toBe(true);

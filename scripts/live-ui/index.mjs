@@ -1,3 +1,4 @@
+import { acceptanceProxy, configureAcceptanceProxy, verifyAcceptanceProxy } from './proxy.mjs';
 // Optional real UI acceptance, always coupled to the isolated live TEST fixture.
 import { createDesktop, check } from './desktop.mjs';
 import {
@@ -18,7 +19,14 @@ import {
   bulkReceive,
   previewPdf,
 } from './readback.mjs';
-import { localTools, ownDestination, keySetup, auditScreen, localScannerReady } from './local-tools.mjs';
+import {
+  localTools,
+  ownDestination,
+  keySetup,
+  auditScreen,
+  localScannerReady,
+  onlineScannerSetup,
+} from './local-tools.mjs';
 import { downloadMessage } from './downloads.mjs';
 import { scannerProblemAcceptance } from './scanner.mjs';
 import { reviewRuntime } from './review-runtime.mjs';
@@ -28,14 +36,19 @@ import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 
 export async function exerciseDesktopUI(fixture) {
   let desktop,
+    proxy,
     stage = 'installation';
   try {
     desktop = await createDesktop(fixture.directory, fixture.receiverProfiles);
     const { page } = desktop;
+    stage = 'proxy_configuration';
+    proxy = await acceptanceProxy();
+    await configureAcceptanceProxy(page, proxy);
     stage = 'sender_login';
     await loginSender(page);
     const senders = { v3: await senderProfileId(page) };
     stage = 'optional_local_scanner';
+    await onlineScannerSetup(desktop, fixture);
     await localScannerReady(page);
     stage = 'sender_api_switch';
     await switchApi(page, 'v2');
@@ -95,6 +108,7 @@ export async function exerciseDesktopUI(fixture) {
     }
     stage = 'review_030';
     await review030(desktop, fixture, senders);
+    verifyAcceptanceProxy(proxy);
     stage = 'workspaces';
     await otherAreas(desktop.page);
     stage = 'scanner_problem_acceptance';
@@ -129,6 +143,10 @@ export async function exerciseDesktopUI(fixture) {
     console.error(`Real desktop UI failed at ${stage}; ${diagnostic}; ${location || 'no source location'}`);
     throw new Error(`live_ui_${stage}_failed`);
   } finally {
-    await desktop?.close();
+    try {
+      await desktop?.close();
+    } finally {
+      await proxy?.close();
+    }
   }
 }

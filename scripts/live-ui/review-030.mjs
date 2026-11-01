@@ -3,7 +3,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { check, until } from './desktop.mjs';
-import { navigate, connectProfile, sendSubmission, openSubmission, replyAndAccept } from './exchange.mjs';
+import {
+  navigate,
+  connectProfile,
+  sendSubmission,
+  openSubmission,
+  acceptReceived,
+  sendReplyAfterReceive,
+} from './exchange.mjs';
 import { receiveReply } from './readback.mjs';
 import { nativeFile } from './downloads.mjs';
 import { reviewProcessAndInbox, reviewShortcuts } from './review-runtime.mjs';
@@ -134,9 +141,12 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   await checkStep(page);
   await checkStep(page);
   await openSubmission(page, fixture, message);
-  await replyAndAccept(desktop, fixture, message);
+  await acceptReceived(desktop, fixture, message);
   await testTools(page, 'Testabläufe');
   await checkStep(page);
+  await navigate(page, 'Empfangen');
+  await sendReplyAfterReceive(desktop, fixture, message);
+  await testTools(page, 'Testabläufe');
   await checkStep(page);
   await connectProfile(page, senders.v3);
   await receiveReply(desktop, fixture, message);
@@ -228,7 +238,7 @@ async function durability(desktop, fixture, senders, pack, message) {
   await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
   const input = await retention(page, true);
   await setRetention(input, false);
-  await desktop.restart();
+  await desktop.restartGracefully();
   page = desktop.page;
   await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
   const restored = await retention(page, false);

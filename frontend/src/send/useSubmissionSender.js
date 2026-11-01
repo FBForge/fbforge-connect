@@ -62,6 +62,7 @@ export function useSubmissionSender(props, emit) {
   watch(
     () => props.testDraft?.requestId,
     () => {
+      if (props.testDraft?.receiverDestination) target.value = props.testDraft.receiverDestination;
       if (props.testDraft)
         pendingTest.value = structuredClone({
           id: props.testDraft.id,

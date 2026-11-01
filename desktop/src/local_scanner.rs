@@ -382,7 +382,7 @@ async fn download_engine(target: &Path, state: &LocalScanner) -> Result<(), &'st
     use std::io::Write;
     let spec = package::component()?;
     let _ = rustls::crypto::ring::default_provider().install_default();
-    let client = reqwest::Client::builder()
+    let client = crate::network_settings::client(reqwest::Client::builder())?
         .connect_timeout(Duration::from_secs(20))
         .timeout(Duration::from_secs(600))
         .redirect(reqwest::redirect::Policy::custom(|attempt| {

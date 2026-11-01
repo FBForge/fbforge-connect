@@ -84,10 +84,12 @@ impl Runtime {
         )
         .map_err(failure)?;
         scanner_process::output_with_cancel(
-            Command::new(engine.join("freshclam.exe"))
-                .current_dir(&engine)
-                .arg("--config-file")
-                .arg(&conf),
+            crate::network_settings::downloader(
+                Command::new(engine.join("freshclam.exe"))
+                    .current_dir(&engine)
+                    .arg("--config-file")
+                    .arg(&conf),
+            )?,
             Duration::from_secs(240),
             &self.cancel,
         )
@@ -165,10 +167,12 @@ impl Runtime {
             )
             .map_err(failure)?;
             scanner_process::output_with_cancel(
-                Command::new(engine.join("freshclam.exe"))
-                    .current_dir(&engine)
-                    .arg("--config-file")
-                    .arg(&conf),
+                crate::network_settings::downloader(
+                    Command::new(engine.join("freshclam.exe"))
+                        .current_dir(&engine)
+                        .arg("--config-file")
+                        .arg(&conf),
+                )?,
                 Duration::from_secs(240),
                 &self.cancel,
             )

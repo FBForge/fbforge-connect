@@ -106,7 +106,7 @@ def read_candidate(archive_bytes, commit, checksum, version, run_id):
     return files, manifest
 
 
-def download_candidate(run_id, commit=None, checksum=None, version=None):
+def download_candidate(run_id, commit=None, checksum=None, version=None, *, offline=False):
     require(bool(re.fullmatch(r"[1-9][0-9]{0,18}", run_id)), "invalid_run")
     base = f"repos/{REPOSITORY}"
     run = api(f"{base}/actions/runs/{run_id}")
@@ -118,7 +118,8 @@ def download_candidate(run_id, commit=None, checksum=None, version=None):
     require(len(checks) == 1 and checks[0].get("conclusion") == "success", "package_verification_missing")
     artifacts = api(f"{base}/actions/runs/{run_id}/artifacts?per_page=100")
     require(artifacts.get("total_count", 0) <= 100, "artifact_limit")
-    candidates = [item for item in artifacts["artifacts"] if item["name"] == "windows-alpha-signed-setup"]
+    artifact_name = "windows-alpha-signed-offline-setup" if offline else "windows-alpha-signed-setup"
+    candidates = [item for item in artifacts["artifacts"] if item["name"] == artifact_name]
     require(len(candidates) == 1 and not candidates[0]["expired"], "candidate_artifact_missing")
     artifact = candidates[0]
     require(artifact["size_in_bytes"] <= LIMIT, "artifact_too_large")

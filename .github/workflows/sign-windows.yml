@@ -89,11 +89,24 @@ jobs:
           path: ${{ env.SIGNED_OUTPUT }}/*
           if-no-files-found: error
           retention-days: 1
+      - name: Sign full offline installer
+        env:
+          VALIDATION_RUN: ${{ inputs.validation_run }}
+          SIGNING_THUMBPRINT: ${{ vars.WINDOWS_SIGNING_THUMBPRINT }}
+          SIGNING_TIMESTAMP_URL: ${{ vars.WINDOWS_TIMESTAMP_URL }}
+        run: ./scripts/build-signed-windows.ps1 -Thumbprint $env:SIGNING_THUMBPRINT -TimestampUrl $env:SIGNING_TIMESTAMP_URL -Offline
+      - name: Retain offline candidate for independent installation checks
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-signed-offline-candidate
+          path: ${{ env.SIGNED_OFFLINE_OUTPUT }}/*
+          if-no-files-found: error
+          retention-days: 1
 
   verify-package:
     needs: sign
     runs-on: windows-2025
-    timeout-minutes: 20
+    timeout-minutes: 40
     defaults:
       run:
         shell: powershell
@@ -112,7 +125,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'signed_candidate_download_failed' }
           gh run download $env:VALIDATION_RUN --repo $env:GITHUB_REPOSITORY --name windows-alpha-unsigned-setup --dir $previous
           if ($LASTEXITCODE -ne 0) { throw 'signing_baseline_download_failed' }
+          $offline = Join-Path $env:RUNNER_TEMP 'signed-offline-candidate'
+          gh run download $env:GITHUB_RUN_ID --repo $env:GITHUB_REPOSITORY --name windows-signed-offline-candidate --dir $offline
+          if ($LASTEXITCODE -ne 0) { throw 'signed_offline_candidate_download_failed' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value ('SIGNED_OFFLINE_CANDIDATE=' + $offline)
           Add-Content -LiteralPath $env:GITHUB_ENV -Value ('SIGNED_CANDIDATE=' + $candidate)
+          $offlinePrevious = Join-Path $env:RUNNER_TEMP 'unsigned-offline-baseline'
+          gh run download $env:VALIDATION_RUN --repo $env:GITHUB_REPOSITORY --name windows-alpha-unsigned-offline-setup --dir $offlinePrevious
+          if ($LASTEXITCODE -ne 0) { throw 'signing_offline_baseline_download_failed' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value ('UNSIGNED_OFFLINE_BASELINE=' + $offlinePrevious)
           Add-Content -LiteralPath $env:GITHUB_ENV -Value ('UNSIGNED_BASELINE=' + $previous)
       - name: Build isolated profile checkpoint bridge
         run: |
@@ -136,5 +157,23 @@ jobs:
             ${{ env.SIGNED_CANDIDATE }}/signature-info.json
             ${{ env.SIGNED_CANDIDATE }}/*.exe.sig
             ${{ env.SIGNED_CANDIDATE }}/latest.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Check signed offline installation and profile preservation
+        env:
+          SIGNING_THUMBPRINT: ${{ vars.WINDOWS_SIGNING_THUMBPRINT }}
+          VALIDATION_RUN: ${{ inputs.validation_run }}
+        run: ./scripts/ci/check-signed-package.ps1 -Directory $env:SIGNED_OFFLINE_CANDIDATE -Baseline $env:UNSIGNED_OFFLINE_BASELINE -Thumbprint $env:SIGNING_THUMBPRINT
+      - name: Retain independently checked signed offline setup
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-alpha-signed-offline-setup
+          path: |
+            ${{ env.SIGNED_OFFLINE_CANDIDATE }}/*-setup.exe
+            ${{ env.SIGNED_OFFLINE_CANDIDATE }}/build-info.json
+            ${{ env.SIGNED_OFFLINE_CANDIDATE }}/SHA256SUMS.txt
+            ${{ env.SIGNED_OFFLINE_CANDIDATE }}/signature-info.json
+            ${{ env.SIGNED_OFFLINE_CANDIDATE }}/*.exe.sig
+            ${{ env.SIGNED_OFFLINE_CANDIDATE }}/latest.json
           if-no-files-found: error
           retention-days: 30

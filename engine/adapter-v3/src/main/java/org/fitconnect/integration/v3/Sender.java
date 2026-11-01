@@ -8,7 +8,6 @@ import dev.fitko.fitconnect.rest.client.services.submission.impl.*;
 import dev.fitko.fitconnect.rest.model.submission.SentSubmission;
 import dev.fitko.fitconnect.sdk.api.*;
 import dev.fitko.fitconnect.sdk.config.credentials.ActingDestination;
-import dev.fitko.fitconnect.sdk.config.settings.SdkSettings;
 import dev.fitko.fitconnect.sdk.schema.SchemaResolver;
 import dev.fitko.fitconnect.sdk.services.attachment.impl.AttachmentTransferService;
 import dev.fitko.fitconnect.sdk.services.keys.SignatureKeyProvider;
@@ -47,7 +46,7 @@ final class Sender {
     private OutgoingTransferService transfers(UUID destination) {
         var env = SdkEnvironment.current();
         var settings =
-                SdkSettings.builder()
+                SdkNetwork.settings()
                         .concurrentAttachmentStreams(1)
                         .attachmentChunkingConfig(
                                 dev.fitko.fitconnect.sdk.config.settings.AttachmentChunkingConfig

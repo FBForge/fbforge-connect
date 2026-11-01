@@ -11,8 +11,10 @@ Dieser Branch enthält **0.3.0, noch nicht veröffentlicht**.
 - JSON/XML und Anlagen ansehen, Nachrichten gesammelt herunterladen und annehmen.
 - Profile und Schlüssel geschützt speichern. Vorgänge gespeicherter Profile bleiben standardmäßig dauerhaft erhalten.
 - Event Logs prüfen, v3-Destinations verwalten und BPMN-Nachrichten auswählen.
-- Testpakete und Abläufe wiederverwenden, eigene JSON-Antwortschemas erstellen und Schemata vergleichen.
+- Testpakete und Abläufe mit Profilzuordnung und gespeichertem Fortschritt wiederverwenden.
+- Eigene JSON-Antwortschemas erstellen, Schemata und erwartete Inhalte vergleichen.
 - Optional lokal mit ClamAV oder einer eigenen ClamAV-/ICAP-Gegenstelle scannen.
+- Bei Bedarf einen HTTP-Proxy unter „Info → Netzwerk und Proxy“ einrichten.
 - Neue stabile Versionen finden und signierte Updates nach Bestätigung installieren.
 
 Für **Windows x64 und FIT-Connect TEST, STAGE und PROD**. STAGE und PROD benötigen

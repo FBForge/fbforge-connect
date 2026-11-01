@@ -15,13 +15,38 @@ const MAX_STORE: u64 = 64 * 1024 * 1024;
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum LibraryRequest {
     List {},
-    Read { id: String },
-    Save { id: String, pack: Pack },
-    Delete { id: String },
+    Read {
+        id: String,
+    },
+    Save {
+        id: String,
+        pack: Pack,
+    },
+    Delete {
+        id: String,
+    },
+    RunList {},
+    RunRead {
+        id: String,
+    },
+    RunSave {
+        id: String,
+        document: runs::SavedRun,
+    },
+    RunDelete {
+        id: String,
+    },
     FlowList {},
-    FlowRead { id: String },
-    FlowSave { id: String, flow: flows::Flow },
-    FlowDelete { id: String },
+    FlowRead {
+        id: String,
+    },
+    FlowSave {
+        id: String,
+        flow: flows::Flow,
+    },
+    FlowDelete {
+        id: String,
+    },
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -247,6 +272,10 @@ impl TestLibrary {
     }
     pub fn execute(&self, request: LibraryRequest) -> Result<Value, &'static str> {
         match request {
+            LibraryRequest::RunList {}
+            | LibraryRequest::RunRead { .. }
+            | LibraryRequest::RunSave { .. }
+            | LibraryRequest::RunDelete { .. } => runs::execute(self, request),
             LibraryRequest::FlowList {}
             | LibraryRequest::FlowRead { .. }
             | LibraryRequest::FlowSave { .. }
@@ -282,3 +311,6 @@ mod tests;
 
 #[path = "test_flow_library.rs"]
 mod flows;
+
+#[path = "test_run_library.rs"]
+mod runs;

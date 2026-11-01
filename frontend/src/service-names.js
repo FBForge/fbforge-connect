@@ -1,3 +1,5 @@
+import { isTauri } from '@tauri-apps/api/core';
+import { invoke } from './native.js';
 // Public catalogue lookup. Destination offers remain authoritative for addressing and schemas.
 const source = 'https://fimportal.de/api/v1/leistung-steckbriefe';
 const cache = new Map();
@@ -21,6 +23,15 @@ export async function lookupServiceName(identifier, signal, fetcher = fetch) {
   if (!code) return null;
   const saved = cache.get(code);
   if (saved && Date.now() < saved.expires) return saved.name;
+  if (fetcher === fetch && isTauri()) {
+    if (signal?.aborted) throw new DOMException('Abgebrochen', 'AbortError');
+    const document = await invoke('lookup_service_names', { code });
+    if (signal?.aborted) throw new DOMException('Abgebrochen', 'AbortError');
+    const name = exactServiceName(document, code);
+    if (cache.size >= 128) cache.delete(cache.keys().next().value);
+    cache.set(code, { name, expires: Date.now() + 15 * 60 * 1000 });
+    return name;
+  }
   const url = `${source}?fts_query=${code}&order_by=relevance&offset=0&limit=20`;
   const response = await fetcher(url, {
     method: 'GET',

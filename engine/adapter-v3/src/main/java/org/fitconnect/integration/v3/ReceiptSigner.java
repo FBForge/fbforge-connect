@@ -27,7 +27,7 @@ final class ReceiptSigner {
     static SignedReceipt sign(
             RSAKey key, ReceiptRequest request, ReceiptEvidence evidence, Path workspace) {
         try {
-            var settings = SdkSettings.withDefaultSettings();
+            var settings = SdkNetwork.settings().build();
             var env = SdkEnvironment.current();
             var http =
                     new ReceiverTransport(

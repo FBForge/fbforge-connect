@@ -1,4 +1,5 @@
 <script setup>
+import NetworkSettings from './NetworkSettings.vue';
 import { ref } from 'vue';
 import ApplicationUpdates from './ApplicationUpdates.vue';
 defineProps({ visible: Boolean, updateState: Object, busy: Boolean });
@@ -9,6 +10,8 @@ const emit = defineEmits([
   'cancel-update',
   'automatic-updates',
   'manual-update',
+  'network-changed',
+  'busy',
 ]);
 import AppIcon from '../AppIcon.vue';
 import appLogo from '../assets/test-client.png';
@@ -45,6 +48,7 @@ async function showDependencyLicenses() {
         <p>{{ productPurpose }}.</p>
       </div>
     </section>
+    <NetworkSettings :busy="busy" @busy="emit('busy', $event)" @changed="emit('network-changed')" />
     <ApplicationUpdates
       v-if="updateState"
       :state="updateState"

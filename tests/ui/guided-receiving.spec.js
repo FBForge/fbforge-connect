@@ -108,6 +108,7 @@ test('accept prepares the current verified message once, cancel sends nothing an
   await expect(page.getByText('Annahme von FIT-Connect bestätigt', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(1);
   await expect(page.getByRole('button', { name: 'Annehmen', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Antwort verfassen', exact: true })).toBeVisible();
   const back = page.getByRole('button', { name: 'Zurück zum Eingang', exact: true });
   await expect(back).toBeInViewport({ ratio: 1 });
   await returnToInbox(page);
@@ -327,3 +328,20 @@ for (const [api, failure] of [
     });
   });
 }
+
+for (const api of ['v2', 'v3'])
+  test(`case replies remain usable after accepting the original ${api}`, async ({ page }) => {
+    await open(page, 1, null, api);
+    await page.getByRole('button', { name: 'Annehmen', exact: true }).click();
+    await page
+      .getByRole('dialog', { name: 'Einreichung annehmen?', exact: true })
+      .getByRole('button', { name: 'Jetzt annehmen', exact: true })
+      .click();
+    await expect(page.getByText('Annahme von FIT-Connect bestätigt', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
+    await expect(page.locator('[aria-labelledby="reply-send-title"]')).toBeVisible();
+    expect(await page.evaluate(() => window.__guidedFixture.commands.includes('discard_received'))).toBe(
+      false,
+    );
+    expect(await page.evaluate(() => window.__guidedFixture.writes)).toBe(1);
+  });

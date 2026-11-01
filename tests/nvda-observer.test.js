@@ -46,7 +46,9 @@ print('bounded expanded NVDA capture passed')
 `;
   const result = execFileSync(process.platform === 'win32' ? 'python' : 'python3', ['-c', program, source], {
     encoding: 'utf8',
-    timeout: 10000,
+    // This checks retained records, not interpreter startup speed. Windows Defender can
+    // delay a cold Python process. The actual NVDA journey has its own bounded timeout.
+    timeout: process.platform === 'win32' ? 30000 : 10000,
   });
   assert.match(result, /bounded expanded NVDA capture passed/);
 });

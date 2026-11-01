@@ -103,6 +103,27 @@
           if (command === 'case_workspace' && args.operation === 'status')
             return envelope({ persistent: false, storageError: null });
           fixture.calls.push(command);
+          if (command === 'network_settings')
+            return { mode: 'system', host: '', port: 0, username: '', hasPassword: false };
+          if (command === 'test_library' && args.request.action.startsWith('run_')) {
+            const { action, id, document } = args.request;
+            const runs = JSON.parse(localStorage.getItem('fixture-test-runs') || '{}');
+            if (action === 'run_save') {
+              runs[id] = document;
+              localStorage.setItem('fixture-test-runs', JSON.stringify(runs));
+              return null;
+            }
+            if (action === 'run_list')
+              return Object.entries(runs).map(([id, value]) => ({
+                id,
+                name: value.flow.name,
+                environment: value.run.environment,
+                passed: value.run.results.length,
+                total: value.flow.steps.length,
+              }));
+            if (action === 'run_read') return runs[id];
+          }
+
           if (wholeApp) {
             if (command === 'list_profiles') return [];
             if (command === 'profile_status') return { profileId: null, saved: false, error: null };

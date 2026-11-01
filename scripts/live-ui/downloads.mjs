@@ -36,6 +36,7 @@ export async function nativeFolder(
       ...(schemaReview === 'attachment' ? ['-AttachmentReview'] : []),
       ...(schemaReview === 'scanner' ? ['-ScannerReview'] : []),
       ...(schemaReview === 'scanner-update' ? ['-ScannerUpdate'] : []),
+      ...(schemaReview === 'scanner-install' ? ['-ScannerInstall'] : []),
     ],
     { env: cleanEnvironment(), stdio: ['ignore', 'pipe', 'ignore'] },
   );
@@ -191,3 +192,6 @@ export async function nativeFile(
 
 export const nativeSignatureUpdate = (desktop, fixture, operation) =>
   nativeFolder(desktop, fixture, operation, false, 'scanner-update');
+
+export const nativeScannerInstall = (desktop, fixture, operation) =>
+  nativeFolder(desktop, fixture, operation, false, 'scanner-install');

@@ -37,6 +37,13 @@ def validate(run, jobs, environment, commit, branch):
     require(not approvals[0].get("prevent_self_review", False), "signing_owner_cannot_approve_own_run")
 
 
+def validate_artifacts(document):
+    require(document.get('total_count', 0) <= 100, 'signing_artifact_limit')
+    for name in ['windows-alpha-unsigned-setup', 'windows-alpha-unsigned-offline-setup']:
+        matches = [item for item in document.get('artifacts', []) if item.get('name') == name]
+        require(len(matches) == 1 and not matches[0].get('expired', True), 'signing_installer_validation_missing')
+
+
 def api(path):
     result = subprocess.run(["gh", "api", path], capture_output=True, text=True, check=False)
     require(result.returncode == 0, "signing_github_read_failed")
@@ -54,6 +61,7 @@ def main():
     require(jobs.get("total_count", 0) <= 100, "signing_job_limit")
     environment = api(f"repos/{REPOSITORY}/environments/windows-signing")
     validate(run, jobs["jobs"], environment, os.environ.get("GITHUB_SHA", ""), branch)
+    validate_artifacts(api(f"repos/{REPOSITORY}/actions/runs/{run_id}/artifacts?per_page=100"))
     print("Exact Windows validation and signing approval policy verified.")
 
 

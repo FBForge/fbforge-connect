@@ -6,19 +6,19 @@ use std::collections::{HashMap, HashSet};
 pub struct Flow {
     format: String,
     version: u8,
-    name: String,
-    pack: Pack,
-    steps: Vec<Step>,
+    pub(super) name: String,
+    pub(super) pack: Pack,
+    pub(super) steps: Vec<Step>,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct Step {
-    case_id: String,
+pub(super) struct Step {
+    pub(super) case_id: String,
     #[serde(rename = "type")]
-    kind: String,
+    pub(super) kind: String,
 }
 impl Flow {
-    fn validate(&self) -> Result<(), &'static str> {
+    pub(super) fn validate(&self) -> Result<(), &'static str> {
         self.pack.validate()?;
         if self.format != "fbforge-connect-testflow"
             || self.version != 1

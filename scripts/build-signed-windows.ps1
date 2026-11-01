@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{40}$')][string]$Thumbprint,
-    [Parameter(Mandatory)][string]$TimestampUrl
+    [Parameter(Mandatory)][string]$TimestampUrl,
+    [switch]$Offline
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -24,6 +25,7 @@ $output = Join-Path $env:RUNNER_TEMP ('fbforge-signed-' + [Guid]::NewGuid().ToSt
 $binary = Join-Path $output 'fbforge-connect.exe'
 $signer = Join-Path $PSScriptRoot 'sign-windows-file.ps1'
 $config = @{ bundle = @{ windows = @{ certificateThumbprint = $Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = $TimestampUrl; tsp = $true; signCommand = @{ cmd = 'powershell.exe'; args = @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',$signer,'-Thumbprint',$Thumbprint,'-TimestampUrl',$TimestampUrl,'-SignedMainBinaryPath',$binary,'-Path','%1') } } } }
+if ($Offline) { $config.bundle.windows.webviewInstallMode = @{ type = 'offlineInstaller'; silent = $true } }
 [IO.File]::WriteAllText($temporary, ($config | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 Push-Location $root
 try {
@@ -56,7 +58,8 @@ try {
     Copy-Item -LiteralPath ($setup[0].FullName + '.sig') -Destination $output
     & python.exe (Join-Path $PSScriptRoot 'update-release.py') $output --public-key $publicKey
     if ($LASTEXITCODE -ne 0) { throw 'update_manifest_failed' }
-    Add-Content -LiteralPath $env:GITHUB_ENV -Value ('SIGNED_OUTPUT=' + $output)
+    $outputVariable = if ($Offline) { 'SIGNED_OFFLINE_OUTPUT=' } else { 'SIGNED_OUTPUT=' }
+    Add-Content -LiteralPath $env:GITHUB_ENV -Value ($outputVariable + $output)
     Write-Output 'Signed application and installer verified. No release was published.'
 } finally {
     Pop-Location

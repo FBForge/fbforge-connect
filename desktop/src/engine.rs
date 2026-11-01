@@ -67,6 +67,7 @@ impl EngineProcess {
         let mut command = Command::new(java);
         command
             .arg("-Xmx512m")
+            .arg("-Djava.net.useSystemProxies=true")
             .arg(format!("-Dfbforge.environment={}", environment.name()))
             .arg("-jar")
             .arg(jar)
@@ -75,6 +76,7 @@ impl EngineProcess {
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .kill_on_drop(true);
+        crate::network_settings::current()?.apply_engine(&mut command);
         // These inherited settings can inject agents, JVM arguments or another module path.
         for key in [
             "JAVA_TOOL_OPTIONS",

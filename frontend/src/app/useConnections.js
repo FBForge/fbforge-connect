@@ -263,8 +263,8 @@ export function useConnections({
     }
   }
   async function connectProfile(profile, restoreKeys, targetApi = profile.apiVersion) {
-    if (busy.value) return;
-    if ((await beforeChange()) === false || busy.value) return;
+    if (busy.value) return false;
+    if ((await beforeChange()) === false || busy.value) return false;
     busy.value = true;
     pendingAction.value = 'open';
     error.value = '';
@@ -274,10 +274,12 @@ export function useConnections({
     let status = 'Erfolgreich';
     try {
       await openProfileSession(profile, restoreKeys, targetApi);
+      return true;
     } catch (cause) {
       status = 'Fehlgeschlagen';
       error.value = targetApi !== profile.apiVersion ? apiError(cause, targetApi) : errorMessage(cause);
       if (resetsSessions(cause)) sessions.value = {};
+      return false;
     } finally {
       busy.value = false;
       pendingAction.value = '';

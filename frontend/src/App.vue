@@ -1,14 +1,5 @@
 <script setup>
-import {
-  ref,
-  shallowRef,
-  provide,
-  computed,
-  nextTick,
-  onMounted,
-  onBeforeUnmount,
-  defineAsyncComponent,
-} from 'vue';
+import { ref, shallowRef, provide, computed, nextTick, defineAsyncComponent } from 'vue';
 import { environmentKey } from './environments.js';
 import { useEnvironmentSwitch } from './app/useEnvironmentSwitch.js';
 import { useDiagnostics } from './app/useDiagnostics.js';
@@ -37,6 +28,9 @@ const ProcessWorkspace = defineAsyncComponent(() => import('./ProcessWorkspace.v
 import { processWorkspaceKey, createProcessWorkspace } from './process-context.js';
 import DestinationManager from './DestinationManager.vue';
 import SubmissionSender from './SubmissionSender.vue';
+import { useFileNavigationGuard } from './app/useFileNavigationGuard.js';
+import { useFlowContext } from './app/useFlowContext.js';
+import ApplicationClose from './app/ApplicationClose.vue';
 import SubmissionBrowser from './SubmissionBrowser.vue';
 import EventLogPanel from './EventLogPanel.vue';
 import CaseWorkspace from './CaseWorkspace.vue';
@@ -179,19 +173,29 @@ function openTestDraft(value) {
   testDraft.value = { ...value, requestId: crypto.randomUUID() };
   beginTask('Senden');
 }
-function preventFileNavigation(event) {
-  event.preventDefault();
-}
-onMounted(() => {
-  window.addEventListener('dragover', preventFileNavigation);
-  window.addEventListener('drop', preventFileNavigation);
+const openFlowContext = useFlowContext({
+  busy,
+  connections,
+  environment,
+  error,
+  activeSession,
+  storageStatus,
+  apiVersion,
+  selectedDestination,
+  defaultDestinations,
+  testDraft,
+  receiveTab,
+  navigate,
+  beforeChange: () => receiveBrowser.value?.confirmLeave(),
 });
-onBeforeUnmount(() => {
-  window.removeEventListener('dragover', preventFileNavigation);
-  window.removeEventListener('drop', preventFileNavigation);
-});
+useFileNavigationGuard();
 </script>
 <template>
+  <ApplicationClose
+    :busy="busy || updates.installing.value"
+    :active="Boolean(activeSession)"
+    :receive-browser="receiveBrowser"
+  />
   <a class="skip-link" href="#main">Zum Arbeitsbereich</a>
   <div class="desktop-shell" :inert="updates.installing.value" @dragover.prevent @drop.prevent>
     <ApplicationChrome
@@ -391,6 +395,7 @@ onBeforeUnmount(() => {
             v-show="section === 'Testwerkzeuge'"
             :busy="busy"
             @send="openTestDraft"
+            @context="openFlowContext"
           />
           <MalwareScannerSettings
             v-if="scannerOpened"
@@ -455,6 +460,11 @@ onBeforeUnmount(() => {
             @cancel-update="updates.controller.cancel()"
             @manual-update="updates.controller.manual()"
             @automatic-updates="updates.controller.setAutomatic($event)"
+            @busy="resourceBusy"
+            @network-changed="
+              sessions = {};
+              storageStatus = null;
+            "
           />
         </div>
       </main>

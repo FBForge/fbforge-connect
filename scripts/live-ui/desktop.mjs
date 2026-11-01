@@ -244,7 +244,11 @@ export async function createDesktop(directory, profiles) {
     await mkdir(join(directory, 'desktop-ui'), { recursive: true });
     const setup = spawnSync(
       process.env.FBFORGE_UI_INSTALLER,
-      ['/S', `/SCANNER=${useScanner ? 1 : 0}`, `/D=${install}`],
+      [
+        '/S',
+        `/SCANNER=${useScanner && process.env.FBFORGE_UI_SCANNER_ONLINE !== 'true' ? 1 : 0}`,
+        `/D=${install}`,
+      ],
       {
         env: cleanEnvironment(),
         stdio: 'ignore',
@@ -286,6 +290,27 @@ export async function createDesktop(directory, profiles) {
         return app;
       },
       close,
+      async restartGracefully() {
+        check(Number.isInteger(app?.pid), 'live_ui_close_process_missing');
+        const result = spawnSync(
+          'powershell.exe',
+          [
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            `(Get-Process -Id ${app.pid}).CloseMainWindow() | Out-Null`,
+          ],
+          { stdio: 'ignore' },
+        );
+        check(result.status === 0, 'live_ui_native_close_request_failed');
+        const dialog = page.getByRole('dialog', { name: 'FBForge Connect beenden?', exact: true });
+        await dialog.getByRole('button', { name: 'Anwendung beenden', exact: true }).click();
+        await until(async () => app.exitCode !== null, 'live_ui_graceful_close_failed');
+        browser = null;
+        launchFailed = false;
+        await launch();
+        console.log('Real desktop UI: native window close checkpointed the session before exiting');
+      },
       async restart() {
         await stopApplication();
         launchFailed = false;

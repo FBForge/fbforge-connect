@@ -5,7 +5,7 @@ const TestFlows = defineAsyncComponent(() => import('./integration/TestFlows.vue
 const SchemaComparison = defineAsyncComponent(() => import('./SchemaComparison.vue'));
 const ChannelSchemaDesigner = defineAsyncComponent(() => import('./integration/ChannelSchemaDesigner.vue'));
 defineProps({ busy: Boolean, session: Object });
-const emit = defineEmits(['send', 'busy', 'scanner-changed']);
+const emit = defineEmits(['send', 'busy', 'scanner-changed', 'context']);
 const mode = ref('packages');
 const category = ref('tests');
 const comparisonOpened = ref(false);
@@ -76,6 +76,7 @@ watch(mode, (value) => {
       v-if="flowsOpened"
       :session="session"
       :busy="busy"
+      @context="emit('context', $event)"
       @send="emit('send', $event)"
       @busy="emit('busy', $event)"
     />

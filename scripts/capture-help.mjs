@@ -30,6 +30,11 @@ const capture = async (name, anchor) => {
   captures.add(name);
 };
 try {
+  await open('test-fixtures/application-view.html?app=1');
+  await button('Info').click();
+  await page.getByLabel('Verbindung', { exact: true }).selectOption('manual');
+  await page.getByLabel('Proxy-Host', { exact: true }).fill('proxy.example.de');
+  await capture('network-settings', page.getByRole('heading', { name: 'Netzwerk und Proxy', exact: true }));
   await openBatch(page);
   await page.evaluate((value) => (window.__batchFixture.schemaError = value), batchId(4));
   await page.getByRole('checkbox', { name: 'Alle auf dieser Seite auswählen', exact: true }).check();
@@ -210,6 +215,8 @@ try {
         });
       }
       if (command === 'cancel_send') return envelope({ ...attempt, status: 'cancelled' });
+      if (command === 'lookup_service_names')
+        return { items: [{ leistungsschluessel: args.code, title: 'Fiktive Bauleistung für den Test' }] };
       if (command === 'load_send_destination')
         return envelope({
           destinationId: args.destinationId,

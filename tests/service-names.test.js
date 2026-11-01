@@ -51,3 +51,28 @@ test('lookup uses only the fixed public endpoint, sends no credentials and bound
     /service_names_unavailable/,
   );
 });
+
+test('desktop catalogue reads use the native proxy-aware boundary without sending a FIT-Connect session', async () => {
+  const previous = globalThis.isTauri,
+    previousWindow = globalThis.window;
+  const calls = [];
+  globalThis.isTauri = true;
+  globalThis.window = {
+    __TAURI_INTERNALS__: {
+      invoke: async (command, args) => {
+        calls.push({ command, args });
+        return { items: [{ leistungsschluessel: '99134061002009', title: 'Fiktiver Proxy-Katalogtitel' }] };
+      },
+    },
+  };
+  try {
+    assert.equal(
+      await lookupServiceName('urn:de:fim:leika:leistung:99134061002009'),
+      'Fiktiver Proxy-Katalogtitel',
+    );
+    assert.deepEqual(calls, [{ command: 'lookup_service_names', args: { code: '99134061002009' } }]);
+  } finally {
+    globalThis.isTauri = previous;
+    globalThis.window = previousWindow;
+  }
+});

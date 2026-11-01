@@ -4,7 +4,6 @@ import com.nimbusds.jose.jwk.*;
 import dev.fitko.fitconnect.core.common.io.ResourceLoader;
 import dev.fitko.fitconnect.jwkvalidator.JWKValidator;
 import dev.fitko.fitconnect.jwkvalidator.result.JWKValidationResult;
-import dev.fitko.fitconnect.sdk.config.settings.SdkSettings;
 import java.util.List;
 import org.fitconnect.integration.contract.*;
 
@@ -36,7 +35,7 @@ final class PublicCertificates {
             var result =
                     JWKValidator.withRecommendedDefaults()
                             .withProxy(
-                                    SdkSettings.builder()
+                                    SdkNetwork.settings()
                                             .build()
                                             .httpConfig()
                                             .proxyConfig()

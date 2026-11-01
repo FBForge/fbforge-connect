@@ -34,9 +34,13 @@ use profiles::{
     forget_profile, get_profile_defaults, list_profiles, open_saved_profile, profile_status,
     save_profile_defaults, save_profile_state, update_profile,
 };
+mod application_close;
 mod application_updates;
+mod cancellable;
 mod commands;
 mod engine;
+mod network_commands;
+mod network_settings;
 mod update_policy;
 mod update_transport;
 mod write_policy;
@@ -66,6 +70,10 @@ fn main() {
         .manage(message_exports::MessageExports::default())
         .manage(file_saves::FileSaves::default())
         .invoke_handler(tauri::generate_handler![
+            application_close::close_application,
+            network_commands::network_settings,
+            network_commands::lookup_service_names,
+            network_commands::save_network_settings,
             application_updates::application_update_status,
             application_updates::open_update_download,
             application_updates::check_application_update,
@@ -199,11 +207,25 @@ fn main() {
                 .build(),
         )
         .setup(|app| {
+            let config = app
+                .path()
+                .app_data_dir()
+                .map(|path| path.join("network.fcprefs"))
+                .map_err(|_| "vault_unavailable")
+                .and_then(|path| network_settings::NetworkSettings::load(&path));
+            network_settings::set(config);
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let _ = local_scanner::initialize(handle).await;
             });
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                use tauri::Emitter;
+                let _ = window.emit("application-close-requested", ());
+            }
         })
         .build(tauri::generate_context!())
         .expect("Desktop startup failed");

@@ -350,7 +350,8 @@ final class SendHttpTransport implements AutoCloseable {
                             : HttpRequest.BodyPublishers.ofByteArray(bytes));
             if (http == null)
                 http =
-                        HttpClient.newBuilder()
+                        org.fitconnect.integration.contract.NetworkProxy.apply(
+                                        HttpClient.newBuilder())
                                 .followRedirects(HttpClient.Redirect.NEVER)
                                 .connectTimeout(Duration.ofSeconds(5))
                                 .build();

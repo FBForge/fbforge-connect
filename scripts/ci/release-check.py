@@ -21,7 +21,7 @@ def dispatch(env, run=subprocess.run):
     branch, commit = source(env)
     if env.get('GITHUB_EVENT_NAME') != 'push':
         raise RuntimeError('release_check_event_denied')
-    payload = json.dumps({'ref': branch, 'inputs': {'expected_commit': commit}})
+    payload = json.dumps({'ref': branch, 'inputs': {'expected_commit': commit, 'offline': True}})
     result = run(['gh', 'api', '--method', 'POST',
                   f'repos/{REPOSITORY}/actions/workflows/windows.yml/dispatches', '--input', '-'],
                  input=payload, capture_output=True, text=True, check=False)

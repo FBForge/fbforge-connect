@@ -1,3 +1,4 @@
+import { nativeScannerInstall, nativeScannerReview } from './downloads.mjs';
 import { isDeepStrictEqual } from 'node:util';
 import { navigate } from './exchange.mjs';
 import { check, until } from './desktop.mjs';
@@ -231,4 +232,29 @@ export async function ownDestination(page, fixture) {
   console.log(
     'Real desktop UI: owned destination detail, edit preview and explicit contact-field-only update passed',
   );
+}
+
+export async function onlineScannerSetup(desktop, fixture) {
+  if (process.env.FBFORGE_UI_SCANNER_ONLINE !== 'true') return;
+  const { page } = desktop;
+  await navigate(page, 'Virenscan');
+  const install = page.getByRole('button', { name: 'Scanner online einrichten', exact: true });
+  await nativeScannerInstall(desktop, fixture, () => install.click());
+  await page.getByRole('button', { name: 'Vorgang abbrechen', exact: true }).click();
+  await until(async () => !(await install.isDisabled()), 'live_ui_online_scanner_cancel_stuck', 30000);
+  await nativeScannerInstall(desktop, fixture, () => install.click());
+  await until(
+    async () => {
+      const status = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('local_scanner_status'));
+      if (!status.busy && status.error) throw new Error('live_ui_online_scanner_setup_failed');
+      return status.installed && !status.busy;
+    },
+    'live_ui_online_scanner_setup_timeout',
+    360000,
+  );
+  await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('local');
+  await nativeScannerReview(desktop, fixture, () =>
+    page.getByRole('button', { name: 'Scanner-Einstellung anwenden', exact: true }).click(),
+  );
+  console.log('Real desktop UI: clean online scanner setup, explicit cancellation and retry passed');
 }

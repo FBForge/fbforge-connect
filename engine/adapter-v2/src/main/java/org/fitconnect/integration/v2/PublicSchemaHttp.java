@@ -9,19 +9,57 @@ import okhttp3.*;
 /** Public HTTPS schema reads. Checked DNS answers are the addresses used by the socket. */
 final class PublicSchemaHttp {
     private static final OkHttpClient HTTP = client(Dns.SYSTEM);
+
     private static final int MAX_REDIRECTS = 5;
 
     static OkHttpClient client(Dns resolver) {
-        return new OkHttpClient.Builder()
-                .dns(host -> checkedAddresses(resolver.lookup(host)))
-                .proxy(Proxy.NO_PROXY)
-                .followRedirects(false)
-                .followSslRedirects(false)
-                .retryOnConnectionFailure(false)
-                .connectTimeout(8, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .callTimeout(15, TimeUnit.SECONDS)
-                .build();
+        var builder =
+                new OkHttpClient.Builder()
+                        .dns(
+                                host ->
+                                        org.fitconnect.integration.contract.NetworkProxy.manual()
+                                                        && host.equalsIgnoreCase(
+                                                                org.fitconnect.integration.contract
+                                                                        .NetworkProxy.host())
+                                                ? resolver.lookup(host)
+                                                : checkedAddresses(resolver.lookup(host)))
+                        .followRedirects(false)
+                        .followSslRedirects(false)
+                        .retryOnConnectionFailure(false)
+                        .connectTimeout(8, TimeUnit.SECONDS)
+                        .readTimeout(15, TimeUnit.SECONDS)
+                        .callTimeout(15, TimeUnit.SECONDS);
+        if (org.fitconnect.integration.contract.NetworkProxy.manual()) {
+            builder.proxy(org.fitconnect.integration.contract.NetworkProxy.proxy());
+            builder.proxyAuthenticator(
+                    (route, response) -> {
+                        if (response.request().header("Proxy-Authorization") != null
+                                || org.fitconnect.integration.contract.NetworkProxy.username()
+                                        .isEmpty()) return null;
+                        return response.request()
+                                .newBuilder()
+                                .header(
+                                        "Proxy-Authorization",
+                                        Credentials.basic(
+                                                org.fitconnect.integration.contract.NetworkProxy
+                                                        .username(),
+                                                org.fitconnect.integration.contract.NetworkProxy
+                                                        .password()))
+                                .build();
+                    });
+        } else if (org.fitconnect.integration.contract.NetworkProxy.direct())
+            builder.proxy(Proxy.NO_PROXY);
+        else
+            builder.proxySelector(
+                    new ProxySelector() {
+                        public List<Proxy> select(URI uri) {
+                            return List.of(Proxy.NO_PROXY);
+                        }
+
+                        public void connectFailed(
+                                URI uri, SocketAddress address, IOException failure) {}
+                    });
+        return builder.build();
     }
 
     static String text(String value) {
@@ -140,6 +178,8 @@ final class PublicSchemaHttp {
         for (int redirects = 0; redirects <= MAX_REDIRECTS; redirects++) {
             current = uri(current.toString());
             if (!visited.add(current)) throw failed();
+            if (org.fitconnect.integration.contract.NetworkProxy.manual())
+                checkedAddresses(Dns.SYSTEM.lookup(current.getHost()));
             Request request =
                     new Request.Builder()
                             .url(current.toString())

@@ -4,6 +4,9 @@ use tauri::Manager;
 
 // Serialize native callers too, including renderer reloads during a save.
 static LIBRARY_LOCK: Mutex<()> = Mutex::new(());
+pub(crate) fn busy() -> bool {
+    LIBRARY_LOCK.try_lock().is_err()
+}
 #[tauri::command]
 pub fn test_library(
     app: tauri::AppHandle,

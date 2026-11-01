@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview, [switch]$AttachmentReview, [switch]$ScannerReview, [switch]$ScannerUpdate, [switch]$SaveFile, [string]$FileName, [string]$DialogTitle = 'Datei speichern')
+param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview, [switch]$AttachmentReview, [switch]$ScannerReview, [switch]$ScannerUpdate, [switch]$ScannerInstall, [switch]$SaveFile, [string]$FileName, [string]$DialogTitle = 'Datei speichern')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 trap {
@@ -175,6 +175,12 @@ if ($SaveFile) {
         Write-Output 'Native file save confirmed with Downloads default and owned output path'
         exit 0
     } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
+}
+if ($ScannerInstall) {
+    $notice = Wait-Ui { Find-Dialog 'Lokalen Virenscan einrichten?' } 'ui_scanner_install_warning_missing'
+    Invoke-Button $notice 'Herunterladen und einrichten'
+    Write-Output 'Native online scanner setup confirmation handled'
+    exit 0
 }
 if ($ScannerUpdate) {
     $notice = Wait-Ui { Find-Dialog 'Virensignaturen aktualisieren?' } 'ui_signature_warning_missing'

@@ -190,7 +190,21 @@ class ReceiverReceiptProtocolTest extends ReceiverTestSupport {
             throws Exception {
         for (var api : ApiVersion.values())
             for (boolean discard : List.of(false, true)) {
-                var fixture = new ReceiverFixture(api, false, false);
+                var answerKey = JsonParser.parseString(registration).getAsJsonObject();
+                answerKey.remove("x5c");
+                answerKey.remove("use");
+                answerKey.addProperty("kid", "synthetic-reply");
+                var fixture =
+                        new ReceiverFixture(
+                                api,
+                                false,
+                                false,
+                                text ->
+                                        text.replace(
+                                                "\"contentStructure\":",
+                                                "\"replyChannel\":{\"fitConnect\":{\"encryptionPublicKey\":"
+                                                        + answerKey
+                                                        + ",\"processStandards\":[\"urn:test:answer\"]}},\"contentStructure\":"));
                 var writes = new AtomicInteger();
                 ResourceExchange remote =
                         new ResourceExchange() {
@@ -201,7 +215,10 @@ class ReceiverReceiptProtocolTest extends ReceiverTestSupport {
                                             + ","
                                             + signingRegistration("synthetic-sign")
                                             + "],\"offset\":0,\"count\":2,\"totalCount\":2}";
-                                return fixture.get(url, headers);
+                                return fixture.get(url, headers)
+                                        .replace(
+                                                "\"submissionSchemas\":",
+                                                "\"replyChannels\":{\"fitConnect\":{\"processStandards\":[\"urn:test:answer\"]}},\"submissionSchemas\":");
                             }
 
                             public Response request(
@@ -316,8 +333,7 @@ class ReceiverReceiptProtocolTest extends ReceiverTestSupport {
                                                                 attempt)
                                                         .data())
                                         .status());
-                        assertThrows(
-                                SessionException.class,
+                        assertDoesNotThrow(
                                 () ->
                                         sessions.received(
                                                 api,
@@ -326,6 +342,14 @@ class ReceiverReceiptProtocolTest extends ReceiverTestSupport {
                                                 proof.proofId(),
                                                 null,
                                                 0));
+                        assertDoesNotThrow(
+                                () -> sessions.replyTarget(api, owner, proof.proofId(), 0));
+                        assertEquals(
+                                "confirmed",
+                                ((ReceiptAccess.State)
+                                                sessions.receipt(api, owner, "receipt_state", null)
+                                                        .data())
+                                        .status());
                         assertEquals(
                                 2,
                                 ((DestinationAccess.KeyState)

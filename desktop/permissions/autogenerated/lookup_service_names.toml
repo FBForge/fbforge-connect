@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lookup-service-names"
+description = "Enables the lookup_service_names command without any pre-configured scope."
+commands.allow = ["lookup_service_names"]
+
+[[permission]]
+identifier = "deny-lookup-service-names"
+description = "Denies the lookup_service_names command without any pre-configured scope."
+commands.deny = ["lookup_service_names"]

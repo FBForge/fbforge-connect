@@ -53,10 +53,13 @@ def api(path):
     calls.append(path)
     if '/environments/' in path: return environment
     if '/jobs?' in path: return {'jobs': jobs, 'total_count': 1}
+    if '/artifacts?' in path: return {'total_count': 2, 'artifacts': [{'name': name, 'expired': False} for name in ['windows-alpha-unsigned-setup','windows-alpha-unsigned-offline-setup']]}
     return run
 module.api = api
 module.main()
-assert len(calls) == 3
+assert len(calls) == 4
+rejected(lambda: module.validate_artifacts({'total_count':1,'artifacts':[{'name':'windows-alpha-unsigned-setup','expired':False}]}),'signing_installer_validation_missing')
+rejected(lambda: module.validate_artifacts({'total_count':101}),'signing_artifact_limit')
 for key, value, reason in [
     ('GITHUB_EVENT_NAME', 'pull_request', 'signing_event_denied'),
     ('GITHUB_REPOSITORY', 'outsider/fork', 'signing_repository_denied'),

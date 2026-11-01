@@ -48,3 +48,12 @@ pub mod file_save_store;
 
 #[path = "../src/scanner_consent.rs"]
 pub mod scanner_consent;
+
+#[path = "../src/cancellable.rs"]
+pub mod cancellable;
+
+#[path = "../src/network_settings.rs"]
+pub mod network_settings;
+
+#[path = "../src/update_transport.rs"]
+pub mod update_transport;

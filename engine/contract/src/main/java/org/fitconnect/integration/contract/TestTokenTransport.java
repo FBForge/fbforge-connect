@@ -26,7 +26,7 @@ public final class TestTokenTransport implements TokenExchange, AutoCloseable {
             throw new SessionException("invalid_credentials");
         if (http == null)
             http =
-                    HttpClient.newBuilder()
+                    org.fitconnect.integration.contract.NetworkProxy.apply(HttpClient.newBuilder())
                             .followRedirects(HttpClient.Redirect.NEVER)
                             .connectTimeout(Duration.ofSeconds(5))
                             .build();

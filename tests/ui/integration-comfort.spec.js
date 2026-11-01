@@ -90,7 +90,7 @@ for (const api of ['v2', 'v3']) {
     await button(page, 'Lokale Ergebnisse laden').click();
     await page.getByLabel('Nachricht für diesen Schritt', { exact: true }).selectOption(record.recordId);
     await button(page, 'Schritt anhand der Inhalte prüfen').click();
-    await expect(page.getByRole('alert')).toContainText('nicht dem erwarteten');
+    await expect(page.getByRole('alert')).toContainText('weichen vom Testfall ab');
     await page.evaluate(() => {
       window.__integration.wrong = false;
     });
@@ -98,6 +98,31 @@ for (const api of ['v2', 'v3']) {
     await expect(
       page.getByRole('heading', { name: `Eingang prüfen: ${pack.cases[0].name}`, exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByText('Fortschritt für Ihr Windows-Benutzerkonto gespeichert', { exact: true }),
+    ).toBeVisible();
+    const saved = await page.evaluate(
+      () => Object.values(JSON.parse(localStorage.getItem('fixture-test-runs')))[0],
+    );
+    expect(saved.run.results).toHaveLength(1);
+    expect(JSON.stringify(saved)).not.toContain('sessionId');
+    await page.reload();
+    await button(page, 'Testfälle und Abläufe').click();
+    await button(page, 'Testabläufe').click();
+    await page.getByText('Gespeicherten Durchlauf fortsetzen', { exact: true }).click();
+    await page.getByLabel('Durchlauf', { exact: true }).selectOption(saved.run.id);
+    await button(page, 'Durchlauf fortsetzen').click();
+    await expect(page.getByText(/Bisherige Ergebnisse sind historische Prüfungen/)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: `Eingang prüfen: ${pack.cases[0].name}`, exact: true }),
+    ).toBeVisible();
+    await page.evaluate(
+      ({ record, data }) => {
+        window.__integration.records = [{ ...record, createdAt: new Date().toISOString() }];
+        window.__integration.data = data;
+      },
+      { record, data: pack.cases[0].request.data },
+    );
     await button(page, 'Schema-Vergleich').click();
     await button(page, 'Testfälle und Abläufe').click();
     await button(page, 'Testabläufe').click();
@@ -175,4 +200,47 @@ test('configuration import requires explicit application and never writes to FIT
   await expect(page.getByRole('status')).toContainText('geschützt gespeichert');
   const calls = await page.evaluate(() => window.__integration.calls.map((c) => c.command));
   expect(calls.every((c) => c === 'profile_workspace')).toBe(true);
+});
+
+test('assigned profiles and destinations persist with the run and context actions never send automatically', async ({
+  page,
+}) => {
+  const pack = structuredClone(example);
+  pack.cases = [pack.cases[0]];
+  await page.goto('http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=v3');
+  await button(page, 'Testabläufe').click();
+  await page.locator('#test-flow-file').setInputFiles({
+    name: 'flow.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(pack)),
+  });
+  await page.getByText('Sender und Empfänger zuordnen', { exact: true }).click();
+  await button(page, 'Passende Profile laden').click();
+  await page.getByLabel('Sender-Profil', { exact: true }).selectOption(id(71));
+  await page.getByLabel('Empfänger-Profil', { exact: true }).selectOption(id(72));
+  await page.getByLabel('Absender-Destination (API v3)', { exact: true }).fill(id(4));
+  await page.getByLabel('Empfangs-Destination', { exact: true }).fill(id(5));
+  await button(page, 'Durchlauf starten').click();
+  await expect(
+    page.getByText('Fortschritt für Ihr Windows-Benutzerkonto gespeichert', { exact: true }),
+  ).toBeVisible();
+  await button(page, 'Zum Sender wechseln').click();
+  const context = await page.evaluate(() => window.__integration.context);
+  expect(context).toMatchObject({
+    senderProfileId: id(71),
+    receiverProfileId: id(72),
+    receiverDestination: id(5),
+    sourceDestination: id(4),
+    side: 'sender',
+    apiVersion: 'v3',
+  });
+  const saved = await page.evaluate(
+    () => Object.values(JSON.parse(localStorage.getItem('fixture-test-runs')))[0],
+  );
+  expect(saved.context.senderProfileId).toBe(id(71));
+  expect(
+    await page.evaluate(() =>
+      window.__integration.calls.some((c) => c.command === 'execute_send' || c.command === 'execute_receipt'),
+    ),
+  ).toBe(false);
 });

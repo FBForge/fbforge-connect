@@ -203,7 +203,7 @@ async function prepare() {
       outcome.value = { ...existing, apiVersion: active.apiVersion };
       outcomeOwner.value = active.sessionId;
       emit('outcome', { ...existing, apiVersion: active.apiVersion, sessionId: active.sessionId });
-      emit('invalidate');
+      if (existing.status !== 'confirmed') emit('invalidate');
       return existing.status === 'uncertain' ? 'Ausgang ungewiss' : 'Erfolgreich';
     }
     if (existing.status === 'prepared') await cancelReceipt(invoke, active, existing.attemptId);
@@ -274,7 +274,7 @@ async function confirm() {
       if (current()) {
         outcome.value = { ...result, apiVersion: active.apiVersion };
         outcomeOwner.value = active.sessionId;
-        emit('invalidate');
+        if (result.status !== 'confirmed') emit('invalidate');
         await nextTick();
         resultHeading.value?.focus();
       }

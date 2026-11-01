@@ -7,7 +7,8 @@
 - Testpakete und Ablaufdefinitionen geschützt im Windows-Benutzerkonto speichern,
   nach Neustart öffnen und bewusst löschen. Testabläufe prüfen Versand, Eingang,
   Fachdaten/Anlagen, Empfangsbestätigung und Antworten anhand lokaler Nachrichten.
-  Ergebnisexport und bestätigter Neustart schützen bisherigen Fortschritt.
+  Sender-/Empfängerprofile und Destinations zuordnen, konkrete Inhaltsabweichungen
+  anzeigen und Durchläufe nach Neustart mit historischem Prüfstand fortsetzen.
 - Prozessantworten aus BPMN-Zuordnungen oder vereinbarten Kennungen zusammenstellen.
   Eigene JSON-Antwortschemas mit Statuswerten, Feldern und Pflichtangaben erzeugen.
   Schema, Beispiel und bearbeitbaren Entwurf exportieren und wieder importieren.
@@ -36,6 +37,12 @@
   Update-Abnahme des endgültigen Release-Pakets steht noch aus.
 
 ### Bedienung und Fehlerkorrekturen
+
+- Antworten im geöffneten Vorgang bleiben nach bestätigter Annahme möglich.
+  Fensterschließen schützt laufende Aktionen und sichert gespeicherte Profile.
+- Einheitliche Proxy-Einstellung für OAuth, FIT-Connect, SDKs, öffentliche Schemata,
+  Updates und Scanner-Downloads. Proxy-Passwörter werden benutzergebunden geschützt.
+- Update-Abbruch greift auch während des Wartens auf HTTP-Antwort-Header.
 
 - Einheitliche Formularabstände, lesbare Auswahlen, kompakte Profileditoren und
   Antwortschema-Felder. Ereignisse zeigen Gründe, Anlagen und Authentifizierungstags

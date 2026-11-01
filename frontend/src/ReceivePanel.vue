@@ -1,4 +1,5 @@
 <script setup>
+import AcceptedReplyNotice from './receive/AcceptedReplyNotice.vue';
 import ScanResult from './ScanResult.vue';
 import { warning, label, bytesLabel, generalWarnings } from './receive/presentation.ts';
 import { isReceiveFailure } from './receive/failures.js';
@@ -335,7 +336,7 @@ defineExpose({
                   Antwort verfassen
                 </button>
                 <button
-                  v-if="!reply"
+                  v-if="!reply && !completed"
                   class="button"
                   type="button"
                   :disabled="disabled || receiptUncertain"
@@ -344,7 +345,7 @@ defineExpose({
                   Annehmen
                 </button>
                 <button
-                  v-if="!reply"
+                  v-if="!reply && !completed"
                   class="button secondary"
                   type="button"
                   :disabled="disabled || receiptUncertain"
@@ -442,11 +443,12 @@ defineExpose({
         @close="closePreview"
       />
     </section>
-    <div v-show="!reply && !completed" ref="replySection" class="receive-action-section">
+    <AcceptedReplyNotice v-if="completed && proof" :disabled="disabled" @reply="beginReply" />
+    <div v-show="!reply" ref="replySection" class="receive-action-section">
       <ReplySender
         ref="replySender"
         guided
-        v-if="!reply && !completed"
+        v-if="!reply"
         :session="session"
         :proof="proof"
         :busy="busy || pending"

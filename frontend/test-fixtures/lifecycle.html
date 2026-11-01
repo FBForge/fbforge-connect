@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fiktive lokale Sitzungsaktionen</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createApp, ref } from 'vue/dist/vue.esm-bundler.js';
+      import ApplicationClose from '../src/app/ApplicationClose.vue';
+      import NetworkSettings from '../src/app/NetworkSettings.vue';
+      import '../src/styles/index.css';
+      window.__lifecycle = { calls: [], busy: false, fail: false };
+      window.__TAURI_INTERNALS__ = {
+        invoke: async (command, args) => {
+          const fixture = window.__lifecycle;
+          fixture.calls.push({ command, args });
+          if (command === 'plugin:event|listen') throw new Error('no native events in browser fixture');
+          if (command === 'network_settings')
+            return {
+              mode: 'manual',
+              host: 'proxy.example.de',
+              port: 8080,
+              username: 'proxy-user',
+              hasPassword: true,
+            };
+          if (command === 'close_application' && fixture.fail) throw 'vault_pending';
+          if (command === 'save_network_settings') return null;
+          return null;
+        },
+      };
+      createApp({
+        components: { ApplicationClose, NetworkSettings },
+        setup() {
+          const close = ref(null),
+            busy = ref(false);
+          window.__lifecycle.setBusy = (value) => (busy.value = value);
+          return { close, busy };
+        },
+        template: `<main><h1>Lokale Sitzung</h1><button @click="close.requestClose()">Fenster schließen</button><ApplicationClose ref="close" :busy="busy" :active="true"/><NetworkSettings :busy="busy"/></main>`,
+      }).mount('#app');
+    </script>
+  </body>
+</html>

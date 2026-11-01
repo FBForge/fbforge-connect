@@ -33,6 +33,7 @@ final class PublicCertificates {
             JWKValidator.withRecommendedDefaults()
                     .withProxy(
                             ApplicationConfig.builder()
+                                    .httpConfig(SdkNetwork.http())
                                     .build()
                                     .getHttpConfig()
                                     .getProxyConfig()
