@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { nativeFile } from './downloads.mjs';
 import { openTestPackage, localScannerReady } from './local-tools.mjs';
 import { navigate } from './exchange.mjs';
+import { reviewSignatureCancellation } from './review-runtime.mjs';
 import { createDesktop, check, until } from './desktop.mjs';
 const directory = await mkdtemp(join(process.env.RUNNER_TEMP, 'fbforge-ui-probe-'));
 let desktop;
@@ -48,6 +49,7 @@ try {
   console.log(
     'Real installed desktop native file-save preflight passed with four sequential exports, Downloads default and exact owned output files, without credentials or TEST writes',
   );
+  if (process.env.FBFORGE_UI_SCANNER === 'true') await reviewSignatureCancellation(desktop, { directory });
 } catch (error) {
   // This probe never authenticates. Report fixed classifications, not UI text or paths.
   const feedback = await desktop?.page

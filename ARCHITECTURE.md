@@ -51,33 +51,35 @@ im Update-Modus. Vorher werden geschützte Schlüssel gesichert und der Java-Ker
 geordnet beendet; aktive Kernaufrufe und offene Exporte blockieren die Installation.
 Die neue Version wird nicht automatisch ohne Zustimmung installiert.
 
-## BPMN-Referenzen
+## Prozessnachrichten und Antwortschemas
 
-BPMN-Element-IDs werden nicht als FIT-Connect-Kennungen verwendet. Eigene Modelle können diese Client-Erweiterung nutzen:
+BPMN-Element-IDs sind keine FIT-Connect-Kennungen. Eigene Modelle verwenden die
+Erweiterung `urn:fit-connect:test-client:bpmn:1` mit `processModelId`, `messageId`
+und optional `schemaUri`/`mimeType`. `processModelId` darf an Definition oder Nachricht
+stehen. Zuordnungsdateien sind an den Modell-SHA-256 gebunden. Beispiel:
+[frontend/src/examples/test-process.bpmn](frontend/src/examples/test-process.bpmn).
 
-```xml
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-  xmlns:fc="urn:fit-connect:test-client:bpmn:1"
-  targetNamespace="urn:mein-test" fc:processModelId="vereinbarte-modellkennung">
-  <bpmn:message id="BpmnMessage_1" name="Nachforderung"
-    fc:messageId="vereinbarte-nachrichtenkennung"
-    fc:schemaUri="urn:vereinbartes:antwortschema:1" fc:mimeType="application/json"/>
-</bpmn:definitions>
-```
+`process-context.js` stellt übernommene Zuordnungen lokal bereit. Destination-Angebote
+und erlaubte Prozessantworten übernehmen sie ausdrücklich. Manuelle Kennungen sind
+begrenzt, duplikatfrei und erweitern keine Berechtigung. Ein Schemawechsel verwirft
+die bisherige Prozessantwortliste. Es gibt keine Prozess-Engine und keinen BPMN-Editor.
 
-`processModelId` darf auch an der Nachricht stehen. Schemahinweise sind optional, erfordern aber URI und MIME-Typ. Zuordnungsdateien sind an den SHA-256 des Modells gebunden. Replies verwenden nur die Bezüge und Schemata des geprüften Antwortkanals. Beispiel: `frontend/src/examples/test-process.bpmn`.
-
-Übernommene Modellzuordnungen stehen über `process-context.js` als öffentliche lokale Nachrichtenliste zur Verfügung. Destination-Angebote und erlaubte Prozessantworten übernehmen sie ausdrücklich. Manuelle Antwortkennungen werden begrenzt und auf Duplikate geprüft; sie erweitern keine native Berechtigung. Ein anderes Antwortschema verwirft die bisherige Prozessantwortliste.
-
-`channel-schemas.js` erzeugt begrenzte JSON-Schemas (Draft 2020-12), fiktive Daten und einen versionierten bearbeitbaren Entwurf vollständig lokal. Exportdateien werden nur auf Benutzeraktion erstellt. Dateihilfen übernehmen Schema-Kennungen in die vorhandenen Konfigurationswege; der Versand akzeptiert nur aktuell angebotene Kennungen. Keine automatische Veröffentlichung, kein Schemahost und keine neue Netzwerkfreigabe. Die eigentliche Inhaltsprüfung bleibt in beiden SDK-Adaptern.
+`channel-schemas.js` erzeugt lokal JSON Schema Draft 2020-12, fiktive Daten und einen
+versionierten bearbeitbaren Entwurf. Maximal 32 Zusatzfelder, begrenzter Import,
+keine Bearbeitung beliebiger fremder Schemas unter Verlust unbekannter Regeln.
+Dateihilfen übernehmen Kennungen, laden aber keine Definition auf den Server.
+Beide Gegenstellen benötigen dieselbe Schemadatei oder eine eigene HTTPS-Quelle.
+Versand und Antwort bleiben an tatsächlich angebotene Kennungen gebunden.
+Es gibt keinen Schemahost oder neue Netzwerkfreigaben. Generatorbeispiele und
+Negativfälle werden durch beide echten SDK-Validatoren geprüft.
 
 ## Tests
 
-SDK-Tests prüfen Verschlüsselung und Rundläufe. Frontend- und native Tests die Verträge und Kontextbindung. Browser-Fixtures werden nicht ausgeliefert. DPAPI, Installation und Upgrades werden unter Windows geprüft. Reale Austausche auf FIT-Connect TEST. Befehle stehen in [CONTRIBUTING.md](CONTRIBUTING.md).
+SDK-Tests prüfen Verschlüsselung und Rundläufe. Frontend- und native Tests die Verträge und Kontextbindung. Browser-Fixtures werden nicht ausgeliefert. DPAPI, Installation und Upgrades werden unter Windows geprüft. Reale Austausche auf FIT-Connect TEST. Befehle stehen in [BUILDING.md](BUILDING.md), Live-Abnahmen in [RELEASING.md](RELEASING.md#live-abnahme).
 
 Änderungsprüfungen wählen betroffene Module aus. Die manuelle Windows-Release-Prüfung baut das vollständige Paket und prüft Installation, Profilerhalt und NVDA. Die Signierung erfordert einen erfolgreichen Lauf für denselben Commit. Ein separater Windows-Runner prüft anschließend das signierte Paket.
 
-## Erweiterungen für 0.3.0
+## Abläufe, Profil-Arbeitsdaten und Scanner
 
 Die Testabläufe kombinieren vorhandene Testfälle und prüfen lokale Nachrichtenergebnisse. Sie besitzen keine zusätzliche Schreibberechtigung; Versand, Empfangsbestätigungen und Antworten bleiben hinter ihren bestehenden nativen Bestätigungen. Der Versandabgleich liest signierte SETs anhand bekannter Kennungen und verändert keinen Versandversuch.
 

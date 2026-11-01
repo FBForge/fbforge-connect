@@ -1,205 +1,179 @@
 # Release vorbereiten und veröffentlichen
 
-Für 0.3.0 ist eine reguläre Version ohne Alpha-, Beta- oder RC-Zusatz vorgesehen.
-Main behält seine veröffentlichte Historie; `v0.2.0` bleibt unverändert.
-Die Entwicklung liegt auf `release/0.3.0`. `fix/0.2.1` ist vollständig darin zusammengeführt; ein gesondertes 0.2.1-Release ist nicht vorgesehen.
-Die Veröffentlichung bleibt eine bewusste Aktion nach abgeschlossener Abnahme.
+0.3.0 ist noch nicht veröffentlicht. Die Entwicklung liegt auf `release/0.3.0`,
+einschließlich der ursprünglich für 0.2.1 vorgesehenen Korrekturen. Der
+[Prüfbericht](docs/design-review/README.md) nennt den abgenommenen Stand und offene
+Freigabepunkte. Ein erfolgreicher Branch-Test ersetzt keine Freigabe des endgültigen Main-Pakets.
 
-## 1. Lokal abnehmen
+## Live-Abnahme
 
-Den aktuellen Stand von `release/0.3.0` beziehen und nach [BUILDING.md](BUILDING.md) bauen.
-Wer das separate PowerShell-Skript für WSL-Quellen verwendet, aktualisiert zuerst die WSL-Arbeitskopie
-und wiederholt anschließend seinen bisherigen Buildaufruf mit den bisherigen Signierparametern.
-Das Skript ist eine lokale Arbeitshilfe und gehört nicht zu den Voraussetzungen des Projekts.
+1. Nach [BUILDING.md](BUILDING.md) bauen und die normalen `Checks` ausführen.
+2. `Windows release validation` für den vollständigen Commit starten. Der Workflow
+   prüft Installation, Profilerhalt, NVDA und lesende TEST-Aufrufe. Mit `upgrade_run`
+   eine geprüfte signierte Vorgängerversion für den Upgrade-Test wählen.
+3. `Real TEST exchange acceptance` auf demselben Branch mit `confirm_test_writes=true`,
+   `local_scanner=true` und der erfolgreichen Lauf-ID als `validation_run` starten.
+   Er installiert genau diesen unabhängig geprüften Kandidaten und bedient seine
+   WebView2-Oberfläche samt nativen Dialogen mit echten TEST-Zugängen.
 
-Vor dem Release auf dem Windows-Zielgerät prüfen:
+Benötigte Actions-Secrets: `SENDERID`, `SENDERSECRET`, `SENDERDEST`, `SUBSCRIBERID`
+und `SUBSCRIBERSECRET`. Der Sender benötigt eine aktive eigene Typ-C-Destination
+mit Verwaltungsrechten und bereits freigegebenen Metadatenversionen 2.0.0 und 3.0.0.
+Der Subscriber benötigt Destination-Verwaltung und Empfang. Die vorhandene
+Sender-Destination wird nicht verändert. Alle Schreibtests verwenden fiktive Daten
+und eine eigens angelegte TEST-Destination. Diese wird anschließend deaktiviert.
+Die früheste Löschung nach `canBeDecommissionedAt` sowie Eigentümer und Zustand
+vor einer späteren Löschung erneut prüfen. Schlüssel und Sicherungen werden nicht hochgeladen.
 
-- Anmeldung mit gespeichertem Profil und temporären Zugangsdaten. API-Wechsel in beide Richtungen,
-  getrennte Schlüssel und Vorgänge sowie Verhalten bei fehlgeschlagener Anmeldung.
-- Versand, Empfang und Antwort mit den tatsächlich verwendeten JSON- und XML-Schemata.
-  STAGE und PROD benötigen gültige V-PKI-Zertifikate samt Kette und erreichbare Sperrprüfungen.
-- Einzelannahme mit und ohne Download. Bei gewähltem Download müssen Metadaten, Fachdaten und Anlagen
-  vor der Annahme vollständig gespeichert sein. Abbruch der Ordnerwahl und Speicherfehler dürfen
-  keine Annahme auslösen. Die Freigabe einer vorbereiteten Empfangsaktion gilt höchstens 60 Sekunden.
-- Sammelannahme mit gültigen und fehlerhaften Einreichungen. Schema- und Entschlüsselungsfehler
-  bleiben manuell. Es gibt keine automatische Ablehnung. Fachliche Fehler können technisch gültig sein.
-- „Auswahl herunterladen“ übermittelt keine Empfangsbestätigung und benötigt erfolgreiche
-  Entschlüsselung und technische Prüfung. Ungeprüfte Rohdaten werden nicht exportiert.
-- Geschützte Aufbewahrung, Neustart, Profil-Backup und Upgrade von der veröffentlichten Version 0.2.0.
-  Ein normaler Download speichert entschlüsselte Dateien außerhalb der geschützten Vorgangsablage.
-- Tastaturbedienung, Screenreader, Textvergrößerung, schmale Fenster und beide Farbschemata.
-- Abhängigkeiten gegen aktuelle Sicherheitsmeldungen prüfen, einschließlich aufgelöster Maven-
-  Abhängigkeiten und plattformspezifischer Rust-Pfade. Bekannte Hinweise und ihre Bewertung unter
-  [SECURITY.md](SECURITY.md) aktualisieren. JDK und WebView2 benötigen zusätzlich aktuelle Sicherheitsupdates.
-- Die in der Anwendung verlinkte [0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start)
-  vor der Veröffentlichung auf der Website bereitstellen und ihre Links im Browser prüfen.
+Die Absenderbeschränkungsprobe erlaubt nur die konfigurierte Sender-Destination,
+prüft v2/v3 mit leeren Client-Freigaben und nimmt die Beschränkung wieder zurück.
+Bearbeitungen betreffen ausschließlich die neue Test-Destination.
 
-Live-Tests bevorzugt in TEST ausführen. Produktive Schreibaktionen einzeln und bewusst bestätigen.
-Automatisierte Tests ersetzen weder eine fachliche Prüfung noch eine formale Sicherheitszertifizierung.
+| Modus | Umfang |
+| --- | --- |
+| Ohne `validation_run` | Nur nativer Kern, keine installierte Oberfläche |
+| `ui_probe=true` | App-Start und native Dateiexporte ohne TEST-Zugänge oder Schreibzugriffe. Mit lokalem Scanner auch Start und echter Signaturupdate-Abbruch. |
+| `review_only=true` | Neue 0.3-Oberflächenfunktionen und vollständiger nativer TEST-Austausch |
+| Beide Diagnosemodi ausgeschaltet | Vollständige Oberflächenabnahme des angegebenen Installers |
 
-## 2. Branches übernehmen
+Bei unverändertem Produktcode darf ein korrigierter Abnahmetreiber denselben
+validierten Installer erneut prüfen. Produktänderungen benötigen eine neue
+Windows-Validierung. Der lokale WebView2-Debuggingzugang bleibt im isolierten
+CI-Prozess auf Loopback. Auf administrativen Hosted-Runnern werden notwendige
+HKLM-Overrides nur für die Client-Kennungen gesetzt und danach entfernt.
+Vorhandene Overrides werden nicht überschrieben.
 
-Der vorgesehene Weg ist `release/0.3.0` → `main`. Neue Änderungen entstehen auf
-`feature/...`-, `fix/...`- oder `release/...`-Branches. Ein zusätzlicher Develop-Branch
-ist nicht vorgesehen. Die Übernahme nach Main erfolgt nach Prüfung per Pull Request.
+Vor Freigabe die tatsächlich verwendeten Schemata, Umgebungen und Berechtigungen
+berücksichtigen. TEST-Nachweise gelten nicht automatisch für STAGE/PROD.
+V-PKI benötigt vollständige Ketten und erreichbare Sperrprüfungen. Außerdem prüfen:
 
-Die nachvollziehbaren, thematischen Commits bleiben erhalten; ein ganzer Release wird
-nicht pauschal zu einem Commit zusammengefasst. Bei der bestehenden linearen Historie
-wird Rebase-Merge verwendet. Dabei ändern sich Commit-IDs; deshalb wird der entstandene
-Main-Stand vor Signierung und Tag erneut exakt validiert. Merge-Verknüpfungen aus den
-Arbeitsbranches werden nicht in die lineare Main-Historie übernommen.
+- Anmeldung, API-/Profilwechsel und Abbruch bei offenen Entwürfen.
+- Versand, Antworten, Annahme/Ablehnung und Downloads mit gültigen und fehlerhaften
+  Daten. Fehlgeschlagene oder abgebrochene Downloads dürfen keine Annahme auslösen.
+  Vorbereitete Empfangsaktionen gelten höchstens 60 Sekunden.
+- Geschützte Aufbewahrung, Sicherung, Neustart, Tastatur, Skalierung und Screenreader.
+- Abhängigkeiten einschließlich Maven-, Rust- und Plattformpfaden gegen aktuelle
+  Meldungen prüfen und [SECURITY.md](SECURITY.md) aktualisieren.
 
-Bei der Übernahme die im Repository konfigurierten Branchregeln einschließlich
-Status-, CodeQL- und Code-Quality-Prüfungen beachten. Lösch- und Force-Push-Sperren
-nicht für den Release umgehen.
-Veröffentlichte Historie und Tags bleiben unverändert. Falls Main inzwischen weitere
-Änderungen enthält, werden diese vor der abschließenden Abnahme integriert.
+## Branch und Veröffentlichung vorbereiten
 
-Ein Commit benötigt keine neue veröffentlichte Version. Versionssprung, Installer,
-Signierung und Tag gehören zur bewussten Veröffentlichung nach der Abnahme.
+`release/0.3.0` nach Prüfung per Pull Request nach `main` übernehmen. Thematische
+Commits erhalten. Bei Rebase-Merge ändern sich IDs, daher den entstandenen Main-SHA
+neu validieren. Branchregeln, erforderliche Prüfungen und Force-Push-/Löschsperren
+beachten. Veröffentlichte Historie, Pakete und Tags unverändert lassen.
 
-Versionsdateien und Versionshinweise vor der letzten Abnahme fertigstellen. Ein abschließender Commit
-`chore: prepare 0.3.0` kann diese Änderungen enthalten. Ein zusätzlicher leerer Commit ist nicht erforderlich.
-Danach keine Änderungen mehr in den zu veröffentlichenden Stand aufnehmen.
+Versionsdateien und [Versionshinweise](RELEASE_NOTES.md) vor der letzten Abnahme
+fertigstellen. Danach keine weiteren Änderungen in den freizugebenden Stand aufnehmen.
+Ein Entwicklungscommit benötigt weder eine neue Version noch einen leeren Release-Commit.
 
-## 3. Exakten Stand auf Main validieren und signieren
+## Signier-Runner einrichten
 
-### Signier-Runner einmalig einrichten
+- Eigenen Windows-x64-Runner mit Label `fbforge-signing` unter einem separaten
+  Benutzer interaktiv starten. Buildwerkzeuge, Windows SDK, lokaler Signaturdienst
+  und Zertifikat im Speicher dieses Benutzers müssen verfügbar sein.
+- Environment `windows-signing` mit `FBForge` als einzigem Required Reviewer.
+  „Prevent self-review“ bleibt aus, damit der Eigentümer eigene Läufe freigeben kann.
+- `WINDOWS_SIGNING_THUMBPRINT` und `WINDOWS_TIMESTAMP_URL` als Repository-Variablen
+  setzen. Keine Passwörter oder TOTP-Geheimnisse in GitHub speichern.
+- Den passenden privaten Update-Schlüssel lokal bereitstellen, siehe unten.
+  Externe Fork-PRs niemals auf dem Signier-Runner ausführen. Runner nur für den
+  manuellen Signierjob starten. Workflows müssen dafür im Default-Branch liegen.
 
-1. Einen eigenen Windows-x64-Runner mit Label `fbforge-signing` unter einem separaten
-   Windows-Benutzer einrichten. Buildwerkzeuge, Windows SDK und lokalen Signaturdienst
-   installieren. Den Runner interaktiv starten, nicht als Dienst. Das Zertifikat
-   muss im Zertifikatspeicher dieses Benutzers verfügbar sein.
-2. Das GitHub-Environment `windows-signing` mit `FBForge` als einzigem Required
-   Reviewer einrichten. „Prevent self-review“ bleibt ausgeschaltet, damit der
-   Eigentümer seinen eigenen Lauf freigeben kann.
-3. Repository-Variablen `WINDOWS_SIGNING_THUMBPRINT` und `WINDOWS_TIMESTAMP_URL`
-   setzen: öffentlicher Zertifikatsfingerabdruck ohne Leerzeichen und RFC-3161-
-   Zeitstempelserver. Keine Zugangsdaten oder TOTP-Geheimnisse in GitHub speichern.
-4. Den passenden privaten Update-Schlüssel und dessen Passwort nach
-   [BUILDING.md](BUILDING.md#update-signierung-einmalig-einrichten) lokal bereitstellen.
-   Den bereits hinterlegten öffentlichen Projekt-Prüfschlüssel beibehalten.
+## Update-Signierung einmalig einrichten
 
-Externe Fork-PR-Workflows benötigen eine manuelle Freigabe und dürfen niemals auf
-dem Signier-Runner ausgeführt werden. Den Runner ausschließlich für den manuellen
-Signierjob verwenden und außerhalb der Signierung anhalten. GitHub bietet manuelle
-Workflows erst an, wenn deren Definition im Default-Branch liegt.
+`desktop/update-public-key.txt` ist die gemeinsame öffentliche Schlüsselquelle für
+App, Signierung und Paketprüfung. Für Builds keinen neuen Schlüssel erzeugen.
+Den vorhandenen privaten Schlüssel und sein Passwort auf dem Signierrechner
+bereitstellen. Bei Verlust oder Kompromittierung ist eine Schlüsselrotation zu planen.
 
-### Für jeden Release
+Nur zur erstmaligen Einrichtung auf dem Windows-Signierrechner ausführen:
 
-1. Den vollständigen Commit-SHA auf Main festhalten und die normalen `Checks` abwarten.
-2. `Windows release validation` manuell auf Main starten. Für den Upgrade-Test unter `upgrade_run`
-   einen erfolgreichen Signierlauf mit einem noch verfügbaren, veröffentlichten Vorgängerpaket angeben.
-   Dieser Lauf muss vollständig erfolgreich sein, einschließlich Installation, Profilerhalt und NVDA.
-3. `Sign Windows candidate` ebenfalls auf Main starten. Als `validation_run` die numerische Lauf-ID
-   genau dieser erfolgreichen Windows-Abnahme angeben. Branch und Commit müssen übereinstimmen.
-4. Den interaktiven Windows-Runner mit Label `fbforge-signing` bereitstellen und den Job im Environment
-   `windows-signing` freigeben. Die vorhandenen Signier-Variablen und das lokale Zertifikat verwenden.
-5. Den gesamten Signierlauf einschließlich `verify-package` abwarten. Er prüft Anwendung,
-   Deinstallationsprogramm, Setup, Zeitstempel, Installation und Upgrade unabhängig.
-6. Das geprüfte Setup aus `windows-alpha-signed-setup` herunterladen. Dieser bestehende Artefaktname
-   ist ein interner Workflow-Bezeichner. Die Paketversion muss 0.3.0 entsprechen.
+```powershell
+.\scripts\setup-update-signing.ps1
+```
 
-Ein früher lokal gebautes Setup ist für den manuellen Test geeignet. Das Veröffentlichungspaket muss
-zum exakten freigegebenen Main-Commit gehören. Nach jeder weiteren Codeänderung beginnt die Abnahme neu.
+Der Aufruf funktioniert auch aus einem WSL-UNC-Checkout ohne zusätzlichen Projektpfad.
+Das Skript verwendet die festgelegte Windows-Tauri-CLI in einem lokalen temporären
+Verzeichnis und überschreibt keine vorhandenen Schlüssel. `-KeyPath` bezeichnet
+eine neue private Datei auf einem lokalen Laufwerk außerhalb des Repositorys.
+Standard: `%LOCALAPPDATA%\FBForge\signing\connect-updater.key`. Ein nicht leeres
+Passwort vergeben und beides sicher sichern. Nur den öffentlichen Prüfschlüssel
+in Git übernehmen. Die zusätzliche `.pub` neben dem privaten Schlüssel ist beabsichtigt.
 
-## 4. Release-Entwurf, Tag und Dateien
+Für den interaktiven Runner das Passwort nur als Prozessvariable bereitstellen:
 
-Einen unveröffentlichten GitHub-Release-Entwurf mit Titel `0.3.0`, Tagname `v0.3.0` und dem vollständigen
-geprüften Main-SHA als Ziel vorbereiten. „Pre-release“ bleibt ausgeschaltet.
-Die Beschreibung aus dem Abschnitt 0.3.0 in [RELEASE_NOTES.md](RELEASE_NOTES.md) übernehmen.
+```powershell
+$secureUpdatePassword = Read-Host 'Passwort des Update-Signaturschlüssels' -AsSecureString
+try {
+    $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = [Net.NetworkCredential]::new('', $secureUpdatePassword).Password
+    .\run.cmd
+} finally {
+    Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD -ErrorAction SilentlyContinue
+    $secureUpdatePassword.Dispose()
+}
+```
 
-`Attach verified candidate to draft` hängt ausschließlich das unabhängig geprüfte Paket an den Entwurf.
-Erforderlich sind Signierlauf-ID, exakter Commit, Installer-SHA-256, Version `0.3.0` und Entwurfs-ID.
-Die Zuordnung von Paket, Version und Commit wird geprüft. Der Workflow veröffentlicht nichts.
+Denselben Windows-Benutzer wie bei der Schlüsselerzeugung verwenden.
+`TAURI_SIGNING_PRIVATE_KEY_PATH` erlaubt einen abweichenden lokalen Pfad.
+Privaten Schlüssel und Passwort nie in Git, Transkripte oder Artefakte übernehmen.
 
-Vor dem Veröffentlichen Setup, `SHA256SUMS.txt`, `build-info.json` und `signature-info.json` kontrollieren.
-Der endgültige Tag muss auf den geprüften Quell-Commit zeigen. Erst danach den Entwurf veröffentlichen.
-Keine Tags früherer Versionen umbenennen und kein bereits veröffentlichtes Paket austauschen.
+## Main-Kandidaten signieren und veröffentlichen
 
-## 5. Dokumentation und Website
+1. Den vollständigen Main-SHA festhalten, `Checks` und `Windows release validation`
+   für genau diesen Commit erfolgreich abschließen. Für den Upgrade-Test einen
+   erfolgreichen Signierlauf mit verfügbarem veröffentlichtem Vorgängerpaket angeben.
+2. `Sign Windows candidate` auf Main mit genau dieser `validation_run` starten.
+   Interaktiven Runner bereitstellen und `windows-signing` freigeben.
+3. Den gesamten Lauf einschließlich `verify-package` abwarten. Geprüft werden App,
+   Deinstallationsprogramm, Setup, Zeitstempel, Installation und Upgrade.
+4. Einen unveröffentlichten stabilen Release-Entwurf `0.3.0` mit Tag `v0.3.0` und
+   geprüftem Main-SHA vorbereiten. Beschreibung aus `RELEASE_NOTES.md` übernehmen.
+5. `Attach verified candidate to draft` mit Signierlauf-ID, Commit, Installer-SHA-256,
+   Version und Entwurfs-ID ausführen. Zuordnung und Herkunft werden geprüft.
+6. Setup, `SHA256SUMS.txt`, `build-info.json`, `signature-info.json`, `<Installer>.sig`
+   und `latest.json` prüfen. Erst danach den passenden Tag und Entwurf veröffentlichen.
 
-Die Quelle der Anleitung ist `docs/guide/`. Sie enthält ausschließlich fiktive Beispiele und Bilder.
-`scripts/capture-help.mjs` erzeugt aktuelle Bilder. `scripts/export-guide.mjs` und
-`scripts/export-wiki.mjs` exportieren die Web-Anleitung und die 0.3-Wiki-Kapitel.
-Vorhandene 0.1- und 0.2-Kapitel bleiben für Nutzer der früheren Version erhalten.
+`windows-alpha-signed-setup` ist ein interner Artefaktname, keine Versionsvorgabe.
+Die Paketversion muss 0.3.0 sein. Die Tauri-Signatur entsteht **nach** Authenticode
+und bindet mit `--app-version` die Version. `update-release.py` erzeugt das Manifest,
+der unabhängige Runner prüft mit `verify-update`. Nach dieser Prüfung weder
+Installer verändern noch neu bauen oder separat neu signieren.
 
-Die 0.3-Anleitung vor der Softwareveröffentlichung aus dem vorbereiteten Website-Branch
-`release/connect-0.3.0` in `FBForge/fbforge` bereitstellen. Ein PR oder Merge wird erst im ausdrücklich beauftragten Release-Prozess erstellt. Bis dahin müssen Downloadlinks und Release-Metadaten weiter auf
-das tatsächlich veröffentlichte Paket zeigen. Nach Veröffentlichung übernimmt `Update project information`
-die neuen Release-Metadaten und den tatsächlichen Installer-Link. Keine Download-URL vorab erfinden.
-Main-Pushes und Projektaktualisierungen können bei aktiviertem `DEPLOY_ENABLED` ein Deployment auslösen.
-Die Produktionseinstellungen vor der Übernahme prüfen. Anleitung, Downloadseite und Wiki anschließend
-im Browser öffnen. Auf Screenshots dürfen keine echten Zugangsdaten, privaten Schlüssel oder Antragsdaten stehen.
+Anschließend `https://github.com/FBForge/fbforge-connect/releases/latest/download/latest.json`
+und dessen signierten Installer prüfen. Der echte integrierte Update-Test benötigt
+eine ältere Installation **mit Updater** und ein neueres passend signiertes Paket:
+Hinweis, Download, Abbruch, ungültige Signatur, offene Aktionen, Profilerhalt,
+NSIS-Update und Neustart abnehmen. 0.2.0 besitzt keinen Updater. Sein manuelles
+Installer-Upgrade prüft Profilerhalt, ersetzt aber diesen Update-Test nicht.
 
-Erst nach erfolgreicher Übernahme nicht mehr benötigte Arbeitsbranches entfernen.
-Main, veröffentlichte Tags und Releases bleiben erhalten.
+## Scanner-Komponente
 
-## Actions nach der Abnahme aufräumen
+Validierung und Signierung führen `stage:scanner` aus. Das Setup bietet die
+Komponente abwählbar an. Stille Installation: `/SCANNER=0` oder `/SCANNER=1` vor
+`/D=...`. Upgrades erhalten die Auswahl. Unveränderte offizielle Engine-Dateien
+werden nicht neu signiert. Hashes, Quellen und Lizenzhinweise gehören zum Paket.
 
-Überholte Entwicklungs- und Fehlversuchsläufe können nach der endgültigen Abnahme
-gelöscht werden. Die erfolgreichen Prüfungen des aktuellen Release-Commits und die
-Signierläufe veröffentlichter Pakete samt benötigter Upgrade-Grundlage erhalten.
-Das Löschen eines Laufs entfernt auch seine Logs und Artefakte; die Signier- und
-Release-Workflows benötigen diese Zuordnung weiterhin. Laufende Jobs erst abschließen
-oder bewusst abbrechen, niemals eine noch verwendete Paketquelle entfernen.
+`windows-scanner-component` enthält die genaue Distribution mit Komponenten-ZIP,
+datierten Datenbanken, passendem Quellarchiv, Originalsignatur und Lizenzhinweisen.
+`attach-candidate.py` prüft und übernimmt sie in den Entwurf. Die vollständige
+Distribution öffentlich mitliefern, nicht nur das innere Komponenten-ZIP.
+Setup mit/ohne Komponente, Upgrade-Auswahl, Nachinstallation, Signaturimport/-update
+und Prozessende prüfen. EICAR nur lokal oder in einer ausdrücklich eigenen
+TEST-Konstellation verwenden. Der kontrollierte Live-ICAP-Test versendet kein EICAR.
 
-## Update-Pakete ab 0.3.0
+## Anleitung, Website und Aufräumen
 
-Der öffentliche Projekt-Prüfschlüssel ist bereits in `desktop/update-public-key.txt`
-hinterlegt. Vor der Signierung den dazugehörigen privaten Schlüssel nach
-[BUILDING.md](BUILDING.md#update-signierung-einmalig-einrichten) auf dem Signierrechner
-bereitstellen; für einen Build keinen neuen Schlüssel erzeugen. Ein fehlender oder
-falscher Schlüssel ist ein Freigabeblocker. Der private Schlüssel und sein Passwort bleiben
-auf dem interaktiven Signierrechner und werden nicht als Release-Artefakt hochgeladen.
+Exporte nach [CONTRIBUTING.md](CONTRIBUTING.md#anleitung-pflegen) erzeugen. Die
+0.3-Anleitung im Website-Branch `release/connect-0.3.0` vor dem Software-Release
+bereitstellen und inklusive Wiki im Browser prüfen. Ältere Anleitungen erhalten.
+Bis zur Veröffentlichung zeigen Download und Metadaten auf das tatsächlich
+veröffentlichte Paket. Danach übernimmt `Update project information` die neuen
+Metadaten und den tatsächlichen Installer-Link. Main-Pushes können bei aktiviertem
+`DEPLOY_ENABLED` ein Deployment auslösen, daher Produktionseinstellungen prüfen.
+Keine echten Zugangsdaten oder Antragsdaten auf Bildern.
 
-Der Signierjob erstellt die zusätzliche Tauri-Signatur **nach** der abschließenden
-Authenticode-Signierung des Setups. `--app-version` bindet die Version an die Signatur.
-`scripts/update-release.py` erzeugt `latest.json` für genau diesen Installer und
-vermerkt den öffentlichen Schlüssel im Herkunftsnachweis. Der unabhängige Windows-
-Runner prüft diese Signatur mit `verify-update` und dem Prüfschlüssel desselben
-Quell-Commits, bevor er das Paket zur Veröffentlichung bereitstellt.
-
-Der geprüfte Kandidat enthält zusätzlich zum bisherigen Paket `<Installer>.sig`
-und `latest.json`. `attach-candidate.py` übernimmt diese Dateien unverändert in den
-weiterhin unveröffentlichten Entwurf. Erst das vollständige stabile Release darf
-als neueste Version veröffentlicht werden. Danach die öffentliche URL
-`https://github.com/FBForge/fbforge-connect/releases/latest/download/latest.json`
-und den darin verlinkten, signierten Installer prüfen. Kein separates Neusignieren
-oder Neubauen nach der Kandidatenprüfung.
-
-Vor der 0.3.0-Freigabe den integrierten Update-Ablauf gesondert prüfen:
-Hinweis, Download, Abbruch, ungültige Signatur, offene Aktionen, gesicherte Profile,
-NSIS-Update, Neustart und erneute Anmeldung. Dafür sind eine ältere Testinstallation
-mit eingebautem Updater und ein neueres, zur Version passend signiertes Paket
-erforderlich; Testaufbau und Ergebnis dokumentieren. Version 0.2.0 hat keinen
-Updater und kann diesen Ablauf nicht prüfen. Das Upgrade von 0.2.0 erfolgt durch
-manuelles Installieren und prüft Installer sowie Profilerhalt. Diese Abnahme
-ersetzt die Bedienung des integrierten Updaters nicht.
-
-Die einmalige Schlüsselerzeugung einschließlich Aufruf aus einem WSL-UNC-Checkout
-ist ausschließlich in [BUILDING.md](BUILDING.md#update-signierung-einmalig-einrichten)
-beschrieben. Bereits vorhandene private Schlüssel werden nicht überschrieben.
-
-## Optionale Scanner-Komponente ab 0.3.0
-
-Windows-Validierung und Signierlauf führen `stage:scanner` aus. Das Setup bietet
-die Komponente ausdrücklich abwählbar an; stille Installationen können
-`/SCANNER=0` oder `/SCANNER=1` vor dem abschließenden `/D=...` verwenden. Ein Upgrade
-erhält die Auswahl. Mitgelieferte Engine-Dateien werden nicht neu signiert oder
-verändert; ihre offiziellen Hashes bleiben Bestandteil der App-Vertrauensgrenze.
-
-Der Signierlauf bewahrt unter `windows-scanner-component` die genau zu diesem
-Build gehörende Distribution mit Engine, datierten Datenbanken, zugehörigem
-Quellarchiv, Originalsignatur und allen Lizenzhinweisen auf. `attach-candidate.py`
-prüft Herkunft und Dateien und hängt diese vollständige Distribution zusätzlich
-an den unveröffentlichten Entwurf. Das Archiv enthält das separat importierbare
-Komponenten-ZIP. Quellen und Hinweise müssen zusammen mit der Binärkomponente
-öffentlich verfügbar bleiben. Nicht nur das innere Komponenten-ZIP veröffentlichen.
-
-Vor Freigabe Setup mit und ohne Komponente, Erhalt der Auswahl beim Upgrade,
-Nachinstallation, Signaturimport/-update und Prozessende prüfen. EICAR nur lokal
-oder in einer ausdrücklich eigenen TEST-Konstellation verwenden; keine Funde an
-fremde Empfänger oder nach STAGE/PROD schicken. Einzelannahme mit Anlagenproblemen
-bestätigt die Nachricht insgesamt. Problembezüge in den signierten Event Logs
-prüfen; es gibt keinen separaten serverseitigen Anlagenannahmestatus.
+Nach Abnahme überholte Actions-Läufe und nach Übernahme nicht benötigte Branches
+entfernen. Erfolgreiche Nachweise, Signierläufe und benötigte Upgrade-Paketquellen
+mit Logs und Artefakten erhalten. Aktive schreibende Live-Tests nicht unterbrechen.
+Main, veröffentlichte Tags und Releases bleiben erhalten. Veröffentlichung und
+Deployment benötigen weiterhin einen ausdrücklich beauftragten Release-Prozess.

@@ -31,6 +31,7 @@ test('web guide exports complete chapters with escaped executable examples', asy
       const html = await readFile(join(destination, `${topic.id}.html`), 'utf8');
       assert.ok(html.includes(`https://fbforge.de/connect/hilfe/0.3/${topic.id}`));
       assert.ok(html.includes('Anleitung für Version 0.3.0'));
+      assert.ok(html.includes('Anleitungen im Wiki'), 'navigation must not present the wiki as 0.1 only');
       assert.ok(html.includes('<a href="/connect">FBForge Connect</a>'));
       assert.ok(!html.includes('>Connect</a>'));
       for (const picture of [topic, ...(topic.illustrations || [])]) {
@@ -43,6 +44,14 @@ test('web guide exports complete chapters with escaped executable examples', asy
     const builtHelp = await readFile(new URL('../frontend/src/ApplicationHelp.vue', import.meta.url), 'utf8');
     assert.ok(!builtHelp.includes('topics.js'));
     assert.ok(!builtHelp.includes('screenshots'));
+    const start = await readFile(join(destination, 'start.html'), 'utf8');
+    for (const action of [
+      'Nach Updates suchen',
+      'Update herunterladen',
+      'Download abbrechen',
+      'Installieren und neu starten',
+    ])
+      assert.ok(start.includes(action), `quickstart must explain the updater action: ${action}`);
   } finally {
     await rm(temp, { recursive: true, force: true });
   }
@@ -55,6 +64,12 @@ test('wiki guide exports the same steps, examples and images into versioned chap
     await promisify(execFile)(process.execPath, ['scripts/export-wiki.mjs', destination]);
     const index = await readFile(join(destination, 'Version-0.3.md'), 'utf8');
     const sidebar = await readFile(join(destination, '_Sidebar.md'), 'utf8');
+    const home = await readFile(join(destination, 'Home.md'), 'utf8');
+    for (const page of [home, sidebar, index])
+      assert.ok(
+        page.includes('https://fbforge.de/connect/hilfe/0.2/start'),
+        'the previous stable guide must stay reachable alongside the 0.3 guide',
+      );
     for (const topic of helpTopics) {
       assert.ok(index.includes(`](0.3-${topic.id})`));
       assert.ok(sidebar.includes(`](0.3-${topic.id})`));

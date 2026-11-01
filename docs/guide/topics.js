@@ -14,11 +14,15 @@ export const helpTopics = [
       'Eine Destination ist ein Zustellpunkt bei FIT-Connect. Ein Onlinedienst sendet Einreichungen und empfängt angebotene Antworten. Ein Subscriber ist das empfangende Fachverfahren. Er ruft Einreichungen ab und kann darauf antworten. Die API und der Zugang müssen zu Ihrem Test passen.',
       'Die Bereiche sind auch direkt über die Navigation erreichbar. Unter „Vorgänge“ finden Sie lokale Kopien. „Anleitung“ öffnet den passenden Abschnitt auf der FBForge-Website.',
       'Führen Sie zuerst einen kleinen Test mit fiktiven JSON-Daten durch. Prüfen Sie anschließend Anlagen, Empfangsbestätigung und gegebenenfalls Antworten.',
+      'Unter „Info → Aktualisierungen“ wählen Sie „Nach Updates suchen“. Die Suche kontaktiert GitHub, ohne FIT-Connect-Zugangsdaten oder Fachdaten zu übertragen. „Beim Start automatisch nach Updates suchen“ lässt sich abschalten. Ohne Internet können Sie weiterarbeiten.',
+      'Bei einer neueren stabilen Windows-x64-Version lesen Sie die Änderungen und wählen „Update herunterladen“. Der Fortschritt bleibt sichtbar. „Download abbrechen“ beendet den Download. Nach erfolgreicher Signaturprüfung sichern Sie offene Entwürfe und wählen „Installieren und neu starten“. Erst die native Bestätigung startet den Installer. Laufende Aktionen und offene Exporte müssen vorher beendet sein.',
     ],
     notes: [
       'Die Abbildungen zeigen Version 0.3.0 mit ausschließlich fiktiven Testdaten. Download und Versionshinweise beziehen sich auf das veröffentlichte Release.',
       'Das Werkzeug ersetzt kein produktives Fachverfahren und ist keine offizielle Anwendung der FITKO.',
       'Die Anwendung wird weiterentwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
+      'Version 0.2.0 hat keinen integrierten Updater. Die erste Version mit dieser Funktion installieren Sie einmal manuell. Anschließend können neuere kompatible Releases über die App angeboten werden.',
+      'Fehlende Update-Informationen, Netzfehler oder ungültige Signaturen sind kein Nachweis, dass Ihre Version aktuell ist. Bis ein Release mit Update-Dateien veröffentlicht ist, meldet die Suche fehlende Informationen. „Manueller Download auf GitHub“ bleibt als Alternative verfügbar. Gespeicherte Profile und Vorgänge bleiben beim regulären Upgrade erhalten.',
     ],
   },
   {
@@ -64,13 +68,12 @@ export const helpTopics = [
       'Ein Profil bündelt einen Zugang, seine Umgebung und die API-Version. Profile anderer Umgebungen werden nicht zum Verbinden angeboten. Bestehende Profile aus Version 0.1 gehören weiterhin zu TEST. Gespeicherte Profile ersparen die erneute Eingabe nach einem Neustart.',
     steps: [
       'Wählen Sie die Umgebung in der Kopfzeile und öffnen Sie „Verbinden“. Gespeicherte Profile werden zuerst angeboten. Wählen Sie ein Profil und die passende API-Version oder öffnen Sie „Anderen Zugang verwenden“. Ohne gespeichertes Profil sind die Eingabefelder direkt geöffnet.',
-      'Bei einem neuen Zugang geben Sie Client-ID und Client-Secret ein. Für die dauerhafte Wiederverwendung aktivieren Sie das Speichern und vergeben einen verständlichen Namen, zum Beispiel „Musterfachverfahren v3“. Ohne Speichern gelten Zugang und Schlüssel nur für diese Sitzung.',
-      'Prüfen Sie vor dem Verbinden, ob Zugang und API-Version zu Ihrem Test passen. Die Berechtigungen Ihres Zugangs bestimmen die verfügbaren Funktionen.',
-      'Gespeicherte Profile stehen im Verbindungsdialog zuerst. Wählen Sie dort das gewünschte Profil aus. Neue Zugangsdaten geben Sie bei vorhandenen Profilen unter „Anderen Zugang verwenden“ ein. Es werden nur dessen Client-ID, API-Version und Schlüsselanzahl angezeigt. „Mit Profil verbinden“ öffnet den Zugang. Umbenennen, Secret ändern, Export und Löschen finden Sie unter „Profil verwalten“. Der schmale Profileditor ersetzt den Verbindungsdialog. Nach Abbruch oder Speichern kehren Sie zur bisherigen Profilauswahl zurück.',
+      'Bei einem neuen Zugang geben Sie Client-ID und Client-Secret ein. Für die dauerhafte Wiederverwendung aktivieren Sie das Speichern und vergeben einen verständlichen Namen, zum Beispiel „Musterfachverfahren v3“. Ohne Speichern gelten Zugang und Schlüssel nur für diese Sitzung. Prüfen Sie, ob Rolle und Berechtigungen zu Ihrem Test passen.',
+      'Unter „Profil verwalten“ finden Sie Umbenennen, Secret ändern, Export und Löschen. Der schmale Profileditor ersetzt den Verbindungsdialog. Nach Abbruch oder Speichern kehren Sie zur bisherigen Profilauswahl zurück. Client-ID, API-Version und Schlüsselanzahl sind sichtbar, das Secret wird nicht angezeigt. Unter „Verbunden“ können Sie auch die aktive Client-ID ansehen und kopieren.',
       'Unter „API-Version für die Verbindung“ können Sie denselben gespeicherten Zugang für v2 oder v3 verwenden. Das Secret muss nicht erneut eingegeben werden. Ein passendes Profil für die weitere API wird weiterverwendet oder neu angelegt. Schlüssel und Vorgänge bleiben nach API getrennt. Der Zugang muss für die gewählte API freigeschaltet sein.',
       'Auch der API-Schalter oben verwendet die aktuelle Anmeldung für die weitere API. Das funktioniert ohne gespeichertes Profil. Bestehende Verbindungen desselben Zugangs werden weiterverwendet. Bei fehlender Freischaltung bleibt die bisherige Verbindung aktiv. Die Umgebung wird dabei nicht gewechselt.',
-      'Unter „Verbunden“ sehen Sie die aktive Client-ID und können sie kopieren. Auch gespeicherte Profile zeigen ihre Client-ID, API-Version und Schlüsselanzahl. Das Client-Secret wird nicht angezeigt.',
       'Speichern Sie Schlüsseländerungen im Profil und beachten Sie Hinweise auf ausstehende Sicherungen. Bewahren Sie zusätzlich eine eigene sichere Schlüsselsicherung auf.',
+      'In der Zertifikatsprüfung und im geladenen Schlüsselbestand werden abgelaufene sowie innerhalb von 30 beziehungsweise 90 Tagen ablaufende Zertifikate hervorgehoben. Erneuerung und Registrierung werden weiterhin bewusst durchgeführt.',
     ],
     notes: [
       'Dauerhafte Profile und private Schlüssel werden auf Windows mit dem Benutzerkonto verschlüsselt. Es gibt keinen unverschlüsselten Ersatzspeicher.',
@@ -128,24 +131,23 @@ export const helpTopics = [
       'Prüfen Sie die Fachdaten mit „Fachdaten gegen Schema prüfen“. JSON wird gegen das angebotene JSON-Schema geprüft, XML gegen die aufgelösten XSDs. Beim Vorbereiten läuft diese Prüfung automatisch, sofern kein aktuelles Ergebnis vorhanden ist. Änderungen an Inhalt, Empfänger oder Schema machen das Ergebnis ungültig. Wird eine öffentliche Schemaquelle benötigt, erscheint vor dem Abruf eine Nachfrage. Mit „Für diese Verbindung erlauben“ wird die Prüfung fortgesetzt. „Abbrechen“ lässt Ihre Fachdaten unverändert. Alternativ fügen Sie unter „Lokale Schemata und technische Optionen“ lokale Prüfschemata mit passender Kennung hinzu.',
       'Fügen Sie bei Bedarf Anlagen hinzu. Prüfen Sie Dateiname, Format und Größe. Entfernen Sie nicht benötigte Anlagen vor dem Vorbereiten. Unter „Entwurf als Testfall wiederverwenden“ vergeben Sie einen Namen und speichern den Entwurf mit Anlagen und lokalen Prüfschemata geschützt in der Sammlung oder exportieren ihn als Datei.',
       'Wenn Sie eine Antwort testen möchten, aktivieren Sie vor dem Versand das Antwortangebot und wählen Sie das erlaubte Antwortschema.',
+      'Der Scannerstatus bleibt im Versand sichtbar. Nach der Vorbereitung zeigt die Bestätigung das tatsächliche Virenscan-Ergebnis für Fachdaten und jede Anlage. Ein eingerichteter Scanner allein bestätigt noch keine Dateiprüfung. Vor der Übertragung wird erneut geprüft.',
       'Wählen Sie „Versand vorbereiten“. Prüfen Sie in der unveränderlichen Zusammenfassung auch Antwortangebot und Anlagenzahl und bestätigen Sie den Versand. „Nicht angeboten“ bedeutet, dass die Einreichung keinen FIT-Connect-Antwortkanal enthält. Über „Abbrechen“ können Sie den Entwurf noch ändern. Kopieren Sie Submission ID und Case ID bei Bedarf mit den Kopierschaltflächen. Nach erfolgreichem Versand können Sie unter „Nächsten Test vorbereiten“ Fachdaten und Anlagen ausdrücklich für einen neuen Entwurf auswählen. Die Case ID wird geleert, Empfängerleistungen und Schema werden erneut geprüft.',
+      'Bei ungewissem Ausgang mit bekannter Case ID und Submission ID „Versand mit Server abgleichen“ wählen. Nur ein eindeutig zugeordnetes, geprüftes Bereitstellungsereignis bestätigt die Übergabe. Ein fehlendes Ereignis oder Lesefehler beweist keinen fehlgeschlagenen Versand. Der Abgleich sendet nichts erneut und bestätigt keinen Empfang.',
     ],
     examples: [
       {
         title: 'JSON-Testantrag',
         language: 'json',
         note: 'Fiktive Daten für einen eigenen Test. Passen Sie Felder und Werte an das Schema der gewählten Leistung an.',
-        content: JSON.stringify(
-          { antrag: { vorname: 'Erika', nachname: 'Muster', anliegen: 'Testantrag' } },
-          null,
-          2,
-        ),
+        content:
+          '{\n  "antrag": {\n    "vorname": "Erika",\n    "nachname": "Muster",\n    "anliegen": "Testantrag"\n  }\n}',
       },
     ],
     notes: [
       'Die Nachfrage für öffentliche Schemaquellen erscheint beim Laden oder Prüfen. Ihre Freigabe gilt für die aktive Verbindung und lässt sich mit „Freigabe beenden“ widerrufen. Nach einem Verbindungswechsel oder Neustart ist erneut eine Freigabe nötig. Lokale Schemata und mitgelieferte Demos benötigen keine Freigabe.',
       'Ist ein Schema nicht verfügbar oder liefert die Quelle eine Fehlerantwort, erzeugt die Anwendung daraus keine Beispieldaten. Ihre bisherigen Fachdaten bleiben erhalten. Prüfen Sie die angebotene Schema-Version oder verwenden Sie eigene Testdaten. Passen Sie bei erzeugten Entwürfen auch Codelistenwerte und Anlagenverweise an Ihren Test an.',
-      'Bei „Ausgang ungewiss“ nicht einfach erneut senden. Nutzen Sie die bekannten IDs zur Event-Log-Prüfung, um doppelte Testnachrichten zu vermeiden. Ab 0.3.0 können Sie anschließend „Neuen Entwurf vorbereiten“ wählen und das Doppelversandrisiko ausdrücklich bestätigen. Der bisherige Versuch bleibt ungewiss und unter „Vorgänge“ erhalten. Die Case ID wird geleert; Empfängerleistungen und Schema werden erneut geladen. Erst eine neue Versandbestätigung übermittelt einen neuen Antrag. Eine eindeutige HTTP-401/403-Ablehnung beim erstmaligen Ankündigen einer Einreichung gilt als fehlgeschlagen.',
+      'Bei „Ausgang ungewiss“ nicht einfach erneut senden. Nutzen Sie die bekannten IDs zur Event-Log-Prüfung, um doppelte Testnachrichten zu vermeiden. Ab 0.3.0 können Sie anschließend „Neuen Entwurf vorbereiten“ wählen und das Doppelversandrisiko ausdrücklich bestätigen. Der bisherige Versuch bleibt ungewiss und unter „Vorgänge“ erhalten. Die Case ID wird geleert. Empfängerleistungen und Schema werden erneut geladen. Erst eine neue Versandbestätigung übermittelt einen neuen Antrag. Eine eindeutige HTTP-401/403-Ablehnung beim erstmaligen Ankündigen einer Einreichung gilt als fehlgeschlagen.',
       'Die Vorgangsablage übernimmt den tatsächlich vorbereiteten Versandinhalt. Spätere Änderungen im Eingabefeld verändern diese Kopie nicht.',
       'Für einen bewussten Negativtest können Sie die Fachdaten-Schemaprüfung unter den technischen Optionen ausschalten. Die Versandbestätigung nennt das ausdrücklich. Format und Empfängerangebot werden weiterhin vom SDK geprüft. Eine erfolgreiche Schemaprüfung bestätigt keine fachliche Richtigkeit.',
     ],
@@ -162,7 +164,10 @@ export const helpTopics = [
         caption:
           'Ein gemeinsamer Import für private Schlüssel. Das Beispiel zeigt ausschließlich fiktive PKCS#12-Daten.',
       },
-      { image: 'receive-inbox', caption: 'Getrennte Eingänge für Einreichungen und Antworten.' },
+      {
+        image: 'receive-inbox',
+        caption: 'Getrennte Eingänge für Einreichungen und Antworten.',
+      },
       {
         image: 'receive-review',
         caption: 'Die geöffnete Nachricht mit Rückweg zum Eingang und Prüfergebnis.',
@@ -187,10 +192,13 @@ export const helpTopics = [
     steps: [
       'Verbinden Sie den Fachverfahren-Zugang. Öffnen Sie unter „Empfangen“ das Register „Einreichungen“. Wählen Sie eine eigene Destination und laden Sie die passenden privaten Schlüssel zum Entschlüsseln und Signieren.',
       'Ohne Submission ID laden Sie die verfügbaren Einreichungen. Mit einer Submission ID öffnet die Schaltfläche oder die Eingabetaste direkt die Nachricht und startet die Entschlüsselung und Prüfung.',
+      '„Alter aus Event Logs laden“ liest geprüfte Bereitstellungszeitpunkte für die geladene Seite. Danach nach Alter filtern oder älteste Einreichungen zuerst anzeigen. Fehlende Zeitpunkte bleiben unbekannt. „Nächste Einreichung öffnen“ führt zur folgenden Nachricht dieser Seite, ohne sie anzunehmen.',
       'Nach erfolgreicher Einrichtung wird die Empfangseinrichtung kompakt angezeigt. Über „Einrichtung ändern“ öffnen Sie Destination und Schlüssel erneut. Wenn Schlüssel oder Schemata fehlen, führt die passende Schaltfläche zur Einrichtung oder zu den Schemaeinstellungen. Laden Sie die fehlenden Dateien und starten Sie „Inhalte entschlüsseln und prüfen“ erneut. Es wurde dabei noch nichts angenommen oder abgelehnt.',
       'Lesen Sie die Fachdaten direkt in der Formularansicht. Ab 0.3.0 zeigt eine Schemaabweichung die Fehlerübersicht und das verwendete Schema. Betroffene JSON-Felder sind markiert. Bei XML werden Zeile und Spalte genannt. Sie können die Nachricht begründet ablehnen oder nach zusätzlicher nativer Bestätigung trotz Schemaabweichung annehmen. Eindeutige Schema-Bezeichnungen ersetzen technische Auswahlwerte, Datumswerte und Wahrheitswerte werden lesbar angezeigt. „Struktur, Quelltext und Feldangaben“ enthält Originalwerte, Pfade, Schemaherkunft und Quelltext. Die Eingangssuche ist während des Lesens ausgeblendet. „Zurück zum Eingang“ stellt Ihre bisherige Suche wieder her.',
+      'Beim Entschlüsseln ist der Prüfstatus sichtbar. Nach erfolgreichem Virenscan werden Metadaten, Fachdaten und die unauffälligen Anlagen ausdrücklich genannt. Gesperrte Anlagen bleiben getrennt gekennzeichnet. Ein ausgeschalteter Scanner wird nicht als erfolgreicher Scan dargestellt.',
       'Öffnen Sie Anlagen über „Ansehen“ oder laden Sie das Original herunter. Bereits im Standardfenster bleibt die rechte Spalte mit Anlagen und Aktionen beim Lesen sichtbar. Lange Anlagenlisten scrollen innerhalb der Spalte. Bei schmalen Fenstern führt „Zu Anlagen und Aktionen“ direkt zu den Empfangsaktionen vor der Anlagenliste. Über „Antwort verfassen“ öffnen Sie den Antwortentwurf.',
       'Unter „Private Schlüssel importieren“ wählen Sie JWK, JWKS, unverschlüsseltes PKCS#8-PEM oder PKCS#12. Textdateien werden direkt geprüft. Bei .p12/.pfx geben Sie das Dateipasswort ein und starten „Schlüssel prüfen und importieren“. Kann ein PKCS#12-Zertifikat zum Signieren und Entschlüsseln verwendet werden, wählen Sie die gewünschte Verwendung. Das Dateipasswort wird nicht gespeichert. Die freigegebene Registrierung bestimmt Kennung und Zertifikatskette des geladenen Schlüssels. STAGE und PROD prüfen weiterhin V-PKI-Vertrauen und Sperrstatus mit dem SDK.',
+      'Einzeldownloads von Anlagen und technischen Inhalten öffnen den Windows-Speichern-Dialog mit dem Downloadordner als Vorschlag. Den Speicherort können Sie ändern. Die Oberfläche meldet Erfolg, Abbruch und Schreibfehler. Das gilt auch für lokale Exporte. Dateien außerhalb der geschützten Vorgangsablage sind unverschlüsselt.',
       'Mit „Alle Dateien herunterladen“ speichern Sie Metadaten, Fachdaten und Anlagen gemeinsam. Direkt an jeder freigegebenen Anlage zeigt ein grüner Haken „Virenscan: kein Fund“ nur bei einem abgeschlossenen Scan. Ohne Scanner oder ohne Prüfergebnis erscheint ein ausdrücklicher Hinweis statt einer Freigabe. Wählen Sie im nativen Dialog einen Zielordner. Die Dateien werden entschlüsselt außerhalb der geschützten Vorgangsablage gespeichert. Jede Nachricht erhält einen eigenen Ordner mit einer Exportübersicht. Bestehende Exporte werden nicht überschrieben.',
       'Beim Annehmen einer einzelnen Einreichung fragt der Bestätigungsdialog „Dateien vor der Annahme speichern?“. Wählen Sie „Ja, alle Dateien vorher speichern“, um vor der Annahme einen Zielordner zu wählen. Erst nach erfolgreicher Speicherung wird die Annahme übermittelt. Bei Abbruch der Ordnerwahl oder einem Speicherfehler bleibt die Einreichung offen. „Nein, ohne Download annehmen“ bestätigt ohne zusätzlichen Export. Die geschützte Aufbewahrung unter „Vorgänge“ bleibt davon unabhängig.',
       'Markieren Sie im Eingang einzelne Nachrichten oder wählen Sie alle aus. „Alle auf dieser Seite auswählen“ betrifft die angezeigte Seite. Bis zu 100 Nachrichten lassen sich über mehrere Seiten gemeinsam auswählen. „Auswahl herunterladen“ prüft und speichert die Auswahl. „Prüfen, speichern und annehmen“ bestätigt anschließend nur erfolgreich geprüfte und vollständig gespeicherte Einreichungen.',
@@ -205,6 +213,7 @@ export const helpTopics = [
       'Die Bestätigung einer vorbereiteten Empfangsaktion ist höchstens 60 Sekunden gültig. Dauert etwa die Ordnerwahl länger, bereiten Sie die Aktion erneut vor. Bereits gespeicherte Dateien lösen keine Annahme aus.',
       'Für XML muss eine passende XSD samt benötigten Referenzen verfügbar sein. Wohlgeformtes XML allein ist kein Schemanachweis.',
       'Die Formularansicht ist auf 256 KiB Fachdaten begrenzt. Größere Inhalte bleiben als Originaldatei verfügbar.',
+      'Technische Abholfrist für nicht abgeholte Nachrichten: grundsätzlich 14 Tage ab Bereitstellung, endgültige Löschung nach 21 Tagen. Erfolgreich abgeholte Nachrichten werden nach 7 Tagen gelöscht. Unvollständige Übertragungen nach einem Tag. Das sind technische Speicherfristen und keine fachlichen Bearbeitungsfristen.',
     ],
   },
   {
@@ -307,25 +316,14 @@ export const helpTopics = [
         title: 'JSON-Antwort',
         language: 'json',
         note: 'Für das unten gezeigte Testschema. Eine Antwort bestätigt noch nicht die Annahme der ursprünglichen Einreichung.',
-        content: JSON.stringify({ status: 'erhalten' }, null, 2),
+        content: '{\n  "status": "erhalten"\n}',
       },
       {
         title: 'JSON-Antwortschema',
         language: 'json',
         note: 'Speichern Sie dieses Schema als JSON-Datei. Bieten Sie beim ursprünglichen Versand urn:de:test mit application/json an. Eine URN ist eine Kennung und keine Downloadadresse. Laden Sie das Schema bei Bedarf lokal, bevor Sie die Antwortdaten prüfen.',
-        content: JSON.stringify(
-          {
-            $schema: 'https://json-schema.org/draft/2020-12/schema',
-            $id: 'urn:de:test',
-            title: 'Testantwort',
-            type: 'object',
-            properties: { status: { type: 'string', enum: ['erhalten', 'in_bearbeitung', 'abgeschlossen'] } },
-            required: ['status'],
-            additionalProperties: false,
-          },
-          null,
-          2,
-        ),
+        content:
+          '{\n  "$schema": "https://json-schema.org/draft/2020-12/schema",\n  "$id": "urn:de:test",\n  "title": "Testantwort",\n  "type": "object",\n  "properties": {\n    "status": {\n      "type": "string",\n      "enum": [\n        "erhalten",\n        "in_bearbeitung",\n        "abgeschlossen"\n      ]\n    }\n  },\n  "required": [\n    "status"\n  ],\n  "additionalProperties": false\n}',
       },
     ],
     notes: [
@@ -359,13 +357,8 @@ export const helpTopics = [
         title: 'BPMN-Nachrichtenbezug',
         language: 'xml',
         note: 'Ausschnitt zur Zuordnung in einem eigenen BPMN-Modell. Die fachlichen Kennungen müssen mit der empfangenden Destination vereinbart sein. Die BPMN-Element-ID BpmnMessage_1 ist keine FIT-Connect-Nachrichten-ID. Ein vollständiges fiktives Modell öffnen Sie über „Fiktiven Demo-Prozess öffnen“.',
-        content: `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-  xmlns:fc="urn:fit-connect:test-client:bpmn:1"
-  targetNamespace="urn:mein-test" fc:processModelId="vereinbarte-modellkennung">
-  <bpmn:message id="BpmnMessage_1" name="Nachforderung"
-    fc:messageId="vereinbarte-nachrichtenkennung"
-    fc:schemaUri="urn:de:test" fc:mimeType="application/json" />
-</bpmn:definitions>`,
+        content:
+          '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"\n  xmlns:fc="urn:fit-connect:test-client:bpmn:1"\n  targetNamespace="urn:mein-test" fc:processModelId="vereinbarte-modellkennung">\n  <bpmn:message id="BpmnMessage_1" name="Nachforderung"\n    fc:messageId="vereinbarte-nachrichtenkennung"\n    fc:schemaUri="urn:de:test" fc:mimeType="application/json" />\n</bpmn:definitions>',
       },
     ],
     notes: [
@@ -386,18 +379,24 @@ export const helpTopics = [
         caption:
           'Import zertifizierter Verschlüsselungs- und Signaturschlüssel für STAGE und PROD. Passwörter sind ausgeblendet.',
       },
+      {
+        image: 'destination-templates',
+        caption: 'Konfigurationsvorlagen vor der aktuellen Servervorschau in die Bearbeitung übernehmen.',
+      },
     ],
     intro:
       'Mit API v3 können Sie eigene Destinations anlegen und deren Konfiguration verwalten. Änderungen benötigen die passenden Rechte Ihres Fachverfahren-Zugangs.',
     steps: [
       'Verbinden Sie ein gespeichertes Fachverfahren-Profil mit API v3 und öffnen Sie „Destinations“.',
-      'Laden Sie eine eigene Destination oder bereiten Sie die Anlage einer neuen Test-Destination vor.',
+      '„Bestehende Destinations“ öffnet die eigene Übersicht und lädt sie beim ersten Aufruf. Auch aus der Detailansicht führt die Schaltfläche zurück zur Liste. Dabei werden keine Destinations geändert. Für einen neuen Zustellpunkt wählen Sie „Neue Destination anlegen“ und folgen der getrennten Einrichtung mit Vorschau und Bestätigung.',
       '„Ansehen“ öffnet die Destination-Details. „Bearbeiten“ führt direkt in die Bearbeitung. Zurück gelangen Sie über „Zur Destination-Übersicht“.',
       'Eine einzelne Destination bearbeiten Sie direkt unter „Stammdaten“. Nur tatsächlich geänderte Werte gelangen in die Vorschau. Leistungen und Prozessnachrichten stehen getrennt unter „Angebote“, die Schlüsselverwaltung unter „Schlüssel wechseln“. Für gemeinsame Änderungen wählen Sie bis zu zehn Destinations und anschließend „Destinations gemeinsam bearbeiten“. Die Auswahl bleibt beim Ansehen einzelner Details erhalten.',
       'In TEST können Sie für verschlüsselte Nachrichten lokale Testschlüssel erzeugen. In STAGE und PROD importieren Sie unter „V-PKI-Schlüsselpaar importieren“ einen Verschlüsselungs- und einen davon verschiedenen Signaturschlüssel. Verwenden Sie je eine PKCS#12-Datei (.p12 oder .pfx) mit privatem Schlüssel und vollständiger Zertifikatskette oder einen privaten JWK mit vollständigem x5c. Dateipasswörter werden nur beim Import verwendet und nicht gespeichert. Die Schlüssel müssen vor einer Registrierung sicher im Profil gespeichert sein.',
       'Prüfen Sie Typ, Bezeichnung, Leistungen und Schemainformationen. Bereiten Sie die Änderung vor und lesen Sie die Zusammenfassung, bevor Sie sie bestätigen.',
       'Übernehmen Sie die eigenen Schlüssel anschließend für den Empfang und senden Sie einen kleinen fiktiven Testantrag an die neue Destination.',
       'Bei einem Schlüsselwechsel nutzen Sie den vorgesehenen Rotationsablauf. Entfernen Sie alte Schlüssel erst, wenn keine entsprechenden Nachrichten mehr entschlüsselt werden müssen.',
+      'In der Bearbeitung unter „Konfigurationsvorlagen“ ausgewählte Felder geschützt im Profil speichern oder eine Vorlage importieren. Das Übernehmen ändert nur die Bearbeitung. Vor jedem Speichern aktuelle Servervorschau, Felder und Leistungs-/Schemaangebote vergleichen und separat bestätigen. Leistungsangebote werden als vollständige Listen ersetzt. Vorlagen mit Angeboten gelten für eine einzelne Antrags-Destination.',
+      '„Lokale Änderungshistorie“ enthält bis zu 100 aktuelle Konfigurationsänderungen dieses Profils, dieser Umgebung und API. Vorher-/Nachher-Werte werden mit Windows-DPAPI geschützt gespeichert. Externe Änderungen und Schlüsselrotationen sind kein Bestandteil dieser lokalen Konfigurationshistorie. Ein ungewisser Eintrag verlangt einen Abgleich mit dem Server vor einer Wiederholung.',
     ],
     notes: [
       'Bei erkannten Leserechten werden keine Auswahl- oder Bearbeitungsaktionen angeboten. Änderungen erfordern die Berechtigung manage-destinations. Unbekannte Rechte werden erst beim Aufruf geprüft. Der Server entscheidet über jede Änderung.',
@@ -420,7 +419,7 @@ export const helpTopics = [
       'Öffnen Sie den Event Log direkt aus einem Versandversuch, einem Empfangsdetail oder einem lokalen Vorgang. Bekannte Kennungen werden übernommen.',
       'Wählen Sie die gewünschte Suche: Vorgang über Case ID, Einreichung über Submission ID oder Antwort über Reply ID.',
       'Verbinden Sie den zur Umgebung passenden Zugang. Tragen Sie fehlende Kennungen vollständig ein und starten Sie die Prüfung.',
-      'Lesen Sie Ereignisse und Prüfhinweise. Bei längeren Verläufen laden Sie die weiteren Seiten.',
+      'Die Übersicht zeigt die vollständigen Nutzdaten der sichtbaren verifizierten Ereignisse direkt, darunter Anlagenkennungen, Authentifizierungstags und alle vom Dienst gemeldeten Probleme mit Typ, Titel, Beschreibung und betroffener Ressource. Ablehnungsgründe stehen zuerst. Anlagenkennungen und ihre Authentifizierungstags bleiben zusammen beschriftet. Der vollständige technische Pfad ist am Feldnamen verfügbar. Details werden seitenweise geladen. Große oder tiefe Strukturen bleiben als unveränderter Text lesbar. „Ereignisdaten“ und „JWS-Header“ öffnen zusätzlich die Originalansicht. Angezeigte Authentifizierungstags sind beim reinen Event-Log-Abruf nicht mit den Inhaltsbytes abgeglichen.',
       'Vergleichen Sie nach einem ungewissen Schreibversuch zunächst die vorhandenen Ereignisse und den Serverzustand. Ein neuer Versand ist eine eigene bewusste Aktion.',
     ],
     notes: [
@@ -521,92 +520,48 @@ export const helpTopics = [
         caption:
           'Schema, fiktives Beispiel und bearbeitbaren Entwurf getrennt exportieren. Beide Seiten benötigen dieselbe Definition.',
       },
+      {
+        image: 'test-flows',
+        caption:
+          'Ein neuer Testablauf kombiniert bestehende Testfälle und prüft die Ergebnisse Schritt für Schritt.',
+      },
+      {
+        image: 'malware-scanner',
+        caption:
+          'Lokalen ClamAV mit sichtbarem Signaturstand oder eine eigene Scanner-Gegenstelle auswählen.',
+      },
+      {
+        image: 'local-scanner',
+        caption:
+          'Lokale Komponente mit geprüftem Signaturbestand, bewussten Updates und Offline-Import verwalten.',
+      },
     ],
     intro:
       'Testpakete und Schema-Vergleich funktionieren lokal. Zum tatsächlichen Senden und Empfangen wechseln Sie in die gewohnten geführten Abläufe.',
     steps: [
-      'Öffnen Sie „Testwerkzeuge“. Unter „Testpakete“ laden Sie ein gespeichertes Paket oder öffnen das fiktive Beispiel. Eine Anmeldung ist dafür nicht erforderlich.',
-      'Wählen Sie einen Testfall aus. „Fachdaten und Anlagen ansehen“ zeigt den vorbereiteten Inhalt. Unter „Erwartungen für den manuellen Test“ können Sie den erwarteten Antwortinhalt und die Empfangsbestätigung hinterlegen. Diese Angaben lösen keine automatische Antwort oder Bestätigung aus. Paketname und Testfallname lassen sich unter „Bezeichnungen ändern“ anpassen.',
-      '„Als Versandentwurf öffnen“ führt zu „Senden“ und bei Bedarf zur Anmeldung. Tragen Sie eine Empfänger-Destination ein und wählen Sie „Testfall übernehmen“. Nach Ihrer Bestätigung wird deren aktuelles Angebot geprüft. Nur bei passender Leistung, Prozessnachricht und Schema werden Fachdaten, Anlagen und Antwortangebot ersetzt. Die Case ID wird geleert. Prüfen Sie anschließend den Entwurf und bestätigen Sie den Versand separat.',
-      'Einen eigenen Versandentwurf speichern Sie im dritten Versandabschnitt unter „Entwurf als Testfall wiederverwenden“. Vergeben Sie einen Namen. „Testfall speichern“ legt ihn geschützt in der lokalen Windows-Sammlung ab. Oben in „Senden“ wählen Sie ihn unter „Meine Testfälle“ direkt aus. „Testfall laden“ prüft nach Ihrer Bestätigung das Empfängerangebot und ersetzt den Entwurf. Unter „Testpakete importieren, exportieren und löschen“ verwalten Sie die Sammlung. Das Paket übernimmt keine Verbindung, privaten Schlüssel, Destination IDs oder bisherigen Nachrichtenkennungen. Im Werkzeug können Sie mehrere Pakete unter „Weitere Testfälle hinzufügen“ zusammenführen. „In Testpaketsammlung speichern“ bewahrt das bearbeitete Paket verschlüsselt für Ihr Windows-Benutzerkonto auf. „Gespeicherte Testpakete laden“ öffnet dieselbe Sammlung wie im Versand und in Testabläufen. „Testpaket exportieren“ erzeugt davon getrennt eine unverschlüsselte Datei.',
-      'Wechseln Sie zu „Schema-Vergleich“. Ziehen Sie die bisherige und die neue JSON-Schema- oder XSD-Datei in die beschrifteten Dateifelder. Prüfen Sie das Schemaformat und wählen Sie „Schemata vergleichen“. Der Beispielvergleich zeigt den Ablauf mit fiktiven Dateien.',
-      'Die Ergebnisliste nennt hinzugefügte, entfernte und geänderte Struktureinträge. Suchen Sie nach einem Feld oder öffnen Sie dessen bisherige und neue Regeln. „Vergleich speichern“ exportiert den Bericht als JSON.',
-      'Unter „Antwortschemas“ definieren Sie ein eigenes JSON-Antwortschema. Tragen Sie eine vereinbarte HTTPS- oder URN-Kennung mit Version, Bezeichnung und fachliche Statuswerte ein. Ergänzen Sie Felder und deren Datentypen und Pflichtangaben. Vorlagen für Statusmitteilungen und Nachforderungen ersetzen den aktuellen Entwurf. Speichern Sie ihn vorher, wenn Sie ihn behalten möchten.',
-      'Die kompakten Feldgruppen halten Name, Beschriftung und Datentyp zusammen. Die Exporte stehen vor der aufklappbaren Anleitung „Antwortschema mit der Gegenstelle verwenden“. „JSON-Schema herunterladen“ exportiert die Definition, „Fiktives Beispiel herunterladen“ passende Beispieldaten und „Schemaentwurf speichern“ die bearbeitbaren Einstellungen. Den gespeicherten Entwurf können Sie später wieder öffnen. Der einfache Assistent importiert keine beliebigen vorhandenen JSON-Schemata zur Bearbeitung und entfernt deshalb keine unbekannten Regeln aus solchen Dateien.',
-      'Bei der Empfängerleistung hinterlegen Sie die Kennung als unterstütztes Antwortschema. In der Destination-Einrichtung und -Verwaltung lässt sie sich aus der JSON-Schemadatei übernehmen. Dies lädt die Datei nicht hoch. Die Konfigurationsänderung wird separat bestätigt. Der Sender lädt die aktuellen Leistungen neu und bietet genau dieses Schema als Antwortkanal an. Ein Dateiimport im Versand umgeht das Empfängerangebot nicht.',
-      'Stellen Sie die Schemadatei beiden Seiten lokal zur Verfügung oder veröffentlichen Sie sie selbst unter einer passenden HTTPS-Adresse. FIT-Connect überträgt die Kennung, nicht automatisch die Definition. Eine URN ist keine Downloadadresse. Beim Antworten laden Sie das passende lokale Antwortschema und prüfen den Inhalt. Empfangene Antworten werden mit derselben Definition geprüft. Eine fachliche Statusmeldung ersetzt keine technische Annahme oder Ablehnung.',
+      'Öffnen Sie „Testwerkzeuge → Testfälle und Abläufe → Testpakete“. Laden Sie ein gespeichertes Paket, eine Datei oder das fiktive Beispiel. Eine Anmeldung ist dafür nicht erforderlich.',
+      'Wählen Sie einen Testfall. „Fachdaten und Anlagen ansehen“ zeigt den Inhalt. „Erwartungen für den manuellen Test“ enthält Antwortinhalt und Empfangsbestätigung, versendet aber nichts. Unter „Bezeichnungen ändern“ passen Sie Paket- und Testfallnamen an.',
+      'Speichern Sie den bearbeiteten Stand mit „In Testpaketsammlung speichern“ verschlüsselt für Ihr Windows-Benutzerkonto. „Gespeicherte Testpakete laden“ öffnet dieselbe Sammlung wie im Versand und in Testabläufen. „Testpaket exportieren“ erzeugt eine unverschlüsselte Datei. Unter „Weitere Testfälle hinzufügen“ führen Sie Pakete zusammen.',
+      '„Als Versandentwurf öffnen“ führt zu „Senden“ und gegebenenfalls zur Anmeldung. Geben Sie eine Ziel-Destination ein und wählen Sie „Testfall übernehmen“. Nach Bestätigung prüft die App das aktuelle Empfängerangebot. Nur bei passender Leistung, Prozessnachricht und Schema ersetzt sie Fachdaten, Anlagen und Antwortangebot. Die Case ID wird geleert. Bestätigen Sie den Versand anschließend separat.',
+      'Einen eigenen Versandentwurf bewahren Sie unter „Entwurf als Testfall wiederverwenden“ mit „Testfall speichern“ geschützt auf. Unter „Meine Testfälle“ können Sie ihn wieder laden. „Testpakete importieren, exportieren und löschen“ verwaltet die Sammlung. Verbindungsdaten, private Schlüssel und bisherige Nachrichtenkennungen werden nicht übernommen.',
+      'Unter „Testabläufe“ öffnen Sie ein Testpaket aus der Sammlung oder einer Datei. „Ablauf lokal speichern“ bewahrt Definition und Testpaket verschlüsselt auf. „Gespeicherte Abläufe laden“ und „Gespeicherten Ablauf öffnen“ stellen sie nach einem Neustart wieder bereit. Starten Sie einen Durchlauf, führen Sie die jeweilige Aktion im Arbeitsbereich aus und wählen Sie danach die passende lokale Nachricht zur Prüfung. Die Schritte vergleichen Fachdaten und Anlagen, Empfangsbestätigungen und Antworten.',
+      'Der aktuelle Schritt steht vor der Ablaufverwaltung und erhält den Tastaturfokus. Ein neuer Durchlauf oder ein anderer Ablauf verlangt bei vorhandenen Prüfergebnissen eine Bestätigung. „Abbrechen“ erhält den Fortschritt. Vor dem Zurücksetzen können Sie das Durchlaufergebnis exportieren. Definition und Ergebnis sind getrennte unverschlüsselte Exporte. Ergebnisse laufender Durchläufe bleiben in der Sitzung.',
+      'Unter „Schema-Vergleich“ wählen Sie bisheriges und neues JSON-Schema oder XSD. „Schemata vergleichen“ zeigt hinzugefügte, entfernte und geänderte Einträge. Suchen Sie nach Feldern und vergleichen Sie deren Regeln. „Vergleich speichern“ exportiert den Bericht als JSON.',
+      'Unter „Antwortschemas“ definieren Sie eine vereinbarte HTTPS- oder URN-Kennung mit Version, Bezeichnung, Statuswerten und zusätzlichen Feldern. Vorlagen ersetzen den Entwurf. „JSON-Schema herunterladen“, „Fiktives Beispiel herunterladen“ und „Schemaentwurf speichern“ exportieren Definition, Beispiel und bearbeitbare Einstellungen getrennt. Den Entwurf können Sie wieder öffnen. Der Assistent bearbeitet keine beliebigen fremden Schemas unter Verlust unbekannter Regeln.',
+      '„Antwortschema mit der Gegenstelle verwenden“ erklärt die Einrichtung: Der Empfänger bietet die Kennung an seiner Leistung an. Die Destination-Verwaltung kann sie aus der Schemadatei übernehmen, ohne diese hochzuladen. Der Sender lädt das aktuelle Angebot und wählt genau dieses Schema. Stellen Sie beiden Seiten dieselbe Datei lokal oder über eine eigene HTTPS-Quelle bereit. FIT-Connect überträgt die Kennung, nicht automatisch die Definition. Eine URN ist keine Downloadadresse. Eine fachliche Statusmeldung ersetzt keine technische Annahme oder Ablehnung.',
+      'In der Hauptnavigation „Virenscan“ wählen Sie ausgeschaltet, „Lokaler ClamAV“ oder eine eigene ClamAV-/ICAP-Gegenstelle. Die im Windows-Setup ausgewählte lokale Komponente wird beim ersten App-Start ohne Internet übernommen. Der aktivierte lokale Standard gilt auch für neue Verbindungen und läuft während der App-Sitzung, nicht als Windows-Dienst.',
+      '„Signaturen aktualisieren“ steht beim Scannerstatus. Unter „Komponente verwalten“ finden Sie „Scanner online einrichten“, „Lokales Scanner-Paket importieren“, Offline-Signaturimport und Beenden. Für den Paketimport entpacken Sie die vollständige ClamAV-Distribution aus dem Release und wählen das innere Komponenten-ZIP. Anschließend „Lokaler ClamAV“ auswählen und anwenden. Download und Signaturupdate bleiben beim Seitenwechsel sichtbar und abbrechbar. Die übrigen Arbeitsbereiche bleiben erreichbar.',
+      'Engine-Version, Bereitschaft und Signaturstand bleiben sichtbar. Ab sieben Tagen erscheint ein Altershinweis. „Signaturen aktualisieren“ lädt offizielle Datenbanken mit FreshClam nach Bestätigung. Automatische Updates beim App-Start sind getrennt abschaltbar und erfolgen höchstens einmal täglich. FIT-Connect-Inhalte werden dabei nicht übertragen.',
+      'Für den Offline-Import wählen Sie main.cvd, daily.cvd und bytecode.cvd mit ihren drei passenden .cvd.sign-Dateien gemeinsam. Nutzen Sie ein frisch erzeugtes geprüftes Komponentenpaket oder eigene offizielle FreshClam-Dateien. Für vollständige CVD-Dateien „ScriptedUpdates no“ verwenden. CLD wird nicht importiert. Ungültige Signaturen und ältere Datenbanken ersetzen keinen neueren gültigen Bestand.',
     ],
     notes: [
       'Exportierte Testpakete sind unverschlüsselte Dateien. Die lokale Sammlung wird mit dem Windows-Benutzerkonto verschlüsselt und bleibt nach einem Neustart verfügbar. Sie ist unabhängig vom Verbindungsprofil. Maximal 32 Pakete und insgesamt 64 MiB. Verwenden Sie nur fiktive Testdaten und prüfen Sie den Inhalt vor dem Teilen.',
       'Grenzen: 20 Testfälle, 8 MiB je Paket, 512 KiB Fachdaten, 2 MiB je lokalem Schema und 4 MiB je Anlage. Lokale Paket-Schemata müssen zur angegebenen Schema-URI passen. Eine abweichende $id wird nicht umgeschrieben.',
       'Der Schema-Vergleich ist ein Strukturvergleich, kein vollständiger Kompatibilitätsnachweis. Externe Referenzen, XSD-Imports und Codelisten werden nicht geladen. Bei XSD werden die ausgewählten Dateien verglichen. Prüfen Sie Änderungen zusätzlich mit Ihren Testfällen.',
       'Der Vergleich akzeptiert JSON-Schemata und XSD-Dateien bis 512 KiB. Fehlerantworten statt eines Schemas sowie XML mit DTDs oder externen Entitäten werden abgewiesen.',
+      'Abläufe: maximal 32 Definitionen mit insgesamt 64 MiB und knapp 8 MiB je Ablauf. Sammlungen sind unabhängig vom FIT-Connect-Profil. Der Durchlauf bleibt beim Werkzeug- oder Profilwechsel innerhalb derselben Umgebung geöffnet. Ein ungewisser Versand oder falscher Inhalt bleibt offen. JSON-Objektreihenfolge ist unerheblich, XML wird nach sicherer Syntaxprüfung exakt verglichen. Ergebnisexporte enthalten Nachrichtenkennungen und Prüfzeitpunkte. Nur fiktive Daten teilen.',
+      'Eigene Scanner erhalten entschlüsselte Inhalte über unverschlüsseltes TCP und benötigen eine lokale oder anderweitig geschützte Gegenstelle. Metadaten-/Fachdatenfunde, Zeitlimits und unvollständige Scans blockieren die Freigabe. Bei Anlagenfunden bleiben geprüfte übrige Inhalte lesbar, betroffene Dateien gesperrt. Voll-Download und Sammelannahme sind dann gesperrt. Die zusätzlich bestätigte Einzelannahme mit Anlagenproblemen bestätigt die gesamte Nachricht und meldet die betroffenen Kennungen signiert. Kein Sanitizing oder zusätzliche Quarantäne. Kein Fund ist keine Sicherheitsgarantie.',
+      'Offline-Installation und Signaturimport benötigen keinen Netzaufruf. Ein abgebrochener Update erhält den bisherigen gültigen Bestand. Temporäre Scannerdateien werden beim Beenden oder nach einem unterbrochenen Lauf beim nächsten Start bereinigt. Ein nicht bereiter Scanner bestätigt keinen erfolgreichen Scan.',
     ],
-  },
-];
-
-// 0.3 additions stay in the same maintained guide source. Exports are versioned independently.
-const additions = {
-  send: [
-    'Der Scannerstatus bleibt im Versand sichtbar. Nach der Vorbereitung zeigt die Bestätigung das tatsächliche Virenscan-Ergebnis für Fachdaten und jede Anlage. Ein eingerichteter Scanner allein bestätigt noch keine Dateiprüfung. Vor der Übertragung wird erneut geprüft.',
-    'Bei ungewissem Ausgang mit bekannter Case ID und Submission ID „Versand mit Server abgleichen“ wählen. Nur ein eindeutig zugeordnetes, geprüftes Bereitstellungsereignis bestätigt die Übergabe. Ein fehlendes Ereignis oder Lesefehler beweist keinen fehlgeschlagenen Versand. Der Abgleich sendet nichts erneut und bestätigt keinen Empfang.',
-  ],
-  receive: [
-    'Beim Entschlüsseln ist der Prüfstatus sichtbar. Nach erfolgreichem Virenscan werden Metadaten, Fachdaten und die unauffälligen Anlagen ausdrücklich genannt. Gesperrte Anlagen bleiben getrennt gekennzeichnet. Ein ausgeschalteter Scanner wird nicht als erfolgreicher Scan dargestellt.',
-    'Einzeldownloads von Anlagen und technischen Inhalten öffnen den Windows-Speichern-Dialog mit dem Downloadordner als Vorschlag. Den Speicherort können Sie ändern. Die Oberfläche meldet Erfolg, Abbruch und Schreibfehler. Das gilt auch für lokale Exporte. Dateien außerhalb der geschützten Vorgangsablage sind unverschlüsselt.',
-    '„Alter aus Event Logs laden“ liest geprüfte Bereitstellungszeitpunkte für die geladene Seite. Danach nach Alter filtern oder älteste Einreichungen zuerst anzeigen. Fehlende Zeitpunkte bleiben unbekannt. „Nächste Einreichung öffnen“ führt zur folgenden Nachricht dieser Seite, ohne sie anzunehmen.',
-  ],
-  events: [
-    'Die Übersicht zeigt die vollständigen Nutzdaten der sichtbaren verifizierten Ereignisse direkt, darunter Anlagenkennungen, Authentifizierungstags und alle vom Dienst gemeldeten Probleme mit Typ, Titel, Beschreibung und betroffener Ressource. Ablehnungsgründe stehen zuerst. Anlagenkennungen und ihre Authentifizierungstags bleiben zusammen beschriftet. Der vollständige technische Pfad ist am Feldnamen verfügbar. Details werden seitenweise geladen. Große oder tiefe Strukturen bleiben als unveränderter Text lesbar. „Ereignisdaten“ und „JWS-Header“ öffnen zusätzlich die Originalansicht. Angezeigte Authentifizierungstags sind beim reinen Event-Log-Abruf nicht mit den Inhaltsbytes abgeglichen.',
-  ],
-  connection: [
-    'In der Zertifikatsprüfung und im geladenen Schlüsselbestand werden abgelaufene sowie innerhalb von 30 beziehungsweise 90 Tagen ablaufende Zertifikate hervorgehoben. Erneuerung und Registrierung werden weiterhin bewusst durchgeführt.',
-  ],
-  destinations: [
-    '„Bestehende Destinations“ öffnet die eigene Übersicht und lädt sie beim ersten Aufruf. Auch aus der Detailansicht führt die Schaltfläche zurück zur Liste. Dabei werden keine Destinations geändert.',
-    'In der Bearbeitung unter „Konfigurationsvorlagen“ ausgewählte Felder geschützt im Profil speichern oder eine Vorlage importieren. Das Übernehmen ändert nur die Bearbeitung. Vor jedem Speichern aktuelle Servervorschau, Felder und Leistungs-/Schemaangebote vergleichen und separat bestätigen. Leistungsangebote werden als vollständige Listen ersetzt. Vorlagen mit Angeboten gelten für eine einzelne Antrags-Destination.',
-    '„Lokale Änderungshistorie“ enthält bis zu 100 aktuelle Konfigurationsänderungen dieses Profils, dieser Umgebung und API. Vorher-/Nachher-Werte werden mit Windows-DPAPI geschützt gespeichert. Externe Änderungen und Schlüsselrotationen sind kein Bestandteil dieser lokalen Konfigurationshistorie. Ein ungewisser Eintrag verlangt einen Abgleich mit dem Server vor einer Wiederholung.',
-  ],
-  tools: [
-    'Unter „Testwerkzeuge → Testfälle und Abläufe → Testabläufe“ ein Testpaket aus der Sammlung oder eine Datei öffnen. Mit „Ablauf lokal speichern“ legen Sie den Ablauf samt Testpaket verschlüsselt für Ihr Windows-Benutzerkonto ab. „Gespeicherte Abläufe laden“ und „Gespeicherten Ablauf öffnen“ stellen ihn nach einem Neustart wieder bereit. Die Sammlung ist unabhängig vom FIT-Connect-Profil. Ergebnisse laufender Durchläufe bleiben in der Sitzung. Maximal 32 Abläufe mit insgesamt 64 MiB und knapp 8 MiB je Ablauf. Exportdateien sind unverschlüsselt. Ein Testfall bleibt ein einzelner Baustein. Ein Testablauf kombiniert Versand, Eingang, Inhaltsvergleich, erwartete Empfangsbestätigung und gegebenenfalls Antwort. Einen neuen Durchlauf starten, die Aktionen einzeln in den Arbeitsbereichen bestätigen und anschließend die passende lokale Nachricht auswählen. Prüfschritte vergleichen Fachdaten und Anlagen. JSON-Objektreihenfolge ist unerheblich; XML wird nach sicherer Syntaxprüfung exakt verglichen. Ein falscher Inhalt oder ein ungewisser Versand bleibt offen.',
-    'Ablaufdefinition und Durchlaufergebnis können exportiert werden. Definitionen enthalten das unverschlüsselte Testpaket; Ergebnisse enthalten Nachrichtenkennungen und Prüfzeitpunkte. Verwenden Sie fiktive Daten und prüfen Sie Dateien vor dem Teilen. Der Durchlauf bleibt beim Wechsel des Werkzeugs oder Profils innerhalb derselben Umgebung geöffnet. Der aktuelle Schritt steht vor der Ablaufverwaltung und erhält nach dem Start und jeder erfolgreichen Prüfung den Tastaturfokus. Die Hinweise nennen die zum Schritt passende Aktion. Ein neuer Durchlauf oder das Öffnen eines anderen Ablaufs verlangt bei vorhandenen Prüfergebnissen eine Bestätigung. „Abbrechen“ erhält den bisherigen Fortschritt. Vor dem Zurücksetzen können Sie das Durchlaufergebnis exportieren.',
-    'In der Hauptnavigation „Virenscan“ öffnen und zwischen ausgeschaltet, lokalem ClamAV und eigener ClamAV-/ICAP-Gegenstelle wählen. Im Windows-Setup kann die lokale Komponente mit offiziellen datierten Signaturen ausgewählt werden. Sie wird beim ersten App-Start ohne Internet übernommen. Der aktivierte lokale Standard gilt auch für neue Verbindungen. Er läuft nur während der Sitzung auf diesem Rechner, nicht als Windows-Dienst.',
-    '„Signaturen aktualisieren“ steht direkt beim aktuellen lokalen Scannerstatus. Für eine Nachinstallation unter „Komponente verwalten“ die Aktion „Scanner online einrichten“ oder „Lokales Scanner-Paket importieren“ wählen. Dort stehen auch der Offline-Signaturimport und das Beenden des lokalen Scanners. Das Release enthält eine ClamAV-Distribution mit Komponenten-ZIP, Quellen und Lizenzhinweisen. Die Distribution zunächst entpacken und das innere Komponenten-ZIP auswählen. Anschließend „Lokaler ClamAV“ auswählen und anwenden. Downloads und Signaturaktualisierungen zeigen einen Status und sind abbrechbar. Sie laufen beim Seitenwechsel weiter. Über „Virenscan“ oder die sichtbare Scanner-Aktion kann der Vorgang auch nach dem Seitenwechsel abgebrochen werden. Die übrigen Arbeitsbereiche bleiben erreichbar. Ohne betriebsbereiten Scanner wird kein erfolgreicher Dateiscan bestätigt. Engine-Dateien und Virendatenbanken werden vor Übernahme geprüft.',
-    'Engine-Version, Bereitschaft, Signaturversion und Signaturdatum bleiben sichtbar. Ein Bestand ab sieben Tagen erhält einen Altershinweis. Ohne erneutes Update oder Offline-Import altert der Bestand weiter. „Signaturen aktualisieren“ lädt offizielle Datenbanken mit FreshClam nach Bestätigung. Automatische Updates beim App-Start sind separat abschaltbar und erfolgen höchstens einmal täglich. FIT-Connect-Inhalte werden dafür nicht übertragen.',
-    'Offline-Import: main.cvd, daily.cvd und bytecode.cvd sowie die jeweils zur Datenbankversion gehörende .cvd.sign-Datei gemeinsam auswählen. Die sechs Dateien stammen aus einem frisch erzeugten geprüften Komponentenpaket oder einer eigenen offiziellen FreshClam-Aktualisierung. Für eine eigene FreshClam-Aktualisierung „ScriptedUpdates no“ verwenden, damit vollständige CVD-Dateien entstehen; CLD-Dateien werden nicht importiert. Ungültige Signaturen und ältere Datenbanken ersetzen keinen neueren gültigen Bestand. Das App-Setup und der Scanner-Import benötigen dafür keinen zusätzlichen Netzaufruf. Eine unterbrochene Aktualisierung erhält den bisherigen geprüften Bestand. Temporäre Scannerdateien werden beim Beenden und nach einem unterbrochenen Lauf beim nächsten Start bereinigt.',
-    'Eigene ClamAV-INSTREAM-/ICAP-RESPMOD-Dienste gelten nur für die Verbindung. Eine native Bestätigung zeigt Ziel und Übertragung entschlüsselter Inhalte. Unverschlüsseltes TCP benötigt eine lokale oder anderweitig geschützte Gegenstelle. Der Scanner prüft Metadaten, Fachdaten und Anlagen beim Empfang. Vor Versand oder Antwort werden Fachdaten und Anlagen geprüft. Metadaten-/Fachdatenfunde, Zeitlimits und unvollständige Scans bleiben blockierend. Es erfolgt keine automatische Annahme oder Ablehnung und keine Übertragung an einen FBForge-Scanner.',
-    'Bei einem Anlagenfund bleiben geprüfte übrige Inhalte lesbar. Die betroffene Anlage erscheint mit Name und Kennung, jedoch ohne freigegebene Bytes. Ein vollständiger Originaldownload und die Sammelannahme sind gesperrt. Eine Einzelannahme mit Anlagenproblemen benötigt eine zusätzliche native Bestätigung. Sie bestätigt die gesamte Nachricht und meldet die betroffenen Kennungen als Problem an FIT-Connect. Benötigte Anlagen gegebenenfalls erneut anfordern. Es gibt kein Sanitizing und keine zusätzliche dauerhafte Quarantäne. Ein unauffälliger Scan ist keine Sicherheitsgarantie.',
-  ],
-};
-for (const topic of helpTopics) topic.steps.push(...(additions[topic.id] || []));
-helpTopics
-  .find((topic) => topic.id === 'receive')
-  .notes.push(
-    'Technische Abholfrist für nicht abgeholte Nachrichten: grundsätzlich 14 Tage ab Bereitstellung, endgültige Löschung nach 21 Tagen. Erfolgreich abgeholte Nachrichten werden nach 7 Tagen gelöscht. Unvollständige Übertragungen nach einem Tag. Das sind technische Speicherfristen und keine fachlichen Bearbeitungsfristen.',
-  );
-
-helpTopics
-  .find((topic) => topic.id === 'tools')
-  .illustrations.push(
-    {
-      image: 'test-flows',
-      caption:
-        'Ein neuer Testablauf kombiniert bestehende Testfälle und prüft die Ergebnisse Schritt für Schritt.',
-    },
-    {
-      image: 'malware-scanner',
-      caption: 'Lokalen ClamAV mit sichtbarem Signaturstand oder eine eigene Scanner-Gegenstelle auswählen.',
-    },
-    {
-      image: 'local-scanner',
-      caption:
-        'Lokale Komponente mit geprüftem Signaturbestand, bewussten Updates und Offline-Import verwalten.',
-    },
-  );
-helpTopics.find((topic) => topic.id === 'destinations').illustrations = [
-  ...(helpTopics.find((topic) => topic.id === 'destinations').illustrations || []),
-  {
-    image: 'destination-templates',
-    caption: 'Konfigurationsvorlagen vor der aktuellen Servervorschau in die Bearbeitung übernehmen.',
   },
 ];

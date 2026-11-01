@@ -23,6 +23,8 @@ export async function copyValue(page, label) {
   const button = page.getByRole('button', { name: `${label} kopieren`, exact: true });
   const value = (await button.locator('..').locator('code').innerText()).trim();
   check(/^[a-f0-9-]{36}$/i.test(value), 'live_ui_message_identifier_missing');
+  await button.click();
+  await button.locator('..').getByText(`${label} kopiert.`, { exact: true }).waitFor();
   return value;
 }
 export async function loginSender(page) {
@@ -260,9 +262,46 @@ export async function replyAndAccept(desktop, fixture, message, saveBeforeAccept
   await queryEventLog(page, fixture, message);
 }
 export async function otherAreas(page) {
-  for (const name of ['Start', 'Vorgänge', 'Destinations', 'Prozesse', 'Testwerkzeuge', 'Diagnose', 'Info'])
+  for (const name of [
+    'Start',
+    'Vorgänge',
+    'Destinations',
+    'Prozesse',
+    'Testwerkzeuge',
+    'Hilfe',
+    'Diagnose',
+    'Info',
+  ])
     await navigate(page, name);
   const { version } = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));
   await page.getByText(`Version ${version}`, { exact: false }).first().waitFor();
+  const opener = page.getByRole('button', { name: 'Darstellung wählen', exact: true });
+  for (const [label, theme] of [
+    ['Dunkel', 'dark'],
+    ['Hell', 'light'],
+    ['System', 'system'],
+  ]) {
+    await opener.click();
+    await page
+      .getByRole('group', { name: 'Darstellung', exact: true })
+      .getByRole('button', { name: label, exact: true })
+      .click();
+    await until(
+      () =>
+        page.evaluate(
+          (preference) =>
+            document.documentElement.dataset.theme ===
+            (preference === 'system'
+              ? matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : preference),
+          theme,
+        ),
+      'live_ui_appearance_not_applied',
+    );
+    check(await opener.evaluate((el) => el === document.activeElement), 'live_ui_appearance_focus_lost');
+  }
+  console.log('Real installed desktop UI: dark, light and system appearance applied with focus restored');
   console.log('Real desktop UI: all workspace navigation and installed version view passed');
 }

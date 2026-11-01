@@ -1,4 +1,4 @@
-// Wiki and website share one maintained guide. Released 0.1 chapters stay intact.
+// Wiki and website share one maintained guide. Older released chapters stay intact.
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { helpTopics } from '../docs/guide/topics.js';
@@ -18,14 +18,14 @@ if (
 const chapters = helpTopics.map((topic) => `- [${topic.title}](0.3-${topic.id})`);
 await writeFile(
   join(directory, 'Home.md'),
-  '# FBForge Connect · Anleitung\n\n- [Version 0.1](Version-0.1)\n- [Version 0.3 mit aktuellen Bildern und Beispielen](Version-0.3)\n\n[Projektseite](https://fbforge.de/connect)\n',
+  '# FBForge Connect · Anleitung\n\n- [Version 0.1](Version-0.1)\n- [Version 0.2](https://fbforge.de/connect/hilfe/0.2/start)\n- [Version 0.3 mit aktuellen Bildern und Beispielen](Version-0.3)\n\n[Projektseite](https://fbforge.de/connect)\n',
 );
 await writeFile(
   join(directory, 'Version-0.3.md'),
   [
     '# Anleitung für 0.3',
     '',
-    'Anleitung für Version 0.3.0. Die veröffentlichte Version 0.1 hat eine [eigene Anleitung](Version-0.1).',
+    'Anleitung für Version 0.3.0. Ältere Anleitungen: [0.2](https://fbforge.de/connect/hilfe/0.2/start) und [0.1](Version-0.1).',
     '',
     ...chapters,
     '',
@@ -44,6 +44,7 @@ await writeFile(
     '',
     ...chapters,
     '',
+    '[Anleitung für 0.2](https://fbforge.de/connect/hilfe/0.2/start)',
     '[Anleitung für 0.1](Version-0.1)',
     '',
   ].join('\n'),
@@ -95,5 +96,5 @@ for (const name of images)
     join(directory, 'images', '0.3', `${name}.png`),
   );
 console.log(
-  `${helpTopics.length} Wiki-Kapitel und ${images.size} Bilder exportiert. Vorhandene 0.1-Kapitel bleiben unverändert.`,
+  `${helpTopics.length} Wiki-Kapitel und ${images.size} Bilder exportiert. Ältere Kapitel bleiben unverändert.`,
 );

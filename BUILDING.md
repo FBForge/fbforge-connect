@@ -16,7 +16,7 @@ Maven wird durch den mitgelieferten Wrapper geladen. Für den ersten Build ist I
 Die folgenden Befehle bauen den ausgecheckten Stand. Veröffentlichte Versionen lassen sich nach dem
 Klonen über ihren Release-Tag auschecken, zum Beispiel mit `git switch --detach v0.2.0`.
 Neue Entwicklung liegt auf dem jeweiligen Arbeitsbranch,
-aktuell `release/0.3.0`; die bisherigen 0.2.1-Fehlerkorrekturen sind darin einschließlich ihrer Branch-Historie enthalten.
+für 0.3.0 auf `release/0.3.0`.
 
 ## Windows
 
@@ -73,57 +73,10 @@ npm run desktop:build:offline -- -- --locked
 
 Der erste Rust-Build und das Laden der WebView2-Dateien können einige Minuten dauern. Beide Varianten verwenden dasselbe Ausgabeverzeichnis. Benötigte Pakete vor dem nächsten Build an einen anderen Ort kopieren.
 
-### Update-Signierung einmalig einrichten
-
-Der öffentliche Projekt-Prüfschlüssel ist in `desktop/update-public-key.txt` hinterlegt. Für normale Entwicklungsbuilds keinen neuen Schlüssel erzeugen. Nur der Projekteigentümer richtet das dauerhafte Schlüsselpaar ein oder plant eine Schlüsselrotation. Solange das letzte veröffentlichte Release noch keine `latest.json` enthält, meldet die Updatesuche die fehlenden Update-Informationen. Eine fehlende Authenticode-Signatur des lokalen Entwicklungsbuilds ist dafür nicht die Ursache. Ein Build ohne gültigen Prüfschlüssel deaktiviert den Updater erkennbar; der manuelle Download bleibt verfügbar.
-
-Diese Datei ist die gemeinsame Quelle für die Anwendung, den Signierablauf und die
-unabhängige Paketprüfung. Der Schlüsselwert wird nicht zusätzlich in der Dokumentation
-oder `tauri.conf.json` gepflegt. Bei der Erzeugung entsteht außerdem die öffentliche
-Datei `connect-updater.key.pub` neben dem privaten Schlüssel auf dem Signierrechner;
-das Skript kopiert deren Inhalt in die Repository-Datei. Beide öffentlichen Kopien
-sind beabsichtigt. Die private `.key`-Datei bleibt außerhalb des Repositorys.
-
-Der Projekteigentümer erzeugt das dauerhafte Schlüsselpaar **auf dem Windows-
-Signierrechner**. Für die einmalige Ersteinrichtung aus dem Checkout ausführen:
-
-```powershell
-.\scripts\setup-update-signing.ps1
-```
-
-Diese einmalige Schlüsselerzeugung funktioniert auch aus einem WSL-UNC-Checkout
-in Windows-PowerShell, ohne zusätzlichen Projektpfad als Argument. Das Skript
-startet die festgelegte Windows-Tauri-CLI aus einem lokalen temporären Verzeichnis;
-es verwendet weder WSL-`node_modules` noch einen UNC-Arbeitsordner für CMD.
-`-KeyPath` bezeichnet ausschließlich eine neue private Schlüsseldatei auf einem
-lokalen Windows-Laufwerk außerhalb des Repositorys.
-
-Ein nicht leeres Passwort vergeben. Standardpfad des privaten Schlüssels:
-`%LOCALAPPDATA%\FBForge\signing\connect-updater.key`. Das Skript überschreibt
-keine vorhandenen Schlüssel und legt den privaten Schlüssel nicht im Repository ab.
-Privaten Schlüssel und Passwort sicher sichern; im Repository wird nur der
-öffentliche Prüfschlüssel `desktop/update-public-key.txt` übernommen. Diesen Commit
-vor dem offiziellen Build validieren. Mit dem Prüfschlüssel kann die App zukünftige
-Pakete prüfen; ein öffentlich geteilter privater Testschlüssel ist dafür ungeeignet.
-
-Für die offizielle Signierung das Passwort über den geschützten lokalen
-Signierablauf als `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` bereitstellen. Ein abweichender
-Dateipfad kann als `TAURI_SIGNING_PRIVATE_KEY_PATH` gesetzt werden. Diese Werte
-nicht in Skripte, Workflow-Dateien, Konsolentranskripte oder das Repository schreiben.
-Das Passwort kann beim Start des interaktiven Signier-Runners ausschließlich für dessen Prozess bereitgestellt werden. Im Runner-Verzeichnis mit `run.cmd`:
-
-```powershell
-$secureUpdatePassword = Read-Host 'Passwort des Update-Signaturschlüssels' -AsSecureString
-try {
-    $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = [Net.NetworkCredential]::new('', $secureUpdatePassword).Password
-    .\run.cmd
-} finally {
-    Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD -ErrorAction SilentlyContinue
-    $secureUpdatePassword.Dispose()
-}
-```
-
-Dazu denselben Windows-Benutzer wie bei der Schlüsselerzeugung verwenden. Dies schreibt das Passwort weder ins Repository noch als dauerhafte Benutzer-Umgebungsvariable. Die Update-Signatur ergänzt das vorhandene Windows-Zertifikat und ist davon unabhängig.
+Für normale Entwicklungsbuilds den öffentlichen Projekt-Prüfschlüssel beibehalten.
+Ohne veröffentlichte `latest.json` meldet die Updatesuche fehlende Update-Informationen.
+Die Einrichtung privater Schlüssel gehört ausschließlich zum
+[Release-Ablauf](RELEASING.md#update-signierung-einmalig-einrichten).
 
 ## Linux und macOS
 
@@ -221,16 +174,9 @@ einen lokalen, an diese Engine angeschlossenen ICAP-Testdienst geprüft. Das ist
 keine Zertifizierung fremder ICAP-Produkte. EICAR ist ein ungefährlicher
 standardisierter Erkennungstest, keine allgemeine Sicherheitsgarantie.
 
-Der manuelle Workflow `Real TEST exchange acceptance` installiert bei
-`local_scanner=true` die optionale Komponente aus dem angegebenen erfolgreichen
-Windows-Validierungslauf. Er prüft den echten v2/v3-Nachrichtenfluss mit lokalem
-ClamAV. Ein zusätzlicher, ausschließlich lokaler ICAP-Testdienst meldet für eine
-festgelegte harmlose Anlage einen kontrollierten Befund: Die übrigen Inhalte
-bleiben lesbar, das Vollarchiv bleibt gesperrt und die ausdrücklich bestätigte
-Einzelannahme muss genau diesen Anlagenbezug im signierten Event Log enthalten.
-Dieser Interoperabilitätstest verschickt keine EICAR-Datei und ersetzt den oben
-beschriebenen echten Erkennungstest nicht. Er benötigt die eingerichteten
-TEST-Zugangsdaten und verändert ausschließlich seine eigene Test-Destination.
+Die echte Nachrichtenabnahme mit ClamAV und kontrollierten ICAP-Anlagenproblemen
+ist unter [Live-Abnahme](RELEASING.md#live-abnahme) beschrieben. Ein kontrollierter
+Protokollbefund ersetzt keinen echten Erkennungstest und überträgt keine EICAR-Datei.
 
 Der rein lesende Workflow `Check ClamAV upstream release` meldet wöchentlich oder
 bei manuellem Start eine neuere offizielle Engine-Version. Er installiert oder

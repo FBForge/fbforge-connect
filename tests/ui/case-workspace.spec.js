@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { setRetention } from '../../scripts/live-ui/review-030.mjs';
 test('local cases reopen exact content after receipt, preview inert PDFs, isolate profiles and delete copies', async ({
   page,
 }) => {
@@ -153,4 +154,33 @@ test('unsaved connections show session-only storage and cannot enable durable re
       'Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Windows-Speicher.',
     ),
   ).toBeVisible();
+});
+
+test('live acceptance waits for the native retention acknowledgement and clicks only once', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  await page.getByText('Geschützte Aufbewahrung aktiv', { exact: true }).click();
+  const choice = page.getByRole('checkbox', {
+    name: 'Vorgänge für dieses gespeicherte Profil dauerhaft aufbewahren',
+    exact: true,
+  });
+  await expect(choice).toBeChecked();
+  await page.evaluate(() => (window.__caseFixture.holdStorage = true));
+  for (const enabled of [false, true]) {
+    const operation = setRetention(choice, enabled);
+    operation.catch(() => {});
+    await expect(choice).toBeDisabled();
+    expect(await choice.isChecked()).toBe(!enabled);
+    expect(await page.evaluate(() => window.__caseFixture.persistent)).toBe(!enabled);
+    await page.evaluate(() => window.__caseFixture.releaseStorage());
+    await operation;
+    expect(await choice.isChecked()).toBe(enabled);
+    expect(await page.evaluate(() => window.__caseFixture.persistent)).toBe(enabled);
+  }
+  expect(
+    await page.evaluate(
+      () => window.__caseFixture.calls.filter((call) => call.operation === 'storage').length,
+    ),
+  ).toBe(2);
 });
