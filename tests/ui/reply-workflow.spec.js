@@ -1,9 +1,9 @@
-import { test } from '@playwright/test';
+import { test } from './fixtures.js';
 import assert from 'node:assert/strict';
 
-test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
+test('reply-workflow with synthetic native fixtures', async ({ createPage }) => {
   for (const uncertain of [false, true]) {
-    const page = await browser.newPage({ viewport: { width: 1180, height: 900 } });
+    const page = await createPage({ viewport: { width: 1180, height: 900 } });
     const errors = [],
       external = [];
     page.on('pageerror', (e) => errors.push(e.message));
@@ -79,7 +79,6 @@ test('reply-workflow with synthetic native fixtures', async ({ browser }) => {
     assert.equal(await page.evaluate(() => window.__applicationFixture.replyWrites), 1);
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
-    await page.close();
   }
   console.log(
     'Reply workflow passed: verified application, schema labels, invalid-data block, unchanged bytes, explicit confirmation/cancel, one write, staging cleanup, uncertain lock and reply event-log navigation.',

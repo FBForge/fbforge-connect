@@ -57,3 +57,18 @@ pub mod network_settings;
 
 #[path = "../src/update_transport.rs"]
 pub mod update_transport;
+
+#[path = "../src/write_gate.rs"]
+pub(crate) mod write_gate;
+
+#[path = "../src/profile_archive.rs"]
+pub(crate) mod profile_archive;
+
+#[path = "../src/update_state.rs"]
+pub(crate) mod update_state;
+
+#[path = "../src/export_source.rs"]
+pub(crate) mod export_source;
+
+#[path = "../src/update_install.rs"]
+pub(crate) mod update_install;

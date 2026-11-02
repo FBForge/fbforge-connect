@@ -1,10 +1,10 @@
 import { downloadLocal } from '../local-download.js';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { isTauri } from '@tauri-apps/api/core';
-import { invoke, diagnosticLog } from '../native.js';
+import { invoke, diagnosticLog } from '../native.ts';
 import { buildSupportReport } from '../support-report.js';
 import { probeAdapter, errorMessage } from '../diagnostics.js';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 
 // Trace exports deliberately exclude user payloads and identifiers.
 export function useDiagnostics({

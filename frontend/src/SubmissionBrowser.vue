@@ -1,6 +1,6 @@
 <script setup>
 import { inject, ref, computed, watch, nextTick } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import { processWorkspaceKey } from './process-context.js';
 const processWorkspace = inject(processWorkspaceKey, null);
 import { caseWorkspaceKey } from './case-context.js';
@@ -16,7 +16,7 @@ import CopyValue from './CopyValue.vue';
 import ServiceLabel from './ServiceLabel.vue';
 import { listSubmissions, loadSubmission } from './submissions.js';
 import { errorMessage } from './diagnostics.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 const props = defineProps({
   session: Object,
   busy: Boolean,

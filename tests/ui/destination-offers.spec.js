@@ -1,8 +1,8 @@
-import { test } from '@playwright/test';
+import { test } from './fixtures.js';
 import assert from 'node:assert/strict';
 
-test('destination-offers with synthetic native fixtures', async ({ browser }) => {
-  const page = await browser.newPage({ viewport: { width: 1180, height: 900 } }),
+test('destination-offers with synthetic native fixtures', async ({ createPage }) => {
+  const page = await createPage({ viewport: { width: 1180, height: 900 } }),
     errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://127.0.0.1:1420/test-fixtures/destination-manager.html');

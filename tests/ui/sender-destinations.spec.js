@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 
 const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;

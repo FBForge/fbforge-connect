@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 
 test('diagnostics show clear context and outcomes with technical codes on demand', async ({
@@ -6,7 +6,7 @@ test('diagnostics show clear context and outcomes with technical codes on demand
 }, testInfo) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html');
   await page.evaluate(async () => {
-    const { diagnosticLog } = await import('/src/native.js');
+    const { diagnosticLog } = await import('/src/native.ts');
     diagnosticLog.clear();
     const base = {
       time: new Date().toISOString(),

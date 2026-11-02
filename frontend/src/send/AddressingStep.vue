@@ -19,6 +19,7 @@ const {
   processChoice,
   selectedService,
   loadRecipient,
+  applyServiceNames,
   disabled,
 } = props.controller;
 </script>
@@ -88,14 +89,7 @@ const {
           :services="recipient.services"
           :context-key="`${session?.sessionId}:${target.trim().toLowerCase()}`"
           :disabled="disabled"
-          @names="
-            (names) => {
-              if (Object.hasOwn(names, service) && (!serviceName || serviceName === service))
-                serviceName = names[service];
-              for (const item of recipient.services)
-                if (Object.hasOwn(names, item.identifier)) item.name = names[item.identifier];
-            }
-          "
+          @names="applyServiceNames"
         />
       </div>
       <label v-if="session?.apiVersion === 'v3' && addressing === 'process'" for="send-process">

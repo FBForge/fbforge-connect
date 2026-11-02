@@ -3,14 +3,14 @@ import { cancelledProductionAction } from './environments.js';
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import { ref, computed, nextTick, watch } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import {
   prepareDestinationCleanup,
   executeDestinationCleanup,
   cancelDestinationCleanup,
 } from './destination-cleanup.js';
 import { diagnosticCode, errorMessage } from './diagnostics.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 const props = defineProps({ session: Object, destination: Object, busy: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'changed']);
 const pending = ref(false),

@@ -6,7 +6,9 @@ const reviewedLimits = new Map();
 const roots = [
   'frontend/src',
   'desktop/src',
-  ...['contract', 'host', 'adapter-v2', 'adapter-v3'].map((name) => `engine/${name}/src/main/java`),
+  ...['contract', 'host', 'adapter-support', 'adapter-v2', 'adapter-v3'].map(
+    (name) => `engine/${name}/src/main/java`,
+  ),
 ];
 const extensions = new Set(['.vue', '.js', '.ts', '.css', '.rs', '.java']);
 let failed = false;

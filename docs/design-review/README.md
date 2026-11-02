@@ -1,18 +1,85 @@
 # Abnahmestand 0.3.0
 
-Stand: 2. November 2026. Der Windows-Kandidat einschließlich der Korrektur der
-Profilnavigation und seine vollständige installierte TEST-Abnahme sind bestanden.
-Testzahlen sind keine gemessene Codeabdeckung oder Zertifizierung.
+Stand: 2. November 2026. Wartbarkeitsänderungen, Regressionen und reproduzierbare
+Abdeckungsmessungen sind umgesetzt. Die reguläre CI, normale und Offline-Installation,
+Upgrade, NVDA sowie die erneute SDK- und installierte UI-Abnahme auf TEST sind bestanden.
+Die Produktquellen stammen unverändert aus `4ce71bc`. Nachfolgende Commits verbessern
+Testwerkzeuge, Messung und Dokumentation. Die finale Signierung bleibt beim Eigentümer.
 
-Die Entwicklungshistorie wurde anschließend auf Wunsch des Eigentümers von
-101 auf 17 Themen-Commits zusammengefasst. Der vollständige Dateibaum blieb dabei
-gegenüber `681fbd1` identisch. Danach wurde ausschließlich diese Herkunftsnotiz
-ergänzt. Die folgenden Abnahmen gehören weiterhin zu den jeweils genannten
-ursprünglichen Commit-IDs. Sie belegen den geprüften Inhalt, keine Signierfreigabe
-für eine neue Commit-ID. Vor der endgültigen Signierung ist der resultierende
+Vor diesem Refactoring wurde die Entwicklungshistorie von 101 auf 17 Themen-Commits
+zusammengefasst. Der damalige Produktbaum blieb gegenüber `681fbd1` identisch.
+Die Nachweise unten nennen ihre tatsächlichen Quellen. Sie sind keine Signierfreigabe
+für eine andere Commit-ID. Vor der endgültigen Signierung ist der resultierende
 Main-Commit nach dem Release-Ablauf erneut zu validieren.
 
-## Nachweise
+## Wartbarkeit und gemessene Abdeckung
+
+- Native Aufrufe, Sitzungen, Profilmetadaten, Empfängerangebote und Schema-Paging
+  verwenden strenge TypeScript-Verträge mit Laufzeitprüfung von `unknown`.
+  Auch die Zuordnung von Sender-/Empfängerprofilen wird in Vue streng geprüft.
+  Bestehende JavaScript-Ansichten sind noch nicht vollständig typisiert.
+- Die Versandadressierung besitzt klare synchrone Übergänge und sieben gezielte
+  Regressionen. Der übergeordnete Versandcontroller benötigt fünf statt zwölf Watcher.
+- Der identische HTTPS-Schemaabruf liegt in `adapter-support`. Beide SDKs laden
+  getrennte Klassen. Der zusätzliche Isolationstest prüft auch identischen Bytecode.
+- Fehlerhaft angebotene Prozessstandards ergeben einen verständlich zuordenbaren
+  Protokollfehler. Der Regressionstest schlägt auf dem ursprünglichen Stand fehl.
+- c8, Chromium/V8, JaCoCo und llvm-cov erzeugen getrennte HTML-Berichte. Fehlende
+  Frontend-Dateien und leere Java-Berichte werden durch Regressionen abgefangen.
+  Nicht geladene Frontend-Module zählen als ungetestet. Instrumentierung gehört
+  ausschließlich zu den Tests, niemals zum ausgelieferten Paket.
+
+Befehle und Mindestwerte stehen in [BUILDING.md](../../BUILDING.md#testabdeckung-messen).
+Die Vergleichsmessung verwendet einen getrennten Checkout von `6cb27f6` und
+identische Ausschlüsse für Typdeklarationen. Die Entdoppelung verändert den
+Java-Nenner. Die Quoten sind keine gemeinsame Gesamtquote oder Sicherheitsgarantie.
+
+| Messumfang | Vorher Zeilen/Zweige | Danach Zeilen/Zweige |
+| --- | --- | --- |
+| Node, alle Frontend-JS/TS-Module | 55,75 % / 85,21 % | 56,83 % / 85,47 % |
+| Java, eigene Module und isolierte Adapter | 82,98 % / 63,62 % | 83,43 % / 64,42 % |
+| Browser, alle Frontend-JS/TS-/Vue-Module | 83,06 % / 70,81 % | 83,08 % / 70,82 % |
+| Rust, isolierte Verträge unter Linux, Produktzeilen | 58,16 % / nicht gemessen | 58,16 % / nicht gemessen |
+| Rust, isolierte Verträge unter Windows, Produktzeilen | erstmals gemessen | 74,08 % / nicht gemessen |
+| Rust, vollständige native Windows-Tests, Produktzeilen | erstmals gemessen | 31,73 % / nicht gemessen |
+
+349 Node-Fälle ohne übersprungene Tests, 279 Java-Fälle und 69 isolierte native
+Fälle sind lokal bestanden. Die sieben neuen Auswahlzustand-Tests decken den neuen
+Adressierungsbaustein mit 100 % Zeilen- und 93,50 % Zweigabdeckung ab.
+Die Browserabnahme entdeckte während des Refactorings eine ausbleibende Dropdown-Aktualisierung
+nach dem FIM-Abruf. Ein expliziter, unveränderlicher Übergang für Katalogtitel behebt
+das Problem und erhält manuelle Änderungen sowie die Schemaauswahl. Der gezielte
+Browsertest und eine zusätzliche Zustandsregression bestehen. Auch der vollständige
+Browserlauf besteht mit 242 Fällen ohne Wiederholungen oder übersprungene Tests.
+Der Produktionsbundle-Test und der paketierte Java-Engine-Smoke-Test bestehen.
+Die erste native Rohmessung enthielt Inline-Testmodule. LLVMs aggregierte
+Zähler können zudem von der Anzahl eindeutiger physischer Quellzeilen abweichen. Die Produktmessung zählt nun eindeutige physische LCOV-Quellzeilen.
+Ein Rust-Syntaxbaum identifiziert testexklusive Module, Funktionen und Felder.
+Die Rohdaten bleiben erhalten. Auch ungetesteter Produktcode nach einem Testmodul
+bleibt im Nenner. Drei Rust-Parserfälle und zwei LCOV-Regressionen sichern das ab.
+Die vollständige native Messung erfasst 2.195 von 6.918 Produktzeilen.
+Besonders die Tauri-Befehle für Profile, Scanner, Vorgänge und Updates sowie
+`write_policy.rs` benötigen weitere gezielte Tests. Die gesonderte installierte
+UI-Abnahme wird nicht instrumentiert und fließt nicht in diese Quote ein.
+Die vollständige Migration des übrigen JavaScripts und weitere Tests bisher
+unerreichter Fehler-/Abbruchpfade bleiben schrittweise Wartungsarbeit.
+
+## Neue Nachweise des Refactorings
+
+| Prüfung | Stand |
+| --- | --- |
+| [CI 41426876905](https://github.com/FBForge/fbforge-connect/actions/runs/41426876905) | Bestanden, `87f3ed2`, vollständige Produktberichte für Node, Browser, Java und beide nativen Windows-Umfänge |
+| [Windows 41416057273](https://github.com/FBForge/fbforge-connect/actions/runs/41416057273) | Bestanden, `4ce71bc`, normale und Offline-Installation, Upgrade von 0.2.0, Profilerhalt, Scanner und NVDA |
+| [SDK-Matrix 41416061122](https://github.com/FBForge/fbforge-connect/actions/runs/41416061122) | Bestanden, `4ce71bc`, Umfang `native_only`, v2/v3 JSON/XML/Prozessnachrichten, Antworten, Absenderbeschränkung, Schlüsselwechsel |
+| [Installierte UI 41424503317](https://github.com/FBForge/fbforge-connect/actions/runs/41424503317) | Bestanden, Kandidat `4ce71bc`, Treiber `191781c`, Umfang `installed_ui_only`, lokale und Online-Scanner-Einrichtung, vollständiger Nachrichtenfluss |
+
+Lokal bestehen alle 349 Node-Fälle ohne übersprungene Tests. Beide CI-Browserläufe
+umfassen alle 242 Fälle einschließlich der geprüften öffentlichen FIM-Fixtures.
+Java: 279 Fälle. Windows: 69 isolierte und 72 vollständige native Fälle sowie drei
+Parserfälle des Messwerkzeugs. Die Plattformwerte werden getrennt festgeschrieben.
+Die Produktquellen und der Live-Treiber blieben nach ihren geprüften Quellständen unverändert.
+
+## Frühere Nachweise
 
 | Prüfung | Stand |
 | --- | --- |
@@ -25,17 +92,9 @@ Main-Commit nach dem Release-Ablauf erneut zu validieren.
 | [Reguläre CI 41385851855](https://github.com/FBForge/fbforge-connect/actions/runs/41385851855) | Bestanden, Testtreiber `29f1646`, Produktcode unverändert |
 | [Website-Deployment 41381860547](https://github.com/FBForge/fbforge/actions/runs/41381860547) | Main `ed812c4`, aktuelle 0.3-Hilfe und als Vorschau gekennzeichnete Produktbilder veröffentlicht |
 
-Windows: 278 Java-Fälle, 242 Browserfälle einschließlich öffentlicher FIM-Schemata,
-69 isolierte native Fälle und 72 Desktop-Fälle bestanden. Lokal sind alle 330 Skriptfälle
-mit PowerShell ohne übersprungene Fälle bestanden. Windows überspringt zwei dort
-nicht anwendbare POSIX-Dateirechtefälle, die lokal ausgeführt wurden.
-Installation, Upgrade, Profilerhalt, Scanner-Auswahl, NVDA sowie Bau und Installation
-des Offline-WebView2-Setups sind bestanden.
-Die letzten Änderungen nach dem Windows-Quellstand betreffen ausschließlich den
-Abnahmetreiber und die Dokumentation, keinen Produktcode. Ein früherer Windows-Versuch
-scheiterte vor einem Browserseitenaufruf an `ERR_NO_BUFFER_SPACE`. Derselbe Quellstand
-bestand anschließend auf einem frischen Runner alle 242 Browserfälle und die
-vollständige Installation. Auch lokal bestanden alle 242 Fälle ohne Testwiederholungen.
+Diese früheren Nachweise gehören zu ihren jeweiligen Produktständen.
+Die damaligen Änderungen von `da29597` bis `29f1646` betrafen ausschließlich den
+Abnahmetreiber und die Dokumentation. Aktuelle Zahlen und Quellstände stehen oben.
 
 ## Umfang der Live-Abnahme
 

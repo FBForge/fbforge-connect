@@ -56,7 +56,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -69,11 +69,22 @@ jobs:
       - run: npm run licenses:check
       - run: npm run lint
       - run: npm run format:check
-      - run: npm test
+      - run: npm run test:coverage:node
       - run: npm run build:frontend
       - run: npx playwright install --with-deps chromium
       - run: npm run test:bundle
-      - run: npm run test:ui
+      - run: npm run test:coverage:ui
+      - run: node scripts/coverage-summary.mjs node browser
+      - name: Retain frontend coverage reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-frontend
+          path: |
+            coverage/node
+            coverage/browser
+            !coverage/browser/.cache
+          if-no-files-found: error
 
   engine:
     needs: changes
@@ -95,7 +106,18 @@ jobs:
           cache: maven
           cache-dependency-path: engine/**/pom.xml
       - working-directory: engine
-        run: ./mvnw --batch-mode verify
+        run: ./mvnw --batch-mode -Pcoverage clean verify
+      - run: node scripts/coverage-engine.mjs
+      - run: node scripts/coverage-summary.mjs engine
+      - name: Retain Java coverage reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-engine
+          path: |
+            engine/coverage/target/site/jacoco-aggregate
+            coverage/engine
+          if-no-files-found: error
       - run: npm run stage:engine
       - run: npm run test:engine
 
@@ -103,15 +125,49 @@ jobs:
     needs: changes
     if: needs.changes.outputs.native == 'true'
     runs-on: windows-2025
-    timeout-minutes: 12
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt
+      - run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt --component llvm-tools-preview
       - run: cargo +1.99.0 fmt --manifest-path desktop/Cargo.toml --all -- --check
       - run: cargo +1.99.0 fmt --manifest-path desktop/native-contracts/Cargo.toml --all -- --check
-      - run: cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked
+      - run: cargo +1.99.0 install cargo-llvm-cov --version 0.9.1 --locked
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.20.0
+          package-manager-cache: false
+      - run: cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked --example coverage-source
+      - run: node scripts/coverage-native.mjs contracts
+      - run: node scripts/coverage-summary.mjs native-contracts
+      - name: Retain Windows native contract coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-native-contracts-windows
+          path: coverage/native-contracts
+          if-no-files-found: error
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: engine/**/pom.xml
+      - run: npm ci --ignore-scripts
+      - working-directory: engine
+        run: .\mvnw.cmd --batch-mode -DskipTests package
+      - run: npm run stage:engine
+      - run: npm run build:frontend
+      - run: node scripts/coverage-native.mjs desktop
+      - run: node scripts/coverage-summary.mjs native-desktop
+      - name: Retain full native Windows product coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-native-desktop-windows
+          path: coverage/native-desktop
+          if-no-files-found: error
       - run: cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked --example profile-checkpoint
       - shell: powershell
         run: ./scripts/ci/test-windows-signing.ps1

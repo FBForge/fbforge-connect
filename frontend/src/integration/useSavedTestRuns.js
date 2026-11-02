@@ -1,5 +1,5 @@
 import { ref, onMounted } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { validateTestFlow } from './test-flows.js';
 export function useSavedTestRuns() {
   const saved = ref([]),

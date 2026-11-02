@@ -1,8 +1,8 @@
 import { cancelledProductionAction } from '../environments.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { errorMessage } from '../diagnostics.js';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 import {
   generateTestKeys,
   listGeneratedKeys,

@@ -8,7 +8,7 @@ import FlowRestartDialog from './FlowRestartDialog.vue';
 import TestFlowContext from './TestFlowContext.vue';
 import { useSavedTestRuns } from './useSavedTestRuns.js';
 import { useFlowVerification } from './useFlowVerification.js';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { useEnvironment } from '../environments.js';
 const environment = useEnvironment();
 import { downloadLocal } from '../local-download.js';

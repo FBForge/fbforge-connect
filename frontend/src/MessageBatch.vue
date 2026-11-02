@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount, nextTick, useId } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import { loadedKeys } from './resources.js';
 import { errorMessage, diagnosticCode } from './diagnostics.js';
 import { receiveMessages } from './receive/messages.js';

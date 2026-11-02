@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 
 test('saved credentials can set up both APIs and reuse an existing API profile without copying keys', async ({

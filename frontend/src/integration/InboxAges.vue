@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { loadSubmission } from '../submissions.js';
 import { readSubmissionTimeline, collectionAge } from './server-timeline.js';
 const props = defineProps({ session: Object, items: Array, busy: Boolean, destinationId: String });

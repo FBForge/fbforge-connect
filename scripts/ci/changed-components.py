@@ -18,12 +18,17 @@ def components(paths):
     for path in paths:
         if documentation(path):
             continue
+        # The report gate is pure JavaScript and has platform-report fixtures.
+        # Updating a numeric minimum does not change either native binary.
+        if path == 'scripts/coverage-summary.mjs':
+            checks['frontend'] = True
+            continue
         if path.startswith(('.github/workflows/', 'scripts/ci/')) or path in (
             'package.json', 'package-lock.json', '.gitattributes', '.npmrc',
         ):
             return dict.fromkeys(NAMES, True)
         if path.startswith(('frontend/', 'tests/', 'licenses/')) or path.endswith('.config.js') or path in (
-            '.prettierrc.json', '.prettierignore', '.editorconfig',
+            '.prettierrc.json', '.prettierignore', '.editorconfig', 'tsconfig.json', '.c8rc.json',
         ):
             checks['frontend'] = True
         if path.startswith('engine/'):

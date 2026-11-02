@@ -1,4 +1,4 @@
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { caseParts, readCaseFile } from '../cases.js';
 import { compareTestContent } from './test-flows.js';
 import { contentDifferences } from './content-differences.js';

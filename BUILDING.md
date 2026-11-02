@@ -123,6 +123,15 @@ Konsole schreiben, obwohl der Test die erwartete Ablehnung erfolgreich prüft.
 Prüfen Sie die zugehörige JUnit-Zusammenfassung: `Failures: 0, Errors: 0` bedeutet
 bestandene Tests. Ein tatsächlicher Test- oder Buildfehler darf nicht übergangen werden.
 
+Die nativen Regressionen verwenden dieselben Module wie die Desktop-Befehle:
+`write_gate` für Schreibfreigaben und dauerhafte Checkpoints, `profile_archive`
+für begrenzte Schlüsselarchive, `export_source` für gebundene Downloads sowie
+`update_state` und `update_install` für Update-Zustände und Installationsfreigaben.
+Die Desktop-Adapter liefern Dialoge, Engine-IPC und Dateisystemzugriffe.
+Zusätzliche Tests prüfen beschädigte Vorgänge, unterbrochene Exporte und
+Scanner-Staging. Windows prüft außerdem echte DPAPI-Dateien und gesperrte Ziele,
+bei denen ein fehlgeschlagener Dateitausch die bisherige Kopie erhalten muss.
+
 Unter Windows zusätzlich die vollständigen nativen Tests ausführen:
 
 ```powershell
@@ -130,6 +139,68 @@ cargo +1.99.0 test --manifest-path desktop/Cargo.toml --locked
 ```
 
 Installation, Upgrade und NVDA werden im Workflow `Windows release validation` geprüft. Die [Beitragsanleitung](CONTRIBUTING.md) beschreibt Live-Tests und die getrennte Signierung von Veröffentlichungspaketen.
+
+## Testabdeckung messen
+
+```bash
+npm run test:coverage:node
+npm run test:coverage:ui
+(cd engine && ./mvnw --batch-mode -Pcoverage clean verify)
+node scripts/coverage-engine.mjs
+node scripts/coverage-summary.mjs node browser engine
+```
+
+Die Browsermessung lädt und prüft ihre festgelegten öffentlichen Schema-Fixtures
+selbst. Ein fehlgeschlagener Lauf entfernt die Freigabe für seine Zusammenfassung,
+damit kein alter Bericht als neuer Erfolg ausgewertet wird.
+
+Die HTML-Berichte liegen unter `coverage/node`, `coverage/browser` und
+`engine/coverage/target/site/jacoco-aggregate`. Die normale CI lädt sie als Artefakte
+hoch. Es gibt keine gemeinsame Prozentzahl über verschiedene Messverfahren.
+
+- Node/c8 zählt alle ausführbaren JS-/TS-Module unter `frontend/src`, auch nie importierte.
+- Chromium/V8 misst dieselben Module sowie Vue-Komponenten mit Source-Maps.
+  Auch nie geladene Komponenten werden kompiliert und als ungetestet aufgenommen.
+  Jeder Test und jeder selbst angelegte Browserkontext verwendet `tests/ui/fixtures.js`.
+  Die Messung erfasst Seitenkontexte. Nicht erfasste Workerdateien bleiben als
+  ungetestet im Nenner.
+- JaCoCo misst die fünf eigenen Java-Module, einschließlich beider isolierter Adapter.
+  SDK- und Bibliotheksquellen sowie Testcode sind ausgeschlossen.
+- Typdeklarationen, Styles und Test-Fixtures gehören nicht zum ausführbaren Frontend-Umfang.
+  Fehlende Quelldateien oder leere Berichte lassen die Messung fehlschlagen.
+
+Native Messung mit festgelegten Werkzeugversionen:
+
+```bash
+rustup component add llvm-tools-preview --toolchain 1.99.0
+cargo +1.99.0 install cargo-llvm-cov --version 0.9.1 --locked
+node scripts/coverage-native.mjs contracts
+node scripts/coverage-summary.mjs native-contracts
+```
+
+Unter Windows nach dem Staging der Engine zusätzlich
+`node scripts/coverage-native.mjs desktop` und
+`node scripts/coverage-summary.mjs native-desktop` ausführen. Berichte unter
+`coverage/native-*` nennen das gemessene Betriebssystem. `index.html` und `product.lcov`
+zeigen eindeutige Produktzeilen aus den LCOV-DA-Daten. Ein Rust-Syntaxbaum schließt
+ausschließlich testexklusive Quellbereiche aus. `raw.lcov`, `summary.json` und der
+LLVM-Bericht unter `html/` erhalten die ursprünglichen Rohdaten einschließlich
+Inline-Tests und expandierter Makrozähler. Die Auswertung erfordert den passenden
+Quellstand. Der Analysehelfer unter `desktop/native-contracts/examples/coverage-source.rs`
+und seine ausschließlich für Tests verwendeten Parserabhängigkeiten werden nicht ausgeliefert. Linux misst weder Windows-DPAPI
+noch den vollständigen Tauri-Befehlsumfang. Native Zweigabdeckung wird derzeit nicht erfasst.
+Instrumentierte Rust-Objekte entstehen in einem separaten temporären Verzeichnis und
+werden nach der Messung entfernt. Release-Builds bleiben ohne Instrumentierung.
+
+Die ersten Mindestwerte in `scripts/coverage-summary.mjs` sichern den gemessenen Stand:
+Node 56 % Zeilen/85 % Zweige, Browser 82 %/70 %, Java 82 %/63 %.
+Sie sind eine Untergrenze, kein Qualitätsziel. Weitere Tests sollen besonders bisher
+unerreichte Fehler- und Abbruchpfade abdecken. Die isolierten nativen Produktzeilen haben Untergrenzen von 57 % unter Linux und
+73 % unter Windows. Für die vollständigen nativen Windows-Tests gelten zunächst 30 %.
+Die gemessenen 31,73 % zeigen weiteren Bedarf an gezielten nativen Tests. Diese
+Untergrenzen verhindern Rückschritte und sind kein ausreichendes Qualitätsziel.
+Die Aufrufe der gesonderten installierten UI-Abnahme werden nicht instrumentiert
+und fließen daher nicht in diese Quote ein. Keine Linux-Quote ersetzt Windows-Nachweise.
 
 ## Häufige Buildfehler
 

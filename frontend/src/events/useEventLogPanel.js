@@ -1,6 +1,6 @@
 import { eventDetailRows } from '../event-details.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import {
   loadEventLog,
   loadReplyEventLog,
@@ -10,7 +10,7 @@ import {
   discardEventLog,
 } from '../event-log.js';
 import { errorMessage, diagnosticCode } from '../diagnostics.js';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 
 // Owns event log panel state and its session-bound lifecycle.
 export function useEventLogPanel(props, emit) {

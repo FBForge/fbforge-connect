@@ -1,7 +1,7 @@
 import { destinationEditChanges } from './edit-changes.js';
 import { cancelledProductionAction } from '../environments.js';
 import { ref, computed, watch, nextTick } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { listDestinations } from '../resources.js';
 import {
   loadManagedDestination,
@@ -11,7 +11,7 @@ import {
   destinationUpdateState,
 } from '../destination-management.js';
 import { errorMessage, diagnosticCode } from '../diagnostics.js';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 
 // Owns destination manager state and its session-bound lifecycle.
 export function useDestinationManager(props, emit) {

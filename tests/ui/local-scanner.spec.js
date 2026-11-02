@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { openTestPackage, selectLocalScanner } from '../../scripts/live-ui/local-tools.mjs';
 test('live acceptance opens the test package explicitly after the remembered scanner tab', async ({

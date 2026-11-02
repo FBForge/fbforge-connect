@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import pack from '../../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 const button = (page, name) => page.getByRole('button', { name, exact: true });

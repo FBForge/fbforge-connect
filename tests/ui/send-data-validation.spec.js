@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 async function draft(page) {
   await page.goto('http://127.0.0.1:1420/test-fixtures/sending.html');
   await page.locator('#send-source').fill('11111111-1111-4111-8111-111111111111');

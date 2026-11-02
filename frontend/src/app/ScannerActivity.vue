@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useScannerMonitor } from './useScannerMonitor.js';
 import { scannerOperation } from '../local-scanner.js';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 defineProps({ visible: Boolean });
 defineEmits(['open']);
 const monitor = useScannerMonitor();

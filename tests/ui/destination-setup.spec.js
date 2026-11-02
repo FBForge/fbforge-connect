@@ -1,9 +1,9 @@
-import { test } from '@playwright/test';
+import { test } from './fixtures.js';
 import assert from 'node:assert/strict';
 
-test('destination-setup with synthetic native fixtures', async ({ browser }) => {
+test('destination-setup with synthetic native fixtures', async ({ createPage }) => {
   for (const scenario of ['confirmed', 'uncertain', 'profile-required', 'type-c']) {
-    const page = await browser.newPage({ viewport: { width: 1180, height: 900 } }),
+    const page = await createPage({ viewport: { width: 1180, height: 900 } }),
       errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('http://127.0.0.1:1420/test-fixtures/destination-setup.html');
@@ -33,7 +33,7 @@ test('destination-setup with synthetic native fixtures', async ({ browser }) => 
       assert.equal(await page.evaluate(() => window.__creationFixture.writes), 0);
       assert.equal(await page.locator('#setup-name').inputValue(), 'Bauamt TEST');
       assert.deepEqual(errors, []);
-      await page.close();
+
       continue;
     }
     await page.getByRole('dialog', { name: 'Diese Destination anlegen?', exact: true }).waitFor();
@@ -104,7 +104,6 @@ test('destination-setup with synthetic native fixtures', async ({ browser }) => 
     }
     assert.equal(await page.evaluate(() => window.__creationFixture.writes), 1);
     assert.deepEqual(errors, []);
-    await page.close();
   }
   console.log(
     'Destination setup UI passed: guided steps, required profile, immutable preview, cancel/reuse of keys, one confirmed create, read-only reconciliation and key/activation navigation.',

@@ -1,6 +1,6 @@
 import { withSchemaSourceAccess } from '../schema-source-access.js';
-import { loadSendSchema } from '../sender-options.js';
-import { invoke } from '../native.js';
+import { loadSendSchema } from '../sender-options.ts';
+import { invoke } from '../native.ts';
 import { nextTick } from 'vue';
 import { validateSendData } from '../send-data-validation.js';
 

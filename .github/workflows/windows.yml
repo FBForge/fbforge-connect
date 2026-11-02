@@ -122,7 +122,7 @@ jobs:
             ${{ runner.os }}-rust-1.99.0-
       - name: Install pinned Rust toolchain
         working-directory: desktop
-        run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt
+        run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt --component llvm-tools-preview
       - name: Resolve locked frontend dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
       - name: Check frontend style and lint
@@ -157,9 +157,19 @@ jobs:
         run: |
           cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked
           cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked --example profile-checkpoint
-      - name: Test native protocol contracts
-        working-directory: desktop
-        run: cargo +1.99.0 test --locked
+          cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked --example coverage-source
+      - name: Install pinned native coverage tool
+        run: cargo +1.99.0 install cargo-llvm-cov --version 0.9.1 --locked
+      - name: Measure the full native Windows command layer
+        run: node scripts/coverage-native.mjs desktop
+      - run: node scripts/coverage-summary.mjs native-desktop
+      - name: Retain full Windows native coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-native-desktop-windows
+          path: coverage/native-desktop
+          if-no-files-found: error
       - name: Select scanner cache day
         run: echo "SCANNER_CACHE_DAY=$([DateTime]::UtcNow.ToString('yyyy-MM-dd'))" >> $env:GITHUB_ENV
       - name: Cache pinned public ClamAV downloads and verified database snapshots

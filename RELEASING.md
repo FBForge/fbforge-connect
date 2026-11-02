@@ -193,7 +193,13 @@ verwendet weiterhin das normale Setup. Kein unsigniertes Offline-Artefakt veröf
 Die nativen Updater-Transporttests verwenden eine ausschließlich lokale Test-CA,
 eine fiktive signierte Datei und dieselbe Produktionsprüfung. Sie prüfen echten
 HTTPS-Download, Versionsbindung und Abbruch vor den Antwort-Headern. Die Datei ist
-nicht ausführbar. Das ersetzt nicht die Installation des endgültigen signierten Pakets.
+nicht ausführbar. Native Regressionen prüfen zusätzlich die tatsächlich verwendeten
+Update-Zustände, Versionsbindung, fehlgeschlagene Signaturprüfungen und den
+Installationsvorlauf. Abbruch, aktive Arbeit und fehlgeschlagene Profil-Checkpoints
+verhindern die Installationsfreigabe. Fehler vor der Übergabe an den Installer
+erhalten den geprüften Download. Nach fehlgeschlagenem Installer-Aufruf ist ein
+neuer geprüfter Download erforderlich. Das ersetzt nicht die Installation des
+endgültigen signierten Pakets.
 
 ## Anleitung, Website und Aufräumen
 

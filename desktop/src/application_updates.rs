@@ -1,6 +1,6 @@
 //! Native-owned update identity, verified bytes and explicit installation permission.
+use crate::update_state::{Pending, Status as UpdateStatus};
 use crate::{update_policy as policy, update_transport, EngineState};
-use serde::Serialize;
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -23,43 +23,23 @@ pub async fn open_update_download() -> Result<(), &'static str> {
     .map_err(|_| "update_unavailable")?
 }
 
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateStatus {
-    configured: bool,
-    supported: bool,
-    phase: &'static str,
-    version: Option<String>,
-    notes: String,
-    downloaded: usize,
-    total: Option<u64>,
+pub struct ApplicationUpdates {
+    pending: Mutex<Pending<Update>>,
+    cancel: AtomicBool,
 }
-impl Default for UpdateStatus {
+impl Default for ApplicationUpdates {
     fn default() -> Self {
         Self {
-            configured: policy::public_key(PUBLIC_KEY).is_ok(),
-            supported: cfg!(all(windows, target_arch = "x86_64")),
-            phase: "idle",
-            version: None,
-            notes: String::new(),
-            downloaded: 0,
-            total: None,
+            pending: Mutex::new(Pending::new(
+                policy::public_key(PUBLIC_KEY).is_ok(),
+                cfg!(all(windows, target_arch = "x86_64")),
+            )),
+            cancel: AtomicBool::new(false),
         }
     }
 }
-#[derive(Default)]
-struct Pending {
-    status: UpdateStatus,
-    release: Option<Update>,
-    bytes: Option<Vec<u8>>,
-}
-#[derive(Default)]
-pub struct ApplicationUpdates {
-    pending: Mutex<Pending>,
-    cancel: AtomicBool,
-}
 impl ApplicationUpdates {
-    fn lock(&self) -> Result<std::sync::MutexGuard<'_, Pending>, &'static str> {
+    fn lock(&self) -> Result<std::sync::MutexGuard<'_, Pending<Update>>, &'static str> {
         self.pending.lock().map_err(|_| "update_unavailable")
     }
 }
@@ -76,23 +56,7 @@ pub async fn check_application_update(
     app: tauri::AppHandle,
     updates: State<'_, ApplicationUpdates>,
 ) -> Result<UpdateStatus, &'static str> {
-    {
-        let mut pending = updates.lock()?;
-        if !pending.status.supported {
-            return Err("update_platform_unsupported");
-        }
-        if !pending.status.configured {
-            return Err("update_not_configured");
-        }
-        if matches!(
-            pending.status.phase,
-            "checking" | "downloading" | "installing"
-        ) {
-            return Err("update_busy");
-        }
-        *pending = Pending::default();
-        pending.status.phase = "checking";
-    }
+    updates.lock()?.begin_check()?;
     let result = async {
         let raw = update_transport::manifest().await?;
         if !policy::manifest(&raw, &app.package_info().version.to_string())? {
@@ -111,19 +75,13 @@ pub async fn check_application_update(
             .map_err(|_| "update_manifest_invalid")
     }
     .await;
-    let mut pending = updates.lock()?;
-    pending.status.phase = "idle";
-    match result {
-        Ok(Some(release)) => {
-            pending.status.phase = "available";
-            pending.status.version = Some(release.version.clone());
-            pending.status.notes = release.body.clone().unwrap_or_default();
-            pending.release = Some(release);
-        }
-        Ok(None) => pending.status.phase = "current",
-        Err(error) => return Err(error),
-    }
-    Ok(pending.status.clone())
+    updates.lock()?.checked(result.map(|release| {
+        release.map(|release| {
+            let version = release.version.clone();
+            let notes = release.body.clone().unwrap_or_default();
+            (release, version, notes)
+        })
+    }))
 }
 
 #[tauri::command]
@@ -131,19 +89,8 @@ pub async fn download_application_update(
     updates: State<'_, ApplicationUpdates>,
     version: String,
 ) -> Result<UpdateStatus, &'static str> {
-    let release = {
-        let mut pending = updates.lock()?;
-        if pending.status.phase != "available" || pending.status.version.as_ref() != Some(&version)
-        {
-            return Err("update_not_ready");
-        }
-        let release = pending.release.clone().ok_or("update_not_ready")?;
-        updates.cancel.store(false, Ordering::Release);
-        pending.status.phase = "downloading";
-        pending.status.downloaded = 0;
-        pending.status.total = None;
-        release
-    };
+    let release = updates.lock()?.begin_download(&version)?;
+    updates.cancel.store(false, Ordering::Release);
     let result = async {
         let bytes = update_transport::package(
             release.download_url.as_str(),
@@ -169,16 +116,7 @@ pub async fn download_application_update(
         Ok(bytes)
     }
     .await;
-    let mut pending = updates.lock()?;
-    pending.status.phase = "available";
-    match result {
-        Ok(bytes) => {
-            pending.bytes = Some(bytes);
-            pending.status.phase = "downloaded";
-        }
-        Err(error) => return Err(error),
-    }
-    Ok(pending.status.clone())
+    updates.lock()?.downloaded(result)
 }
 
 #[tauri::command]
@@ -206,38 +144,17 @@ pub async fn install_application_update(
     exports: State<'_, crate::message_exports::MessageExports>,
     version: String,
 ) -> Result<UpdateStatus, &'static str> {
-    let release = {
-        let mut pending = updates.lock()?;
-        if pending.status.phase != "downloaded" || pending.status.version.as_ref() != Some(&version)
-        {
-            return Err("update_not_ready");
-        }
-        let release = pending.release.clone().ok_or("update_not_ready")?;
-        pending.status.phase = "installing";
-        release
-    };
+    let release = updates.lock()?.begin_install(&version)?;
     let result = async {
-        if engine.process.try_lock().is_err()
-            || exports.active().await
-            || crate::local_scanner::busy(&app)
-            || app.state::<crate::file_saves::FileSaves>().active()
-        {
-            return Err("update_activity_pending");
-        }
-        if !confirm_install(&app, &version).await? {
-            return Err("update_cancelled");
-        }
-        // Checkpoint protected keys before taking the engine lock; checkpoint itself uses IPC.
-        let profiles: Vec<_> = engine
-            .profiles
-            .lock()
-            .await
-            .iter()
-            .map(|(id, binding)| (id.clone(), binding.api))
-            .collect();
-        for (id, api) in profiles {
-            crate::profiles::checkpoint(&app, &engine, api, &id).await?;
-        }
+        crate::update_install::prepare(
+            &InstallContext {
+                app: &app,
+                engine: &engine,
+                exports: &exports,
+            },
+            &version,
+        )
+        .await?;
         let mut process = engine
             .process
             .try_lock()
@@ -256,7 +173,7 @@ pub async fn install_application_update(
             engine.forget_closed_sessions().await;
             shutdown.map_err(|_| "update_engine_shutdown_failed")?;
         }
-        let bytes = updates.lock()?.bytes.take().ok_or("update_not_ready")?;
+        let bytes = updates.lock()?.take_install_bytes()?;
         // Windows' official updater starts NSIS /UPDATE and exits after successful launch.
         // A failed launch keeps the application open; its sessions must be reconnected.
         let result = tokio::task::spawn_blocking(move || release.install(bytes))
@@ -266,12 +183,36 @@ pub async fn install_application_update(
     }
     .await;
     engine.updating.store(false, Ordering::Release);
-    let mut pending = updates.lock()?;
-    pending.status.phase = if pending.bytes.is_some() {
-        "downloaded"
-    } else {
-        "available"
-    };
-    result?;
-    Ok(pending.status.clone())
+    updates.lock()?.installed(result)
+}
+
+struct InstallContext<'a> {
+    app: &'a tauri::AppHandle,
+    engine: &'a EngineState,
+    exports: &'a crate::message_exports::MessageExports,
+}
+impl crate::update_install::Context for InstallContext<'_> {
+    async fn idle(&self) -> bool {
+        self.engine.process.try_lock().is_ok()
+            && !self.exports.active().await
+            && !crate::local_scanner::busy(self.app)
+            && !self.app.state::<crate::file_saves::FileSaves>().active()
+    }
+    async fn confirm(&self, version: &str) -> Result<bool, &'static str> {
+        confirm_install(self.app, version).await
+    }
+    async fn checkpoint(&self) -> Result<(), &'static str> {
+        let Self { app, engine, .. } = *self;
+        let profiles: Vec<_> = engine
+            .profiles
+            .lock()
+            .await
+            .iter()
+            .map(|(id, binding)| (id.clone(), binding.api))
+            .collect();
+        for (id, api) in profiles {
+            crate::profiles::checkpoint(app, engine, api, &id).await?;
+        }
+        Ok(())
+    }
 }

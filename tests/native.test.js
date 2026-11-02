@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { serialInvoke } from '../frontend/src/native.js';
+import { serialInvoke } from '../frontend/src/native.ts';
 import { readFile } from 'node:fs/promises';
 
 test('desktop command registration, generated permissions and main-window grants agree', async () => {

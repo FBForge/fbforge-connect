@@ -2,7 +2,7 @@ import { saveLocalFile, localSave } from '../local-download.js';
 import { label } from './presentation.ts';
 import { inject, ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { processWorkspaceKey } from '../process-context.js';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import {
   verifySubmission,
   verifyReply,
@@ -13,7 +13,7 @@ import {
 import { uploadContent, discardContent } from '../content.js';
 import { createPreview, disposePreview } from '../submission-preview.js';
 import { errorMessage, diagnosticCode } from '../diagnostics.js';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 import { useSchemaSourceAccess, withSchemaSourceAccess } from '../schema-source-access.js';
 import { readReceivedSchema } from '../received-schema.js';
 import { STRUCTURED_BYTES, structuredFormat } from '../structured-data.js';

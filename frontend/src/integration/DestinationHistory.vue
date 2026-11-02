@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { profileWorkspace } from './destination-templates.js';
 const props = defineProps({ session: Object, busy: Boolean, revision: String });
 const rows = ref([]),

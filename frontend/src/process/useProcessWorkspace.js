@@ -1,6 +1,6 @@
 import { downloadLocal } from '../local-download.js';
 import { ref, shallowRef, computed, watch, inject, nextTick } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import {
   BPMN_LIMIT,
   initialMapping,
@@ -12,7 +12,7 @@ import { loadBpmnModel } from '../load-bpmn-model.js';
 import { searchProcessDestinations } from '../process-discovery.js';
 import { processWorkspaceKey } from '../process-context.js';
 import { errorMessage } from '../diagnostics.js';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 import { mappedMessages } from '../process-messages.js';
 
 // Owns process workspace state and its session-bound lifecycle.

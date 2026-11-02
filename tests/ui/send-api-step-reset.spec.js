@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('changing API returns a retained send draft to addressing and requires current offers', async ({
   page,

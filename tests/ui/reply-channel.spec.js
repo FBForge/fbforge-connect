@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 
 async function open(page, api, failure = 'reply_channel_missing', schemaUri = null) {
@@ -132,7 +132,7 @@ for (const api of ['v2', 'v3']) {
     await expect(notice.locator('code')).toHaveText('reply_channel_missing');
     expect(
       await page.evaluate(async () => {
-        const { diagnosticLog } = await import('/src/native.js');
+        const { diagnosticLog } = await import('/src/native.ts');
         return diagnosticLog.snapshot().find((entry) => entry.command === 'reply_target')?.code;
       }),
     ).toBe('reply_channel_missing');

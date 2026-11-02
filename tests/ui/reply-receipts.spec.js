@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import assert from 'node:assert/strict';
 
-test('reply-receipts with synthetic native fixtures', async ({ browser }) => {
+test('reply-receipts with synthetic native fixtures', async ({ createPage }) => {
   for (const action of ['accept', 'reject', 'uncertain', 'stale']) {
-    const page = await browser.newPage({ viewport: { width: 1180, height: 900 } });
+    const page = await createPage({ viewport: { width: 1180, height: 900 } });
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('http://127.0.0.1:1420/test-fixtures/reply-receipt.html');
@@ -23,7 +23,7 @@ test('reply-receipts with synthetic native fixtures', async ({ browser }) => {
       await page.waitForFunction(() => window.__receiptFixture.cancels === 1);
       assert.equal(await page.getByRole('dialog').count(), 0);
       assert.equal(await page.evaluate(() => window.__receiptFixture.writes), 0);
-      await page.close();
+
       continue;
     }
     await page.getByRole('button', { name: 'Aktion vorbereiten', exact: true }).click();
@@ -49,7 +49,6 @@ test('reply-receipts with synthetic native fixtures', async ({ browser }) => {
     assert.equal(await page.locator('.event-log-entry').count(), 1);
     assert.equal(await page.evaluate(() => window.__receiptFixture.writes), 1);
     assert.deepEqual(errors, []);
-    await page.close();
   }
   console.log(
     'Reply receipt UI passed: explicit prepare/cancel/confirm, accept/reject, uncertain lock, stale-proof cleanup, reply/case log navigation.',

@@ -6,7 +6,7 @@
   <version>0.3.0</version>
   <packaging>pom</packaging>
   <licenses><license><name>EUPL-1.2</name><url>https://interoperable-europe.ec.europa.eu/licence/european-union-public-licence-version-12-eupl</url></license></licenses>
-  <modules><module>contract</module><module>adapter-v2</module><module>adapter-v3</module><module>host</module></modules>
+  <modules><module>contract</module><module>adapter-support</module><module>adapter-v2</module><module>adapter-v3</module><module>host</module></modules>
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,4 +45,19 @@
       </configuration></execution></executions>
     </plugin>
   </plugins></pluginManagement></build>
+  <profiles>
+    <profile>
+      <id>coverage</id>
+      <modules><module>coverage</module></modules>
+      <build><plugins>
+        <plugin>
+          <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.14</version>
+          <executions><execution>
+            <goals><goal>prepare-agent</goal></goals>
+            <configuration><includes><include>org.fitconnect.integration.*</include></includes></configuration>
+          </execution></executions>
+        </plugin>
+      </plugins></build>
+    </profile>
+  </profiles>
 </project>

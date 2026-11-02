@@ -48,3 +48,5 @@ __pycache__/
 /frontend/test-fixtures/.public-schema-cache/
 
 /.cache/
+/coverage/
+/.c8_output/

@@ -1,5 +1,5 @@
 import { shallowRef, computed, watch, onMounted, onBeforeUnmount, provide, inject } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { requestResource } from '../resources.js';
 import { checkedLocalScanner } from '../local-scanner.js';
 const scannerKey = Symbol('scanner-monitor');

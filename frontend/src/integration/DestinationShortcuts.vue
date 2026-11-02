@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { profileWorkspace } from './destination-templates.js';
 const props = defineProps({ session: Object, modelValue: String, disabled: Boolean, loaded: String });
 const emit = defineEmits(['update:modelValue']);

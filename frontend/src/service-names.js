@@ -1,5 +1,5 @@
 import { isTauri } from '@tauri-apps/api/core';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 // Public catalogue lookup. Destination offers remain authoritative for addressing and schemas.
 const source = 'https://fimportal.de/api/v1/leistung-steckbriefe';
 const cache = new Map();

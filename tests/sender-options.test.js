@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { destinationOptions, loadSendDestination, loadSendSchema } from '../frontend/src/sender-options.js';
+import { destinationOptions, loadSendDestination, loadSendSchema } from '../frontend/src/sender-options.ts';
 import { jsonExample } from '../frontend/src/schema-examples.js';
 import { generateExample } from '../frontend/src/generate-example.js';
 
@@ -11,6 +11,23 @@ const session = { sessionId: id, apiVersion: 'v3', environment: 'TEST', connecte
 const envelope = (data) => ({ apiVersion: 'v3', sessionId: id, environment: 'TEST', data });
 const uri = 'https://example.invalid/application.schema.json';
 const schema = { schemaUri: uri, mimeType: 'application/json' };
+
+test('malformed recipient process standards produce a stable protocol error', () => {
+  for (const processStandards of ['urn:invalid:scalar', 1, {}, true]) {
+    assert.throws(
+      () =>
+        destinationOptions({
+          publicServices: [
+            {
+              identifier: 'urn:test:service',
+              replyChannels: { fitConnect: { processStandards } },
+            },
+          ],
+        }),
+      /engine_protocol_error/,
+    );
+  }
+});
 
 test('sender offers only services, schema pairs and process messages actually advertised by the recipient', async () => {
   const document = {

@@ -1,20 +1,15 @@
 //! Export capabilities are bound to the current session and environment. Paths never come from IPC.
 use crate::{
+    export_source::{Permit, Source},
     message_export_store as store,
-    protocol::{valid_session_id, ApiVersion},
+    protocol::ApiVersion,
     resource_action, EngineState,
 };
 use serde_json::{json, Value};
-use std::{collections::HashMap, hash::BuildHasher, path::PathBuf};
+use std::{collections::HashMap, hash::BuildHasher};
 use tauri::{Manager, State};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
-struct Permit {
-    api: ApiVersion,
-    session: String,
-    environment: String,
-    path: PathBuf,
-}
 #[derive(Default)]
 pub struct MessageExports(tokio::sync::Mutex<HashMap<String, Permit>>);
 
@@ -90,24 +85,7 @@ pub async fn finish_message_export(
     Ok(())
 }
 
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Source {
-    proof_id: Option<String>,
-    record_id: Option<String>,
-    message_id: String,
-    reply: bool,
-}
 impl Source {
-    fn validate(&self) -> bool {
-        valid_session_id(&self.message_id)
-            && (self.proof_id.is_some() != self.record_id.is_some())
-            && self
-                .proof_id
-                .iter()
-                .chain(self.record_id.iter())
-                .all(|id| valid_session_id(id))
-    }
     async fn read(
         &self,
         app: &tauri::AppHandle,
@@ -131,34 +109,10 @@ impl Source {
             )
             .await?
         } else {
-            let command = match (self.reply, content.is_some()) {
-                (false, false) => "list_received_contents",
-                (false, true) => "read_received_content",
-                (true, false) => "list_received_reply_contents",
-                (true, true) => "read_received_reply_content",
-            };
-            let mut request = json!({"command":command,"proofId":self.proof_id});
-            if let Some(id) = content {
-                request["contentId"] = id.into();
-                request["byteOffset"] = offset.into();
-            } else {
-                request["offset"] = offset.into();
-            }
+            let request = self.live_command(content, offset);
             resource_action(app, &state, api, session, request).await?
         };
-        if !result.validate(api, session) {
-            return Err("engine_protocol_error");
-        }
-        let identity = if self.record_id.is_some() {
-            "recordId"
-        } else {
-            "proofId"
-        };
-        if result.data[identity].as_str() != self.record_id.as_deref().or(self.proof_id.as_deref())
-        {
-            return Err("engine_protocol_error");
-        }
-        Ok(result.data)
+        self.checked(result, api, session)
     }
 }
 
@@ -177,12 +131,7 @@ pub async fn export_message(
     }
     let permits = exports.0.lock().await;
     let permit = permits.get(&export_id).ok_or("export_expired")?;
-    if permit.api != api_version
-        || permit.session != session_id
-        || permit.environment != state.environment().name()
-    {
-        return Err("session_missing");
-    }
+    permit.validate(api_version, &session_id, state.environment().name())?;
     let prefix = if source.reply {
         "Antwort"
     } else {

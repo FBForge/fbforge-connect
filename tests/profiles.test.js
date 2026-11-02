@@ -9,7 +9,8 @@ import {
   importProfileBackup,
   importProfileBackupFile,
   updateProfile,
-} from '../frontend/src/profiles.js';
+  saveProfileState,
+} from '../frontend/src/profiles.ts';
 const id = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
 const profile = {
   profileId: id(1),
@@ -20,6 +21,73 @@ const profile = {
   keyCount: 2,
   available: true,
 };
+test('profile-state persistence sends only the bound session and requires an empty acknowledgement', async () => {
+  const session = {
+    sessionId: id(2),
+    apiVersion: 'v3',
+    clientId: 'not-required',
+    clientSecret: 'never-forward',
+  };
+  const calls = [];
+  await saveProfileState(async (command, args) => {
+    calls.push([command, args]);
+    return null;
+  }, session);
+  assert.deepEqual(calls, [['save_profile_state', { sessionId: id(2), apiVersion: 'v3' }]]);
+  for (const value of [undefined, false, {}, { saved: true }])
+    await assert.rejects(
+      saveProfileState(async () => value, session),
+      /engine_protocol_error/,
+    );
+  for (const value of [null, {}, { ...session, sessionId: '../other' }, { ...session, apiVersion: 'v1' }])
+    await assert.rejects(
+      saveProfileState(() => assert.fail('invalid session reached native storage'), value),
+      /invalid_input/,
+    );
+  let attempts = 0;
+  await assert.rejects(
+    saveProfileState(async () => {
+      attempts++;
+      throw new Error('vault_unavailable');
+    }, session),
+    /vault_unavailable/,
+  );
+  assert.equal(attempts, 1, 'a failed save is not silently retried');
+});
+test('unavailable profile summaries cannot retain stale identity, environment or keys', async () => {
+  const locked = {
+    ...profile,
+    available: false,
+    clientId: null,
+    apiVersion: null,
+    role: null,
+    environment: null,
+    keyCount: 0,
+  };
+  assert.deepEqual((await listProfiles(async () => [locked]))[0], locked);
+  for (const patch of [
+    { clientId: profile.clientId },
+    { apiVersion: 'v3' },
+    { role: 'online-service' },
+    { environment: 'TEST' },
+    { keyCount: 1 },
+  ])
+    await assert.rejects(
+      listProfiles(async () => [{ ...locked, ...patch }]),
+      /engine_protocol_error/,
+    );
+  for (const value of [
+    null,
+    {},
+    [null],
+    [{ ...profile, available: 'true' }],
+    [{ ...profile, name: '\u0000invalid' }],
+  ])
+    await assert.rejects(
+      listProfiles(async () => value),
+      /engine_protocol_error/,
+    );
+});
 test('profile list accepts public metadata only and rejects unexpected secrets and duplicate handles', async () => {
   const profiles = await listProfiles(async () => [profile]);
   assert.ok(Object.isFrozen(profiles));
@@ -199,7 +267,7 @@ test('profile editing binds name/id, never echoes a new secret and preserves nat
 });
 
 test('API profile reuse exposes no secret and rejects cross-identity native results', async () => {
-  const { copyProfileForApi } = await import('../frontend/src/profiles.js');
+  const { copyProfileForApi } = await import('../frontend/src/profiles.ts');
   const source = { ...profile, environment: 'TEST', apiVersion: 'v2' };
   const target = { ...source, profileId: id(99), apiVersion: 'v3', keyCount: 0 };
   let calls = 0;

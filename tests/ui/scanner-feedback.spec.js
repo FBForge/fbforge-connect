@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 for (const api of ['v2', 'v3']) {
   for (const status of ['passed', 'not_configured', 'unknown']) {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { receiveReadingExample } from './reading-fixtures.js';
 
 const submissionId = '00000003-1111-4111-8111-111111111111';

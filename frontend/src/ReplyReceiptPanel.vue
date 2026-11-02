@@ -4,7 +4,7 @@ import { cancelledProductionAction } from './environments.js';
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import {
   prepareReplyReceipt,
   executeReplyReceipt,
@@ -12,7 +12,7 @@ import {
   replyReceiptState,
 } from './reply-receipts.js';
 import { errorMessage } from './diagnostics.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 
 const props = defineProps({ session: Object, detail: Object, proof: Object, parts: Array, busy: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'invalidate', 'outcome', 'event-log']);

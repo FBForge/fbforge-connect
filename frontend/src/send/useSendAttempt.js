@@ -1,7 +1,7 @@
 import { prepareSend, executeSend, cancelSend, sendState, acknowledgeSendUncertainty } from '../sending.js';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { nextTick } from 'vue';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 import { caseStorageNotice } from '../cases.js';
 
 // Prepared attempts remain bound to their confirmed session. Never retry uncertain writes.

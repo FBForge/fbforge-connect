@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 const props = defineProps({ busy: Boolean });
 const emit = defineEmits(['changed', 'busy']);
 const settings = ref({ mode: 'system', host: '', port: 8080, username: '', password: null });

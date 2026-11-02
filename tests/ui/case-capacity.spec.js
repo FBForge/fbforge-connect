@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 test('full local history blocks before send, keeps the confirmation recoverable and shows the reason in the dialog', async ({
   page,
 }) => {

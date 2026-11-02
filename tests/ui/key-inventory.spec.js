@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 test('key inventory protects unresolved keys and confirms local removal with recoverable save errors', async ({
   page,

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { ownDestination } from '../../scripts/live-ui/local-tools.mjs';
 test('the real acceptance driver uses direct single fields and verifies unchanged server fields', async ({
   page,

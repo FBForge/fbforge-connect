@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onBeforeUnmount, nextTick, useId } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { listTestFlows, saveTestFlow, readTestFlow, deleteTestFlow } from './test-flow-library.js';
 const props = defineProps({ flow: Object, busy: Boolean });
 const emit = defineEmits(['open', 'busy']);

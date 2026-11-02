@@ -4,7 +4,7 @@ import CertifiedKeyImport from './destinations/CertifiedKeyImport.vue';
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import { computed, ref, watch } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import { generateTestKeys, listGeneratedKeys, useGeneratedKeys } from './destination-setup.js';
 import {
   prepareDestinationRotation,
@@ -13,7 +13,7 @@ import {
   destinationRotationState,
 } from './destination-rotation.js';
 import { diagnosticCode, errorMessage } from './diagnostics.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 const props = defineProps({ session: Object, selected: { type: Array, default: () => [] }, busy: Boolean });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'changed', 'receive']);
 const pending = ref(false),

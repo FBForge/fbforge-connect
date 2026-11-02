@@ -3,13 +3,13 @@ import CopyValue from './CopyValue.vue';
 import InboxSelection from './InboxSelection.vue';
 import { inject, ref, computed, watch, nextTick } from 'vue';
 import ReceivePanel from './ReceivePanel.vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import { caseWorkspaceKey } from './case-context.js';
 const caseWorkspace = inject(caseWorkspaceKey, null);
 const selection = ref(null);
 import { listReplies, listReplyChannels } from './replies.js';
 import { errorMessage } from './diagnostics.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 
 const props = defineProps({ session: Object, busy: Boolean, keyRevision: Number, receiveRevision: Number });
 const emit = defineEmits(['busy', 'activity', 'fatal', 'receive-start', 'event-log']);

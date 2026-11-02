@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { checkedLocalScanner, scannerError } from '../local-scanner.js';
 const props = defineProps({ disabled: Boolean, connected: Boolean });
 const emit = defineEmits(['changed', 'disable']);

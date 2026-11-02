@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { readFile } from 'node:fs/promises';
 import AxeBuilder from '@axe-core/playwright';
 const example = JSON.parse(

@@ -1,5 +1,5 @@
 import { inject, ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { caseStorageNotice } from '../cases.js';
 import { processWorkspaceKey } from '../process-context.js';
 import { caseWorkspaceKey } from '../case-context.js';
@@ -13,7 +13,7 @@ import {
   replyState,
 } from '../reply-sending.js';
 import { diagnosticCode } from '../diagnostics.js';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 import { explain, messages } from './messages.js';
 
 // Owns reply sender state and its session-bound lifecycle.

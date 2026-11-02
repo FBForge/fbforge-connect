@@ -1,9 +1,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { invoke } from './native.js';
-import { saveProfileDefaults } from './profiles.js';
+import { invoke } from './native.ts';
+import { saveProfileDefaults } from './profiles.ts';
 import { errorMessage } from './diagnostics.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 const props = defineProps({ session: Object, defaults: Object, busy: Boolean });
 const emit = defineEmits(['busy', 'saved', 'fatal']);
 const source = ref(''),

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
 const base = 'http://127.0.0.1:1420';

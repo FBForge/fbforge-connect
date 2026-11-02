@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, onBeforeUnmount } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import { downloadMessage } from './message-export.js';
 import { errorMessage } from './diagnostics.js';
 import CopyValue from './CopyValue.vue';

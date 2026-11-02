@@ -290,7 +290,7 @@ try {
   await capture('processes');
 
   await page.evaluate(async () => {
-    const { diagnosticLog } = await import('/src/native.js');
+    const { diagnosticLog } = await import('/src/native.ts');
     diagnosticLog.clear();
     const base = {
       time: new Date().toISOString(),

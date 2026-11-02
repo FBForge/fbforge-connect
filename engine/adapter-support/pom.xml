@@ -1,0 +1,10 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>org.fitconnect.integration</groupId><artifactId>engine-parent</artifactId><version>0.3.0</version></parent>
+  <artifactId>adapter-support</artifactId>
+  <dependencies>
+    <dependency><groupId>org.fitconnect.integration</groupId><artifactId>contract</artifactId><scope>provided</scope></dependency>
+    <!-- Compile against the common HTTP API. Each SDK supplies its own runtime version. -->
+    <dependency><groupId>com.squareup.okhttp3</groupId><artifactId>okhttp</artifactId><version>4.12.0</version><scope>provided</scope></dependency>
+  </dependencies>
+</project>

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onBeforeUnmount } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { listTestLibrary, readTestLibrary, saveTestLibrary, testLibraryError } from '../test-library.js';
 const props = defineProps({ createPack: Function, disabled: Boolean, hasPack: Boolean });
 const emit = defineEmits(['open']);

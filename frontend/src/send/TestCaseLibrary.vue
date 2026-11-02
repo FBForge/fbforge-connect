@@ -1,6 +1,6 @@
 <script setup>
 import { computed, watch, ref, shallowRef, nextTick } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import {
   listTestLibrary,
   readTestLibrary,

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { getProfileDefaults, saveProfileDefaults } from '../frontend/src/profiles.js';
+import { getProfileDefaults, saveProfileDefaults } from '../frontend/src/profiles.ts';
 const session = {
   sessionId: '11111111-1111-4111-8111-111111111111',
   apiVersion: 'v3',

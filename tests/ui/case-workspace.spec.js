@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { setRetention } from '../../scripts/live-ui/review-030.mjs';
 test('local cases reopen exact content after receipt, preview inert PDFs, isolate profiles and delete copies', async ({

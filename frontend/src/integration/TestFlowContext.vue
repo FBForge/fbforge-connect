@@ -1,10 +1,23 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
-import { invoke } from '../native.js';
-import { listProfiles } from '../profiles.js';
-const props = defineProps({ context: Object, environment: String, disabled: Boolean, side: String });
-const emit = defineEmits(['update:context', 'open']);
-const profiles = ref([]),
+import { invoke } from '../native.ts';
+import { listProfiles } from '../profiles.ts';
+import type { Environment, FlowAssignment, FlowContext, SavedProfile } from '../contracts.d.ts';
+const props = defineProps<{
+  context: FlowAssignment;
+  environment: Environment;
+  disabled?: boolean;
+  side?: FlowContext['side'];
+}>();
+const emit = defineEmits<{
+  'update:context': [context: FlowAssignment];
+  open: [context: FlowContext];
+}>();
+const sides = [
+  { side: 'sender', title: 'Sender' },
+  { side: 'receiver', title: 'Empfänger' },
+] as const;
+const profiles = ref<readonly SavedProfile[]>([]),
   error = ref('');
 async function load() {
   try {
@@ -16,8 +29,16 @@ async function load() {
     error.value = 'Profile konnten nicht geladen werden. Öffnen Sie die Verbindung bei Bedarf manuell.';
   }
 }
-function set(key, value) {
-  emit('update:context', { ...props.context, [key]: value });
+function set(key: keyof Omit<FlowAssignment, 'apiVersion'>, event: Event) {
+  if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement)) return;
+  emit('update:context', { ...props.context, [key]: event.target.value.trim() });
+}
+function changeApi(event: Event) {
+  if (!(event.target instanceof HTMLSelectElement)) return;
+  const apiVersion = event.target.value;
+  if (apiVersion !== 'v2' && apiVersion !== 'v3') return;
+  emit('update:context', { ...props.context, apiVersion, senderProfileId: '', receiverProfileId: '' });
+  profiles.value = [];
 }
 </script>
 <template>
@@ -29,32 +50,14 @@ function set(key, value) {
     </p>
     <label>
       API-Version für diesen Ablauf
-      <select
-        :value="context.apiVersion"
-        :disabled="disabled"
-        @change="
-          emit('update:context', {
-            ...context,
-            apiVersion: $event.target.value,
-            senderProfileId: '',
-            receiverProfileId: '',
-          });
-          profiles = [];
-        "
-      >
+      <select :value="context.apiVersion" :disabled="disabled" @change="changeApi">
         <option value="v2">API v2</option>
         <option value="v3">API v3</option>
       </select>
     </label>
     <button class="button secondary" :disabled="disabled" @click="load">Passende Profile laden</button>
     <div class="settings-fields">
-      <fieldset
-        v-for="item in [
-          { side: 'sender', title: 'Sender' },
-          { side: 'receiver', title: 'Empfänger' },
-        ]"
-        :key="item.side"
-      >
+      <fieldset v-for="item in sides" :key="item.side">
         <legend>{{ item.title }}</legend>
         <label>
           Gespeichertes Profil
@@ -62,7 +65,7 @@ function set(key, value) {
             :aria-label="`${item.title}-Profil`"
             :value="context[`${item.side}ProfileId`]"
             :disabled="disabled"
-            @change="set(`${item.side}ProfileId`, $event.target.value)"
+            @change="set(`${item.side}ProfileId`, $event)"
           >
             <option value="">Manuell verbinden</option>
             <option
@@ -85,12 +88,7 @@ function set(key, value) {
             :value="context[item.side === 'sender' ? 'sourceDestination' : 'receiverDestination']"
             :disabled="disabled || (item.side === 'sender' && context.apiVersion === 'v2')"
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            @input="
-              set(
-                item.side === 'sender' ? 'sourceDestination' : 'receiverDestination',
-                $event.target.value.trim(),
-              )
-            "
+            @input="set(item.side === 'sender' ? 'sourceDestination' : 'receiverDestination', $event)"
           />
         </label>
       </fieldset>

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { documentationTopics } from '../../frontend/src/documentation.js';
 
 test('help opens only the requested website chapter and keeps a copyable fallback', async ({ page }) => {

@@ -1,8 +1,8 @@
 import { ref, shallowRef, computed, watch, nextTick } from 'vue';
 import { isTauri } from '@tauri-apps/api/core';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { errorMessage } from '../diagnostics.js';
-import { openSession, openSessionForApi, updateSession, resetsSessions } from '../sessions.js';
+import { openSession, openSessionForApi, updateSession, resetsSessions } from '../sessions.ts';
 import {
   listProfiles,
   openSavedProfile,
@@ -14,7 +14,7 @@ import {
   importProfileBackupFile,
   getProfileDefaults,
   copyProfileForApi,
-} from '../profiles.js';
+} from '../profiles.ts';
 
 // Owns connection credentials, saved profiles and their session-bound defaults.
 export function useConnections({

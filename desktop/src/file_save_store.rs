@@ -96,3 +96,35 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[cfg(all(test, windows))]
+mod windows_regressions {
+    use super::*;
+    use std::os::windows::fs::OpenOptionsExt;
+    #[test]
+    fn failed_final_replacement_preserves_existing_download_and_removes_partial_file() {
+        let root = std::env::temp_dir().join(format!(
+            "fbforge-save-locked-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&root).unwrap();
+        let path = root.join("original.pdf");
+        fs::write(&path, b"previous original bytes").unwrap();
+        let guard = fs::OpenOptions::new()
+            .read(true)
+            .share_mode(1)
+            .open(&path)
+            .unwrap();
+        assert_eq!(write(&path, b"replacement bytes"), Err("export_failed"));
+        drop(guard);
+        assert_eq!(fs::read(&path).unwrap(), b"previous original bytes");
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        write(&path, b"retry succeeds").unwrap();
+        assert_eq!(fs::read(&path).unwrap(), b"retry succeeds");
+        fs::remove_dir_all(root).unwrap();
+    }
+}

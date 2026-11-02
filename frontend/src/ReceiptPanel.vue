@@ -4,11 +4,11 @@ import { cancelledProductionAction } from './environments.js';
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import { loadedKeys } from './resources.js';
 import { prepareReceipt, executeReceipt, cancelReceipt, receiptState } from './receipts.js';
 import { errorMessage } from './diagnostics.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 import ReceiptDownloadChoice from './ReceiptDownloadChoice.vue';
 import { downloadMessage, exportSource } from './message-export.js';
 

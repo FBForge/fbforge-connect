@@ -1,6 +1,6 @@
 import { cancelledProductionAction } from './environments.js';
 import { isDemoSchema } from './demo-identifiers.js';
-import { readSchemaPackage } from './sender-options.js';
+import { readSchemaPackage } from './sender-options.ts';
 import { requestResource, sameJsonValue } from './resources.js';
 import { uploadContent, discardContent, CONTENT_FILE_BYTES } from './content.js';
 

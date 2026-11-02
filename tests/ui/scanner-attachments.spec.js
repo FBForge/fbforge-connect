@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { openBatch, id } from '../../frontend/test-fixtures/message-batch.js';
 
 async function blockedMessage(page, replies = false) {

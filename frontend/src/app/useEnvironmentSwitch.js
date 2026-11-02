@@ -1,5 +1,5 @@
-import { invoke } from '../native.js';
-import { updateSession } from '../sessions.js';
+import { invoke } from '../native.ts';
+import { updateSession } from '../sessions.ts';
 import { selectEnvironment } from '../environments.js';
 import { errorMessage } from '../diagnostics.js';
 

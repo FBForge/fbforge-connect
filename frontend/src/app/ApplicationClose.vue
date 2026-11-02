@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 const props = defineProps({ busy: Boolean, active: Boolean, receiveBrowser: Object });
 const dialog = ref(null),
   error = ref(''),

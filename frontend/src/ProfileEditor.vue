@@ -1,8 +1,8 @@
 <script setup>
 import { ref, nextTick, inject } from 'vue';
-import { invoke } from './native.js';
-import { updateProfile } from './profiles.js';
-import { resetsSessions } from './sessions.js';
+import { invoke } from './native.ts';
+import { updateProfile } from './profiles.ts';
+import { resetsSessions } from './sessions.ts';
 import { errorMessage } from './diagnostics.js';
 const context = inject('profile-editor-context', null);
 const props = defineProps({ profile: Object, busy: Boolean });

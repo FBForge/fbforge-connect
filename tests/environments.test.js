@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { selectEnvironment } from '../frontend/src/environments.js';
-import { openSession, updateSession } from '../frontend/src/sessions.js';
+import { openSession, updateSession } from '../frontend/src/sessions.ts';
 import { requestResource } from '../frontend/src/resources.js';
-import { listProfiles, openSavedProfile } from '../frontend/src/profiles.js';
+import { listProfiles, openSavedProfile } from '../frontend/src/profiles.ts';
 import { certificateMaterial } from '../frontend/src/certified-keys.js';
 import { buildSupportReport } from '../frontend/src/support-report.js';
 const id = '11111111-1111-4111-8111-111111111111';

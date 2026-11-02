@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import { listDestinations, loadDestination, importKey, loadedKeys, discardKeys } from './resources.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 import { importKeyFiles } from './key-files.js';
 import CertificateResults from './destinations/CertificateResults.vue';
 import { useEnvironment } from './environments.js';

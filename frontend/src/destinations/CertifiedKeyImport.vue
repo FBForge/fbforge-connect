@@ -1,10 +1,10 @@
 <script setup>
 import { ref } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { importCertifiedKeys } from '../destination-setup.js';
 import { importKey } from '../resources.js';
 import { errorMessage } from '../diagnostics.js';
-import { resetsSessions } from '../sessions.js';
+import { resetsSessions } from '../sessions.ts';
 import CertificateFile from './CertificateFile.vue';
 const props = defineProps({ session: Object, busy: Boolean, destinationId: String });
 const emit = defineEmits(['busy', 'imported', 'fatal']);

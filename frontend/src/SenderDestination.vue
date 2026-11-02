@@ -1,9 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import CopyValue from './CopyValue.vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import { listDestinations } from './resources.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 
 const props = defineProps({ modelValue: String, session: Object, busy: Boolean, visible: Boolean });
 const emit = defineEmits(['update:modelValue', 'activity', 'fatal']);

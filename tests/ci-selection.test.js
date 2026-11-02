@@ -35,6 +35,10 @@ for ref in ['refs/heads/main','refs/heads/fix/example','refs/heads/release/0.3.0
     p=m.plan({},'push',ref,['frontend/src/App.vue'],repo)
     assert p['frontend'] and not p['engine'] and not p['native']
     assert p['mode']=='affected'
+for path in ['tsconfig.json', '.c8rc.json']:
+    assert m.components([path]) == dict(frontend=True, engine=False, native=False)
+assert m.components(['scripts/coverage-summary.mjs']) == dict(frontend=True, engine=False, native=False)
+assert all(m.components(['scripts/coverage-native-product.mjs']).values())
 for event in [{}, {'head_commit':{'message':'docs: wording'}}]:
     p=m.plan(event,'push','refs/heads/main',['README.md'],repo)
     assert not any(p[n] for n in m.NAMES)

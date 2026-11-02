@@ -1,6 +1,6 @@
 import { packFromDraft, testCaseFiles, validateTestPack } from '../test-packs.js';
-import { loadSendDestination } from '../sender-options.js';
-import { invoke } from '../native.js';
+import { loadSendDestination } from '../sender-options.ts';
+import { invoke } from '../native.ts';
 import { nextTick } from 'vue';
 
 // Import validates the current recipient offer before replacing any draft fields.

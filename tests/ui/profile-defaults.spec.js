@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 test('profile defaults survive reconnect, preserve edited fields and clear without losing key references', async ({
   page,
 }) => {

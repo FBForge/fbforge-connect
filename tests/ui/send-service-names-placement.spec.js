@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 for (const api of ['v2', 'v3']) {
   test(`FIM lookup follows the service directly before sender addressing (${api})`, async ({ page }) => {

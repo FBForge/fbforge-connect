@@ -6,11 +6,12 @@ Vue → Tauri/Rust → Java-Host → FIT-Connect SDK v2/v3 → TEST, STAGE oder 
 | --------------------------------- | ---------------------------------------------------------------- |
 | `frontend/src`                    | Oberfläche, Entwürfe und Bestätigungen                           |
 | `desktop/src`                     | Tauri-Befehle, IPC, Profile und Vorgangsspeicher                 |
+| `engine/adapter-support` | Gemeinsamer HTTPS-Schemaabruf, in jedem Adapter separat geladen |
 | `engine/contract`                 | SDK-unabhängige Verträge                                         |
 | `engine/host`                     | Sitzungen, Berechtigungen, Ressourcenlimits und Schreibfreigaben |
 | `engine/adapter-v2`, `adapter-v3` | SDK-Aufrufe, Serialisierung und Kryptografie                     |
 
-Die SDK-Versionen laufen in getrennten Classloadern. Gemeinsame Verträge enthalten keine SDK-Typen.
+Die SDK-Versionen laufen in getrennten Classloadern. `adapter-support` wird in beide Adapter eingebettet und verwendet dort die jeweilige HTTP-Bibliothek. Schema-Validierung bleibt SDK-spezifisch. Ein Isolationstest prüft getrennte Hilfsklassen und identischen gemeinsamen Bytecode. Gemeinsame Verträge enthalten keine SDK-Typen.
 Die Umgebung ist je Engine-Prozess fest. Ein Umgebungswechsel beendet die bisherigen Verbindungen.
 Der API-Wechsel innerhalb derselben Umgebung kann die aktuelle Anmeldung wiederverwenden;
 Schlüssel, Profile und Vorgänge bleiben nach API getrennt.
@@ -18,6 +19,8 @@ Schlüssel, Profile und Vorgänge bleiben nach API getrennt.
 ## Zuständigkeiten
 
 `App.vue` verbindet die Arbeitsbereiche. Verbindung, Profile und Diagnose liegen unter `frontend/src/app`. Die Fachansichten verwenden ihre Ablaufsteuerung unter `send`, `receive`, `reply`, `cases`, `destinations`, `events` und `process`. Beim Senden gehören Entwurf, Anzeigezustand und bestätigter Versandversuch zu getrennten Zuständen. Styles beginnen bei `styles/index.css`, gemeinsame Farben und Schriften bei `styles/theme.css`.
+
+`useSendAddressing.ts` verwaltet Leistung, Prozessnachricht und zugehörige Schemata über synchrone Übergänge. Der Versandcontroller kümmert sich um Laden, Entwurf und Versand. Dadurch benötigen abhängige Auswahlfelder keine gegenseitigen Watcher. Native Antworten bleiben `unknown`, bis die Laufzeitprüfung sie auf einen öffentlichen Vertrag eingegrenzt hat. Profilmetadaten, Sitzungen, Schema-Paging und die native Warteschlange sind streng typisiert. `contracts.d.ts` enthält ausschließlich Typen. Die übrigen JavaScript-Ansichten werden schrittweise migriert, ihre vollständige statische Prüfung steht noch aus.
 
 Rust trennt Befehle unter `commands`, Prozesskommunikation in `engine.rs` und die zentrale Schreibabsicherung in `write_policy.rs`. Der Java-Host prüft Frames in `EngineRequest` und delegiert über `SessionManager` an fachliche Koordinatoren. `SessionState` besitzt die SDK-Sitzungen und räumt deren Ressourcen auf. SDK-spezifische Sitzungen und Destination-Aufrufe bleiben in ihrem Adapter.
 
@@ -74,6 +77,14 @@ Es gibt keinen Schemahost oder neue Netzwerkfreigaben. Generatorbeispiele und
 Negativfälle werden durch beide echten SDK-Validatoren geprüft.
 
 ## Tests
+
+Kritische native Ablaufregeln liegen außerhalb der Tauri-Adapter. `write_gate`
+steuert Scannerbereitschaft, native Bestätigungen und Checkpoints vor und nach
+Schreibaktionen. `profile_archive` und `export_source` prüfen die Kontextbindung
+privater Archive und Exporte. `update_state` und `update_install` verwalten
+Versionsbindung, Installationsfreigabe und Wiederaufnahme nach Fehlern. Die
+Vertragstests kompilieren diese Produktionsmodule direkt. Dialoge und Engine-IPC
+bleiben Aufgaben der Desktop-Adapter.
 
 SDK-Tests prüfen Verschlüsselung und Rundläufe. Frontend- und native Tests die Verträge und Kontextbindung. Browser-Fixtures werden nicht ausgeliefert. DPAPI, Installation und Upgrades werden unter Windows geprüft. Reale Austausche auf FIT-Connect TEST. Befehle stehen in [BUILDING.md](BUILDING.md), Live-Abnahmen in [RELEASING.md](RELEASING.md#live-abnahme).
 

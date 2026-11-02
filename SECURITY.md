@@ -65,16 +65,20 @@ und signierte Update-Abnahme: [RELEASING.md](RELEASING.md#update-signierung-einm
 
 ## Bekannte Abhängigkeitsbefunde
 
-Stand der Bewertung: 31. Oktober 2026. npm-Abgleich am 1. November bestätigt die unten
-genannten Werkzeugbefunde. Lockfiles und Actions-Versionen sind festgelegt.
+Stand der Bewertung: 2. November 2026. Der npm-Abgleich einschließlich der neuen
+Abdeckungswerkzeuge bestätigt die unten genannten Werkzeugbefunde. Lockfiles und Actions-Versionen sind festgelegt.
 Vor Releases npm, Maven und Rust einschließlich plattformspezifischer Pfade erneut
 gegen Sicherheitsmeldungen prüfen. JDK und WebView2 separat aktuell halten.
 
 - npm meldete keine bekannten Laufzeit-Schwachstellen.
   `GHSA-g3hv-75wg-m249` betrifft `minimatch 10.2.6` im Entwicklungs-/Prüfwerkzeugbaum:
-  Ressourcenverbrauch durch präparierte Glob-Muster, 13 moderate abhängige Einträge,
-  im verwendeten Werkzeugbaum wird keine kompatible Korrektur angeboten. Keine
-  Laufzeitfunktion der Windows-App.
+  Ressourcenverbrauch durch präparierte Glob-Muster. Zusätzlich betrifft
+  `GHSA-3g3m-2fjr-6pw4` den Abbruch von Dateisuchen in `glob 13.0.6`, einer
+  Entwicklungsabhängigkeit von c8. Insgesamt 16 moderate abhängige npm-Einträge.
+  Die Prüfwerkzeuge verwenden festgelegte lokale Muster, keine Muster aus Einreichungen.
+  Im verwendeten Werkzeugbaum wird keine kompatible Korrektur angeboten. Die
+  vorgeschlagenen Hauptversions-Downgrades werden nicht ungeprüft übernommen.
+  Beide Befunde betreffen keine Laufzeitfunktion der Windows-App.
 - `GHSA-qwgh-2vcv-g2f7` betrifft laut OSV `block-buffer 0.10.4` im Tauri-Buildbaum,
   nicht im Windows-Laufzeitbaum. Die konkret betroffene `ReadBuffer`-Implementierung
   ist in dieser Version nicht enthalten. Den weit gefassten Versionsbereich bei Updates erneut prüfen.

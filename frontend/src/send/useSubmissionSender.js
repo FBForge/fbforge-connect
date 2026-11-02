@@ -1,10 +1,11 @@
+import { useSendAddressing } from './useSendAddressing.ts';
 import { snapshotSendDraft } from './draft-snapshot.ts';
 import { useSendSteps } from './useSendSteps.js';
 import { inject, ref, shallowRef, computed, watch, nextTick } from 'vue';
 import { caseWorkspaceKey } from '../case-context.js';
 import { useSchemaSourceAccess } from '../schema-source-access.js';
-import { loadSendDestination } from '../sender-options.js';
-import { invoke } from '../native.js';
+import { loadSendDestination } from '../sender-options.ts';
+import { invoke } from '../native.ts';
 import { useSendSchema } from './useSendSchema.js';
 import { useSendTestCases } from './useSendTestCases.js';
 import { useSendAttempt } from './useSendAttempt.js';
@@ -15,11 +16,34 @@ import { explain, diagnosticLabels } from './messages.js';
 export function useSubmissionSender(props, emit) {
   const storageWarning = ref('');
   const caseWorkspace = inject(caseWorkspaceKey, null);
-  const target = ref(''),
-    source = ref(''),
-    service = ref(''),
-    serviceName = ref('Testantrag'),
-    region = ref('DE000000000000');
+  const address = useSendAddressing();
+  const {
+    target,
+    service,
+    serviceName,
+    region,
+    schema,
+    mime,
+    addressing,
+    modelId,
+    messageId,
+    recipient,
+    schemaChoice,
+    processChoice,
+    replySchema,
+    replyMime,
+    offerReplies,
+    offeredProcessMessages,
+    selectedService,
+    selectedProcess,
+    schemaOptions,
+    replyOptions,
+    exampleNotice,
+    selectSchema,
+    applyServiceNames,
+  } = address;
+  const source = ref(''),
+    caseId = ref('');
   watch(
     [() => props.session?.sessionId, () => props.defaultSource],
     () => {
@@ -28,16 +52,6 @@ export function useSubmissionSender(props, emit) {
     },
     { immediate: true, flush: 'post' },
   );
-  const schema = ref(''),
-    mime = ref('application/json'),
-    caseId = ref(''),
-    addressing = ref('service'),
-    modelId = ref(''),
-    messageId = ref('');
-  const offeredProcessMessages = ref([]);
-  const offerReplies = ref(false),
-    replySchema = ref(''),
-    replyMime = ref('application/json');
   const dataText = ref('{\n  "vorname": "Erika",\n  "nachname": "Musterfrau"\n}');
   const dataFile = shallowRef(null),
     attachments = ref([]),
@@ -83,13 +97,6 @@ export function useSubmissionSender(props, emit) {
 
   const allowExternalSchemas = useSchemaSourceAccess(() => props.session);
   const schemaAccess = ref(null);
-  watch(
-    () => props.session?.sessionId,
-    () => {
-      localValidationSchemas.value = [];
-      skipSchemaValidation.value = false;
-    },
-  );
   const schemaDocument = shallowRef(null);
   const exampleDialog = ref(null),
     exampleButton = ref(null);
@@ -120,56 +127,6 @@ export function useSubmissionSender(props, emit) {
     },
     { deep: true, flush: 'sync' },
   );
-  const recipient = ref(null),
-    schemaChoice = ref(0),
-    processChoice = ref(0),
-    exampleNotice = ref('');
-  const selectedService = computed(() =>
-    recipient.value?.services.find((item) => item.identifier === service.value),
-  );
-  const selectedProcess = computed(() => recipient.value?.processes[processChoice.value]);
-  const schemaOptions = computed(() =>
-    addressing.value === 'process'
-      ? selectedProcess.value?.schemas || []
-      : selectedService.value?.schemas || [],
-  );
-  const replyOptions = computed(() => selectedService.value?.replySchemas || []);
-  watch([target, () => props.session?.sessionId], () => {
-    recipient.value = null;
-    service.value = '';
-    schema.value = '';
-    exampleNotice.value = '';
-  });
-  watch(selectedService, (value) => {
-    serviceName.value = value?.name || '';
-    region.value = value?.regions[0] || 'DE000000000000';
-    offerReplies.value = false;
-    offeredProcessMessages.value = [];
-    replySchema.value = value?.replySchemas[0]?.schemaUri || '';
-    replyMime.value = value?.replySchemas[0]?.mimeType || 'application/json';
-  });
-  watch(
-    [replySchema, replyMime],
-    () => {
-      offeredProcessMessages.value = [];
-    },
-    { flush: 'sync' },
-  );
-  watch(selectedProcess, (value) => {
-    modelId.value = value?.processModelId || '';
-    messageId.value = value?.messageId || '';
-  });
-  watch(schemaOptions, () => {
-    schemaChoice.value = 0;
-    selectSchema();
-  });
-  watch(schemaChoice, selectSchema);
-  function selectSchema() {
-    const value = schemaOptions.value[schemaChoice.value];
-    schema.value = value?.schemaUri || '';
-    mime.value = value?.mimeType || 'application/json';
-    exampleNotice.value = '';
-  }
   async function loadRecipient() {
     if (disabled.value) return;
     const active = { ...props.session },
@@ -236,13 +193,15 @@ export function useSubmissionSender(props, emit) {
     () => props.session?.sessionId,
     (next, previous) => {
       if (next === previous) return;
+      address.resetSession(props.session?.apiVersion);
+      localValidationSchemas.value = [];
+      skipSchemaValidation.value = false;
       prepared.value = null;
       dialog.value?.close();
       nextDialog.value?.close();
       sendStep.value = 0;
       stepNotice.value = '';
       source.value = '';
-      if (props.session?.apiVersion !== 'v3') addressing.value = 'service';
       if (next) {
         outcome.value = null;
         storageWarning.value = '';
@@ -448,6 +407,7 @@ export function useSubmissionSender(props, emit) {
     processChoice,
     selectedService,
     loadRecipient,
+    applyServiceNames,
     schema,
     mime,
     dataText,

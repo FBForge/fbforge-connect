@@ -24,8 +24,10 @@ einreichen. Vor größeren Änderungen ein Issue öffnen. Beiträge stehen unter
 - Commits nach `type(scope): imperative description` benennen. Scope optional.
   `fix` für Fehlerkorrekturen, `feat` für Funktionen, `docs` für Dokumentation und
   `chore(deps)` für reine Abhängigkeitsupdates. Beschreibungen kurz und sachlich halten.
-- Öffentliche Frontend-Typen in `frontend/src/contracts.ts` pflegen. Laufzeitprüfungen
+- Öffentliche Frontend-Typen in `frontend/src/contracts.d.ts` pflegen. Laufzeitprüfungen
   für native Antworten und Dateien bleiben neben der schrittweisen Typisierung nötig.
+  Neue Ablaufsteuerung in streng geprüftem TypeScript schreiben. `unknown` vor Nutzung
+  eingrenzen. Keine pauschalen `any`-Typen oder abgeschalteten Typprüfungen ergänzen.
 
 Formatieren: `npm run format`, im Engine-Verzeichnis `./mvnw spotless:apply` und
 `cargo +1.99.0 fmt --manifest-path desktop/Cargo.toml --all`.
@@ -37,6 +39,10 @@ Nach Frontend-Abhängigkeitsupdates `npm run licenses:update` ausführen.
 Sie werden durch npm, Actions oder ausdrücklich von Hand gestartet. `tests/` enthält
 JavaScript-/Browser-Testfälle, Maven-Module ihre Java-Tests und Rust-Module ihre
 nativen Tests. `desktop/native-contracts/` prüft isolierte native Verträge.
+
+Die Abdeckungsmessung ist in [BUILDING.md](BUILDING.md#testabdeckung-messen) beschrieben.
+Berichte und Mindestwerte werden je Testumfang geprüft. Nicht geladene Frontend-Module
+zählen als ungetestet. Deklarationen, Test-Fixtures und Bibliotheken gehören nicht zum Produktumfang.
 
 `npm test` führt keine echten FIT-Connect-Schreibaktionen aus. Live-Treiber unter
 `scripts/live-ui/` und `scripts/live-exchange.mjs` benötigen Windows, einen gebauten
@@ -71,6 +77,10 @@ Markdown-Änderungen erhalten nur einen Statuslauf, `docs/guide/` eine Exportpr�
   Windows-Validierung des angeforderten Commits. Keine Signierung oder Veröffentlichung.
 - Manuelle Workflow-Aufrufe bleiben möglich. `[skip ci]` vermeiden, da sonst der
   erforderliche Status fehlen kann.
+
+Codeprüfungen erzeugen HTML-Abdeckungsberichte als Actions-Artefakte und eine Zusammenfassung.
+Die normale CI misst Node, Browser, Java sowie isolierte und vollständige native Windows-Verträge.
+Die Windows-Validierung ergänzt Installation, Upgrade und NVDA.
 
 Die Windows-Validierung prüft Paket, Installation, Profilerhalt, NVDA und lesende
 TEST-Aufrufe. `upgrade_run` wählt ein geprüftes signiertes Vorgängerpaket.

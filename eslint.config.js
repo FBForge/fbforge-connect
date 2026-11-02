@@ -49,7 +49,11 @@ export default [
     files: ['frontend/src/{app,send,receive,reply,cases,destinations,events,process}/**/*.{js,ts,vue}'],
     rules: { 'max-depth': ['warn', 4], complexity: ['warn', 25] },
   },
-  { files: ['**/*.vue'], rules: { 'vue/no-v-html': 'error' } },
+  {
+    files: ['**/*.vue'],
+    languageOptions: { parserOptions: { parser: tseslint.parser } },
+    rules: { 'vue/no-v-html': 'error' },
+  },
   {
     files: ['frontend/src/**/*.ts'],
     rules: {

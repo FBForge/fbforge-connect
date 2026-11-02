@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('cold start and local BPMN demo work without credentials', async ({ page }) => {
   const errors = [];

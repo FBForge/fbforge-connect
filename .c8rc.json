@@ -1,0 +1,7 @@
+{
+  "all": true,
+  "include": ["frontend/src/**/*.js", "frontend/src/**/*.ts"],
+  "exclude": ["frontend/src/**/*.d.ts"],
+  "reporter": ["text-summary", "json-summary", "json", "html", "lcovonly"],
+  "reports-dir": "coverage/node"
+}

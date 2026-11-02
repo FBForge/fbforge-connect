@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 const fixture = 'http://127.0.0.1:1420/test-fixtures/case-workspace.html';
 test('Case ID groups keep full histories through filtering, exact ID navigation and individual deletion', async ({

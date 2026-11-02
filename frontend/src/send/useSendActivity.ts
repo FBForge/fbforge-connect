@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
-import type { Session, SendOutcome, ActivityEvent } from '../contracts.ts';
-import { resetsSessions } from '../sessions.js';
+import type { Session, SendOutcome, ActivityEvent } from '../contracts.d.ts';
+import { resetsSessions } from '../sessions.ts';
 
 interface ActivityContext {
   props: { readonly busy: boolean; readonly session?: Session | null };

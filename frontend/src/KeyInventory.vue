@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
-import { invoke } from './native.js';
+import { invoke } from './native.ts';
 import CertificateExpiryNotice from './integration/CertificateExpiryNotice.vue';
 import { loadKeyInventory, removeInventoryItem } from './key-inventory.js';
-import { resetsSessions } from './sessions.js';
+import { resetsSessions } from './sessions.ts';
 const props = defineProps({ session: Object, busy: Boolean });
 const emit = defineEmits(['busy', 'invalidate', 'fatal']);
 const rows = ref(null),

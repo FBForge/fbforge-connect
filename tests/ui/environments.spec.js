@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 const url = 'http://127.0.0.1:1420/test-fixtures/environments.html';
 test('environment changes confirm, filter profiles and close previous sessions before selecting another environment', async ({

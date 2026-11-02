@@ -290,3 +290,7 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[cfg(test)]
+#[path = "scanner_install_regression_tests.rs"]
+mod regression_tests;

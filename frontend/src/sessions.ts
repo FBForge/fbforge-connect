@@ -1,11 +1,20 @@
+import type { NativeInvoke, Session, ApiVersion, SessionRole, Environment } from './contracts.d.ts';
+import { record } from './dto.ts';
 import { validEnvironment } from './environments.js';
 const roles = new Set(['online-service', 'administrative-system']);
 const versions = new Set(['v2', 'v3']);
 const sessionIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function validate(result, apiVersion, role, connected, sessionId, environment = 'TEST') {
+function validate(
+  result: unknown,
+  apiVersion: ApiVersion,
+  role: SessionRole,
+  connected: boolean,
+  sessionId?: string,
+  environment: Environment = 'TEST',
+): Session {
   if (
-    !result ||
+    !record(result) ||
     result.apiVersion !== apiVersion ||
     result.role !== role ||
     !validEnvironment(environment) ||
@@ -21,13 +30,13 @@ function validate(result, apiVersion, role, connected, sessionId, environment = 
 }
 
 export async function openSession(
-  invoke,
-  apiVersion,
-  role,
-  clientId,
-  clientSecret,
-  profile = null,
-  environment = 'TEST',
+  invoke: NativeInvoke,
+  apiVersion: ApiVersion,
+  role: SessionRole,
+  clientId: string,
+  clientSecret: string,
+  profile: { profileId: string; name: string } | null = null,
+  environment: Environment = 'TEST',
 ) {
   if (
     !versions.has(apiVersion) ||
@@ -66,7 +75,7 @@ export async function openSession(
   return { ...result, clientId };
 }
 
-export async function updateSession(invoke, session, connected) {
+export async function updateSession(invoke: NativeInvoke, session: Session, connected: boolean) {
   if (
     !session ||
     !versions.has(session.apiVersion) ||
@@ -90,7 +99,7 @@ export async function updateSession(invoke, session, connected) {
     : result;
 }
 
-export async function openSessionForApi(invoke, source, targetApiVersion) {
+export async function openSessionForApi(invoke: NativeInvoke, source: Session, targetApiVersion: ApiVersion) {
   if (
     !source?.connected ||
     !versions.has(source.apiVersion) ||
@@ -118,13 +127,13 @@ export async function openSessionForApi(invoke, source, targetApiVersion) {
   return { ...result, clientId: source.clientId };
 }
 
-export function resetsSessions(cause) {
-  const code = typeof cause === 'string' ? cause : cause?.message;
+export function resetsSessions(cause: unknown) {
+  const code = typeof cause === 'string' ? cause : record(cause) ? cause.message : undefined;
   return [
     'engine_timeout',
     'engine_protocol_error',
     'engine_disconnected',
     'engine_not_staged',
     'engine_start_failed',
-  ].includes(code);
+  ].includes(typeof code === 'string' ? code : '');
 }

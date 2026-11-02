@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { Session } from '../contracts.ts';
+import type { Session } from '../contracts.d.ts';
 type AddressField =
   | 'target'
   | 'source'

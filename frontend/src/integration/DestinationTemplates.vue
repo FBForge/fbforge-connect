@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import FileDropInput from '../FileDropInput.vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { downloadLocal } from '../local-download.js';
 import { validateTemplate, profileWorkspace } from './destination-templates.js';
 const props = defineProps({ session: Object, changes: Object, disabled: Boolean });

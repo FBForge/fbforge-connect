@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import assert from 'node:assert/strict';
 
-test('profile-maintenance with synthetic native fixtures', async ({ browser }) => {
-  const page = await browser.newPage({ viewport: { width: 1180, height: 900 } }),
+test('profile-maintenance with synthetic native fixtures', async ({ createPage }) => {
+  const page = await createPage({ viewport: { width: 1180, height: 900 } }),
     errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html');

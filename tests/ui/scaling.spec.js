@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 
 test('reading and reply drafting tolerate increased text spacing at narrow widths', async ({ page }) => {
@@ -46,12 +46,11 @@ test('reading and reply drafting tolerate increased text spacing at narrow width
 // Representative Full-HD client area at Windows-like device scales. This checks
 // CSS reflow and accessibility, not the real monitor DPI or a spoken screen reader.
 for (const scale of [1.25, 1.5, 2]) {
-  test(`workspaces and modal remain usable at ${scale * 100}% device scale`, async ({ browser }) => {
-    const context = await browser.newContext({
+  test(`workspaces and modal remain usable at ${scale * 100}% device scale`, async ({ createPage }) => {
+    const page = await createPage({
       viewport: { width: Math.floor(1920 / scale), height: Math.floor(1080 / scale) },
       deviceScaleFactor: scale,
     });
-    const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.addInitScript(() => {
@@ -116,6 +115,5 @@ for (const scale of [1.25, 1.5, 2]) {
     await expect(dialog).toBeHidden();
     await expect(page.getByRole('button', { name: 'Verbinden', exact: true })).toBeFocused();
     expect(errors).toEqual([]);
-    await context.close();
   });
 }

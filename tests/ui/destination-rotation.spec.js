@@ -1,9 +1,9 @@
-import { test } from '@playwright/test';
+import { test } from './fixtures.js';
 import assert from 'node:assert/strict';
 
-test('destination-rotation with synthetic native fixtures', async ({ browser }) => {
+test('destination-rotation with synthetic native fixtures', async ({ createPage }) => {
   for (const uncertain of [false, true]) {
-    const page = await browser.newPage({ viewport: { width: 1180, height: 900 } }),
+    const page = await createPage({ viewport: { width: 1180, height: 900 } }),
       errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('http://127.0.0.1:1420/test-fixtures/destination-rotation.html');
@@ -52,7 +52,6 @@ test('destination-rotation with synthetic native fixtures', async ({ browser }) 
       .click();
     await page.waitForFunction(() => window.__rotationFixture.receive);
     assert.deepEqual(errors, []);
-    await page.close();
   }
   console.log(
     'Bulk key rotation UI passed: independent keys, read-only preview, cancel/reuse, one confirmation, uncertain read-only result and explicit resume, receive navigation.',

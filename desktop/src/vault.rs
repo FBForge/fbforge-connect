@@ -489,3 +489,7 @@ mod tests {
         fs::remove_dir_all(directory).unwrap();
     }
 }
+
+#[cfg(test)]
+#[path = "vault_regression_tests.rs"]
+mod regression_tests;

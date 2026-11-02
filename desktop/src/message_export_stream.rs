@@ -315,4 +315,43 @@ mod tests {
         assert_eq!(fs::read_dir(&root).unwrap().count(), 0);
         fs::remove_dir_all(root).unwrap();
     }
+    #[test]
+    fn cancelled_expired_or_unscanned_reads_clean_partial_exports_and_preserve_completed_copies() {
+        for code in [
+            "content_cancelled",
+            "proof_expired",
+            "message_content_missing",
+            "malware_scan_required",
+        ] {
+            for fail_before_bytes in [false, true] {
+                let root =
+                    store::reserve(&std::env::temp_dir(), "fbforge-cancelled-export").unwrap();
+                let existing = root.join(format!("Einreichung-{}", id(9)));
+                fs::create_dir(&existing).unwrap();
+                fs::write(existing.join("data.json"), b"previous complete export").unwrap();
+                let parts = parts();
+                let result = ready(export(
+                    &root,
+                    "Einreichung",
+                    &id(9),
+                    false,
+                    "TEST",
+                    |content, offset| {
+                        if fail_before_bytes || content.as_deref() == Some(&id(2)) {
+                            std::future::ready(Err(code))
+                        } else {
+                            std::future::ready(Ok(response(&parts, content, offset)))
+                        }
+                    },
+                ));
+                assert_eq!(result, Err(code));
+                assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+                assert_eq!(
+                    fs::read(existing.join("data.json")).unwrap(),
+                    b"previous complete export"
+                );
+                fs::remove_dir_all(root).unwrap();
+            }
+        }
+    }
 }

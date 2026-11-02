@@ -2,7 +2,7 @@ import { saveLocalFile } from '../local-download.js';
 import { readScannerReport } from '../scanner-report.js';
 import { caseGroups, filterCaseGroups, defaultCaseMessage } from '../case-groups.js';
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { listCases, caseParts, readCaseFile, caseRequest, caseErrorMessage } from '../cases.js';
 import { createPreview, disposePreview } from '../submission-preview.js';
 import { errorMessage } from '../diagnostics.js';

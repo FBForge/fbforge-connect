@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { openSession, openSessionForApi, updateSession, resetsSessions } from '../frontend/src/sessions.js';
+import { openSession, openSessionForApi, updateSession, resetsSessions } from '../frontend/src/sessions.ts';
 
 const id = '00000000-0000-4000-8000-000000000001';
 const snapshot = {
@@ -10,6 +10,43 @@ const snapshot = {
   environment: 'TEST',
   connected: true,
 };
+test('optional profile registration validates UTF-8 metadata before forwarding credentials', async () => {
+  const profile = { profileId: id, name: 'Ä'.repeat(60) };
+  const calls = [];
+  const session = await openSession(
+    async (command, args) => {
+      calls.push([command, args]);
+      return snapshot;
+    },
+    'v2',
+    'online-service',
+    'synthetic-client',
+    'synthetic-secret',
+    profile,
+  );
+  assert.equal(calls[0][1].profileName, profile.name);
+  assert.equal(calls[0][1].profileId, id);
+  assert.equal(session.clientSecret, undefined);
+  assert.equal(session.profileName, undefined);
+  for (const patch of [
+    { profileId: '../other' },
+    { name: '' },
+    { name: 42 },
+    { name: 'Ä'.repeat(61) },
+    { name: 'bad\nname' },
+  ])
+    await assert.rejects(
+      openSession(
+        () => assert.fail('invalid profile reached native login'),
+        'v2',
+        'online-service',
+        'c',
+        's',
+        { ...profile, ...patch },
+      ),
+      /invalid_input/,
+    );
+});
 
 test('opening a session returns public state and keeps API and role explicit', async () => {
   const calls = [];

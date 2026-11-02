@@ -23,48 +23,13 @@ pub(crate) fn vault(app: &tauri::AppHandle) -> Result<Vault, &'static str> {
             .join("profiles"),
     ))
 }
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ArchiveItem {
-    offset: usize,
-    total: usize,
-    item: Option<serde_json::Value>,
-}
 async fn archive(
     app: &tauri::AppHandle,
     state: &EngineState,
     api: ApiVersion,
     session: &str,
 ) -> Result<Vec<serde_json::Value>, &'static str> {
-    let mut keys = vec![];
-    let mut expected = None;
-    for offset in 0..=176 {
-        let response: SessionResource = request(app, state, serde_json::json!({"command":"export_session_item", "apiVersion":api,"sessionId":session,"offset":offset})).await?;
-        if !response.validate(api, session) {
-            return Err("engine_protocol_error");
-        }
-        let page: ArchiveItem =
-            serde_json::from_value(response.data).map_err(|_| "engine_protocol_error")?;
-        if page.offset != offset
-            || page.total > 176
-            || expected.is_some_and(|total| total != page.total)
-        {
-            return Err("engine_protocol_error");
-        }
-        expected = Some(page.total);
-        if offset == page.total {
-            if page.item.is_some() {
-                return Err("engine_protocol_error");
-            }
-            return Ok(keys);
-        }
-        let item = page.item.ok_or("engine_protocol_error")?;
-        if !item.is_object() {
-            return Err("engine_protocol_error");
-        }
-        keys.push(item);
-    }
-    Err("engine_protocol_error")
+    crate::profile_archive::read(api, session, |command| request(app, state, command)).await
 }
 pub async fn save_opened(
     app: &tauri::AppHandle,

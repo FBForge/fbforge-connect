@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 async function login(page, saved = false) {
   await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html');
@@ -67,10 +67,10 @@ test('topbar reuses saved credentials while preserving the original profile and 
 });
 
 test('disabled target API preserves the original login for temporary and saved credentials', async ({
-  browser,
+  createPage,
 }) => {
   for (const saved of [false, true]) {
-    const page = await browser.newPage();
+    const page = await createPage();
     const original = await login(page, saved);
     await page.evaluate(() => {
       window.__profilesFixture.failApiSwitch = true;
@@ -83,7 +83,6 @@ test('disabled target API preserves the original login for temporary and saved c
     const fixture = await page.evaluate(() => window.__profilesFixture);
     expect(Object.keys(fixture.sessions)).toEqual([original]);
     expect(fixture.profiles).toHaveLength(saved ? 1 : 0);
-    await page.close();
   }
 });
 

@@ -1,8 +1,8 @@
-import { test } from '@playwright/test';
+import { test } from './fixtures.js';
 import assert from 'node:assert/strict';
 
-test('profiles with synthetic native fixtures', async ({ browser }) => {
-  const page = await browser.newPage({ viewport: { width: 1180, height: 900 } }),
+test('profiles with synthetic native fixtures', async ({ createPage }) => {
+  const page = await createPage({ viewport: { width: 1180, height: 900 } }),
     errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html');
@@ -49,10 +49,10 @@ test('profiles with synthetic native fixtures', async ({ browser }) => {
 });
 
 test('connection identity remains visible for temporary and restored profiles in both API versions', async ({
-  browser,
+  createPage,
 }) => {
   for (const api of ['v2', 'v3']) {
-    const page = await browser.newPage();
+    const page = await createPage();
     await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html');
     await page.locator('#session-api').selectOption(api);
     await page.getByRole('button', { name: 'Verbindung herstellen', exact: true }).click();
@@ -79,6 +79,5 @@ test('connection identity remains visible for temporary and restored profiles in
     await identity.getByText(`saved-client-${api}`, { exact: true }).waitFor();
     await identity.getByRole('heading', { name: `Testsender ${api}`, exact: true }).waitFor();
     assert.equal((await page.getByRole('dialog').textContent()).includes('synthetic-secret-marker'), false);
-    await page.close();
   }
 });

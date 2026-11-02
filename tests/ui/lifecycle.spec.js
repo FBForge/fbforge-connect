@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 test('normal close blocks active operations and leaves the app open when checkpointing fails', async ({
   page,

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dropFiles } from './drop-files.js';
@@ -38,8 +38,8 @@ test('BPMN loading restores visible keyboard focus', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Modell einpassen', exact: true })).toBeFocused();
 });
 
-test('process-workspace with synthetic native fixtures', async ({ browser }) => {
-  const page = await browser.newPage({ viewport: { width: 1180, height: 900 } }),
+test('process-workspace with synthetic native fixtures', async ({ createPage }) => {
+  const page = await createPage({ viewport: { width: 1180, height: 900 } }),
     errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://127.0.0.1:1420/test-fixtures/process-workspace.html');

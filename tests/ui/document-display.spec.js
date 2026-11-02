@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('JSON and inherited XML display types format only proven values and preserve raw source', async ({
   page,

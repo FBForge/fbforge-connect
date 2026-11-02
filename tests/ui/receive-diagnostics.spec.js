@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 const cases = [
   ['malware_detected', 'Malwarescanner meldet einen Fund', /Scanner meldet einen Fund/],

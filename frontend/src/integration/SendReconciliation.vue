@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { invoke } from '../native.js';
+import { invoke } from '../native.ts';
 import { readSubmissionTimeline } from './server-timeline.js';
 const props = defineProps({ session: Object, outcome: Object, busy: Boolean });
 const emit = defineEmits(['busy']);

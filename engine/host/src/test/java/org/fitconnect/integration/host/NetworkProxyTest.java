@@ -77,7 +77,9 @@ class NetworkProxyTest {
                     assertEquals(
                             server.getAddress().getPort(),
                             ((InetSocketAddress) proxy.address()).getPort());
-                    var schemaType = loader.loadClass(prefix + "PublicSchemaHttp");
+                    var schemaType =
+                            loader.loadClass(
+                                    "org.fitconnect.integration.adapters.PublicSchemaHttp");
                     var http = schemaType.getDeclaredField("HTTP");
                     http.setAccessible(true);
                     Object client = http.get(null);

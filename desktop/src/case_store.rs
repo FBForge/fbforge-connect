@@ -450,3 +450,7 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[cfg(test)]
+#[path = "case_store_regression_tests.rs"]
+mod regression_tests;
