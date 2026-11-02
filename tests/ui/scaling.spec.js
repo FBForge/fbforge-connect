@@ -75,7 +75,7 @@ for (const scale of [1.25, 1.5, 2]) {
       'Virenscan',
       'Destinations',
       'Prozesse',
-      'Info',
+      'Einstellungen',
     ]) {
       await page.getByRole('button', { name, exact: true }).click();
       if (name === 'Prozesse') {

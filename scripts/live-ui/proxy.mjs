@@ -69,7 +69,7 @@ export async function acceptanceProxy(dial = (host) => connect({ host, port: 443
   };
 }
 export async function configureAcceptanceProxy(page, proxy) {
-  await navigate(page, 'Info');
+  await navigate(page, 'Einstellungen');
   await page.getByLabel('Verbindung', { exact: true }).selectOption('manual');
   await page.getByLabel('Proxy-Host', { exact: true }).fill('127.0.0.1');
   await page.getByLabel('Port', { exact: true }).fill(String(proxy.port));

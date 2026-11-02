@@ -58,17 +58,25 @@ pub mod network_settings;
 #[path = "../src/update_transport.rs"]
 pub mod update_transport;
 
+#[cfg(test)]
 #[path = "../src/write_gate.rs"]
 pub(crate) mod write_gate;
 
+#[cfg(test)]
 #[path = "../src/profile_archive.rs"]
 pub(crate) mod profile_archive;
 
+#[cfg(test)]
 #[path = "../src/update_state.rs"]
 pub(crate) mod update_state;
 
+#[cfg(test)]
 #[path = "../src/export_source.rs"]
 pub(crate) mod export_source;
 
+#[cfg(test)]
 #[path = "../src/update_install.rs"]
 pub(crate) mod update_install;
+
+#[path = "../src/scanner_download.rs"]
+pub mod scanner_download;

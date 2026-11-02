@@ -108,7 +108,7 @@ test('the full application announces a release and prevents editing during nativ
   await expect(page.getByRole('status')).toContainText('0.4.0');
   expect(await page.evaluate(() => window.__updateCalls.includes('download_application_update'))).toBe(false);
   await page.getByRole('button', { name: 'Update ansehen' }).click();
-  await expect(page.getByRole('heading', { name: 'Info', exact: true })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Einstellungen', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Update herunterladen' }).click();
   await page.getByRole('button', { name: 'Installieren und neu starten' }).click();
   await expect(page.locator('.desktop-shell')).toHaveAttribute('inert', '');

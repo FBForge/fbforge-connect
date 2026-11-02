@@ -1,13 +1,14 @@
 <script setup>
-defineProps({ disabled: Boolean });
-const emit = defineEmits(['reply']);
+import ReplyActions from './ReplyActions.vue';
+defineProps({ disabled: Boolean, replyState: Object });
+const emit = defineEmits(['reply', 'retry']);
 </script>
 <template>
   <div class="tool-section">
-    <p>
-      Der Empfang ist abgeschlossen. Der Antwortkanal gehört zum Vorgang und bleibt für diese Sitzung
-      verfügbar.
+    <p>Der Empfang ist abgeschlossen.</p>
+    <p v-if="replyState.status === 'available'" class="small-note">
+      Der angebotene Antwortkanal gehört zum Vorgang und bleibt für diese Sitzung verfügbar.
     </p>
-    <button class="button secondary" :disabled="disabled" @click="emit('reply')">Antwort verfassen</button>
+    <ReplyActions :state="replyState" :disabled="disabled" @reply="emit('reply')" @retry="emit('retry')" />
   </div>
 </template>

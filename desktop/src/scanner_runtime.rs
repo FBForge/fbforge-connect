@@ -176,6 +176,7 @@ impl Runtime {
             }
         }
         clear_temporary(&root)?;
+        crate::scanner_download::cleanup_stale(&root);
         let prefs = root.join("preferences.json");
         let preferences = if prefs.exists() {
             let bytes = fs::read(&prefs).map_err(failure)?;

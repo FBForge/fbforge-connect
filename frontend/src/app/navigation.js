@@ -62,10 +62,10 @@ export const navigation = [
     description: 'Lokale Komponenten prüfen und einen technischen Bericht für die Fehleranalyse speichern.',
   },
   {
-    name: 'Info',
+    name: 'Einstellungen',
     group: 'Hilfe und Anwendung',
-    icon: 'info',
-    description: 'Programmversion, Funktionsumfang und Lizenzinformationen.',
+    icon: 'settings',
+    description: 'Netzwerk, Proxy und Updates einrichten sowie Programminformationen und Lizenzen ansehen.',
   },
 ];
 export const navigationGroups = ['Arbeitsbereich', 'Werkzeuge und Verwaltung', 'Hilfe und Anwendung'].map(

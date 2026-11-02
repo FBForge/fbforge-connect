@@ -348,6 +348,9 @@ async fn receipt_reviews_are_bound_to_attempt_and_native_confirmation_cannot_be_
             );
         }
         for review in [
+            json!({"requiresConfirmation":false,"attachmentProblemCount":1}),
+            json!({"requiresConfirmation":false,"attachmentProblemCount":"0"}),
+            json!({"requiresConfirmation":false,"attachmentProblemCount":null}),
             json!({}),
             json!({"requiresConfirmation":null,"attachmentProblemCount":0}),
             json!({"requiresConfirmation":true,"attachmentProblemCount":40}),

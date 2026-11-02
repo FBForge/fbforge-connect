@@ -29,7 +29,7 @@ test('main workspaces support keyboard navigation, reflow and automated accessib
     'Event Log',
     'Testwerkzeuge',
     'Virenscan',
-    'Info',
+    'Einstellungen',
   ]) {
     await page.getByRole('button', { name, exact: true }).click();
     if (name === 'Prozesse') {

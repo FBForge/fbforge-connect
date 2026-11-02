@@ -46,7 +46,7 @@ async function open(page, api, failure = 'reply_channel_missing', schemaUri = nu
   await page.locator('#pickup-submission').fill('00000003-1111-4111-8111-111111111111');
   await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Antrag lesen', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
+  if (!failure) await page.getByRole('button', { name: 'Antwort verfassen', exact: true }).click();
 }
 
 for (const api of ['v2', 'v3']) {
@@ -110,17 +110,15 @@ for (const api of ['v2', 'v3']) {
 }
 
 for (const api of ['v2', 'v3']) {
-  test(`missing reply channel explains the sender prerequisite and preserves verified reception (${api})`, async ({
+  test(`missing reply channel is a passive notice and preserves verified reception (${api})`, async ({
     page,
   }) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await open(page, api);
-    const notice = page.getByRole('alert', { name: 'Kein Antwortkanal angeboten', exact: true });
-    await expect(notice.getByRole('heading')).toBeFocused();
-    await expect(notice).toContainText('Antworten über FIT-Connect anbieten');
-    await expect(notice).toContainText('neue Einreichung');
-    await expect(notice).not.toContainText('Client-Secret prüfen');
+    const notice = page.getByText('Für diesen Vorgang wurde kein Antwortkanal angeboten.', { exact: true });
+    await expect(notice).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Antwort verfassen', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Antwortmöglichkeiten laden', exact: true })).toHaveCount(
       0,
     );
@@ -128,8 +126,6 @@ for (const api of ['v2', 'v3']) {
     await expect(page.locator('.received-application').getByText('Erika', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Annehmen', exact: true })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Ablehnen', exact: true })).toBeEnabled();
-    await notice.getByText('Technische Fehlerangaben', { exact: true }).click();
-    await expect(notice.locator('code')).toHaveText('reply_channel_missing');
     expect(
       await page.evaluate(async () => {
         const { diagnosticLog } = await import('/src/native.ts');
@@ -164,9 +160,9 @@ test('a real authentication failure retains the credential error instead of repo
   page,
 }) => {
   await open(page, 'v3', 'authentication_failed');
-  const notice = page.getByRole('alert', { name: 'Antwortaktion fehlgeschlagen', exact: true });
+  const notice = page.getByRole('alert', { name: 'Antwortkanal konnte nicht geprüft werden', exact: true });
   await expect(notice).toContainText('Client-ID und Client-Secret prüfen');
-  await expect(page.getByRole('button', { name: 'Antwortmöglichkeiten laden', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Antwortkanal erneut prüfen', exact: true })).toBeEnabled();
   await notice.getByText('Technische Fehlerangaben', { exact: true }).click();
   await expect(notice.locator('code')).toHaveText('authentication_failed');
 });

@@ -30,7 +30,7 @@ test('cold start and local BPMN demo work without credentials', async ({ page })
   await expect(
     page.getByRole('button', { name: 'Passende Prozess-Destinations suchen', exact: true }),
   ).toBeDisabled();
-  await page.getByRole('button', { name: 'Info', exact: true }).click();
+  await page.getByRole('button', { name: 'Einstellungen', exact: true }).click();
   await page.getByRole('button', { name: 'Drittanbieter-Lizenzen anzeigen', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: 'Drittanbieter-Komponenten und Lizenzen', exact: true }),

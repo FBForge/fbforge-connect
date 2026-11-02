@@ -19,6 +19,9 @@
 
 ### Scanner und Updates
 
+- Online-Einrichtung des Scanners nach einem Abbruch erneut starten, auch wenn
+  Windows eine temporäre Downloaddatei kurzzeitig sperrt. Jeder Versuch verwendet
+  einen eigenen Arbeitsbereich. Unterbrochene Downloads werden beim Neustart bereinigt.
 - Optionaler lokaler ClamAV 1.5.4 im Setup, Offline-Import und Online-Einrichtung.
   Geprüfte Engine-Dateien, signierte Datenbanken, sichtbarer Signaturstand und
   zustimmungspflichtige FreshClam-Updates. Eigene ClamAV-/ICAP-Dienste bleiben möglich.
@@ -34,13 +37,23 @@
   FIT-Connect. Sammelannahme und vollständiger Export bleiben gesperrt.
   Metadaten-/Fachdatenfunde und unvollständige Scans blockieren die Freigabe.
 - Integrierte Suche nach neueren stabilen Windows-x64-Releases, abschaltbar beim Start
-  oder manuell unter „Info“. Download mit Fortschritt und Abbruch. Installation erst
+  oder manuell unter „Einstellungen“. Download mit Fortschritt und Abbruch. Installation erst
   nach Paket-/Versionssignaturprüfung, Schlüsselsicherung und nativer Bestätigung.
   Release-Pakete enthalten Update-Signatur und `latest.json`.
 - Die erste Version mit Updater einmal manuell installieren. Die signierte
   Update-Abnahme des endgültigen Release-Pakets steht noch aus.
 
 ### Bedienung und Fehlerkorrekturen
+
+- Empfangsfilter mit ausgerichteten Bedienelementen und gestapelter Anordnung bei
+  schmalen Fenstern. Antwortaktionen erst nach Prüfung des angebotenen Kanals
+  anzeigen. Fehlender Kanal als Hinweis, tatsächliche Fehler mit erneuter Prüfung.
+- „Einstellungen“ bündelt Netzwerk, Proxy, Updates sowie Programm- und Lizenzinfos.
+  Das Browser-Kontextmenü ist in der Desktop-App unterdrückt. Tastaturbedienung
+  zum Kopieren und Einfügen bleibt erhalten.
+
+- Widersprüchliche oder unvollständige native Angaben zu Anlagenproblemen
+  blockieren die Empfangsbestätigung vor einer Schreibaktion.
 
 - Profil-Abkürzungen im Testablauf wechseln auch während des automatischen
   Schlüsselladens zur gewünschten Aufgabe. Die Empfangs-Destination wird
@@ -77,7 +90,8 @@
 - SDK v3 auf 4.0.0 aktualisiert, v2 verwendet 3.5.2. Die ursprünglich für 0.2.1
   vorgesehenen Korrekturen sind enthalten. Es gibt kein separates 0.2.1-Release.
 - Fehlendes Scanner-Paket vor Installer-Build automatisch vorbereiten. Debug-Starts
-  laden es nicht nach. Frontend-Pakete aufgeteilt und Produktionspaketprüfung ergänzt.
+  laden es nicht nach. Der öffentliche ClamAV-Schlüsselimport und die Signaturprüfung
+  starten keinen GPG-Agenten. Frontend-Pakete aufgeteilt und Produktionspaketprüfung ergänzt.
 
 ## 0.2.0
 

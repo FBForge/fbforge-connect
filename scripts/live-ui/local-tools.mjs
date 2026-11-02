@@ -2,7 +2,7 @@ import { nativeScannerInstall, nativeScannerReview } from './downloads.mjs';
 import { isDeepStrictEqual } from 'node:util';
 import { navigate } from './exchange.mjs';
 import { check, until } from './desktop.mjs';
-import { writeFile, readFile } from 'node:fs/promises';
+import { writeFile, readFile, stat, statfs } from 'node:fs/promises';
 import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -46,9 +46,14 @@ export async function scannerDiagnostics(page) {
     .getByRole('combobox', { name: 'Verfahren', exact: true })
     .inputValue()
     .catch(() => 'unavailable');
+  const root = join(process.env.LOCALAPPDATA, 'org.fitconnect.integration-client', 'scanner');
+  const archive = await stat(join(root, 'engine-download.zip')).catch(() => null);
+  const disk = await statfs(root).catch(() => null);
   console.error(
     `Actual native scanner diagnostics: ${JSON.stringify({
       ...state,
+      interruptedArchiveBytes: archive?.isFile() ? archive.size : null,
+      freeBytes: disk ? disk.bavail * disk.bsize : null,
       procedure: ['off', 'local', 'clamav', 'icap'].includes(selected) ? selected : 'unavailable',
       componentVisible: await page
         .getByRole('heading', { name: 'Lokaler ClamAV', exact: true })
@@ -166,7 +171,7 @@ export async function localTools(page) {
     async () => (await page.getByText('Lokal bereit', { exact: true }).count()) === 2,
     'live_ui_sdk_probe_incomplete',
   );
-  await navigate(page, 'Info');
+  await navigate(page, 'Einstellungen');
   const { version } = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));
   await page.getByText(`Version ${version}`, { exact: false }).first().waitFor();
   check((await page.getByText('Alpha 1', { exact: false }).count()) === 0, 'live_ui_stale_alpha_label');
@@ -274,6 +279,19 @@ export async function onlineScannerSetup(desktop, fixture, connected = true) {
   );
   await page.getByRole('button', { name: 'Vorgang abbrechen', exact: true }).click();
   await until(async () => !(await install.isDisabled()), 'live_ui_online_scanner_cancel_stuck', 30000);
+  // Reproduce a cancelled download whose Windows cleanup was delayed by a file lock.
+  // This runner owns the fresh scanner root. Never replace an existing archive.
+  const interruptedArchive = join(
+    process.env.LOCALAPPDATA,
+    'org.fitconnect.integration-client',
+    'scanner',
+    'engine-download.zip',
+  );
+  await writeFile(interruptedArchive, 'Interrupted public component test download', { flag: 'wx' }).catch(
+    (error) => {
+      if (error.code !== 'EEXIST') throw error;
+    },
+  );
   await nativeScannerInstall(desktop, fixture, () => install.click());
   await until(
     async () => {
@@ -297,5 +315,7 @@ export async function onlineScannerSetup(desktop, fixture, connected = true) {
   await nativeScannerReview(desktop, fixture, () =>
     page.getByRole('button', { name: 'Scanner-Einstellung anwenden', exact: true }).click(),
   );
-  console.log('Real desktop UI: clean online scanner setup, explicit cancellation and retry passed');
+  console.log(
+    'Real desktop UI: clean online scanner setup, explicit cancellation and retry despite an interrupted archive passed',
+  );
 }

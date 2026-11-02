@@ -81,7 +81,7 @@ test(
       });
       await page.goto(origin);
       await expect(page.getByRole('heading', { name: 'Start', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Info', exact: true }).click();
+      await page.getByRole('button', { name: 'Einstellungen', exact: true }).click();
       await page.getByRole('button', { name: 'Lizenztext anzeigen', exact: true }).click();
       await expect(page.locator('dialog[open]')).toContainText('European Union Public Licence');
       await page

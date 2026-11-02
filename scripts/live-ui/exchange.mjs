@@ -278,7 +278,7 @@ export async function otherAreas(page) {
     'Testwerkzeuge',
     'Hilfe',
     'Diagnose',
-    'Info',
+    'Einstellungen',
   ])
     await navigate(page, name);
   const { version } = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));

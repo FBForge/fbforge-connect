@@ -290,21 +290,17 @@ pub async fn install_local_scanner(
             if !online {
                 return runtime.install_offline(&paths[0]);
             }
-            let archive = runtime.root.join("engine-download.zip");
-            let stage = runtime
-                .root
-                .join(format!("online-{}", crate::scanner_runtime::now()));
-            let result = (|| {
+            let attempt = crate::scanner_download::Attempt::begin(&runtime.root)?;
+            let archive = &attempt.archive;
+            let stage = &attempt.stage;
+            (|| {
                 phase(state, "downloading");
-                tauri::async_runtime::block_on(download_engine(&archive, state))?;
-                package::unpack_upstream(&archive, &stage)?;
+                tauri::async_runtime::block_on(download_engine(archive, state))?;
+                package::unpack_upstream(archive, stage)?;
                 phase(state, "updating-database");
-                runtime.populate_stage(&stage)?;
-                runtime.commit(stage.clone())
-            })();
-            let _ = std::fs::remove_file(archive);
-            let _ = std::fs::remove_dir_all(stage);
-            result
+                runtime.populate_stage(stage)?;
+                runtime.commit(stage.to_path_buf())
+            })()
         })
         .await?;
         view(&app.state::<LocalScanner>())
@@ -402,11 +398,7 @@ async fn download_engine(target: &Path, state: &LocalScanner) -> Result<(), &'st
     {
         return Err("scanner_download_failed");
     }
-    let mut output = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(target)
-        .map_err(|_| "scanner_install_failed")?;
+    let mut output = crate::scanner_download::create_archive(target)?;
     let mut total = 0u64;
     while let Some(chunk) = download_step(response.chunk(), state).await? {
         if state.cancel.load(Ordering::SeqCst) {

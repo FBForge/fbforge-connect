@@ -87,10 +87,10 @@ for (const layout of layouts) {
   });
 }
 
-test('Info shows the regular version without an obsolete release qualifier', async ({ page }) => {
+test('Settings show the regular version without an obsolete release qualifier', async ({ page }) => {
   await page.goto(url);
-  await page.getByRole('button', { name: 'Info', exact: true }).click();
-  const info = page.locator('.info-view');
+  await page.getByRole('button', { name: 'Einstellungen', exact: true }).click();
+  const info = page.locator('.settings-view');
   await expect(info.getByText(`Version ${version}`, { exact: true })).toBeVisible();
   await expect(info).not.toContainText(/Alpha|Beta|Release Candidate|Entwicklungsstand/);
   await expect(info.getByText('FIT-Connect TEST, STAGE und PROD', { exact: true })).toBeVisible();

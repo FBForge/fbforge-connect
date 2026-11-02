@@ -12,7 +12,7 @@ import { useApplicationUpdates } from './app/useApplicationUpdates.js';
 import { navigation } from './app/navigation.js';
 import ConnectionDialog from './app/ConnectionDialog.vue';
 import DiagnosticsView from './app/DiagnosticsView.vue';
-import InfoView from './app/InfoView.vue';
+import SettingsView from './app/SettingsView.vue';
 import { provideScannerMonitor } from './app/useScannerMonitor.js';
 import ScannerActivity from './app/ScannerActivity.vue';
 import SaveFeedback from './app/SaveFeedback.vue';
@@ -217,7 +217,9 @@ useFileNavigationGuard();
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div :key="environment" class="workspace-content">
           <div
-            v-if="updates.state.value.version && !updates.state.value.dismissed && section !== 'Info'"
+            v-if="
+              updates.state.value.version && !updates.state.value.dismissed && section !== 'Einstellungen'
+            "
             class="connection-notice"
             role="status"
           >
@@ -225,7 +227,7 @@ useFileNavigationGuard();
               <strong>FBForge Connect {{ updates.state.value.version }} ist verfügbar.</strong>
               <p>Aktualisieren Sie die Anwendung, wenn Ihre aktuelle Arbeit abgeschlossen ist.</p>
             </div>
-            <button class="button secondary" @click="navigate('Info')">Update ansehen</button>
+            <button class="button secondary" @click="navigate('Einstellungen')">Update ansehen</button>
             <button class="button secondary" @click="updates.controller.dismiss()">Später</button>
           </div>
           <p v-if="environment === 'PROD'" class="environment-warning" role="status">
@@ -239,9 +241,15 @@ useFileNavigationGuard();
           <div
             v-if="
               !activeSession &&
-              !['Start', 'Diagnose', 'Info', 'Prozesse', 'Hilfe', 'Testwerkzeuge', 'Virenscan'].includes(
-                section,
-              )
+              ![
+                'Start',
+                'Diagnose',
+                'Einstellungen',
+                'Prozesse',
+                'Hilfe',
+                'Testwerkzeuge',
+                'Virenscan',
+              ].includes(section)
             "
             class="connection-notice"
           >
@@ -450,8 +458,8 @@ useFileNavigationGuard();
             @export="exportReport"
             @clear="clearHistory"
           />
-          <InfoView
-            :visible="section === 'Info'"
+          <SettingsView
+            :visible="section === 'Einstellungen'"
             :update-state="updates.state.value"
             :busy="busy"
             @check-update="updates.controller.check()"

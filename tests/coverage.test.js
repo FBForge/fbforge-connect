@@ -107,19 +107,19 @@ const nativeReport = (platform, covered) => ({
 });
 test('native reports declare their platform and respect its independently measured minimum', async () => {
   await summaryFixture(async (run) => {
-    assert.equal((await run(nativeReport('linux', 58))).status, 0);
-    const below = await run(nativeReport('linux', 56));
+    assert.equal((await run(nativeReport('linux', 69))).status, 0);
+    const below = await run(nativeReport('linux', 68));
     assert.notEqual(below.status, 0);
     assert.match(below.stderr, /coverage_below_baseline/);
-    assert.match((await run(nativeReport('win32', 72))).stderr, /coverage_below_baseline/);
-    assert.equal((await run(nativeReport('win32', 74))).status, 0);
+    assert.match((await run(nativeReport('win32', 78))).stderr, /coverage_below_baseline/);
+    assert.equal((await run(nativeReport('win32', 79))).status, 0);
     const missing = nativeReport('win32', 82);
     delete missing.platform;
     assert.match((await run(missing)).stderr, /coverage_native_platform_missing/);
   });
   await summaryFixture(async (run) => {
-    assert.equal((await run(nativeReport('win32', 31))).status, 0);
-    assert.match((await run(nativeReport('win32', 29))).stderr, /coverage_below_baseline/);
+    assert.equal((await run(nativeReport('win32', 37))).status, 0);
+    assert.match((await run(nativeReport('win32', 36))).stderr, /coverage_below_baseline/);
   }, 'native-desktop');
 });
 test('reported percentages must agree with finite covered and total counters', async () => {

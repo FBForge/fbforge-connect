@@ -59,7 +59,7 @@ export async function reviewShortcuts(page, fixture) {
 }
 export async function reviewRuntime(desktop, fixture) {
   const page = desktop.page;
-  await navigate(page, 'Info');
+  await navigate(page, 'Einstellungen');
   const updates = page.locator('.application-updates');
   const search = updates.getByRole('button', { name: 'Nach Updates suchen', exact: true });
   await until(async () => !(await search.isDisabled()), 'live_ui_update_check_busy');

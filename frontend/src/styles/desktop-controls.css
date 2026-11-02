@@ -124,7 +124,7 @@
   flex-shrink: 0;
 }
 .diagnostic-view,
-.info-view {
+.settings-view {
   display: grid;
   gap: 16px;
 }

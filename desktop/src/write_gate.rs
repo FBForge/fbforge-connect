@@ -135,14 +135,17 @@ pub(crate) async fn run(
         if !review.validate(version, id) || review.data.as_object().map(|o| o.len()) != Some(2) {
             return Err("engine_protocol_error");
         }
-        if review.data["requiresConfirmation"]
+        let requires_confirmation = review.data["requiresConfirmation"]
             .as_bool()
-            .ok_or("engine_protocol_error")?
-        {
-            let blocked = review.data["attachmentProblemCount"]
-                .as_u64()
-                .filter(|n| *n <= 39)
-                .ok_or("engine_protocol_error")?;
+            .ok_or("engine_protocol_error")?;
+        let blocked = review.data["attachmentProblemCount"]
+            .as_u64()
+            .filter(|n| *n <= 39)
+            .ok_or("engine_protocol_error")?;
+        if blocked > 0 && !requires_confirmation {
+            return Err("engine_protocol_error");
+        }
+        if requires_confirmation {
             if blocked > 0 {
                 context.effect(Effect::ConfirmAttachments(blocked)).await?;
             } else {

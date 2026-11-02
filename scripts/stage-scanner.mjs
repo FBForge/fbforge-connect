@@ -10,6 +10,7 @@ import {
   copyEngine,
   databaseFiles,
   gpgPath,
+  publicGpgArguments,
 } from './scanner/component.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const argument = (name) => {
@@ -37,7 +38,8 @@ try {
   await mkdir(keyring, { mode: 0o700 });
   const key = fileURLToPath(new URL('./scanner/talos-public-key.asc', import.meta.url));
   const forGpg = (path) => gpgPath(path, gpg);
-  run(gpg, ['--homedir', forGpg(keyring), '--batch', '--import', forGpg(key)]);
+  const publicGpg = publicGpgArguments(keyring, gpg);
+  run(gpg, [...publicGpg, '--import', forGpg(key)]);
   for (const file of [archive, source]) {
     const url = (file === archive ? manifest.archive.url : manifest.source.url) + '.sig';
     const signature = file + '.sig';
@@ -58,20 +60,10 @@ try {
         url,
       ]);
     }
-    const result = run(
-      gpg,
-      [
-        '--homedir',
-        forGpg(keyring),
-        '--batch',
-        '--status-fd',
-        '1',
-        '--verify',
-        forGpg(signature),
-        forGpg(file),
-      ],
-      { stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8' },
-    );
+    const result = run(gpg, [...publicGpg, '--status-fd', '1', '--verify', forGpg(signature), forGpg(file)], {
+      stdio: ['ignore', 'pipe', 'inherit'],
+      encoding: 'utf8',
+    });
     if (!result.stdout.includes(`[GNUPG:] VALIDSIG ${manifest.signerFingerprint} `))
       throw new Error('scanner_build_signature_invalid');
   }

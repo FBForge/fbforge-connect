@@ -12,7 +12,7 @@ const limits = {
   'native-desktop': {},
 };
 const rows = [];
-const nativeFloors = { 'native-contracts': { win32: 73, linux: 57 }, 'native-desktop': { win32: 30 } };
+const nativeFloors = { 'native-contracts': { win32: 79, linux: 69 }, 'native-desktop': { win32: 37 } };
 for (const scope of scopes) {
   if (!Object.hasOwn(limits, scope)) throw new Error('coverage_scope_invalid');
   const report = JSON.parse(await readFile(`coverage/${scope}/scope.json`, 'utf8'));

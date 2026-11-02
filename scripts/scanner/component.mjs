@@ -16,6 +16,10 @@ export function gpgPath(path, executable, platform = process.platform) {
     ? normalized.replace(/^([a-z]):\//i, (_, drive) => `/${drive.toLowerCase()}/`)
     : normalized;
 }
+export function publicGpgArguments(keyring, executable, platform = process.platform) {
+  // Public-key import and verification never need a private-key agent.
+  return ['--homedir', gpgPath(keyring, executable, platform), '--batch', '--no-autostart'];
+}
 export function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     stdio: 'inherit',

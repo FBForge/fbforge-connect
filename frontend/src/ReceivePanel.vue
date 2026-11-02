@@ -15,9 +15,9 @@ import ReplyReceiptPanel from './ReplyReceiptPanel.vue';
 import ReplySender from './ReplySender.vue';
 import DocumentLayout from './DocumentLayout.vue';
 import AttachmentList from './AttachmentList.vue';
-import MessageDownload from './MessageDownload.vue';
+import ReceiveActions from './receive/ReceiveActions.vue';
+import { useReplyAvailability } from './receive/useReplyAvailability.ts';
 import BlockedAttachments from './BlockedAttachments.vue';
-import { exportSource } from './message-export.js';
 import StructuredData from './StructuredData.vue';
 import { useReceivePanel } from './receive/useReceivePanel.js';
 const props = defineProps({
@@ -86,6 +86,11 @@ const {
   beginReply,
   beginReceipt,
 } = receiveController;
+const replyAvailability = useReplyAvailability(() => ({
+  session: props.session,
+  proof: proof.value,
+  reply: props.reply,
+}));
 defineExpose({
   confirmLeave,
   getSchemas: () => schemas.value.map(({ uri, contentId }) => ({ uri, contentId })),
@@ -313,60 +318,22 @@ defineExpose({
             </section>
           </template>
           <template #aside>
-            <div class="document-next-actions">
-              <MessageDownload
-                :session="session"
-                :source="exportSource(proof, reply)"
-                :blocked="Boolean(proof.blockedAttachments?.length)"
-                :disabled="disabled"
-                @busy="emit('busy', $event)"
-              />
-              <h3>Nächster Schritt</h3>
-              <p class="small-note">
-                Prüfen Sie die Fachdaten und Anlagen. Eine Antwort schließt den Empfang noch nicht ab.
-              </p>
-              <div class="client-actions">
-                <button
-                  v-if="!reply"
-                  class="button secondary"
-                  type="button"
-                  :disabled="disabled"
-                  @click="beginReply"
-                >
-                  Antwort verfassen
-                </button>
-                <button
-                  v-if="!reply && !completed"
-                  class="button"
-                  type="button"
-                  :disabled="disabled || receiptUncertain"
-                  @click="beginReceipt('accept')"
-                >
-                  Annehmen
-                </button>
-                <button
-                  v-if="!reply && !completed"
-                  class="button secondary"
-                  type="button"
-                  :disabled="disabled || receiptUncertain"
-                  @click="beginReceipt('reject')"
-                >
-                  Ablehnen
-                </button>
-                <button
-                  v-else
-                  class="button"
-                  type="button"
-                  :disabled="disabled"
-                  @click="
-                    receiptSection?.scrollIntoView({ block: 'start' });
-                    receiptSection?.querySelector('button, select')?.focus();
-                  "
-                >
-                  Antwort quittieren
-                </button>
-              </div>
-            </div>
+            <ReceiveActions
+              :session="session"
+              :proof="proof"
+              :reply="reply"
+              :disabled="disabled"
+              :receipt-uncertain="receiptUncertain"
+              :reply-state="replyAvailability.state.value"
+              @busy="emit('busy', $event)"
+              @reply="beginReply"
+              @retry="replyAvailability.check()"
+              @receipt="beginReceipt"
+              @acknowledge="
+                receiptSection?.scrollIntoView({ block: 'start' });
+                receiptSection?.querySelector('button, select')?.focus();
+              "
+            />
             <AttachmentList
               :parts="attachments"
               :warnings="proof.warnings"
@@ -443,7 +410,13 @@ defineExpose({
         @close="closePreview"
       />
     </section>
-    <AcceptedReplyNotice v-if="completed && proof" :disabled="disabled" @reply="beginReply" />
+    <AcceptedReplyNotice
+      v-if="completed && proof"
+      :disabled="disabled"
+      :reply-state="replyAvailability.state.value"
+      @reply="beginReply"
+      @retry="replyAvailability.check()"
+    />
     <div v-show="!reply" ref="replySection" class="receive-action-section">
       <ReplySender
         ref="replySender"

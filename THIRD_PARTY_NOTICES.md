@@ -2,7 +2,7 @@
 
 Die Anwendung enthält getrennt lizenzierte Komponenten. Die EUPL-Lizenz des Projekts ersetzt deren Lizenzen nicht. Exakte Versionen und transitive Abhängigkeiten stehen in `package-lock.json`, `desktop/Cargo.lock` und den Maven-POMs.
 
-Die Lizenztexte der Frontend-Abhängigkeiten und PDF-Schriftarten stehen in `licenses/frontend.txt` und in der Infoansicht der Anwendung.
+Die Lizenztexte der Frontend-Abhängigkeiten und PDF-Schriftarten stehen in `licenses/frontend.txt` und unter „Einstellungen“ der Anwendung.
 
 | Komponente                                                    | Verwendung                                                           | Lizenz                                                                                                                                          |
 | ------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -16,12 +16,12 @@ Die Lizenztexte der Frontend-Abhängigkeiten und PDF-Schriftarten stehen in `lic
 | bpmn-moddle 10.3.1                                            | BPMN-Referenzen und XML-Modell                                       | MIT                                                                                                                                             |
 | Bouncy Castle 1.86                                            | Zertifikate und Kryptografie der SDK-Adapter                         | MIT                                                                                                                                             |
 
-**bpmn-js:** Copyright (c) 2014-present Camunda Services GmbH. Die Lizenz verlangt das sichtbare, unveränderte bpmn.io-Wasserzeichen in gerenderten Diagrammen. Es bleibt in der Anwendung erhalten. Der vollständige Text liegt unter `licenses/bpmn-js.txt` und ist in der Infoansicht zugänglich.
+**bpmn-js:** Copyright (c) 2014-present Camunda Services GmbH. Die Lizenz verlangt das sichtbare, unveränderte bpmn.io-Wasserzeichen in gerenderten Diagrammen. Es bleibt in der Anwendung erhalten. Der vollständige Text liegt unter `licenses/bpmn-js.txt` und ist unter „Einstellungen“ zugänglich.
 
 Für Apache-2.0 liegt der vollständige Lizenztext unter `licenses/Apache-2.0.txt`. Lizenz- und Copyright-Hinweise der Java-Adapter bleiben bei der Paketierung in den Artefakten erhalten.
 
 Die Lizenz- und Copyright-Texte der neuen nativen Update-Komponenten einschließlich
-ring sind in `licenses/native-updates.txt` und in der Infoansicht enthalten.
+ring sind in `licenses/native-updates.txt` und unter „Einstellungen“ enthalten.
 
 ## Optionale ClamAV-Komponente (ab 0.3.0)
 

@@ -68,8 +68,8 @@ async function load() {
 }
 </script>
 <template>
-  <section aria-label="Alter und Abholfristen">
-    <div class="client-actions">
+  <section class="inbox-ages" aria-label="Alter und Abholfristen">
+    <div class="inbox-age-filters">
       <button
         class="button secondary"
         type="button"
@@ -101,3 +101,27 @@ async function load() {
     <p v-if="!rows.length && items?.length" role="status">Keine Einreichungen für diesen Filter.</p>
   </section>
 </template>
+<style scoped>
+.inbox-age-filters {
+  display: grid;
+  grid-template-columns: max-content minmax(180px, 240px) minmax(200px, 1fr);
+  align-items: end;
+  gap: 16px;
+  margin-block: 20px;
+}
+.inbox-ages .inbox-age-filters > label {
+  margin: 0;
+}
+.inbox-ages .inbox-age-filters > label.checkbox-label {
+  margin-block: 0;
+  align-items: center;
+  min-height: 44px;
+}
+@media (max-width: 1000px) {
+  .inbox-age-filters {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+    gap: 12px;
+  }
+}
+</style>

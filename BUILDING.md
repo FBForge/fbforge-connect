@@ -71,7 +71,10 @@ Für einen Installer mit eingebettetem WebView2-Installer:
 npm run desktop:build:offline -- -- --locked
 ```
 
-Der erste Rust-Build und das Laden der WebView2-Dateien können einige Minuten dauern. Beide Varianten verwenden dasselbe Ausgabeverzeichnis. Benötigte Pakete vor dem nächsten Build an einen anderen Ort kopieren.
+Der erste Rust-Release-Build kompiliert sämtliche Abhängigkeiten und kann lange dauern.
+Auch die letzte Anzeige `487/488` kann mehrere Minuten stehen bleiben, während Rust
+optimiert und verlinkt. Die Zahl zählt Aufgaben, keine Zeitanteile. Den Build-Ordner
+für Folgebuilds behalten. Das Laden der WebView2-Dateien benötigt zusätzlich Zeit. Beide Varianten verwenden dasselbe Ausgabeverzeichnis. Benötigte Pakete vor dem nächsten Build an einen anderen Ort kopieren.
 
 Für normale Entwicklungsbuilds den öffentlichen Projekt-Prüfschlüssel beibehalten.
 Ohne veröffentlichte `latest.json` meldet die Updatesuche fehlende Update-Informationen.
@@ -192,15 +195,24 @@ noch den vollständigen Tauri-Befehlsumfang. Native Zweigabdeckung wird derzeit 
 Instrumentierte Rust-Objekte entstehen in einem separaten temporären Verzeichnis und
 werden nach der Messung entfernt. Release-Builds bleiben ohne Instrumentierung.
 
-Die ersten Mindestwerte in `scripts/coverage-summary.mjs` sichern den gemessenen Stand:
+Die Mindestwerte in `scripts/coverage-summary.mjs` sichern den gemessenen Stand:
 Node 56 % Zeilen/85 % Zweige, Browser 82 %/70 %, Java 82 %/63 %.
 Sie sind eine Untergrenze, kein Qualitätsziel. Weitere Tests sollen besonders bisher
-unerreichte Fehler- und Abbruchpfade abdecken. Die isolierten nativen Produktzeilen haben Untergrenzen von 57 % unter Linux und
-73 % unter Windows. Für die vollständigen nativen Windows-Tests gelten zunächst 30 %.
-Die gemessenen 31,73 % zeigen weiteren Bedarf an gezielten nativen Tests. Diese
-Untergrenzen verhindern Rückschritte und sind kein ausreichendes Qualitätsziel.
-Die Aufrufe der gesonderten installierten UI-Abnahme werden nicht instrumentiert
-und fließen daher nicht in diese Quote ein. Keine Linux-Quote ersetzt Windows-Nachweise.
+unerreichte Fehler- und Abbruchpfade abdecken.
+
+Native Produktzeilen am Referenzstand `426960a`:
+
+| Umfang | Gemessen | Mindestwert |
+| --- | --- | --- |
+| Isolierte Verträge unter Linux | 69,08 % | 69 % |
+| Isolierte Verträge unter Windows | 79,66 % | 79 % |
+| Vollständige Desktop-Tests unter Windows | 37,94 % | 37 % |
+
+Die gemeinsamen Ablaufmodule für Schreibfreigaben, Schlüsselarchive, Exportbindung,
+Scanner-Downloads und Updates erreichen dabei 97,30 bis 100 % Zeilenabdeckung. Die vollständige
+Desktop-Quote zeigt weiterhin Testlücken bei den Tauri-I/O-Adaptern und weiteren
+nativen Pfaden. Die gesonderte installierte UI-Abnahme wird nicht instrumentiert
+und fließt daher nicht in diese Quote ein. Keine Linux-Quote ersetzt Windows-Nachweise.
 
 ## Häufige Buildfehler
 
@@ -219,6 +231,9 @@ Bei Fehlern nicht mit späteren Buildschritten fortfahren. Keine Zugangsdaten od
 `stage:scanner` prüft ClamAV 1.5.4 anhand des festgelegten Talos-Schlüssels und der
 Hashes in `desktop/scanner-component.json`. GnuPG aus einer anderen Installation
 kann mit `npm run stage:scanner -- --gpg C:/Pfad/gpg.exe` angegeben werden.
+Der öffentliche Schlüsselimport und die Signaturprüfung benötigen keinen
+GPG-Agenten. Die Paketvorbereitung verhindert dessen automatischen Start auch
+bei Git for Windows. Die festgelegten Signatur- und Hashprüfungen bleiben aktiv.
 Downloads werden unter `.cache/scanner/` zwischengespeichert und vor Verwendung
 erneut geprüft. Offizielle Datenbanken werden höchstens 24 Stunden aus dem zuvor
 geprüften Build-Cache übernommen. Keine Zugangsdaten sind erforderlich.

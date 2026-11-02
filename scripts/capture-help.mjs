@@ -31,7 +31,7 @@ const capture = async (name, anchor) => {
 };
 try {
   await open('test-fixtures/application-view.html?app=1');
-  await button('Info').click();
+  await button('Einstellungen').click();
   await page.getByLabel('Verbindung', { exact: true }).selectOption('manual');
   await page.getByLabel('Proxy-Host', { exact: true }).fill('proxy.example.de');
   await capture('network-settings', page.getByRole('heading', { name: 'Netzwerk und Proxy', exact: true }));
@@ -344,9 +344,9 @@ try {
     }, failure);
     await page.locator('#pickup-submission').fill('00000003-1111-4111-8111-111111111111');
     await button('Einreichung öffnen und prüfen').click();
-    await button('Antwort verfassen').click();
     const missing = failure === 'reply_channel_missing';
     if (!missing) {
+      await button('Antwort verfassen').click();
       await page.getByText('Antwortschema und technische Optionen', { exact: true }).click();
       await page.locator('#reply-schema-file').setInputFiles({
         name: 'synthetisches-antwortschema.json',
@@ -355,10 +355,9 @@ try {
       });
       await button('Antwortschema laden').click();
     }
-    const notice = page.getByRole('alert', {
-      name: missing ? 'Kein Antwortkanal angeboten' : 'Antwortschema passt nicht zum Angebot',
-      exact: true,
-    });
+    const notice = missing
+      ? page.getByText('Für diesen Vorgang wurde kein Antwortkanal angeboten.', { exact: true })
+      : page.getByRole('alert', { name: 'Antwortschema passt nicht zum Angebot', exact: true });
     await expect(notice).toBeVisible();
     await capture(missing ? 'reply-missing-channel' : 'reply-schema-mismatch', notice);
   }

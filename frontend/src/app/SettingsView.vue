@@ -38,16 +38,7 @@ async function showDependencyLicenses() {
 }
 </script>
 <template>
-  <div v-show="visible" class="info-view">
-    <section class="tool-section app-info" aria-labelledby="about-title">
-      <img class="app-mark large" :src="appLogo" alt="" width="64" height="64" />
-      <div>
-        <p class="workspace-eyebrow">Desktop-Anwendung</p>
-        <h2 id="about-title">{{ productName }}</h2>
-        <p>Version {{ version }}</p>
-        <p>{{ productPurpose }}.</p>
-      </div>
-    </section>
+  <div v-show="visible" class="settings-view">
     <NetworkSettings :busy="busy" @busy="emit('busy', $event)" @changed="emit('network-changed')" />
     <ApplicationUpdates
       v-if="updateState"
@@ -60,6 +51,15 @@ async function showDependencyLicenses() {
       @manual="emit('manual-update')"
       @automatic="emit('automatic-updates', $event)"
     />
+    <section class="tool-section app-info" aria-labelledby="about-title">
+      <img class="app-mark large" :src="appLogo" alt="" width="64" height="64" />
+      <div>
+        <p class="workspace-eyebrow">Desktop-Anwendung</p>
+        <h2 id="about-title">Über {{ productName }}</h2>
+        <p>Version {{ version }}</p>
+        <p>{{ productPurpose }}.</p>
+      </div>
+    </section>
     <section class="tool-section" aria-labelledby="scope-title">
       <h2 id="scope-title">Aktueller Funktionsumfang</h2>
       <dl class="info-facts">
