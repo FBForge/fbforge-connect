@@ -28,8 +28,9 @@ und werden zusätzlich bestätigt. Verwenden Sie für Tests fiktive Daten.
 3. Einreichungen senden oder abrufen und prüfen.
 
 Der Download unter Releases enthält die veröffentlichte Version. Für diese gilt die
-[stabile Anleitung](https://fbforge.de/connect/hilfe). Die 0.3-Anleitung liegt als
-Quelle unter [docs/guide/](docs/guide/) und wird vor dem Release auf der Website bereitgestellt.
+[stabile Anleitung](https://fbforge.de/connect/hilfe). Die
+[0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start) ist bereits als Vorschau verfügbar.
+Ihre Quelle liegt unter [docs/guide/](docs/guide/).
 
 [Versionshinweise](RELEASE_NOTES.md) · [Lokal bauen](BUILDING.md) ·
 [Mitwirken](CONTRIBUTING.md) · [Issues](https://github.com/FBForge/fbforge-connect/issues) ·

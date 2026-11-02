@@ -32,9 +32,29 @@ Bearbeitungen betreffen ausschließlich die neue Test-Destination.
 | Modus | Umfang |
 | --- | --- |
 | Ohne `validation_run` | Nur nativer Kern, keine installierte Oberfläche |
-| `ui_probe=true` | App-Start und native Dateiexporte ohne TEST-Zugänge oder Schreibzugriffe. Mit lokalem Scanner auch Start und echter Signaturupdate-Abbruch. |
+| `ui_probe=true` | App-Start, reguläres Fensterschließen mit Neustart und NVDA ohne TEST-Zugänge. Standardmodus: native Dateiexporte, bei lokalem Scanner auch Start und Signaturupdate-Abbruch. Online-Modus siehe unten. |
+| `ui_only=true` | Vollständige installierte Client-Abnahme mit echter TEST-Verbindung und validiertem Installer. Die separate SDK-Matrix wird ausdrücklich nicht ausgeführt. |
 | `review_only=true` | Neue 0.3-Oberflächenfunktionen und vollständiger nativer TEST-Austausch |
-| Beide Diagnosemodi ausgeschaltet | Vollständige Oberflächenabnahme des angegebenen Installers |
+| Keine Umfangsbeschränkung | Separate SDK-Matrix und vollständige Oberflächenabnahme des angegebenen Installers |
+
+`ui_only` benötigt eine gültige `validation_run` und ist nicht mit `ui_probe`
+kombinierbar. Die Ausgabe benennt den begrenzten Umfang ausdrücklich. Ein Fehler in
+der normalen SDK-Matrix bleibt ein Fehler und wird nicht automatisch wiederholt.
+Getrennte Läufe helfen, Plattformstörungen von der Client-Abnahme zu unterscheiden.
+
+Mit `online_scanner=true` beginnt die Oberfläche ohne installierte Scanner-Komponente.
+Die Abnahme prüft Online-Einrichtung, ausdrücklichen Abbruch und erneuten Versuch.
+Zusammen mit `ui_probe=true` prüft sie diese Einrichtung gezielt ohne FIT-Connect-Zugang
+oder Test-Destination. Anschließend prüft sie echte NVDA-Sprachausgabe mit dem aktuellen
+Testtreiber am selben validierten Installer. Der vollständige Austausch bleibt ein
+eigener anschließender Lauf.
+Der installierte Client nutzt einen eigenen lokalen CONNECT-Proxy mit künstlichen
+Proxy-Zugangsdaten. OAuth und FIT-Connect müssen darüber kommunizieren. TLS bleibt
+unverändert geprüft, Tunnelinhalte und Zugangsdaten werden nicht protokolliert.
+Ein Testablauf wird nach regulärem Fensterschließen samt Profilzuordnung wiederhergestellt.
+Beim ersten App-Start und beim Fortsetzen eines Durchlaufs nach dem Neustart
+wartet die Scanner-Abnahme auf den tatsächlich bereiten und aktiven lokalen Scanner. Während des Datenbankstarts bleibt die Inhaltsfreigabe
+mit `scanner_busy` gesperrt. Dieser Zustand ist kein erfolgreicher Scan.
 
 Bei unverändertem Produktcode darf ein korrigierter Abnahmetreiber denselben
 validierten Installer erneut prüfen. Produktänderungen benötigen eine neue
@@ -178,8 +198,11 @@ nicht ausführbar. Das ersetzt nicht die Installation des endgültigen signierte
 ## Anleitung, Website und Aufräumen
 
 Exporte nach [CONTRIBUTING.md](CONTRIBUTING.md#anleitung-pflegen) erzeugen. Die
-0.3-Anleitung im Website-Branch `release/connect-0.3.0` vor dem Software-Release
-bereitstellen und inklusive Wiki im Browser prüfen. Ältere Anleitungen erhalten.
+[0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start) ist auf Website-Main
+veröffentlicht und bis zum Software-Release als Vorbereitung gekennzeichnet.
+Bei Änderungen Website und Wiki im Browser prüfen. Ältere Anleitungen erhalten.
+Bei Veröffentlichung von 0.3.0 die Kennzeichnung „In Vorbereitung“ im Hilfe-Einstieg
+des Website-Repositories entfernen. Die Versions- und Downloadmetadaten werden automatisch aktualisiert.
 Bis zur Veröffentlichung zeigen Download und Metadaten auf das tatsächlich
 veröffentlichte Paket. Danach übernimmt `Update project information` die neuen
 Metadaten und den tatsächlichen Installer-Link. Main-Pushes können bei aktiviertem
