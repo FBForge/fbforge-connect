@@ -18,13 +18,17 @@ jobs = [{'name': 'windows', 'conclusion': 'success'}]
 environment = {'protection_rules': [{'type': 'required_reviewers', 'prevent_self_review': False,
                 'reviewers': [{'type': 'User', 'reviewer': {'login': 'FBForge'}}]}]}
 module.validate(run, jobs, environment, commit, 'main')
+release_run = dict(run, head_branch='release/0.3.0', event='workflow_dispatch')
+module.validate(release_run, jobs, environment, commit, 'main')
 def rejected(fn, expected):
     try: fn()
     except RuntimeError as error: assert str(error) == expected, str(error)
     else: raise AssertionError('unsafe signing request accepted: ' + expected)
 for key, value, reason in [
     ('head_sha', 'b' * 40, 'signing_build_commit_mismatch'),
-    ('head_branch', 'release/0.2.0', 'signing_build_branch_mismatch'),
+    ('head_branch', 'feature/untrusted', 'signing_build_branch_mismatch'),
+    ('head_branch', 'release/0.3.0/other', 'signing_build_branch_mismatch'),
+    ('head_branch', 'release/next', 'signing_build_branch_mismatch'),
     ('head_repository', {'full_name': 'outsider/fork'}, 'signing_build_repository_mismatch'),
     ('path', '.github/workflows/other.yml', 'signing_build_workflow_mismatch'),
     ('event', 'pull_request', 'signing_build_event_denied'),
@@ -34,6 +38,9 @@ for key, value, reason in [
 ]:
     changed = dict(run, **{key: value})
     rejected(lambda: module.validate(changed, jobs, environment, commit, 'main'), reason)
+rejected(lambda: module.validate(dict(release_run, event='push'), jobs, environment, commit, 'main'), 'signing_build_branch_mismatch')
+rejected(lambda: module.validate(dict(release_run, head_sha='b' * 40), jobs, environment, commit, 'main'), 'signing_build_commit_mismatch')
+rejected(lambda: module.validate(release_run, jobs, environment, commit, 'release/0.3.0'), 'signing_branch_denied')
 rejected(lambda: module.validate(run, [], environment, commit, 'main'), 'signing_windows_validation_missing')
 rejected(lambda: module.validate(run, jobs * 2, environment, commit, 'main'), 'signing_windows_validation_missing')
 rejected(lambda: module.validate(run, jobs, {}, commit, 'main'), 'signing_environment_approval_missing')

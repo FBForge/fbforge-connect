@@ -18,7 +18,13 @@ def validate(run, jobs, environment, commit, branch):
     require(bool(re.fullmatch(r"[a-f0-9]{40}", commit)), "signing_commit_invalid")
     require(branch == "main", "signing_branch_denied")
     require(run.get("head_sha") == commit, "signing_build_commit_mismatch")
-    require(run.get("head_branch") == branch, "signing_build_branch_mismatch")
+    validation_branch = run.get("head_branch", "")
+    require(
+        validation_branch == "main"
+        or (bool(re.fullmatch(r"release/[0-9]+\.[0-9]+\.[0-9]+", validation_branch))
+            and run.get("event") == "workflow_dispatch"),
+        "signing_build_branch_mismatch",
+    )
     require(run.get("head_repository", {}).get("full_name") == REPOSITORY, "signing_build_repository_mismatch")
     require(run.get("path") == ".github/workflows/windows.yml", "signing_build_workflow_mismatch")
     require(run.get("event") in ("push", "workflow_dispatch"), "signing_build_event_denied")

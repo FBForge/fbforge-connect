@@ -54,6 +54,9 @@ jobs:
       - name: Test Windows signing checks without a signing certificate
         shell: powershell
         run: ./scripts/ci/test-windows-signing.ps1
+      - name: Test byte-preserving installer rebundling
+        shell: powershell
+        run: ./scripts/ci/test-windows-bundling.ps1
 
   test-readonly:
     needs: verify-source
@@ -116,6 +119,8 @@ jobs:
             ~/.cargo/git
             desktop/target
             desktop/native-contracts/target
+            !desktop/target/release/bundle
+            !desktop/target/scanner-dist
           key: ${{ runner.os }}-rust-1.99.0-${{ hashFiles('desktop/Cargo.lock', 'desktop/native-contracts/Cargo.lock') }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-rust-1.99.0-${{ hashFiles('desktop/Cargo.lock', 'desktop/native-contracts/Cargo.lock') }}-
@@ -221,6 +226,8 @@ jobs:
             ~/.cargo/git
             desktop/target
             desktop/native-contracts/target
+            !desktop/target/release/bundle
+            !desktop/target/scanner-dist
           key: ${{ steps.rust-cache.outputs.cache-primary-key }}
       - name: Load a verified signed upgrade baseline
         if: inputs.expected_commit != '' || inputs.upgrade_run != ''
@@ -276,9 +283,9 @@ jobs:
             desktop/target/release/bundle/nsis/SHA256SUMS.txt
             desktop/target/release/bundle/nsis/build-info.json
           if-no-files-found: error
-      - name: Build offline installer
+      - name: Bundle offline installer from the same compiled application
         if: github.event_name == 'workflow_dispatch' && inputs.offline
-        run: npm run desktop:build:offline -- -- --locked
+        run: ./scripts/bundle-offline-windows.ps1
       - name: Verify offline installer and profile preservation
         if: github.event_name == 'workflow_dispatch' && inputs.offline
         run: |

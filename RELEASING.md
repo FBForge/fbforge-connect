@@ -78,9 +78,10 @@ V-PKI benötigt vollständige Ketten und erreichbare Sperrprüfungen. Außerdem 
 ## Branch und Veröffentlichung vorbereiten
 
 `release/0.3.0` nach Prüfung per Pull Request nach `main` übernehmen. Thematische
-Commits erhalten. Bei Rebase-Merge ändern sich IDs, daher den entstandenen Main-SHA
-neu validieren. Branchregeln, erforderliche Prüfungen und Force-Push-/Löschsperren
-beachten. Veröffentlichte Historie, Pakete und Tags unverändert lassen.
+Commits erhalten. Eine erfolgreiche Windows-Validierung des Release-Branches gilt
+auch auf Main, wenn dessen SHA **exakt identisch** ist. Bei Rebase-, Squash- oder
+Merge-Commit mit neuer SHA den entstandenen Main-Stand neu validieren. Branchregeln,
+erforderliche Prüfungen und Force-Push-/Löschsperren beachten. Veröffentlichte Historie, Pakete und Tags unverändert lassen.
 
 Versionsdateien und [Versionshinweise](RELEASE_NOTES.md) vor der letzten Abnahme
 fertigstellen. Danach keine weiteren Änderungen in den freizugebenden Stand aufnehmen.
@@ -139,9 +140,12 @@ Privaten Schlüssel und Passwort nie in Git, Transkripte oder Artefakte überneh
 
 ## Main-Kandidaten signieren und veröffentlichen
 
-1. Den vollständigen Main-SHA festhalten, `Checks` und `Windows release validation`
-   für genau diesen Commit erfolgreich abschließen. Für den Upgrade-Test einen
-   erfolgreichen Signierlauf mit verfügbarem veröffentlichtem Vorgängerpaket angeben.
+1. Den vollständigen Main-SHA festhalten und `Checks` prüfen. Eine erfolgreiche
+   `Windows release validation` für genau diesen SHA auswählen, entweder von Main
+   oder vom manuell geprüften `release/<Version>`-Branch. Beide Installer müssen
+   als nicht abgelaufene Artefakte vorliegen. Bei geänderter SHA oder abgelaufenen
+   Artefakten neu validieren. Für den Upgrade-Test einen erfolgreichen Signierlauf
+   mit verfügbarem veröffentlichtem Vorgängerpaket angeben.
 2. `Sign Windows candidate` auf Main mit genau dieser `validation_run` starten.
    Interaktiven Runner bereitstellen und `windows-signing` freigeben.
 3. Den gesamten Lauf einschließlich `verify-package` abwarten. Geprüft werden App,
@@ -182,7 +186,10 @@ und Prozessende prüfen. EICAR nur lokal oder in einer ausdrücklich eigenen
 TEST-Konstellation verwenden. Der kontrollierte Live-ICAP-Test versendet kein EICAR.
 
 Die Windows-Validierung vor dem Signieren mit `offline: true` starten. Das
-Signiertor verlangt beide erfolgreich geprüften Installer-Artefakte.
+Signiertor verlangt beide erfolgreich geprüften Installer-Artefakte. Die Validierung
+kompiliert die App einmal. Anschließend erstellt `tauri bundle` den Offline-Installer
+aus derselben EXE und prüft ihren SHA-256 vor und nach dem Verpacken. Beide Setups
+werden weiterhin getrennt installiert und auf Profilerhalt geprüft.
 
 Der Signierlauf erzeugt außerdem einen vollständigen Offline-WebView2-Installer.
 Er wird getrennt installiert und geprüft. `windows-alpha-signed-offline-setup`

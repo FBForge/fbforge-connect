@@ -84,6 +84,11 @@ rejected(lambda: read(archive(extra='../escape.exe')), 'unexpected_archive_files
 run = dict(head_sha=commit, status='completed', conclusion='success', path='.github/workflows/sign-windows.yml',
            head_repository=dict(full_name=c.REPOSITORY), event='workflow_dispatch', head_branch='develop')
 c.verified_run(run, commit, '.github/workflows/sign-windows.yml')
+release_validation = dict(run, path='.github/workflows/windows.yml', head_branch='release/0.3.0')
+c.verified_run(release_validation, commit, '.github/workflows/windows.yml')
+rejected(lambda: c.verified_run(dict(run, head_branch='release/0.3.0'), commit, '.github/workflows/sign-windows.yml'), 'untrusted_run')
+rejected(lambda: c.verified_run(dict(release_validation, event='push'), commit, '.github/workflows/windows.yml', ('push', 'workflow_dispatch')), 'untrusted_run')
+rejected(lambda: c.verified_run(dict(release_validation, head_sha='b' * 40), commit, '.github/workflows/windows.yml'), 'unverified_source')
 for key, value, reason in [
     ('event', 'pull_request', 'untrusted_run'),
     ('conclusion', 'failure', 'unverified_source'),
@@ -101,6 +106,10 @@ def api(path):
     return run
 c.api, c.gh = api, lambda *args: blob
 assert c.download_candidate(run_id)[2] == manifest
+previous_api = c.api
+c.api = lambda path: release_validation if path.endswith('/100') else previous_api(path)
+assert c.download_candidate(run_id)[2] == manifest
+c.api = previous_api
 artifact['digest'] = 'sha256:' + '0' * 64
 rejected(lambda: c.download_candidate(run_id), 'artifact_digest_mismatch')
 original_run = c.subprocess.run

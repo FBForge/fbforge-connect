@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       validation_run:
-        description: Successful Windows validation run for this exact branch commit
+        description: Successful Main or release-branch Windows validation for the exact Main SHA
         required: true
         type: string
 

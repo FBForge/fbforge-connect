@@ -49,11 +49,16 @@ def verified_run(run, commit, workflow, events=("workflow_dispatch",)):
         "unverified_source",
     )
     require(run.get("path") == workflow, "wrong_workflow")
+    validation_branch = (
+        workflow == ".github/workflows/windows.yml"
+        and run.get("event") == "workflow_dispatch"
+        and bool(re.fullmatch(r"release/[0-9]+\.[0-9]+\.[0-9]+", run.get("head_branch", "")))
+    )
     require(
         run.get("head_repository", {}).get("full_name") == REPOSITORY
         and run.get("event") in events
         # Historical signed Develop artifacts remain valid upgrade baselines.
-        and run.get("head_branch") in ("main", "develop"),
+        and (run.get("head_branch") in ("main", "develop") or validation_branch),
         "untrusted_run",
     )
 
