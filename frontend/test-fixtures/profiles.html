@@ -43,6 +43,22 @@
           if (command === 'test_library') return testLibraryFixture(args.request);
           fixture.calls.push({ command, args });
           if (command === 'list_profiles') return fixture.profiles;
+          if (command === 'loaded_keys' && new URLSearchParams(location.search).has('flow-context')) {
+            if (fixture.bindings[args.sessionId] === fixture.holdKeyProfileId) {
+              fixture.keyReadStarted = true;
+              await new Promise((resolve) => {
+                fixture.finishKeyRead = resolve;
+              });
+            }
+            const active = fixture.sessions[args.sessionId];
+            return {
+              apiVersion: active.apiVersion,
+              sessionId: active.sessionId,
+              environment: active.environment,
+              data: { keys: [] },
+            };
+          }
+
           if (command === 'copy_profile_for_api') {
             if (fixture.failApiCopy) throw 'authentication_failed';
             const source = fixture.profiles.find((p) => p.profileId === args.profileId);

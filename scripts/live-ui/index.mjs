@@ -126,7 +126,9 @@ export async function exerciseDesktopUI(fixture) {
     if (desktop) {
       if (stage === 'optional_local_scanner') await scannerDiagnostics(desktop.page);
       const values = await desktop.page
-        .locator('[aria-labelledby="event-log-title"] .small-note code, .action-notice:visible code')
+        .locator(
+          '[aria-labelledby="event-log-title"] .small-note code, .action-notice:visible code, [aria-labelledby="trace-title"] .trace-details code',
+        )
         .allTextContents()
         .catch(() => []);
       const codes = [
@@ -134,7 +136,19 @@ export async function exerciseDesktopUI(fixture) {
           values.map((value) => diagnosticCode(value.trim())).filter((code) => code !== 'unknown_error'),
         ),
       ];
-      if (codes.length) console.error(`Real desktop UI diagnostic codes: ${codes.join(', ')}`);
+      if (codes.length) console.error(`Real desktop UI diagnostic codes: ${codes.slice(0, 12).join(', ')}`);
+      console.error(
+        `Real desktop UI failure state: ${JSON.stringify({
+          submissionDetail: await desktop.page.locator('.submission-information').isVisible(),
+          submissionLoadError: await desktop.page.locator('.submission-inbox [role="alert"]').isVisible(),
+          schemaConsent: await desktop.page
+            .getByRole('dialog', { name: 'Öffentliche Schemaquellen laden?', exact: true })
+            .isVisible(),
+          receiveDocument: await desktop.page
+            .getByRole('heading', { name: 'Antrag lesen', exact: true })
+            .isVisible(),
+        })}`,
+      );
     }
     // Only fixed source locations, never Playwright's argument values or page contents.
     const location =

@@ -15,6 +15,7 @@ import { receiveReply } from './readback.mjs';
 import { nativeFile } from './downloads.mjs';
 import { reviewProcessAndInbox, reviewShortcuts } from './review-runtime.mjs';
 import { reviewProfile } from './review-authoring.mjs';
+import { localScannerReady } from './local-tools.mjs';
 
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 const flowPanel = (page) => page.locator('[aria-labelledby="test-flows-title"]');
@@ -121,6 +122,7 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   await desktop.restartGracefully();
   page = desktop.page;
   await connectProfile(page, senders.v3);
+  await localScannerReady(page);
   await testTools(page, 'Testabläufe');
   await page.locator('.saved-flow-runs summary').click();
   await page
@@ -164,6 +166,15 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   await progress.waitFor();
   await button(page, 'Zum Empfänger wechseln').click();
   await page.getByRole('heading', { name: 'Empfangen', exact: true }).waitFor();
+  check(
+    (await page.locator('#destination-id').inputValue()) === fixture.destination,
+    'live_ui_flow_receiver_not_prefilled',
+  );
+  check(
+    (await page.getByRole('tab', { name: 'Einreichungen', exact: true }).getAttribute('aria-selected')) ===
+      'true',
+    'live_ui_flow_wrong_receive_tab',
+  );
   await openSubmission(page, fixture, message);
   await singleFiles(desktop, fixture, message);
   await testTools(page, 'Testabläufe');

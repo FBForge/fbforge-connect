@@ -42,6 +42,10 @@
 
 ### Bedienung und Fehlerkorrekturen
 
+- Profil-Abkürzungen im Testablauf wechseln auch während des automatischen
+  Schlüsselladens zur gewünschten Aufgabe. Die Empfangs-Destination wird
+  vorausgewählt und der Eingang für Einreichungen geöffnet.
+
 - Reguläres Fensterschließen erreicht den Bestätigungsdialog auch im installierten
   Desktop. Die Oberfläche erhält dafür nur die nötigen Ereignis-Empfangsrechte.
 
