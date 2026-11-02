@@ -6,7 +6,10 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import okhttp3.*;
 
-/** Public HTTPS schema reads. Checked DNS answers are the addresses used by the socket. */
+/**
+ * Bounded public HTTPS schema reads. Direct routes use checked DNS answers; a configured proxy
+ * controls tunnel target resolution.
+ */
 public final class PublicSchemaHttp {
     private static final OkHttpClient HTTP = client(Dns.SYSTEM);
 
@@ -33,7 +36,19 @@ public final class PublicSchemaHttp {
             builder.proxy(org.fitconnect.integration.contract.NetworkProxy.proxy());
             builder.proxyAuthenticator(
                     (route, response) -> {
-                        if (response.request().header("Proxy-Authorization") != null
+                        // Credentials belong only to the configured proxy's HTTPS tunnel.
+                        // An origin's 407 must never authenticate an application request.
+                        if (!response.request().method().equals("CONNECT")
+                                || route == null
+                                || route.proxy().type() != Proxy.Type.HTTP
+                                || !(route.proxy().address() instanceof InetSocketAddress address)
+                                || !address.getHostString()
+                                        .equalsIgnoreCase(
+                                                org.fitconnect.integration.contract.NetworkProxy
+                                                        .host())
+                                || address.getPort()
+                                        != org.fitconnect.integration.contract.NetworkProxy.port()
+                                || response.request().header("Proxy-Authorization") != null
                                 || org.fitconnect.integration.contract.NetworkProxy.username()
                                         .isEmpty()) return null;
                         return response.request()
@@ -185,7 +200,8 @@ public final class PublicSchemaHttp {
                             .url(current.toString())
                             .header(
                                     "Accept",
-                                    "application/schema+json, application/json, application/xml, application/zip")
+                                    "application/schema+json, application/json, application/xml,"
+                                            + " application/zip")
                             .build();
             Call call = calls.newCall(request);
             long remaining = deadline - System.nanoTime();

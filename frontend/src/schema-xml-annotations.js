@@ -8,17 +8,32 @@ const children = (node, name) =>
 const key = (namespace, local) => JSON.stringify([namespace || '', local]);
 export function annotateXmlSchema(root, packet, Parser) {
   const tick = budget(),
-    files = readAnnotationSchemas(packet, Parser, tick);
+    files = readAnnotationSchemas(packet, Parser, tick),
+    siblingPositions = new WeakMap();
+  function siblingPosition(node) {
+    const parent = node.parentElement;
+    if (!parent) return 1;
+    let positions = siblingPositions.get(parent);
+    if (!positions) {
+      positions = new WeakMap();
+      const counts = new Map();
+      for (const child of parent.children) {
+        tick();
+        const name = key(child.namespaceURI, child.localName),
+          ordinal = (counts.get(name) || 0) + 1;
+        counts.set(name, ordinal);
+        positions.set(child, ordinal);
+      }
+      siblingPositions.set(parent, positions);
+    }
+    return positions.get(node);
+  }
   function context(node, file, namespace = file.namespace) {
     const parts = [];
     let current = node;
     while (current?.nodeType === 1) {
-      const siblings = current.parentElement
-        ? [...current.parentElement.children].filter(
-            (item) => item.namespaceURI === current.namespaceURI && item.localName === current.localName,
-          )
-        : [current];
-      parts.unshift(`xs:${current.localName}[${siblings.indexOf(current) + 1}]`);
+      tick();
+      parts.unshift(`xs:${current.localName}[${siblingPosition(current)}]`);
       current = current.parentElement;
     }
     return { node, file, namespace, uri: file.uri, location: '/' + parts.join('/'), kind: 'XSD' };

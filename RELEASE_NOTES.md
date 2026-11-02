@@ -45,6 +45,13 @@
 
 ### Bedienung und Fehlerkorrekturen
 
+- Proxy-Authentifizierung öffentlicher Schemaabrufe auf CONNECT am konfigurierten
+  Proxy begrenzen. Schema-Gegenstellen erhalten keine Proxy-Anmeldedaten.
+- Rückschritte für `main.cvd`, `daily.cvd` und `bytecode.cvd` vor Offline-Import,
+  Komponentenwechsel und Online-Signaturupdate verhindern.
+- XML-Schema-Provenienz mit einmaliger Geschwisterindizierung und begrenztem
+  Operationsbudget aufbauen. Originalinhalte und genaue Quellpositionen erhalten.
+
 - Empfangsfilter mit ausgerichteten Bedienelementen und gestapelter Anordnung bei
   schmalen Fenstern. Antwortaktionen erst nach Prüfung des angebotenen Kanals
   anzeigen. Fehlender Kanal als Hinweis, tatsächliche Fehler mit erneuter Prüfung.

@@ -30,13 +30,18 @@ Löschen garantiert kein physisches Überschreiben. Abmelden widerruft ausgestel
   benötigen zusätzlich eine native Bestätigung. Der Server prüft Berechtigungen.
 - Öffentliche Schemaquellen benötigen Freigabe und erhalten Schema-URIs. Die optionale
   FIM-Abfrage überträgt LeiKa-Kennungen, keine Zugangsdaten oder Fachdaten.
+  Proxy-Anmeldedaten werden nur beim CONNECT an den konfigurierten Proxy verwendet.
+  Ein konfigurierter Proxy bestimmt die Tunnel-Zielauflösung und muss vertrauenswürdig sein.
+  Schemaauswertung und Provenienzaufbau bleiben durch Eingabe- und Operationsgrenzen begrenzt.
 - Kryptografisch geprüfte Inhalte bleiben trotz Schemaabweichung lesbar. Einzelannahme
   benötigt dann zusätzliche native Bestätigung. Fehlerhafte Sammelfälle bleiben manuell.
   Hash-, Signatur-, Zertifikats- und Entschlüsselungsfehler blockieren die Freigabe.
   Eine technische Prüfung ersetzt keine fachliche Entscheidung.
 - Optionaler lokaler ClamAV läuft auf Loopback als eigener Benutzerprozess und endet
   mit der App. Engine-Dateien sind festgelegt, CVD-Datenbanken signiert. Downloads
-  und automatische Signaturupdates benötigen Zustimmung. Offline-Bestände altern.
+  und automatische Signaturupdates benötigen Zustimmung. Vor dem Austausch werden
+  Versionsnummer und Erstellzeit aller drei Datenbanken auf Rückschritte geprüft.
+  Offline-Bestände altern.
 - Eigene ClamAV-/ICAP-Dienste erhalten entschlüsselte Inhalte über unverschlüsseltes
   TCP und benötigen ein vertrauenswürdiges lokales oder anderweitig geschütztes Netz.
   Metadaten-/Fachdatenfunde, Zeitlimits und unvollständige Scans blockieren die Freigabe.

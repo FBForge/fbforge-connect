@@ -52,14 +52,11 @@ impl Runtime {
         }
         let current = self.current();
         let backup = self.root.join("previous");
-        if let (Ok(previous), Ok(next)) = (
-            database_header(&current.join("database/daily.cvd")),
-            database_header(&stage.join("database/daily.cvd")),
-        ) {
-            if next.0 < previous.0 || next.1 < previous.1 {
-                let _ = fs::remove_dir_all(stage);
-                return Err("scanner_database_rollback");
-            }
+        if let Err(error) =
+            ensure_database_progress(&current.join("database"), &stage.join("database"))
+        {
+            let _ = fs::remove_dir_all(stage);
+            return Err(error);
         }
         let was_ready = self.status().ready;
         self.stop();
@@ -187,6 +184,7 @@ impl Runtime {
                 }
             })?;
             verify_databases(&engine, &database, &self.cancel)?;
+            ensure_database_progress(&current.join("database"), &database)?;
             let old = current.join("database.previous");
             let was_ready = self.status().ready;
             self.stop();
@@ -218,6 +216,20 @@ impl Runtime {
         self.save()?;
         result
     }
+}
+
+// Authenticity is verified before this guard. Compare each independent database,
+// including online refreshes, before stopping the daemon or replacing any file.
+fn ensure_database_progress(current: &Path, next: &Path) -> Result<(), &'static str> {
+    for name in package::DATABASES {
+        if let Ok(previous) = database_header(&current.join(name)) {
+            let candidate = database_header(&next.join(name))?;
+            if candidate.0 < previous.0 || candidate.1 < previous.1 {
+                return Err("scanner_database_rollback");
+            }
+        }
+    }
+    Ok(())
 }
 
 fn database_names(directory: &Path) -> Result<Vec<String>, &'static str> {
