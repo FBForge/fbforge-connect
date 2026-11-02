@@ -20,6 +20,10 @@ try {
   check(Boolean(process.env.FBFORGE_UI_INSTALLER), 'live_ui_validated_installer_required');
   desktop = await createDesktop(directory, []);
   console.log('Validated installed desktop UI bootstrap passed without credentials or TEST writes');
+  await desktop.restartGracefully();
+  console.log(
+    'Actual native close request, confirmation, shutdown and restart passed without a FIT-Connect session',
+  );
   if (online) {
     proxy = await acceptanceProxy();
     await configureAcceptanceProxy(desktop.page, proxy);

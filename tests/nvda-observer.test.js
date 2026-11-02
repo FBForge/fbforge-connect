@@ -52,6 +52,50 @@ try {
     assert.match(result, /NVDA scanner isolation passed/);
   },
 );
+test(
+  'NVDA fixture activates the native WebView input before asking for focused-control speech',
+  { skip: !powershell },
+  () => {
+    const program = `
+$ErrorActionPreference = 'Stop'
+$tokens=$null; $errors=$null
+$tree=[System.Management.Automation.Language.Parser]::ParseFile((Join-Path (Get-Location) 'scripts/windows-accessibility-smoke.ps1'),[ref]$tokens,[ref]$errors)
+if ($errors.Count) { throw 'parser_error' }
+$definition=$tree.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Start-KeyboardFixture'},$true)
+if (-not $definition) { throw 'native_input_bootstrap_missing' }
+. ([scriptblock]::Create($definition.Extent.Text))
+Add-Type -TypeDefinition 'public static class AccessibilityKeys { public static int Clicks=0; public static bool Active=false; public static bool AllowFocus=true; public static bool FocusWindow(System.IntPtr window) { Active=AllowFocus && window.ToInt64()==1234; return Active; } public static void ActivateInput(int x, int y) { if (!Active) throw new System.Exception("native_window_not_focused"); if (x!=120 || y!=240) throw new System.Exception("wrong_control"); Clicks++; } }'
+$script:taskInputActive=$false
+$script:taskWindow=[PSCustomObject]@{ Current=[PSCustomObject]@{ NativeWindowHandle=1234 } }
+$script:events=[Collections.Generic.List[string]]::new()
+function Wait-Check([scriptblock]$Check,[string]$Code) { $value=& $Check; if (-not $value) { throw $Code }; $value }
+function Find-Control([string]$Name, $Type) {
+  $script:events.Add($Name)
+  $control=[PSCustomObject]@{ Name=$Name }
+  $control | Add-Member -MemberType ScriptMethod -Name GetClickablePoint -Value { [PSCustomObject]@{ X=120; Y=240 } }
+  $control
+}
+function Invoke-Control($Element) { if ($Element.Name -ne 'Verbinden') { throw 'unexpected_invocation' }; $script:events.Add('open') }
+Start-KeyboardFixture 'Button' 'Edit'
+if (-not $taskInputActive -or [AccessibilityKeys]::Clicks -ne 1 -or ($events -join ',') -ne 'Verbinden,open,Client-ID') { throw 'native_input_not_activated' }
+[AccessibilityKeys]::AllowFocus=$false; [AccessibilityKeys]::Clicks=0; $script:events.Clear()
+$refused=$false
+try { Start-KeyboardFixture 'Button' 'Edit' } catch { $refused=$_.Exception.Message -eq 'a11y_window_not_foreground' }
+if (-not $refused -or [AccessibilityKeys]::Clicks -ne 0 -or $events.Count -ne 0) { throw 'input_to_unowned_foreground' }
+
+$body=($tree.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.TryStatementAst] } | Select-Object -First 1).Body.Extent.Text
+$bootstrap=$body.IndexOf('Start-KeyboardFixture $buttonType $editType')
+$firstSpeech=$body.IndexOf('Check-Spoken ')
+if ($bootstrap -lt 0 -or $firstSpeech -lt $bootstrap) { throw 'speech_before_native_input' }
+'NVDA native input bootstrap passed'
+`;
+    const result = execFileSync(powershell, ['-NoProfile', '-NonInteractive', '-Command', program], {
+      encoding: 'utf8',
+      timeout: 30000,
+    });
+    assert.match(result, /NVDA native input bootstrap passed/);
+  },
+);
 test('NVDA observer retains the expanded keyboard journey and explicitly signals its bounded limit', () => {
   const source = fileURLToPath(new URL('../scripts/ci/nvda-capture.py', import.meta.url));
   const program = `

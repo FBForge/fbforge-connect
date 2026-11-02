@@ -3,6 +3,8 @@
   "description": "Only the bundled main window may run diagnostics or manage sessions in the selected FIT-Connect environment.",
   "windows": ["main"],
   "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
     "allow-lookup-service-names",
     "allow-close-application",
     "allow-network-settings",

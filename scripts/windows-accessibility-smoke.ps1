@@ -153,6 +153,18 @@ function Invoke-Control($Element) {
     if (-not $Element.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) { throw 'a11y_invoke_missing' }
     $pattern.Invoke()
 }
+function Start-KeyboardFixture($ButtonType, $EditType) {
+    if (-not [AccessibilityKeys]::FocusWindow([IntPtr]$taskWindow.Current.NativeWindowHandle)) { throw 'a11y_window_not_foreground' }
+    $connect = Wait-Check { Find-Control 'Verbinden' $ButtonType } 'a11y_connect_missing'
+    Invoke-Control $connect
+    $clientField = Wait-Check { Find-Control 'Client-ID' $EditType } 'a11y_client_field_missing'
+    # UIA focus may address the DOM while NVDA still sees the WebView container.
+    # Activate the native input host in an empty field before any speech assertions.
+    # No credentials are entered. Tab/Escape and NVDA's speech remain unmodified.
+    $point = $clientField.GetClickablePoint()
+    [AccessibilityKeys]::ActivateInput([int]$point.X, [int]$point.Y)
+    $script:taskInputActive = $true
+}
 function Start-Clean([string]$Executable, [string]$Arguments = '') {
     $info = [Diagnostics.ProcessStartInfo]::new([IO.Path]::GetFullPath($Executable))
     $info.UseShellExecute = $false; $info.Arguments = $Arguments
@@ -209,14 +221,7 @@ automaticUpdates = disabled
     if ($ready.nvdaVersion -ne '2026.2') { throw 'nvda_version_mismatch' }
     $buttonType = [System.Windows.Automation.ControlType]::Button
     $editType = [System.Windows.Automation.ControlType]::Edit
-    $connect = Check-Spoken 'Verbinden' $buttonType
-    Invoke-Control $connect
-    $clientField = Wait-Check { Find-Control 'Client-ID' $editType } 'a11y_client_field_missing'
-    # UIA SetFocus can focus the DOM without activating the native WebView input host.
-    # One real click in this empty field activates it; Tab/Escape remain actual keys.
-    $point = $clientField.GetClickablePoint()
-    [AccessibilityKeys]::ActivateInput([int]$point.X, [int]$point.Y)
-    $taskInputActive = $true
+    Start-KeyboardFixture $buttonType $editType
     $null = Check-Spoken 'Client-ID' $editType
     [AccessibilityKeys]::Press(0x09)
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Client-Secret' } 'native_tab_order_invalid'
@@ -226,6 +231,7 @@ automaticUpdates = disabled
     $null = Check-Spoken 'Verbindungsdialog schließen' $buttonType
     [AccessibilityKeys]::Press(0x1b)
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Verbinden' } 'native_dialog_focus_not_restored'
+    $null = Check-Spoken 'Verbinden' $buttonType
     $null = Check-Spoken 'Umgebung' ([System.Windows.Automation.ControlType]::ComboBox)
     foreach ($name in @('Senden','Empfangen','Prozesse')) {
         $control = Check-Spoken $name $buttonType

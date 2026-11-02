@@ -298,15 +298,19 @@ export async function createDesktop(directory, profiles) {
             '-NoProfile',
             '-NonInteractive',
             '-Command',
-            `(Get-Process -Id ${app.pid}).CloseMainWindow() | Out-Null`,
+            `if (-not (Get-Process -Id ${app.pid}).CloseMainWindow()) { exit 1 }`,
           ],
-          { stdio: 'ignore' },
+          { stdio: 'ignore', timeout: 15000 },
         );
-        check(result.status === 0, 'live_ui_native_close_request_failed');
+        check(!result.error && result.status === 0, 'live_ui_native_close_request_failed');
         const dialog = page.getByRole('dialog', { name: 'FBForge Connect beenden?', exact: true });
-        await dialog.getByRole('button', { name: 'Anwendung beenden', exact: true }).click();
+        await until(() => dialog.isVisible(), 'live_ui_close_dialog_missing');
+        const confirm = dialog.getByRole('button', { name: 'Anwendung beenden', exact: true });
+        await until(() => confirm.isEnabled(), 'live_ui_close_activity_did_not_finish');
+        await confirm.click();
         await until(async () => app.exitCode !== null, 'live_ui_graceful_close_failed');
         browser = null;
+        await until(async () => !(await debuggerEndpoint(policyPort)), 'live_ui_old_debugger_still_running');
         launchFailed = false;
         await launch();
         console.log('Real desktop UI: native window close checkpointed the session before exiting');

@@ -20,6 +20,23 @@ test('normal close blocks active operations and leaves the app open when checkpo
   await dialog.getByRole('button', { name: 'Zurück zur Anwendung', exact: true }).click();
   await expect(dialog).toBeHidden();
 });
+test('native close event reaches the accessible confirmation and cancellation leaves the session open', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/lifecycle.html');
+  await page.waitForFunction(() =>
+    window.__lifecycle.calls.some((call) => call.command === 'plugin:event|listen'),
+  );
+  await page.evaluate(() => window.__lifecycle.nativeClose());
+  const dialog = page.getByRole('dialog', { name: 'FBForge Connect beenden?', exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Anwendung beenden', exact: true })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Zurück zur Anwendung', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  expect(
+    await page.evaluate(() => window.__lifecycle.calls.some((call) => call.command === 'close_application')),
+  ).toBe(false);
+});
 test('proxy settings preserve a saved password without exposing it and require deliberate reconnect', async ({
   page,
 }) => {

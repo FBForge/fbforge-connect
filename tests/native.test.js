@@ -24,8 +24,19 @@ test('desktop command registration, generated permissions and main-window grants
   assert.equal(grants.remote, undefined, 'remote pages must not receive native permissions');
   assert.deepEqual(declared, registered, 'every command needs a generated permission');
   assert.deepEqual(
-    grants.permissions.toSorted(),
+    grants.permissions.filter((permission) => !permission.startsWith('core:')).toSorted(),
     registered.map((name) => `allow-${name.replaceAll('_', '-')}`).sort(),
+  );
+});
+
+test('normal native window close can subscribe and unsubscribe without granting renderer event emission', async () => {
+  const capability = JSON.parse(
+    await readFile(new URL('../desktop/capabilities/main.json', import.meta.url), 'utf8'),
+  );
+  assert.deepEqual(
+    capability.permissions.filter((permission) => permission.startsWith('core:')).toSorted(),
+    ['core:event:allow-listen', 'core:event:allow-unlisten'],
+    'receive native close requests with only the required event permissions',
   );
 });
 

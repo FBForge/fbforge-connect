@@ -42,6 +42,9 @@
 
 ### Bedienung und Fehlerkorrekturen
 
+- Reguläres Fensterschließen erreicht den Bestätigungsdialog auch im installierten
+  Desktop. Die Oberfläche erhält dafür nur die nötigen Ereignis-Empfangsrechte.
+
 - Antworten im geöffneten Vorgang bleiben nach bestätigter Annahme möglich.
   Fensterschließen schützt laufende Aktionen und sichert gespeicherte Profile.
 - Einheitliche Proxy-Einstellung für OAuth, FIT-Connect, SDKs, öffentliche Schemata,

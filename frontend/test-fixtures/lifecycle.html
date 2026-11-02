@@ -11,12 +11,35 @@
       import ApplicationClose from '../src/app/ApplicationClose.vue';
       import NetworkSettings from '../src/app/NetworkSettings.vue';
       import '../src/styles/index.css';
-      window.__lifecycle = { calls: [], busy: false, fail: false };
+      const callbacks = new Map();
+      const listeners = new Map();
+      window.isTauri = true;
+      window.__lifecycle = {
+        calls: [],
+        busy: false,
+        fail: false,
+        nativeClose: () => {
+          const callback = listeners.get('application-close-requested');
+          if (!callback) throw new Error('native close listener missing');
+          callbacks.get(callback)({ event: 'application-close-requested', id: callback, payload: null });
+        },
+      };
+      window.__TAURI_EVENT_PLUGIN_INTERNALS__ = {
+        unregisterListener: (event) => listeners.delete(event),
+      };
       window.__TAURI_INTERNALS__ = {
+        transformCallback: (callback) => {
+          const id = callbacks.size + 1;
+          callbacks.set(id, callback);
+          return id;
+        },
         invoke: async (command, args) => {
           const fixture = window.__lifecycle;
           fixture.calls.push({ command, args });
-          if (command === 'plugin:event|listen') throw new Error('no native events in browser fixture');
+          if (command === 'plugin:event|listen') {
+            listeners.set(args.event, args.handler);
+            return args.handler;
+          }
           if (command === 'network_settings')
             return {
               mode: 'manual',

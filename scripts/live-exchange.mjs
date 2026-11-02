@@ -11,6 +11,7 @@ import { exerciseDesktopUI } from './live-ui/index.mjs';
 import { probeSenderRestrictions } from './live-sender-restrictions.mjs';
 import { scannerFixture } from './live-scanner-fixture.mjs';
 import { probeReplyOffers } from './live-destination-offers.mjs';
+import { acceptanceScope, exerciseAcceptance } from './live-acceptance-scope.mjs';
 
 const requireCheck = (value, code = 'acceptance_check_failed') => {
   if (!value) throw new Error(code);
@@ -18,6 +19,10 @@ const requireCheck = (value, code = 'acceptance_check_failed') => {
 requireCheck(process.platform === 'win32', 'windows_required');
 for (const secretName of secretNames)
   requireCheck(Boolean(process.env[secretName]), 'actions_secret_missing');
+const scope = acceptanceScope({
+  uiOnly: process.env.FBFORGE_UI_ONLY === 'true',
+  installer: process.env.FBFORGE_UI_INSTALLER,
+});
 const root = fileURLToPath(new URL('../', import.meta.url));
 const bridge = join(root, 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe');
 const directory = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), 'fbforge-live-'));
@@ -621,90 +626,100 @@ try {
   console.log(
     'Native destination creation, exact registration readback, DPAPI checkpoint/restart and separate activation passed',
   );
-  for (const api of ['v2', 'v3']) for (const format of ['json', 'xml']) await exchange(api, format);
-  await exchange('v3', 'json', true);
-  await exchange('v3', 'json', false, 'reject');
-  stage = 'sender_destination_restriction';
-  await probeSenderRestrictions({
-    destination,
-    senderDestination: process.env.SENDERDEST,
-    runName,
-    clientId: process.env.SUBSCRIBERID,
-    clientSecret: process.env.SUBSCRIBERSECRET,
-    exchange: (api) => exchange(api, 'json'),
-  });
-  stage = 'destination_rotation';
-  const replacementKeys = await receiverV3.call('generate_test_keys');
-  await checkpoint(receiverV3);
-  const rotation = await receiverV3.call('prepare_destination_rotation', {
-    destinationDocument: JSON.stringify({
-      destinations: [{ destinationId: destination, bundleId: replacementKeys.bundleId }],
-    }),
-  });
-  await receiverV3.call('mark_destination_rotation_dispatch', { attemptId: rotation.attemptId });
-  await checkpoint(receiverV3);
-  const rotated = await receiverV3.call('execute_destination_rotation', { attemptId: rotation.attemptId });
-  await checkpoint(receiverV3);
-  requireCheck(rotated.status === 'completed' && rotated.changes[0]?.status === 'updated', 'rotation_failed');
-  receiptSigningKid = replacementKeys.signing.kid;
-  await receiverV3.call('use_generated_keys', {
-    bundleId: replacementKeys.bundleId,
-    destinationId: destination,
-  });
-  await checkpoint(receiverV3);
-  // Exchange again using the newly selected destination key, retaining the old keys.
-  await exchange('v3', 'json');
-  console.log('Native key rotation and exchange using the replacement key passed');
-  stage = 'destination_reply_offers';
-  await probeReplyOffers({ receiver: receiverV3, destination, runName });
-  if (process.env.FBFORGE_UI_INSTALLER) {
-    stage = 'desktop_ui';
-    const receiverV2 = await openNativeSession('subscriber', 'v2');
-    await restore(receiverV2, 'subscriber-v3', (item) => Boolean(item.destinationKey));
-    await checkpoint(receiverV2);
-    await checkpoint(receiverV3);
-    const receiverProfiles = ['v2', 'v3'].map((api) => {
-      const id = randomUUID();
-      return {
-        id,
-        api,
-        bridge,
-        document: {
-          version: 1,
-          profileId: id,
-          environment: 'TEST',
-          name: `CI UI receiver ${api}`,
-          apiVersion: api,
-          role: 'administrative-system',
-          clientId: process.env.SUBSCRIBERID,
-          clientSecret: process.env.SUBSCRIBERSECRET,
-          keys: protectedBridge('load', profiles.get(`subscriber-${api}`)),
-        },
-      };
-    });
-    await exerciseDesktopUI({
-      directory,
-      destination,
-      service,
-      replyUri,
-      xmlUri,
-      xmlSchema,
-      signingKid: receiptSigningKid,
-      runName,
-      receiverProfiles,
-      readOwnedDestination: () => receiverV3.call('load_managed_destination', { destinationId: destination }),
-      ...scannerFixture({
-        openSender: (api) => openNativeSession('sender', api),
-        receiver: (api) => (api === 'v3' ? receiverV3 : receiverV2),
-        upload,
+  const completedScope = await exerciseAcceptance(scope, {
+    native: async () => {
+      for (const api of ['v2', 'v3']) for (const format of ['json', 'xml']) await exchange(api, format);
+      await exchange('v3', 'json', true);
+      await exchange('v3', 'json', false, 'reject');
+      stage = 'sender_destination_restriction';
+      await probeSenderRestrictions({
+        destination,
+        senderDestination: process.env.SENDERDEST,
+        runName,
+        clientId: process.env.SUBSCRIBERID,
+        clientSecret: process.env.SUBSCRIBERSECRET,
+        exchange: (api) => exchange(api, 'json'),
+      });
+      stage = 'destination_rotation';
+      const replacementKeys = await receiverV3.call('generate_test_keys');
+      await checkpoint(receiverV3);
+      const rotation = await receiverV3.call('prepare_destination_rotation', {
+        destinationDocument: JSON.stringify({
+          destinations: [{ destinationId: destination, bundleId: replacementKeys.bundleId }],
+        }),
+      });
+      await receiverV3.call('mark_destination_rotation_dispatch', { attemptId: rotation.attemptId });
+      await checkpoint(receiverV3);
+      const rotated = await receiverV3.call('execute_destination_rotation', {
+        attemptId: rotation.attemptId,
+      });
+      await checkpoint(receiverV3);
+      requireCheck(
+        rotated.status === 'completed' && rotated.changes[0]?.status === 'updated',
+        'rotation_failed',
+      );
+      receiptSigningKid = replacementKeys.signing.kid;
+      await receiverV3.call('use_generated_keys', {
+        bundleId: replacementKeys.bundleId,
+        destinationId: destination,
+      });
+      await checkpoint(receiverV3);
+      // Exchange again using the newly selected destination key, retaining the old keys.
+      await exchange('v3', 'json');
+      console.log('Native key rotation and exchange using the replacement key passed');
+      stage = 'destination_reply_offers';
+      await probeReplyOffers({ receiver: receiverV3, destination, runName });
+    },
+    desktop: async () => {
+      stage = 'desktop_ui';
+      const receiverV2 = await openNativeSession('subscriber', 'v2');
+      await restore(receiverV2, 'subscriber-v3', (item) => Boolean(item.destinationKey));
+      await checkpoint(receiverV2);
+      await checkpoint(receiverV3);
+      const receiverProfiles = ['v2', 'v3'].map((api) => {
+        const id = randomUUID();
+        return {
+          id,
+          api,
+          bridge,
+          document: {
+            version: 1,
+            profileId: id,
+            environment: 'TEST',
+            name: `CI UI receiver ${api}`,
+            apiVersion: api,
+            role: 'administrative-system',
+            clientId: process.env.SUBSCRIBERID,
+            clientSecret: process.env.SUBSCRIBERSECRET,
+            keys: protectedBridge('load', profiles.get(`subscriber-${api}`)),
+          },
+        };
+      });
+      await exerciseDesktopUI({
+        directory,
         destination,
         service,
-        schemaUri: applicationUri,
-        from: process.env.SENDERDEST,
-      }),
-    });
-  }
-  console.log('Live TEST exchange acceptance completed');
+        replyUri,
+        xmlUri,
+        xmlSchema,
+        signingKid: receiptSigningKid,
+        runName,
+        receiverProfiles,
+        readOwnedDestination: () =>
+          receiverV3.call('load_managed_destination', { destinationId: destination }),
+        ...scannerFixture({
+          openSender: (api) => openNativeSession('sender', api),
+          receiver: (api) => (api === 'v3' ? receiverV3 : receiverV2),
+          upload,
+          destination,
+          service,
+          schemaUri: applicationUri,
+          from: process.env.SENDERDEST,
+        }),
+      });
+    },
+  });
+  console.log(`Live TEST acceptance completed: ${completedScope}`);
 } catch (error) {
   // Stable diagnostics only. Never echo SDK bodies, credential values or private checkpoint data.
   const code = /^[a-z0-9_]+(?:: [a-z_]+)?$/.test(error.message) ? error.message : 'acceptance_check_failed';

@@ -24,6 +24,10 @@ on:
         description: Focus installed UI on new 0.3 functions, full native TEST exchange still runs
         type: boolean
         default: false
+      ui_only:
+        description: Only the full installed client UI, explicitly excludes the separate SDK matrix
+        type: boolean
+        default: false
       ui_probe:
         description: Diagnose validated installed UI startup without credentials or TEST writes
         type: boolean
@@ -59,6 +63,14 @@ jobs:
       - name: Install pinned Rust toolchain
         if: inputs.ui_probe != true
         run: rustup toolchain install 1.99.0 --profile minimal
+      - name: Validate focused acceptance scope
+        env:
+          UI_ONLY: ${{ inputs.ui_only }}
+          UI_PROBE: ${{ inputs.ui_probe }}
+          VALIDATION_RUN: ${{ inputs.validation_run }}
+        shell: powershell
+        run: |
+          if ($env:UI_ONLY -eq 'true' -and ($env:UI_PROBE -eq 'true' -or -not $env:VALIDATION_RUN)) { throw 'ui_only_requires_validated_installer_and_no_probe' }
       - name: Resolve locked dependencies
         run: npm ci --ignore-scripts
       - name: Build isolated SDK adapters and native protocol host
@@ -83,10 +95,22 @@ jobs:
           FBFORGE_UI_SCANNER: ${{ inputs.local_scanner }}
           FBFORGE_UI_SCANNER_ONLINE: ${{ inputs.online_scanner }}
         run: node scripts/live-ui/probe.mjs
+      - name: Prepare pinned official NVDA for the credential-free installer probe
+        if: inputs.ui_probe == true && inputs.validation_run != ''
+        shell: powershell
+        run: ./scripts/ci/prepare-nvda.ps1
+      - name: Observe actual NVDA speech using the validated installer and current test driver
+        if: inputs.ui_probe == true && inputs.validation_run != ''
+        shell: powershell
+        run: |
+          $expected = (Get-FileHash -LiteralPath $env:FBFORGE_UI_INSTALLER -Algorithm SHA256).Hash.ToLowerInvariant()
+          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/windows-accessibility-smoke.ps1 -InstallerPath $env:FBFORGE_UI_INSTALLER -ExpectedInstallerSha256 $expected -NvdaPath $env:FBFC_NVDA_PATH
+          if ($LASTEXITCODE -ne 0) { throw 'validated_installer_accessibility_failed' }
       - name: Exercise real TEST exchange with fictitious data
         if: inputs.ui_probe != true
         env:
           FBFORGE_UI_REVIEW_ONLY: ${{ inputs.review_only }}
+          FBFORGE_UI_ONLY: ${{ inputs.ui_only }}
           SENDERID: ${{ secrets.SENDERID }}
           SENDERSECRET: ${{ secrets.SENDERSECRET }}
           SENDERDEST: ${{ secrets.SENDERDEST }}

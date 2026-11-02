@@ -43,7 +43,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir(&root)?;
     let result = (|| -> Result<(), Box<dyn std::error::Error>> {
         let mut runtime = Runtime::open(root.clone())?;
-        runtime.install_offline(&package)?;
+        if let Err(error) = runtime.install_offline(&package) {
+            // Diagnose only this newly owned, credential-free fixture. Keep the failure.
+            let stages: Vec<_> = fs::read_dir(&root)?
+                .flatten()
+                .filter(|entry| {
+                    entry.file_name().to_string_lossy().starts_with("install-")
+                        && entry.path().is_dir()
+                })
+                .collect();
+            eprintln!(
+                "scanner_install_probe stages={} current={}",
+                stages.len(),
+                runtime.current().exists()
+            );
+            let write = root.join("diagnostic-write");
+            match fs::write(&write, b"owned fixture") {
+                Ok(()) => eprintln!("scanner_install_probe write_succeeded=true"),
+                Err(error) => eprintln!(
+                    "scanner_install_probe write_os_error={}",
+                    error.raw_os_error().unwrap_or(-1)
+                ),
+            }
+            if stages.len() == 1 && !runtime.current().exists() {
+                let stage = stages[0].path();
+                let probe = root.join("diagnostic-rename");
+                match fs::rename(&stage, &probe) {
+                    Ok(()) => {
+                        eprintln!("scanner_install_probe stage_rename_succeeded=true");
+                        let _ = fs::rename(probe, stage);
+                    }
+                    Err(error) => eprintln!(
+                        "scanner_install_probe stage_rename_os_error={}",
+                        error.raw_os_error().unwrap_or(-1)
+                    ),
+                }
+            }
+            return Err(error.into());
+        }
         let port = runtime
             .enable(true)?
             .ok_or("scanner_acceptance_not_ready")?;
