@@ -14,9 +14,8 @@ Das Desktop-Paket wird auf Windows x64 gebaut. Frontend, Java-Engine und isolier
 Maven wird durch den mitgelieferten Wrapper geladen. Für den ersten Build ist Internet erforderlich. Zugangsdaten zu FIT-Connect oder ein Signaturzertifikat sind zum Bauen und für die lokalen Tests nicht erforderlich.
 
 Die folgenden Befehle bauen den ausgecheckten Stand. Veröffentlichte Versionen lassen sich nach dem
-Klonen über ihren Release-Tag auschecken, zum Beispiel mit `git switch --detach v0.2.0`.
-Neue Entwicklung liegt auf dem jeweiligen Arbeitsbranch,
-für 0.3.0 auf `release/0.3.0`.
+Klonen über ihren Release-Tag auschecken, zum Beispiel mit `git switch --detach v0.3.0`.
+Main enthält den aktuellen Quellstand. Neue Entwicklung liegt auf dem jeweiligen Arbeitsbranch.
 
 ## Windows
 
@@ -28,7 +27,7 @@ Windows-Verzeichnis statt direkt unter `\\wsl.localhost\...`.
 ```powershell
 git clone https://github.com/FBForge/fbforge-connect.git
 cd fbforge-connect
-# Für die neue Entwicklung: git switch release/0.3.0
+# Für den veröffentlichten Stand: git switch --detach v0.3.0
 rustup toolchain install 1.99.0 --profile minimal --component rustfmt
 npm ci --ignore-scripts
 .\engine\mvnw.cmd -f engine/pom.xml --batch-mode verify
@@ -233,7 +232,10 @@ Hashes in `desktop/scanner-component.json`. GnuPG aus einer anderen Installation
 kann mit `npm run stage:scanner -- --gpg C:/Pfad/gpg.exe` angegeben werden.
 Der öffentliche Schlüsselimport und die Signaturprüfung benötigen keinen
 GPG-Agenten. Die Paketvorbereitung verhindert dessen automatischen Start auch
-bei Git for Windows. Die festgelegten Signatur- und Hashprüfungen bleiben aktiv.
+bei Git for Windows. Dessen Agent-Socketpfad muss trotzdem kurz genug bleiben.
+Bei `File name too long` ein kurzes Checkout-Verzeichnis verwenden. Für einen
+Actions-Runner eignet sich beispielsweise das Arbeitsverzeichnis `C:\w`.
+Die festgelegten Signatur- und Hashprüfungen bleiben aktiv.
 Downloads werden unter `.cache/scanner/` zwischengespeichert und vor Verwendung
 erneut geprüft. Offizielle Datenbanken werden höchstens 24 Stunden aus dem zuvor
 geprüften Build-Cache übernommen. Keine Zugangsdaten sind erforderlich.

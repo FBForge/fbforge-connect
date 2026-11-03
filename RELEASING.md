@@ -1,9 +1,10 @@
 # Release vorbereiten und veröffentlichen
 
-0.3.0 ist noch nicht veröffentlicht. Die Entwicklung liegt auf `release/0.3.0`,
-einschließlich der ursprünglich für 0.2.1 vorgesehenen Korrekturen. Der
-[Prüfbericht](docs/design-review/README.md) nennt den abgenommenen Stand und offene
-Freigabepunkte. Ein erfolgreicher Branch-Test ersetzt keine Freigabe des endgültigen Main-Pakets.
+[0.3.0](https://github.com/FBForge/fbforge-connect/releases/tag/v0.3.0) enthält auch
+die ursprünglich für 0.2.1 vorgesehenen Korrekturen. Der
+[Prüfbericht](docs/design-review/README.md) nennt Quellstände, erfolgreiche Läufe
+und verbleibende Prüfgrenzen. Der folgende Ablauf gilt für künftige Releases.
+Ein erfolgreicher Branch-Test ersetzt keine Freigabe des endgültigen Main-Pakets.
 
 ## Live-Abnahme
 
@@ -77,7 +78,7 @@ V-PKI benötigt vollständige Ketten und erreichbare Sperrprüfungen. Außerdem 
 
 ## Branch und Veröffentlichung vorbereiten
 
-`release/0.3.0` nach Prüfung per Pull Request nach `main` übernehmen. Thematische
+Den jeweiligen Release-Branch nach Prüfung per Pull Request nach `main` übernehmen. Thematische
 Commits erhalten. Eine erfolgreiche Windows-Validierung des Release-Branches gilt
 auch auf Main, wenn dessen SHA **exakt identisch** ist. Bei Rebase-, Squash- oder
 Merge-Commit mit neuer SHA den entstandenen Main-Stand neu validieren. Branchregeln,
@@ -92,6 +93,9 @@ Ein Entwicklungscommit benötigt weder eine neue Version noch einen leeren Relea
 - Eigenen Windows-x64-Runner mit Label `fbforge-signing` unter einem separaten
   Benutzer interaktiv starten. Buildwerkzeuge, Windows SDK, lokaler Signaturdienst
   und Zertifikat im Speicher dieses Benutzers müssen verfügbar sein.
+  Ein kurzes Arbeitsverzeichnis wie `C:\w` verhindert zu lange GPG-Socketpfade
+  beim Scanner-Paketbau. Bei einer vorhandenen `.runner`-Konfiguration deren
+  verstecktes Dateiattribut beim Bearbeiten berücksichtigen.
 - Environment `windows-signing` mit `FBForge` als einzigem Required Reviewer.
   „Prevent self-review“ bleibt aus, damit der Eigentümer eigene Läufe freigeben kann.
 - `WINDOWS_SIGNING_THUMBPRINT` und `WINDOWS_TIMESTAMP_URL` als Repository-Variablen
@@ -212,9 +216,9 @@ endgültigen signierten Pakets.
 
 Exporte nach [CONTRIBUTING.md](CONTRIBUTING.md#anleitung-pflegen) erzeugen. Die
 [0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start) ist auf Website-Main
-veröffentlicht und bis zum Software-Release als Vorbereitung gekennzeichnet.
+veröffentlicht. Die Kennzeichnung als Vorbereitung ist seit dem Software-Release entfernt.
 Bei Änderungen Website und Wiki im Browser prüfen. Ältere Anleitungen erhalten.
-Bei Veröffentlichung von 0.3.0 die Kennzeichnung „In Vorbereitung“ im Hilfe-Einstieg
+Bei künftigen Veröffentlichungen vorbereitende Kennzeichnungen im Hilfe-Einstieg
 des Website-Repositories entfernen. Die Versions- und Downloadmetadaten werden automatisch aktualisiert.
 Bis zur Veröffentlichung zeigen Download und Metadaten auf das tatsächlich
 veröffentlichte Paket. Danach übernimmt `Update project information` die neuen
