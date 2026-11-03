@@ -5,7 +5,7 @@
 <img src="frontend/src/assets/test-client.png" alt="" width="80" height="80">
 
 Open-Source-Desktop-Client für FIT-Connect. Kein offizielles Produkt der FITKO.
-Dieser Branch enthält **0.3.0, noch nicht veröffentlicht**.
+Die aktuelle Veröffentlichung ist **[0.3.0](https://github.com/FBForge/fbforge-connect/releases/tag/v0.3.0)**.
 
 - Einreichungen und Antworten über API v2/v3 senden, empfangen und prüfen.
 - JSON/XML und Anlagen ansehen, Nachrichten gesammelt herunterladen und annehmen.
@@ -27,9 +27,8 @@ und werden zusätzlich bestätigt. Verwenden Sie für Tests fiktive Daten.
 2. Umgebung wählen und mit passenden Zugangsdaten verbinden.
 3. Einreichungen senden oder abrufen und prüfen.
 
-Der Download unter Releases enthält die veröffentlichte Version. Für diese gilt die
-[stabile Anleitung](https://fbforge.de/connect/hilfe). Die
-[0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start) ist bereits als Vorschau verfügbar.
+Die [0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start) erklärt die aktuelle
+Version. [Ältere Anleitungen](https://fbforge.de/connect/hilfe) bleiben verfügbar.
 Ihre Quelle liegt unter [docs/guide/](docs/guide/).
 
 [Versionshinweise](RELEASE_NOTES.md) · [Lokal bauen](BUILDING.md) ·

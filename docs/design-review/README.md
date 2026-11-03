@@ -1,8 +1,8 @@
 # Abnahmestand 0.3.0
 
-Stand: 2. November 2026. Die Entwicklung liegt auf `release/0.3.0`, einschließlich
-der ursprünglich für 0.2.1 vorgesehenen Korrekturen. Die Veröffentlichung und die
-Signierung des endgültigen Pakets stehen noch aus.
+Version 0.3.0 enthält auch die ursprünglich für 0.2.1 vorgesehenen Korrekturen.
+Der veröffentlichte Quellstand ist `4d5f4b47a0756879ca8ab59add067c2e14a6f1b0`.
+Spätere reine Dokumentationsänderungen verändern weder diesen Tag noch die Pakete.
 
 ## Abschließende Bedienkorrekturen
 
@@ -29,8 +29,18 @@ fiktiven Daten liegen unter `docs/guide/images/`.
 ## Vorliegende automatisierte Nachweise
 
 Die Links nennen den tatsächlich geprüften Quellstand. Frühere erfolgreiche Läufe
-sind keine Prüfung späterer Produktänderungen. Vor der Signierung muss der endgültige
-Main-Commit erneut die normale CI und vollständige Windows-Validierung bestehen.
+sind keine Prüfung späterer Produktänderungen. Main wurde auf denselben vollständigen
+Commit wie der abgenommene Release-Branch übernommen. Dadurch bleibt die vorhandene
+Windows-Validierung gültig. Ein neuer Merge-, Rebase- oder Produktcommit wäre separat zu prüfen.
+
+| Abschließende Prüfung | Tatsächlich geprüfter Umfang |
+| --- | --- |
+| [Checks 41531392702](https://github.com/FBForge/fbforge-connect/actions/runs/41531392702) | `4d5f4b4`, Node, Browser, Java, native Windows-Tests und Coverage-Grenzen |
+| [Windows 41531392037](https://github.com/FBForge/fbforge-connect/actions/runs/41531392037) | `4d5f4b4`, normales und vollständiges Offline-Setup, Upgrade von signiertem 0.2.0, Profilerhalt, NVDA, echte ClamAV-Prüfung mit sauberer Datei und EICAR sowie lesende TEST-Anmeldung |
+| [CodeQL 41541239704](https://github.com/FBForge/fbforge-connect/actions/runs/41541239704) | `4d5f4b4`, Actions, Java/Kotlin, JavaScript/TypeScript, Python und Rust |
+| [Signierung 41542584783](https://github.com/FBForge/fbforge-connect/actions/runs/41542584783) | `4d5f4b4`, Authenticode mit Zeitstempeln, Updater-Signatur und unabhängige Installation beider signierter Pakete |
+
+Frühere Live-Abnahmen bleiben getrennt zugeordnet:
 
 | Prüfung | Tatsächlich geprüfter Umfang |
 | --- | --- |
@@ -42,7 +52,8 @@ Main-Commit erneut die normale CI und vollständige Windows-Validierung bestehen
 
 Die spätere Historienkonsolidierung hat den Produktbaum von `8f1153b` unverändert
 übernommen. Der danach korrigierte GPG-Paketbau wurde separat unter Windows geprüft.
-Die aktuellen Bedienkorrekturen benötigen ihre eigenen erneuten Prüfungen.
+Die abschließenden Bedienkorrekturen und Sicherheitskorrekturen sind in den
+oben genannten Prüfungen für `4d5f4b4` enthalten.
 
 ## Testabdeckung und Grenzen
 
@@ -51,22 +62,37 @@ Frontend-Module zählen als ungetestet. Die nativen Produktberichte schließen
 ausschließlich über einen Rust-Syntaxbaum erkannte Testbereiche aus. Es gibt keine
 gemeinsame Gesamtquote und keine Behauptung von 95 oder 100 Prozent Gesamtdeckung.
 
-Gemessene native Produktzeilen am Referenzstand `426960a`:
+Gemessene native Produktzeilen am Release-Stand `4d5f4b4`:
 
 | Umfang | Zeilenabdeckung |
 | --- | --- |
-| Isolierte Verträge unter Linux | 69,08 % |
-| Isolierte Verträge unter Windows | 79,66 % |
-| Vollständige native Windows-Tests | 37,94 % |
+| Isolierte Verträge unter Linux am früheren Referenzstand `426960a` | 69,08 % |
+| Isolierte Verträge unter Windows | 79,77 % |
+| Vollständige native Windows-Tests | 38,04 % |
 
-Gemeinsame Ablaufmodule für Schreibfreigaben, Schlüsselarchive, Exportbindung,
-Scanner-Downloads und Updates erreichen dort 97,30 bis 100 Prozent. Die vollständige
+Node erreicht 56,56 % Produktzeilen, der Browser 83,22 % und Java 83,52 %.
+Die Werte stammen aus Checks `41531392702` und sind nicht zu einer Gesamtquote addierbar.
+
+Am früheren Referenzstand `426960a` erreichten gemeinsame Ablaufmodule für
+Schreibfreigaben, Schlüsselarchive, Exportbindung, Scanner-Downloads und Updates
+97,30 bis 100 Prozent. Die vollständige
 Quote zeigt weitere Testlücken an den Tauri-I/O-Adaptern. Installierte UI-Tests
 fließen ohne Instrumentierung nicht in diese Messung ein.
 
 Befehle, Berichtspfade und Mindestwerte stehen in
 [BUILDING.md](../../BUILDING.md#testabdeckung-messen). Aktuelle CI-Artefakte enthalten
 die Messungen ihres jeweiligen Quellstands.
+
+## Sicherheitsprüfung
+
+Die zusätzliche manuelle Prüfung am früheren Stand `6e390a4` blieb teilweise
+unvollständig. Sie ist keine vollständige Sicherheitsfreigabe. Die lokal
+reproduzierte Weitergabe von Proxy-Anmeldedaten wurde in `4d5f4b4` behoben und
+mit beiden SDK-Laufzeiten geprüft. Zusätzlich begrenzen eine lineare
+XML-Geschwisterindizierung und eine Rückschrittsperre für alle drei
+ClamAV-Datenbanken die untersuchten Risiken. Die abschließenden CodeQL-Prüfungen
+sind erfolgreich. Weder diese Prüfungen noch automatisierte Tests garantieren
+Fehlerfreiheit. Sicherheitsmeldungen folgen [SECURITY.md](../../SECURITY.md).
 
 ## Freigabe und Veröffentlichung
 
@@ -79,10 +105,10 @@ bestanden. Daraus folgt keine allgemeine Verfügbarkeitszusage des Dienstes.
 Die erste Version mit Updater wird manuell installiert. Das Upgrade von 0.2.0 prüft
 den Profilerhalt, keinen integrierten Updater. Die endgültigen signierten
 Installer, `latest.json`, Versionsbindung und unabhängige Paketprüfung gehören zum
-[Release-Ablauf](../../RELEASING.md). Veröffentlichung und Signierung bleiben beim
-Eigentümer. Produktänderungen nach der Abnahme benötigen eine erneute Validierung.
+[Release-Ablauf](../../RELEASING.md). Der beauftragte Release-Prozess veröffentlicht ausschließlich die unabhängig
+geprüften Pakete. Produktänderungen nach der Abnahme benötigen eine erneute Validierung.
 
-Die [0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start) bleibt bis zum
-Software-Release als Vorbereitung gekennzeichnet. Ältere veröffentlichte Anleitungen
+Die [0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start) ist veröffentlicht.
+Ältere veröffentlichte Anleitungen
 und funktionierende Downloads erhalten. Überholte Actions-Läufe erst entfernen,
 wenn ihre Nachweise und Artefakte durch erfolgreiche aktuelle Prüfungen ersetzt sind.

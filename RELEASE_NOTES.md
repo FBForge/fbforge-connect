@@ -1,6 +1,6 @@
 # Versionshinweise
 
-## 0.3.0 (unveröffentlicht)
+## 0.3.0
 
 ### Integrationen und Testabläufe
 
@@ -40,8 +40,8 @@
   oder manuell unter „Einstellungen“. Download mit Fortschritt und Abbruch. Installation erst
   nach Paket-/Versionssignaturprüfung, Schlüsselsicherung und nativer Bestätigung.
   Release-Pakete enthalten Update-Signatur und `latest.json`.
-- Die erste Version mit Updater einmal manuell installieren. Die signierte
-  Update-Abnahme des endgültigen Release-Pakets steht noch aus.
+- Diese erste Version mit Updater einmal manuell installieren. Version 0.2.0
+  besitzt noch keinen integrierten Updater.
 
 ### Bedienung und Fehlerkorrekturen
 
