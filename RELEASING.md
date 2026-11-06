@@ -9,6 +9,10 @@ Ein erfolgreicher Branch-Test ersetzt keine Freigabe des endgültigen Main-Paket
 Auf `release/0.4.0` ist die nächste Version noch unveröffentlicht. Browser-Fixtures
 prüfen die neuen Integrationstests mit fiktiven Daten. Vor der Freigabe müssen
 dieselben Abläufe am Windows-Kandidaten mit echten TEST-Zugängen abgenommen werden.
+Dabei auch eine v2/v3-Testserie nach einem Neustart öffnen, gespeicherte Abweichungen
+wiederfinden und mehrere unterschiedliche Antworten nach der Annahme im selben
+Vorgang nachweisen. Prozessnachrichten bleiben v3 vorbehalten. Alle Serienstarts
+und Schreibaktionen müssen weiterhin ausdrücklich erfolgen.
 
 ## Live-Abnahme
 

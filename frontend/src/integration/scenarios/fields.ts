@@ -11,6 +11,12 @@ export interface Field {
   end?: number;
 }
 const escapePointer = (s: string) => s.replaceAll('~', '~0').replaceAll('/', '~1');
+export function fieldSnippet(value: string, limit: number) {
+  let prefix = value.slice(0, limit);
+  const last = prefix.charCodeAt(prefix.length - 1);
+  if (last >= 0xd800 && last <= 0xdbff) prefix = prefix.slice(0, -1);
+  return new TextDecoder().decode(new TextEncoder().encode(prefix));
+}
 export function jsonFields(source: string): Field[] {
   if (new TextEncoder().encode(source).length > 512 * 1024) invalid();
   JSON.parse(source);
@@ -65,7 +71,7 @@ interface XmlNode {
   ns: Record<string, string>;
   content: (string | XmlNode)[];
 }
-function expanded(name: string, ns: Record<string, string>, attribute = false) {
+export function expanded(name: string, ns: Record<string, string>, attribute = false) {
   const parts = name.split(':'),
     prefix = parts.length > 1 ? parts[0] : attribute ? '' : ns.xmlns || '';
   const uri = parts.length > 1 || !attribute ? ns[`${prefix}$uri`] || '' : '';

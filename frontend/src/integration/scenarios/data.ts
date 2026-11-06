@@ -1,3 +1,4 @@
+import { messageFor } from './messages.ts';
 import { clone } from './model.ts';
 import { validateTestPack } from '../../test-packs.js';
 import { invalid } from './model.ts';
@@ -26,8 +27,9 @@ export function variableValue(variable: Variable, value: string, now: string) {
       return '';
   }
 }
-export function resolvePack(s: Scenario, variantId: string, now = new Date().toISOString()) {
+export function resolveMessages(s: Scenario, variantId: string, now = new Date().toISOString()) {
   const pack = clone(s.pack),
+    followups = s.followups ? clone(s.followups) : undefined,
     variant = s.variants.find((v) => v.id === variantId);
   if (!variant) invalid();
   const variables = [...s.variables].sort(
@@ -35,17 +37,20 @@ export function resolvePack(s: Scenario, variantId: string, now = new Date().toI
   );
   for (const variable of variables) {
     const item = pack.cases.find((c) => c.id === variable.caseId),
-      message = item?.[variable.scope];
+      message = messageFor(pack, followups, variable.caseId, variable.scope);
     if (!item || !message) invalid();
     const value = variant.values.find((v) => v.variableId === variable.id)?.value ?? variable.value;
     let raw = variableValue(variable, value, now);
     if (variable.kind === 'reference') {
-      if (variable.scope !== 'reply') invalid();
+      if (variable.scope === 'request') invalid();
       raw = messageFields(item.request.data, item.request.mimeType).find((f) => f.path === value)?.raw || '';
       if (!raw) invalid();
     }
     message.data = replaceField(message.data, message.mimeType, variable.path, raw);
   }
   validateTestPack(pack);
-  return pack;
+  return { pack, ...(followups ? { followups } : {}) };
+}
+export function resolvePack(s: Scenario, variantId: string, now?: string) {
+  return resolveMessages(s, variantId, now).pack;
 }

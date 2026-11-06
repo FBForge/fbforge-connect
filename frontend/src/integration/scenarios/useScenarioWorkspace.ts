@@ -11,7 +11,10 @@ import { startRun, addAttempt, canReference } from './runs.ts';
 import * as storage from './storage.ts';
 import { requireContext, candidates, verifyRecord, receiptEvidence, observeRemote } from './verification.ts';
 import { createWaiter } from './wait.ts';
+import { replyKey } from './messages.ts';
+import { resultExport } from './report.ts';
 import { bindReferences } from './references.ts';
+import { receiptExample } from './templates.ts';
 import type { Session } from '../../contracts.d.ts';
 import type { Scenario, Run, Assignment, CaseRecord, Pack } from './types.ts';
 import type { Difference } from './expectations.ts';
@@ -189,21 +192,8 @@ export function useScenarioWorkspace(
     stop();
   }
   function example(pack: Pack, kind: 'accept' | 'reject' | 'reply') {
-    const value = clone(pack);
-    value.cases = value.cases.slice(0, 1);
-    value.cases[0].receipt = kind === 'reject' ? 'reject' : 'accept';
-    if (kind !== 'reply') {
-      value.cases[0].reply = null;
-      value.cases[0].request.replyOffer = null;
-    }
-    value.name =
-      kind === 'reject'
-        ? 'Erwartete Ablehnung'
-        : kind === 'reply'
-          ? 'Einreichung mit Antwort'
-          : 'Einreichung annehmen';
     void act(async () => {
-      await open(value);
+      await open(receiptExample(pack, kind));
     });
   }
   async function importFiles(files: File[]) {
@@ -244,27 +234,27 @@ export function useScenarioWorkspace(
           : await readTestLibrary(invoke, selected.id),
       );
     });
-  const start = () =>
+  const launch = (source: Scenario, selectedVariant: string, context: Assignment) =>
     act(async (current) => {
-      if (!definition.value || !props.session) return;
+      if (!props.session) return;
+      if (context.apiVersion !== props.session.apiVersion) throw Error('scenario_context_changed');
       if (run.value) await storage.saveRun(invoke, clone(run.value));
-      const next = await startRun(
-        definition.value,
-        variant.value,
-        environment.value as Run['environment'],
-        assignment.value,
-      );
+      const next = await startRun(source, selectedVariant, environment.value as Run['environment'], context);
       if (!current() || !props.session) return;
-      if (next.assignment.apiVersion !== props.session.apiVersion)
-        throw new Error('scenario_context_changed');
       await storage.saveScenario(invoke, next.definition);
       if (!current()) return;
+      definition.value = clone(next.definition);
+      assignment.value = clone(next.assignment);
+      variant.value = next.variantId;
       run.value = next;
+      differences.value = [];
       tab.value = 'run';
       records.value = [];
       await persist();
       publish();
     });
+  const start = () =>
+    definition.value ? launch(definition.value, variant.value, assignment.value) : Promise.resolve();
   const restore = () =>
     act(async (current) => {
       const value = await storage.readRun(invoke, runChoice.value);
@@ -276,6 +266,10 @@ export function useScenarioWorkspace(
       if (!current()) return;
       stop();
       run.value = value;
+      differences.value =
+        [...value.attempts]
+          .reverse()
+          .find((a) => a.stepId === scenarioSteps(value.definition)[value.cursor]?.id)?.differences || [];
       definition.value = clone(value.definition);
       assignment.value = clone(value.assignment);
       variant.value = value.variantId;
@@ -326,7 +320,7 @@ export function useScenarioWorkspace(
               bindReferences(document, currentStep.caseId, result.observedData);
             const binding = document.bindings.find((b) => b.testCaseId === currentStep.caseId);
             if (binding) {
-              if (record.replyId) binding.replyId = record.replyId;
+              if (record.replyId && !currentStep.followupId) binding.replyId = record.replyId;
             } else
               document.bindings.push({
                 testCaseId: currentStep.caseId,
@@ -335,7 +329,16 @@ export function useScenarioWorkspace(
                 replyId: record.replyId,
               });
           }
+          if (result.passed && record.replyId) {
+            document.replyBindings ||= [];
+            const key = replyKey(currentStep),
+              previous = document.replyBindings.find((b) => b.messageId === key);
+            if (previous) previous.replyId = record.replyId;
+            else document.replyBindings.push({ messageId: key, replyId: record.replyId });
+          }
           addAttempt(document, {
+            differences: result.differences,
+            context: { caseId: record.caseId, submissionId: record.submissionId, replyId: record.replyId },
             status: result.passed ? 'passed' : 'failed',
             detail: result.detail,
             recordId: record.recordId,
@@ -416,26 +419,16 @@ export function useScenarioWorkspace(
   const exportDefinition = () =>
     definition.value &&
     downloadLocal(JSON.stringify(definition.value, null, 2), 'integrationstest.fcscenario.json');
+  const includeValues = ref(false);
+  watch(
+    () => run.value?.id,
+    () => {
+      includeValues.value = false;
+    },
+  );
   const exportResult = () =>
     run.value &&
-    downloadLocal(
-      JSON.stringify(
-        {
-          format: 'fbforge-connect-testresult',
-          version: 2,
-          name: run.value.definition.name,
-          fingerprint: run.value.fingerprint,
-          variantId: run.value.variantId,
-          environment: run.value.environment,
-          apiVersion: run.value.assignment.apiVersion,
-          startedAt: run.value.startedAt,
-          attempts: run.value.attempts,
-        },
-        null,
-        2,
-      ),
-      'testergebnis.json',
-    );
+    downloadLocal(JSON.stringify(resultExport(run.value, includeValues.value), null, 2), 'testergebnis.json');
   onMounted(() => {
     void refresh().catch((cause) => {
       error.value = storage.scenarioError(cause);
@@ -494,6 +487,9 @@ export function useScenarioWorkspace(
     deleteRun,
     wait,
     stop,
+    launch,
+    sessionId: computed(() => props.session?.sessionId || ''),
+    includeValues,
     exportDefinition,
     exportResult,
   };

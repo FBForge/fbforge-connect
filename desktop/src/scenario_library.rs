@@ -1,6 +1,13 @@
 //! Versioned integration scenarios. Native validation and protected, bounded storage.
 use super::*;
+use messages::{AttemptContext, Difference, Followup, ReplyBinding};
 use std::collections::HashSet;
+#[path = "scenario_run.rs"]
+mod checkpoint;
+#[path = "scenario_messages.rs"]
+mod messages;
+#[path = "scenario_series.rs"]
+pub(super) mod series;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -17,6 +24,8 @@ pub struct Scenario {
     rules: Vec<Rule>,
     comparison: String,
     expected_problem: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    followups: Option<Vec<Followup>>,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -56,6 +65,7 @@ struct VariantValue {
 impl Scenario {
     fn validate(&self) -> Result<(), &'static str> {
         self.pack.validate()?;
+        self.validate_messages()?;
         let cases: HashSet<_> = self.pack.cases.iter().map(|c| &c.id).collect();
         if self.format != "fbforge-connect-scenario"
             || self.version != 2
@@ -74,11 +84,7 @@ impl Scenario {
         {
             return Err("scenario_invalid");
         }
-        let message = |id: &str, scope: &str| {
-            self.pack.cases.iter().any(|c| {
-                c.id == id && (scope == "request" || scope == "reply" && c.reply.is_some())
-            })
-        };
+        let message = |id: &str, scope: &str| self.message(id, scope).is_some();
         if self
             .variables
             .iter()
@@ -157,10 +163,22 @@ impl Scenario {
                     }
                     types.push("check_reply");
                 }
-                types
+                let mut result = types
                     .into_iter()
                     .map(|kind| format!("{}:{kind}", c.id))
-                    .collect::<Vec<_>>()
+                    .collect::<Vec<_>>();
+                for f in self
+                    .followups
+                    .iter()
+                    .flatten()
+                    .filter(|f| f.case_id == c.id)
+                {
+                    if self.mode != "sender" {
+                        result.push(format!("{}:reply:{}", c.id, f.id));
+                    }
+                    result.push(format!("{}:check_reply:{}", c.id, f.id));
+                }
+                result
             })
             .collect()
     }
@@ -187,6 +205,10 @@ pub struct ScenarioRun {
     bindings: Vec<Binding>,
     reference: bool,
     references: Vec<ObservedReference>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    followups: Option<Vec<Followup>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    reply_bindings: Option<Vec<ReplyBinding>>,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -203,6 +225,12 @@ struct Attempt {
     at: String,
     detail: String,
     record_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    differences: Option<Vec<Difference>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    differences_omitted: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    context: Option<AttemptContext>,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -212,146 +240,36 @@ struct Binding {
     reply_id: Option<String>,
     test_case_id: String,
 }
-impl ScenarioRun {
-    fn validate(&self) -> Result<(), &'static str> {
-        self.definition.validate()?;
-        self.pack.validate()?;
-        let steps = self.definition.steps();
-        if self.references.len() > 64 {
-            return Err("scenario_invalid");
-        }
-        for row in &self.references {
-            if !self.pack.cases.iter().any(|c| c.id == row.test_case_id)
-                || !name(&row.path, 1024)
-                || row.raw.len() > 4096
-            {
-                return Err("scenario_invalid");
-            }
-            let value: Value = serde_json::from_str(&row.raw).map_err(|_| "scenario_invalid")?;
-            if value.is_array() || value.is_object() {
-                return Err("scenario_invalid");
-            }
-        }
-        if self.format != "fbforge-connect-scenario-run"
-            || self.version != 2
-            || !valid_session_id(&self.id)
-            || !["TEST", "STAGE", "PROD"].contains(&self.environment.as_str())
-            || !self
-                .definition
-                .variants
-                .iter()
-                .any(|v| v.id == self.variant_id)
-            || self.fingerprint.len() != 64
-            || !self.fingerprint.bytes().all(|b| b.is_ascii_hexdigit())
-            || !name(&self.started_at, 40)
-            || self.cursor > steps.len()
-            || self.attempts.len() > 480
-            || self.bindings.len() > 20
-            || !["v2", "v3"].contains(&self.assignment.api_version.as_str())
-            || self.pack.cases.iter().map(|c| &c.id).collect::<Vec<_>>()
-                != self
-                    .definition
-                    .pack
-                    .cases
-                    .iter()
-                    .map(|c| &c.id)
-                    .collect::<Vec<_>>()
-        {
-            return Err("scenario_invalid");
-        }
-        for value in [
-            &self.assignment.sender_profile_id,
-            &self.assignment.receiver_profile_id,
-            &self.assignment.source_destination,
-            &self.assignment.receiver_destination,
-        ] {
-            if !value.is_empty() && !valid_session_id(value) {
-                return Err("scenario_invalid");
-            }
-        }
-        for attempt in &self.attempts {
-            if !steps.contains(&attempt.step_id)
-                || !["passed", "failed", "blocked", "manual", "cancelled"]
-                    .contains(&attempt.status.as_str())
-                || !name(&attempt.at, 40)
-                || attempt.detail.len() > 2048
-                || attempt
-                    .record_id
-                    .as_ref()
-                    .is_some_and(|s| !valid_session_id(s))
-            {
-                return Err("scenario_invalid");
-            }
-        }
-        for step in steps.iter().take(self.cursor) {
-            if !self
-                .attempts
-                .iter()
-                .rev()
-                .find(|a| &a.step_id == step)
-                .is_some_and(|a| ["passed", "manual"].contains(&a.status.as_str()))
-            {
-                return Err("scenario_invalid");
-            }
-        }
-        let mut ids = HashSet::new();
-        for binding in &self.bindings {
-            if !valid_session_id(&binding.case_id)
-                || !self.pack.cases.iter().any(|c| c.id == binding.test_case_id)
-                || !ids.insert(&binding.test_case_id)
-                || (self.definition.shared_case && self.bindings[0].case_id != binding.case_id)
-                || [&binding.submission_id, &binding.reply_id]
-                    .iter()
-                    .any(|v| v.as_ref().is_some_and(|s| !valid_session_id(s)))
-            {
-                return Err("scenario_invalid");
-            }
-        }
-        if self.reference
-            && (self.cursor != steps.len()
-                || steps.iter().any(|step| {
-                    !self
-                        .attempts
-                        .iter()
-                        .rev()
-                        .find(|a| &a.step_id == step)
-                        .is_some_and(|a| a.status == "passed")
-                }))
-        {
-            return Err("scenario_invalid");
-        }
-        Ok(())
-    }
-    fn summary(&self) -> Value {
-        json!({"id":self.id,"name":self.definition.name,"scenarioId":self.definition.id,"environment":self.environment,"apiVersion":self.assignment.api_version,"variantId":self.variant_id,"startedAt":self.started_at,"cursor":self.cursor,"total":self.definition.steps().len(),"reference":self.reference})
-    }
-}
 
+fn read_scenario(store: &TestLibrary, id: &str) -> Result<Scenario, &'static str> {
+    let s: Scenario =
+        serde_json::from_value(store.read_document(id)?).map_err(|_| "scenario_invalid")?;
+    s.validate()?;
+    if s.id != id {
+        return Err("scenario_invalid");
+    }
+    Ok(s)
+}
+fn read_run(store: &TestLibrary, id: &str) -> Result<ScenarioRun, &'static str> {
+    let r: ScenarioRun =
+        serde_json::from_value(store.read_document(id)?).map_err(|_| "scenario_invalid")?;
+    r.validate()?;
+    if r.id != id {
+        return Err("scenario_invalid");
+    }
+    Ok(r)
+}
 pub(super) fn execute(
     library: &TestLibrary,
     request: LibraryRequest,
 ) -> Result<Value, &'static str> {
     let scenarios = TestLibrary(library.0.join("scenarios-v2"));
     let runs = TestLibrary(library.0.join("scenario-runs-v2"));
-    fn read_scenario(store: &TestLibrary, id: &str) -> Result<Scenario, &'static str> {
-        let s: Scenario =
-            serde_json::from_value(store.read_document(id)?).map_err(|_| "scenario_invalid")?;
-        s.validate()?;
-        if s.id != id {
-            return Err("scenario_invalid");
-        }
-        Ok(s)
-    }
-    fn read_run(store: &TestLibrary, id: &str) -> Result<ScenarioRun, &'static str> {
-        let r: ScenarioRun =
-            serde_json::from_value(store.read_document(id)?).map_err(|_| "scenario_invalid")?;
-        r.validate()?;
-        if r.id != id {
-            return Err("scenario_invalid");
-        }
-        Ok(r)
-    }
     match request {
+        request @ (LibraryRequest::ScenarioSeriesList {}
+        | LibraryRequest::ScenarioSeriesRead { .. }
+        | LibraryRequest::ScenarioSeriesSave { .. }
+        | LibraryRequest::ScenarioSeriesDelete { .. }) => series::execute(library, request),
         LibraryRequest::ScenarioList {} => scenarios
             .files()?
             .iter()

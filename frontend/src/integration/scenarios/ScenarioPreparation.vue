@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import ScenarioResponses from './ScenarioResponses.vue';
+import { messageFor, messageOptions } from './messages.ts';
+import { synchronizeReplyOffers } from './response-offers.ts';
 import { messageFields } from './fields.ts';
-import type { Scenario, Assignment } from './types.ts';
+import type { Scenario, Assignment, Scope } from './types.ts';
 import type { Environment } from '../../contracts.d.ts';
 import TestFlowContext from '../TestFlowContext.vue';
 import ScenarioVariables from './ScenarioVariables.vue';
@@ -15,9 +18,28 @@ const assignment = defineModel<Assignment>('assignment', { required: true });
 defineProps<{ disabled: boolean; session: Session | null }>();
 const emit = defineEmits<{ context: [value: object] }>();
 const selected = ref(0),
-  scope = ref<'request' | 'reply'>('request');
+  scope = ref<Scope>('request');
 const item = computed(() => scenario.value.pack.cases[selected.value] || scenario.value.pack.cases[0]);
-const message = computed(() => item.value[scope.value]);
+const options = computed(() => messageOptions(scenario.value, item.value.id));
+const message = computed(() =>
+  messageFor(scenario.value.pack, scenario.value.followups, item.value.id, scope.value),
+);
+watch(options, (value) => {
+  if (!value.some((o) => o.value === scope.value)) scope.value = 'request';
+});
+watch(
+  () =>
+    JSON.stringify(
+      scenario.value.pack.cases.map((c) => [
+        c.id,
+        c.reply?.processMessage,
+        ...(scenario.value.followups || [])
+          .filter((f) => f.caseId === c.id)
+          .map((f) => f.message.processMessage),
+      ]),
+    ),
+  () => synchronizeReplyOffers(scenario.value),
+);
 const syntax = computed(() => {
   try {
     if (message.value) messageFields(message.value.data, message.value.mimeType);
@@ -32,6 +54,11 @@ watch(
     if (item.value.reply && item.value.request.replyOffer) {
       item.value.request.replyOffer.schemaUri = item.value.reply.schemaUri;
       item.value.request.replyOffer.mimeType = item.value.reply.mimeType;
+      for (const f of scenario.value.followups || [])
+        if (f.caseId === item.value.id) {
+          f.message.schemaUri = item.value.reply.schemaUri;
+          f.message.mimeType = item.value.reply.mimeType;
+        }
     }
   },
 );
@@ -77,22 +104,25 @@ watch(
         <label>
           Nachricht bearbeiten
           <select v-model="scope" :disabled="disabled">
-            <option value="request">Einreichung</option>
-            <option v-if="item.reply" value="reply">Erwartete Antwort</option>
+            <option v-for="o in options" :key="o.value" :value="o.value">{{ o.name }}</option>
           </select>
         </label>
       </div>
       <template v-if="message">
         <label>
           Nachrichtenformat
-          <select v-model="message.mimeType" :disabled="disabled">
+          <select v-model="message.mimeType" :disabled="disabled || scope.startsWith('reply:')">
             <option value="application/json">JSON</option>
             <option value="application/xml">XML</option>
           </select>
         </label>
         <label>
           Schema-Kennung
-          <input v-model="message.schemaUri" maxlength="4096" :disabled="disabled" />
+          <input
+            v-model="message.schemaUri"
+            maxlength="4096"
+            :disabled="disabled || scope.startsWith('reply:')"
+          />
         </label>
         <label>
           Fachdaten
@@ -104,6 +134,39 @@ watch(
           erfolgen über die vorhandenen Versand- und Empfangsfunktionen.
         </p>
       </template>
+      <p v-if="scope.startsWith('reply:')" class="small-note">
+        Alle Antworten verwenden das vereinbarte Antwortschema. Format und Schema ändern Sie bei „Erste
+        Antwort“.
+      </p>
+      <details v-if="scope !== 'request' && message">
+        <summary>Adressierung der ausgewählten Antwort</summary>
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            :disabled="disabled"
+            :checked="Boolean(message.processMessage)"
+            @change="
+              message.processMessage = message.processMessage ? null : { processModelId: '', messageId: '' }
+            "
+          />
+          Antwort als Prozessnachricht (API v3)
+        </label>
+        <template v-if="message.processMessage">
+          <label>
+            Prozessmodell der Antwort
+            <input v-model="message.processMessage.processModelId" maxlength="1000" :disabled="disabled" />
+          </label>
+          <label>
+            Nachrichtenkennung der Antwort
+            <input v-model="message.processMessage.messageId" maxlength="1000" :disabled="disabled" />
+          </label>
+        </template>
+        <p class="small-note">
+          Diese Prozessnachrichten werden beim Versand der Testeinreichung im Antwortkanal angeboten. Ein
+          bereits gesendetes Angebot lässt sich dadurch nicht ändern.
+        </p>
+      </details>
+      <ScenarioResponses v-model="scenario" :case-id="item.id" :disabled="disabled" />
       <label>
         Erwartete Empfangsbestätigung
         <select v-model="item.receipt" :disabled="disabled">

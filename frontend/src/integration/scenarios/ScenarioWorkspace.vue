@@ -2,6 +2,7 @@
 import { watch, computed, ref } from 'vue';
 import FileDropInput from '../../FileDropInput.vue';
 import TestDifferences from '../TestDifferences.vue';
+import ScenarioSeries from './ScenarioSeries.vue';
 import ScenarioPreparation from './ScenarioPreparation.vue';
 import ScenarioRunPanel from './ScenarioRunPanel.vue';
 import ScenarioResults from './ScenarioResults.vue';
@@ -48,6 +49,7 @@ const {
   steps,
   step,
   available,
+  includeValues,
 } = controller;
 const disabled = computed(() => pending.value || props.busy);
 const deleteDialog = ref<HTMLDialogElement>(),
@@ -239,6 +241,13 @@ watch(
       <TestDifferences v-if="tab === 'run'" :differences="differences" />
       <template v-if="tab === 'results' && run">
         <ScenarioResults :run="run" :comparison="comparison" />
+        <label class="checkbox-label">
+          <input v-model="includeValues" type="checkbox" />
+          Feldwerte in den Ergebnisexport aufnehmen
+        </label>
+        <p v-if="includeValues" class="small-note">
+          Der Export kann personenbezogene Testdaten enthalten. Prüfen Sie die Datei vor der Weitergabe.
+        </p>
         <div class="client-actions">
           <button class="button secondary" :disabled="disabled" @click="controller.exportResult">
             Prüfergebnis exportieren
@@ -253,6 +262,7 @@ watch(
         </div>
       </template>
     </template>
+    <ScenarioSeries :controller="controller" :disabled="disabled" @context="emit('context', $event)" />
     <details v-if="history.length">
       <summary>Gespeicherte Durchläufe und Referenzen ({{ history.length }}/32)</summary>
       <label>

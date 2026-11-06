@@ -8,6 +8,7 @@ const props = defineProps<{
   environment: Environment;
   disabled?: boolean;
   side?: FlowContext['side'];
+  fixedApi?: boolean;
 }>();
 const emit = defineEmits<{
   'update:context': [context: FlowAssignment];
@@ -48,7 +49,7 @@ function changeApi(event: Event) {
       Nur Profilkennungen und Destinations werden gespeichert. Zugangsdaten bleiben im geschützten Profil.
       Jeder Versand wird weiterhin einzeln bestätigt.
     </p>
-    <label>
+    <label v-if="!fixedApi">
       API-Version für diesen Ablauf
       <select :value="context.apiVersion" :disabled="disabled" @change="changeApi">
         <option value="v2">API v2</option>

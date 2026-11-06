@@ -14,6 +14,16 @@ const MAX_STORE: u64 = 64 * 1024 * 1024;
 #[derive(Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum LibraryRequest {
+    ScenarioSeriesList {},
+    ScenarioSeriesRead {
+        id: String,
+    },
+    ScenarioSeriesSave {
+        document: scenarios::series::ScenarioSeries,
+    },
+    ScenarioSeriesDelete {
+        id: String,
+    },
     ScenarioList {},
     ScenarioRead {
         id: String,
@@ -301,7 +311,11 @@ impl TestLibrary {
     }
     pub fn execute(&self, request: LibraryRequest) -> Result<Value, &'static str> {
         match request {
-            LibraryRequest::ScenarioList {}
+            LibraryRequest::ScenarioSeriesList {}
+            | LibraryRequest::ScenarioSeriesRead { .. }
+            | LibraryRequest::ScenarioSeriesSave { .. }
+            | LibraryRequest::ScenarioSeriesDelete { .. }
+            | LibraryRequest::ScenarioList {}
             | LibraryRequest::ScenarioRead { .. }
             | LibraryRequest::ScenarioSave { .. }
             | LibraryRequest::ScenarioDelete { .. }

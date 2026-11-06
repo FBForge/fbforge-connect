@@ -1,5 +1,16 @@
 export type Mode = 'sender' | 'receiver' | 'both';
-export type Scope = 'request' | 'reply';
+export type Scope = 'request' | 'reply' | `reply:${string}`;
+export interface Followup {
+  id: string;
+  caseId: string;
+  name: string;
+  message: Message;
+}
+export interface Difference {
+  path: string;
+  expected: string;
+  actual: string;
+}
 export type CheckStatus = 'passed' | 'failed' | 'blocked' | 'manual' | 'cancelled';
 export interface Variable {
   id: string;
@@ -56,6 +67,7 @@ export interface Scenario {
   rules: Rule[];
   comparison: 'exact' | 'xml-structure' | 'rules';
   expectedProblem: string;
+  followups?: Followup[];
 }
 export interface Assignment {
   apiVersion: 'v2' | 'v3';
@@ -71,6 +83,7 @@ export interface Step {
   side: 'sender' | 'receiver';
   external: boolean;
   title: string;
+  followupId?: string;
 }
 export interface Attempt {
   stepId: string;
@@ -78,6 +91,9 @@ export interface Attempt {
   at: string;
   detail: string;
   recordId: string | null;
+  differences?: Difference[];
+  differencesOmitted?: boolean;
+  context?: { caseId: string | null; submissionId: string | null; replyId: string | null };
 }
 export interface Run {
   format: 'fbforge-connect-scenario-run';
@@ -95,6 +111,8 @@ export interface Run {
   bindings: { caseId: string; submissionId: string | null; replyId: string | null; testCaseId: string }[];
   reference: boolean;
   references: { testCaseId: string; path: string; raw: string }[];
+  followups?: Followup[];
+  replyBindings?: { messageId: string; replyId: string }[];
 }
 export interface CaseRecord {
   recordId: string;

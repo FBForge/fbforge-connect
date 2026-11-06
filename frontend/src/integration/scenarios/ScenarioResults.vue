@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
 import { latestChecks } from './model.ts';
+import CopyValue from '../../CopyValue.vue';
+import ScenarioAttemptDetails from './ScenarioAttemptDetails.vue';
+import ScenarioAttemptHistory from './ScenarioAttemptHistory.vue';
+import { ticketResult } from './report.ts';
 import { compareRuns } from './runs.ts';
 import type { Run } from './types.ts';
 const props = defineProps<{ run: Run; comparison: Run | null }>();
@@ -39,9 +43,10 @@ const comparison = computed(() => (props.comparison ? compareRuns(props.run, pro
       >
         <strong>{{ check.step.title }}</strong>
         <span>{{ names[check.attempt?.status || 'pending'] }}</span>
-        <p v-if="check.attempt">{{ check.attempt.detail }}</p>
+        <ScenarioAttemptDetails v-if="check.attempt" :attempt="check.attempt" />
       </li>
     </ol>
+    <CopyValue :value="ticketResult(run)" label="Testergebnis fürs Ticket" :show-value="false" />
     <template v-if="comparison">
       <h4>Vergleich mit dem ausgewählten Durchlauf</h4>
       <p v-if="!comparison.comparable" class="scenario-notice">
@@ -82,8 +87,10 @@ const comparison = computed(() => (props.comparison ? compareRuns(props.run, pro
       <summary>Alle Prüfversuche ({{ run.attempts.length }})</summary>
       <ol>
         <li v-for="(attempt, index) in run.attempts" :key="index">
-          {{ new Date(attempt.at).toLocaleString('de-DE') }} · {{ names[attempt.status] }} ·
-          {{ attempt.detail }}
+          <ScenarioAttemptHistory
+            :attempt="attempt"
+            :label="`${names[attempt.status]} · ${checks.find((check) => check.step.id === attempt.stepId)?.step.title || ''}`"
+          />
         </li>
       </ol>
     </details>

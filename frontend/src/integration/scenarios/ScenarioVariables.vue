@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useMessageFields } from './useMessageFields.ts';
 import type { Scenario, Variable } from './types.ts';
+import { messageFor } from './messages.ts';
 import { messageFields } from './fields.ts';
 const scenario = defineModel<Scenario>({ required: true });
-const { caseId, scope, path, item, fields, selected } = useMessageFields(() => scenario.value);
+const { caseId, scope, path, item, fields, selected, options } = useMessageFields(() => scenario.value);
 function sourceFields(id: string) {
   const item = scenario.value.pack.cases.find((c) => c.id === id);
   try {
@@ -14,7 +15,7 @@ function sourceFields(id: string) {
 }
 function jsonVariable(variable: Variable) {
   return (
-    scenario.value.pack.cases.find((c) => c.id === variable.caseId)?.[variable.scope]?.mimeType ===
+    messageFor(scenario.value.pack, scenario.value.followups, variable.caseId, variable.scope)?.mimeType ===
     'application/json'
   );
 }
@@ -68,8 +69,7 @@ function setValue(variantId: string, variable: Variable, event: Event) {
       <label>
         Nachricht für variable Angaben
         <select v-model="scope">
-          <option value="request">Einreichung</option>
-          <option v-if="item.reply" value="reply">Antwort</option>
+          <option v-for="o in options" :key="o.value" :value="o.value">{{ o.name }}</option>
         </select>
       </label>
     </div>
@@ -103,7 +103,7 @@ function setValue(variantId: string, variable: Variable, event: Event) {
             <option v-if="jsonVariable(variable)" value="boolean">Ja oder Nein als true/false</option>
             <option value="date">Datum, leer für heutiges Datum</option>
             <option value="uuid">Neue Kennung pro Durchlauf</option>
-            <option v-if="variable.scope === 'reply'" value="reference">Wert aus der Einreichung</option>
+            <option v-if="variable.scope !== 'request'" value="reference">Wert aus der Einreichung</option>
           </select>
         </label>
       </div>

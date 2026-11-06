@@ -8,6 +8,9 @@
 - Einzelne Felder, Datumswerte, Referenzen und erwartete Problemtypen prüfen. Optionaler XML-Strukturvergleich erhält Text, Leerzeichen, Elementreihenfolge und Attributnamensräume.
 - Begrenzter, abbrechbarer Wartemodus für Eingänge, Antworten und Empfangsbestätigungen. Keine automatischen Schreibaktionen.
 - Prüfversuche und Ergebnisse geschützt aufbewahren. Vollständig nachgewiesene Durchläufe als Referenz schützen und spätere Ergebnisse vergleichen. Geänderte Testdefinitionen und API-Versionen bleiben erkennbar.
+- Testserien aus ausgewählten Datensätzen und API v2/v3 zusammenstellen, geschützt speichern und einzeln fortsetzen. Nicht ausgeführte, blockierte, manuelle und automatisch nachgewiesene Ergebnisse bleiben unterscheidbar. Schritte mit Prozessnachrichten oder Nachreichungen im selben Case sind unter v2 ausdrücklich nicht anwendbar.
+- Vollständige JSON/XML-Vergleiche zeigen konkrete Feld-, Struktur- und Reihenfolgeabweichungen. Anlagenabweichungen nennen die betroffene Datei. Begrenzte Details und Nachrichtenkennungen bleiben im Durchlauf erhalten. Ticketzusammenfassung kopieren und Ergebnisse standardmäßig ohne verglichene Feldwerte exportieren.
+- Mehrere fachliche Antworten pro Einreichung definieren, ordnen und getrennt nachweisen. Eigene Reply-IDs verhindern die Wiederverwendung früherer Antworten. Die Dialogvorlage umfasst Bearbeitungsstand, Nachforderung, Nachreichung und Abschluss. Antworten bleiben nach Annahme möglich und verwenden das tatsächlich vereinbarte Antwortschema.
 - Vorhandene Testpakete und Abläufe aus 0.3.0 in das neue Format übernehmen. Die ursprüngliche Sammlung bleibt erhalten.
 - Kompaktere Werkzeugauswahl, klare Vorbereitung/Durchführung/Ergebnisse und Rückweg zum aktuellen Test aus anderen Arbeitsbereichen.
 - Fragmentierte Anlagen unter API v2 in eine getrennte temporäre Zieldatei zusammenfügen. Originalname, Inhalt und Prüfbezüge bleiben erhalten.

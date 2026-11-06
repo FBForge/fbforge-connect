@@ -6,6 +6,9 @@
 .scenario-workspace :is(p, h2, h3, h4) {
   margin-block: 0 8px;
 }
+.scenario-workspace :is(h3, h4, details) {
+  scroll-margin-block-start: 6rem;
+}
 .scenario-workspace :is(label, fieldset) {
   min-width: 0;
 }
@@ -169,6 +172,9 @@
   background: var(--status-error-bg);
 }
 @media (max-width: 760px) {
+  .scenario-workspace .scenario-toolbar {
+    position: static;
+  }
   .scenario-fields {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -187,4 +193,38 @@
   .scenario-tabs button[aria-pressed='true'] {
     outline: 2px solid Highlight;
   }
+}
+
+.scenario-response-list {
+  display: grid;
+  gap: 12px;
+  padding-left: 20px;
+}
+.scenario-workspace .scenario-check {
+  overflow-wrap: anywhere;
+}
+.scenario-workspace .scenario-check .table-scroll {
+  max-width: 100%;
+}
+.scenario-series-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+.scenario-series-status.passed {
+  color: var(--status-success-ink);
+  border-color: var(--status-success-line);
+  background: var(--status-success-bg);
+}
+.scenario-series-status.failed {
+  color: var(--status-error-ink);
+  border-color: var(--status-error-line);
+  background: var(--status-error-bg);
+}
+.scenario-series-status:is(.manual, .blocked, .unavailable) {
+  color: var(--status-warning-ink);
+  border-color: var(--status-warning-line);
+  background: var(--status-warning-bg);
 }

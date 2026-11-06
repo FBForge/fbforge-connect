@@ -112,7 +112,10 @@ test('recipient offers recover from missing reply schemas and discard a late res
       };
     };
   });
-  await page.getByText('Sender und Empfänger zuordnen', { exact: true }).click();
+  await page
+    .locator('.scenario-preparation')
+    .getByText('Sender und Empfänger zuordnen', { exact: true })
+    .click();
   await page
     .getByRole('textbox', { name: 'Empfangs-Destination', exact: true })
     .fill('11111111-1111-4111-8111-111111111111');

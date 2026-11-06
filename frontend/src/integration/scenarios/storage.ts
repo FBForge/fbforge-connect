@@ -1,6 +1,8 @@
 import { invalid, uuid, validateScenario } from './model.ts';
 import { validateRun } from './runs.ts';
 import type { NativeInvoke } from '../../contracts.d.ts';
+import { validateSeries } from './series.ts';
+import type { Series } from './series.ts';
 import type { Run, Scenario } from './types.ts';
 
 export interface ScenarioSummary {
@@ -10,6 +12,8 @@ export interface ScenarioSummary {
   caseCount: number;
 }
 export interface RunSummary {
+  outcome?: string;
+  fingerprint?: string;
   id: string;
   name: string;
   scenarioId: string;
@@ -75,7 +79,12 @@ export async function listRuns(invoke: NativeInvoke): Promise<RunSummary[]> {
         !Number.isInteger(r.total) ||
         r.cursor < 0 ||
         r.cursor > r.total ||
-        r.total > 120 ||
+        r.total < 1 ||
+        r.total > 152 ||
+        (r.fingerprint !== undefined && !/^[a-f0-9]{64}$/.test(r.fingerprint)) ||
+        (r.outcome !== undefined &&
+          (!['passed', 'failed', 'blocked', 'manual', 'cancelled', 'pending'].includes(r.outcome) ||
+            (['passed', 'manual'].includes(r.outcome) && r.cursor !== r.total))) ||
         typeof r.reference !== 'boolean',
     ) ||
     new Set(rows.map((r) => r.id)).size !== rows.length
@@ -111,4 +120,39 @@ export function scenarioError(cause: unknown) {
   if (code === 'scenario_invalid')
     return 'Der Test ist unvollständig oder ungültig. Prüfen Sie Felder, Werte, Erwartungen und das Dateiformat.';
   return 'Die Testaktion konnte nicht abgeschlossen werden. Ihre geöffneten Daten bleiben erhalten. Prüfen Sie Verbindung, Dateiformat und geschützten Speicher.';
+}
+
+export async function listSeries(
+  invoke: NativeInvoke,
+): Promise<{ id: string; name: string; total: number; environment: string }[]> {
+  const rows = await call(invoke, 'scenario_series_list');
+  if (
+    !Array.isArray(rows) ||
+    rows.length > 32 ||
+    rows.some(
+      (r) =>
+        !r ||
+        !uuid(r.id) ||
+        typeof r.name !== 'string' ||
+        !Number.isInteger(r.total) ||
+        r.total < 1 ||
+        r.total > 32 ||
+        !['TEST', 'STAGE', 'PROD'].includes(r.environment),
+    ) ||
+    new Set(rows.map((r) => r.id)).size !== rows.length
+  )
+    invalid();
+  return rows;
+}
+export async function readSeries(invoke: NativeInvoke, id: string) {
+  if (!uuid(id)) invalid();
+  const s = validateSeries(await call(invoke, 'scenario_series_read', { id }));
+  if (s.id !== id) invalid();
+  return s;
+}
+export const saveSeries = (invoke: NativeInvoke, document: Series) =>
+  call(invoke, 'scenario_series_save', { document: validateSeries(document) });
+export async function removeSeries(invoke: NativeInvoke, id: string) {
+  if (!uuid(id)) invalid();
+  return call(invoke, 'scenario_series_delete', { id });
 }

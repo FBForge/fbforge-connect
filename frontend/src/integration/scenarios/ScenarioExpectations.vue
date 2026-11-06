@@ -3,7 +3,7 @@ import { useMessageFields } from './useMessageFields.ts';
 import type { Scenario } from './types.ts';
 import { messageFields } from './fields.ts';
 const scenario = defineModel<Scenario>({ required: true });
-const { caseId, scope, path, item, fields, selected } = useMessageFields(() => scenario.value);
+const { caseId, scope, path, item, fields, selected, options } = useMessageFields(() => scenario.value);
 function sourceFields(id: string) {
   const item = scenario.value.pack.cases.find((c) => c.id === id);
   try {
@@ -53,8 +53,7 @@ function add() {
       <label>
         Nachricht für Erwartung
         <select v-model="scope">
-          <option value="request">Einreichung</option>
-          <option v-if="item.reply" value="reply">Antwort</option>
+          <option v-for="o in options" :key="o.value" :value="o.value">{{ o.name }}</option>
         </select>
       </label>
     </div>
@@ -78,7 +77,7 @@ function add() {
           <option value="equals">Entspricht dem Wert</option>
           <option value="present">Ist vorhanden</option>
           <option value="date">Ist ein gültiges Datum</option>
-          <option v-if="rule.scope === 'reply'" value="reference">
+          <option v-if="rule.scope !== 'request'" value="reference">
             Entspricht einem Feld der Einreichung
           </option>
         </select>

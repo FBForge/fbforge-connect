@@ -589,6 +589,19 @@ export const helpTopics = [
         caption:
           'Ergebnisse unterscheiden automatische Nachweise, fehlgeschlagene Prüfungen und manuelle Bestätigungen.',
       },
+      {
+        image: 'integration-responses',
+        caption: 'Weitere fachliche Antworten erhalten eigene Inhalte, Bezeichnungen und Prüfschritte.',
+      },
+      {
+        image: 'integration-series',
+        caption:
+          'Eine Testserie unterscheidet Datensatz, API-Version und den tatsächlichen Prüfstand jedes Durchlaufs.',
+      },
+      {
+        image: 'integration-differences',
+        caption: 'Konkrete Feldabweichungen bleiben zusammen mit dem Prüfversuch gespeichert.',
+      },
     ],
     intro:
       'Ab 0.4.0 verbinden geführte Tests vorhandene Versand-, Empfangs- und Prüffunktionen. Eine externe Gegenstelle übernimmt ihre eigenen Schritte. Schreiben, Annahme und Ablehnung bestätigen Sie weiterhin ausdrücklich.',
@@ -598,15 +611,19 @@ export const helpTopics = [
       'Mit „Angebot der Gegenstelle übernehmen“ laden Sie Leistungs-, Prozess- und Schemaangaben aus der zugeordneten Empfangs-Destination. Wählen Sie das Angebot und übernehmen Sie es ausdrücklich. Die Fachdaten müssen zu diesen Schemata passen. Prozessnachrichten und Folgeschritte im selben Case benötigen API v3.',
       'Alternativ öffnen Sie einen verfügbaren Vorgang und wählen „Als Test wiederverwenden“. Wählen Sie Einreichung und gegebenenfalls Antwort. Ergänzen Sie fehlende Leistungs- und Schema-Kennungen. Die Inhalte werden zunächst als neuer Test zur Bearbeitung geöffnet. Prüfen Sie personenbezogene Angaben und verwenden Sie fiktive Testdaten.',
       'Bearbeiten Sie Fachdaten und Nachrichtenformat unter „Vorbereitung“. „Variable Angaben und Datensätze“ lässt Sie Felder auswählen, Texte, Zahlen und Wahrheitswerte setzen, Datum oder Kennungen erzeugen und Antwortwerte aus der beobachteten Einreichung übernehmen. Jeder Datensatz erhält einen eigenen Durchlauf.',
+      'Unter „Weitere Antworten im selben Vorgang“ ergänzen, benennen und ordnen Sie fachliche Rückmeldungen. „Nachricht bearbeiten“ öffnet deren Inhalte. Alle Antworten verwenden das vereinbarte Antwortschema. Prozesskennungen werden bei der Vorbereitung in das Antwortangebot der Einreichung übernommen. Bereits gesendete Angebote ändern sich dadurch nicht. Die Vorlage „Nachforderung und Nachreichung“ zeigt Bearbeitungsstand, Nachforderung, Nachreichung und Abschluss.',
       'Unter „Prüferwartungen anpassen“ wählen Sie vollständigen Inhalt, XML-Struktur oder nur ausgewählte Fachdatenfelder. Ergänzen Sie Bedingungen und gegebenenfalls den erwarteten Problemtyp der Empfangsbestätigung. Bei ausgewählten Feldern bleiben alle anderen Fachdatenfelder ausdrücklich ungeprüft. Anlagen werden weiterhin vollständig verglichen.',
       'Wählen Sie einen Datensatz und starten Sie den Durchlauf. Erzeugte Werte werden für diesen Durchlauf festgeschrieben. „Versandentwurf öffnen“ nutzt den normalen Versand mit Bestätigung. Die passende Arbeitsansicht öffnet Empfang und Antwortfunktionen. „Nachweise aktualisieren“ lädt lokale Kopien. Wählen und prüfen Sie die passende Nachricht.',
       '„Auf Nachweis warten“ fragt höchstens fünf Minuten nach. Es wird jeweils nur eine Abfrage durchgeführt. Bei Fehlern wächst der Abstand. Sie können Seiten wechseln und das Warten beenden. Bei Profil- oder Umgebungswechsel endet der Wartemodus. Ein gefundener Eintrag muss weiterhin geöffnet und geprüft werden.',
       'Unter „Ergebnisse“ sehen Sie den Prüfstand und alle Versuche. Fehlgeschlagene, blockierte und manuell bestätigte Schritte sind keine automatischen Erfolgsnachweise. Der Fortschritt wird für das Windows-Benutzerkonto verschlüsselt gespeichert. Ein gespeicherter Durchlauf setzt keine Schreibaktion automatisch fort.',
+      'Vollständige Vergleiche zeigen konkrete JSON-Felder, XML-Attribute, Texte und Reihenfolgeabweichungen. Bei Anlagen werden Anzahl, Dateiname, Dateityp und Inhalt geprüft. Bis zu 20 Abweichungen und gekürzte Feldwerte je Versuch bleiben gespeichert. „Testergebnis fürs Ticket kopieren“ kopiert eine kurze Zusammenfassung. „Prüfergebnis exportieren“ nimmt verglichene Feldwerte erst nach ausdrücklicher Auswahl auf.',
+      'Mit „Testserien planen und fortsetzen“ wählen Sie Datensätze, API v2/v3 und die Profilzuordnung pro API. Benennen und speichern Sie die Serie. Jede Kombination erhält einen ausdrücklich gestarteten Durchlauf. „Passendes Profil öffnen“ hilft beim Wechsel. „Ergebnis öffnen“ beziehungsweise „Durchlauf fortsetzen“ führt zum gespeicherten Stand. Die Serie hält ihre Definition fest und übernimmt spätere Änderungen an der Vorbereitung nicht.',
       'Vollständig automatisch nachgewiesene Durchläufe können Sie als Referenz festlegen. Wählen Sie später einen gespeicherten Durchlauf zum Vergleich. Abweichende Definitionen, Datensätze, Umgebungen und API-Versionen werden benannt. Zum Löschen einer Referenz müssen Sie deren Schutz zuerst aufheben.',
     ],
     notes: [
       'Testdefinition und Fortschritt sind getrennt. Eine geänderte Vorlage ändert frühere Prüfergebnisse nicht. Beim Fortsetzen bleiben die erzeugten Daten des Durchlaufs erhalten.',
-      'Die Testsammlung und der Durchlaufverlauf sind jeweils auf 32 Einträge, 64 MiB insgesamt und knapp 8 MiB pro Dokument begrenzt. Bestehende Testpaketgrenzen bleiben erhalten. Exportieren und löschen Sie nicht mehr benötigte Einträge, wenn die Sammlung voll ist.',
+      'Testsammlung, Durchlaufverlauf und Seriensammlung sind jeweils auf 32 Einträge, 64 MiB insgesamt und knapp 8 MiB pro Dokument begrenzt. Eine Serie umfasst maximal 32 Kombinationen aus Datensatz und API. Vergleichsdetails eines Durchlaufs sind auf 128 KiB begrenzt. Der gewählte Prüfumfang bleibt auch bei gekürzten Details unverändert. Bestehende Testpaketgrenzen bleiben erhalten.',
+      'Nicht ausgeführte, blockierte und manuell bestätigte Serienläufe zählen nicht als automatisch erfolgreich. Prozessnachrichten und Nachreichungen im selben Case sind unter v2 nicht anwendbar. Ein fehlender oder geänderter Durchlauf liefert keinen Erfolgsnachweis. „Serie entfernen“ löscht nur die Zusammenstellung. Gespeicherte Durchläufe und Referenzen bleiben erhalten.',
       'Der XML-Strukturvergleich berücksichtigt Namensräume und ignoriert die Attributreihenfolge. Text, Leerzeichen und die Reihenfolge der Kindelemente bleiben relevant. Der Vergleich verändert keine verschlüsselten oder signierten Originaldateien.',
       'Empfangsbestätigungen werden anhand des verifizierten Event Logs geprüft. Inhaltsvergleiche benötigen zusätzlich verfügbare lokale Kopien. Eine manuelle Rückmeldung der Gegenstelle wird gesondert gespeichert und berechtigt nicht zum Festlegen einer vollständig geprüften Referenz.',
       'Testdefinitionen enthalten Fachdaten und Anlagen und sind nach dem Export unverschlüsselt. Verbindungszugänge, private Schlüssel und alte technische Case-Zuordnungen werden nicht als neue Versandvorgaben exportiert. Ergebnisse sind lokale Prüfnachweise für den definierten Umfang.',

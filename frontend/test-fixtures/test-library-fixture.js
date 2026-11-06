@@ -1,39 +1,55 @@
 // Synthetic memory-only storage. Actual DPAPI/restart tests live in native-contracts.
+import { scenarioSteps } from '../src/integration/scenarios/model.ts';
+import { runOutcome } from '../src/integration/scenarios/series.ts';
 const saved = new Map();
 const flows = new Map(),
   runs = new Map();
 const scenarios = new Map(),
   scenarioRuns = new Map();
+const scenarioSeries = new Map();
 export function testLibraryFixture(request) {
   if (request.action.startsWith('scenario_')) {
     const run = request.action.startsWith('scenario_run_'),
-      store = run ? scenarioRuns : scenarios;
-    const action = request.action.slice(run ? 'scenario_run_'.length : 'scenario_'.length);
+      series = request.action.startsWith('scenario_series_'),
+      store = series ? scenarioSeries : run ? scenarioRuns : scenarios;
+    const action = request.action.slice(
+      series ? 'scenario_series_'.length : run ? 'scenario_run_'.length : 'scenario_'.length,
+    );
     const summary = (value) =>
-      run
-        ? {
-            id: value.id,
-            name: value.definition.name,
-            scenarioId: value.definition.id,
-            environment: value.environment,
-            apiVersion: value.assignment.apiVersion,
-            variantId: value.variantId,
-            startedAt: value.startedAt,
-            cursor: value.cursor,
-            total: value.definition.pack.cases.reduce(
-              (n, c) =>
-                n +
-                (value.definition.mode === 'sender' ? 1 : value.definition.mode === 'receiver' ? 2 : 3) +
-                (c.receipt === 'none' ? 0 : 1) +
-                (c.reply ? (value.definition.mode === 'sender' ? 1 : 2) : 0),
-              0,
-            ),
-            reference: value.reference,
-          }
-        : { id: value.id, name: value.name, mode: value.mode, caseCount: value.pack.cases.length };
+      series
+        ? { id: value.id, name: value.name, environment: value.environment, total: value.entries.length }
+        : run
+          ? {
+              id: value.id,
+              name: value.definition.name,
+              scenarioId: value.definition.id,
+              environment: value.environment,
+              apiVersion: value.assignment.apiVersion,
+              variantId: value.variantId,
+              startedAt: value.startedAt,
+              cursor: value.cursor,
+              total: scenarioSteps(value.definition).length,
+              outcome: runOutcome(value),
+              fingerprint: value.fingerprint,
+              reference: value.reference,
+            }
+          : { id: value.id, name: value.name, mode: value.mode, caseCount: value.pack.cases.length };
     if (action === 'list') return [...store.values()].map(summary);
     if (action === 'read') return structuredClone(store.get(request.id));
     if (action === 'save') {
+      if (series)
+        for (const entry of request.document.entries) {
+          if (!entry.runId) continue;
+          const linked = scenarioRuns.get(entry.runId);
+          if (
+            !linked ||
+            linked.fingerprint !== request.document.fingerprint ||
+            linked.environment !== request.document.environment ||
+            linked.variantId !== entry.variantId ||
+            Object.keys(entry.assignment).some((key) => linked.assignment[key] !== entry.assignment[key])
+          )
+            throw 'scenario_invalid';
+        }
       store.set(request.document.id, structuredClone(request.document));
       return summary(request.document);
     }

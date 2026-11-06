@@ -12,7 +12,7 @@ defineProps({ differences: Array });
         </tr>
       </thead>
       <tbody>
-        <tr v-for="difference in differences" :key="difference.path">
+        <tr v-for="(difference, index) in differences.slice(0, 20)" :key="index">
           <td>
             <code>{{ difference.path }}</code>
           </td>
@@ -22,7 +22,8 @@ defineProps({ differences: Array });
       </tbody>
     </table>
     <p class="small-note">
-      Bis zu 20 Abweichungen werden angezeigt. Der Vergleich prüft weiterhin den vollständigen Inhalt.
+      Bis zu 20 Abweichungen werden angezeigt. Lange Feldwerte sind gekürzt. Der gewählte Prüfumfang bleibt
+      unverändert.
     </p>
   </div>
 </template>

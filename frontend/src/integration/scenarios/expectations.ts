@@ -1,7 +1,8 @@
+import { contentDifferences } from './content-differences.ts';
 import { compareTestContent } from '../test-flows.js';
 import { messageFields, structuralXml } from './fields.ts';
 import type { Field } from './fields.ts';
-import type { Message, Scenario, Rule } from './types.ts';
+import type { Message, Scenario, Rule, Scope } from './types.ts';
 
 export interface Difference {
   path: string;
@@ -39,7 +40,7 @@ export function checkMessage(
   expected: Message,
   scenario: Scenario,
   caseId: string,
-  scope: 'request' | 'reply',
+  scope: Scope,
   reference: Message,
 ): Difference[] {
   const rules = scenario.rules.filter((r) => r.caseId === caseId && r.scope === scope),
@@ -51,15 +52,7 @@ export function checkMessage(
         scenario.comparison === 'xml-structure' && expected.mimeType === 'application/xml'
           ? structuralXml(actual) === structuralXml(expected.data)
           : compareTestContent(actual, expected.data, expected.mimeType);
-      if (!equal)
-        rows.push({
-          path: 'Gesamter Inhalt',
-          expected:
-            scenario.comparison === 'xml-structure'
-              ? 'Gleiche XML-Struktur mit unverändertem Text'
-              : 'Inhalt des Testfalls',
-          actual: 'Inhalt weicht ab',
-        });
+      if (!equal) rows.push(...contentDifferences(actual, expected.data, expected.mimeType));
     }
     if (scenario.comparison === 'rules' && !rules.length)
       rows.push({

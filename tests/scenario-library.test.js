@@ -92,7 +92,7 @@ test('native collection responses reject identity confusion, duplicate rows and 
     [{ ...runRow, startedAt: 'invalid' }],
     [{ ...runRow, cursor: -1 }],
     [{ ...runRow, cursor: 11 }],
-    [{ ...runRow, total: 121 }],
+    [{ ...runRow, total: 153 }],
     [{ ...runRow, reference: 'true' }],
     Array(33).fill(runRow),
   ])

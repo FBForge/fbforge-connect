@@ -1,5 +1,6 @@
 import { validateTestPack } from '../../test-packs.js';
 import { validateTestFlow } from '../test-flows.js';
+import { messageFor } from './messages.ts';
 import type { Scenario, Pack, Step, Mode, Run } from './types.ts';
 
 export const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
@@ -28,6 +29,7 @@ export function validateScenario(input: unknown): Scenario {
       'rules',
       'comparison',
       'expectedProblem',
+      ...(Object.hasOwn(s, 'followups') ? ['followups'] : []),
     ]) ||
     s.format !== 'fbforge-connect-scenario' ||
     s.version !== 2 ||
@@ -42,6 +44,31 @@ export function validateScenario(input: unknown): Scenario {
   )
     invalid();
   validateTestPack(s.pack);
+  if (Object.hasOwn(s, 'followups')) {
+    if (!Array.isArray(s.followups) || s.followups.length > 16) invalid();
+    const ids = new Set();
+    for (const f of s.followups) {
+      const item = s.pack.cases.find((c) => c.id === f?.caseId);
+      if (
+        !f ||
+        !keys(f, ['id', 'caseId', 'name', 'message']) ||
+        !uuid(f.id) ||
+        ids.has(f.id) ||
+        !title(f.name) ||
+        !item?.reply ||
+        !item.request.replyOffer
+      )
+        invalid();
+      ids.add(f.id);
+      validateTestPack({ ...s.pack, cases: [{ ...item, reply: f.message }] });
+      if (
+        !f.message ||
+        f.message.schemaUri !== item.reply.schemaUri ||
+        f.message.mimeType !== item.reply.mimeType
+      )
+        invalid();
+    }
+  }
   if (
     !Array.isArray(s.variables) ||
     s.variables.length > 32 ||
@@ -67,10 +94,7 @@ export function validateScenario(input: unknown): Scenario {
         !keys(row, fields) ||
         !uuid(row.id) ||
         ids.has(row.id) ||
-        !s.pack.cases.some(
-          (c) => c.id === row.caseId && (row.scope === 'request' || (row.scope === 'reply' && c.reply)),
-        ) ||
-        !['request', 'reply'].includes(row.scope) ||
+        !messageFor(s.pack, s.followups, row.caseId, row.scope) ||
         !title(row.path, 1024) ||
         typeof row.value !== 'string' ||
         row.value.length > 4096
@@ -168,7 +192,7 @@ export function scenarioSteps(s: Scenario): Step[] {
     if (item.receipt !== 'none') types.push('receipt');
     if (item.reply)
       types.push(...(s.mode === 'sender' ? (['check_reply'] as const) : (['reply', 'check_reply'] as const)));
-    return types.map((type) => ({
+    const base: Step[] = types.map((type) => ({
       id: `${item.id}:${type}`,
       caseId: item.id,
       type,
@@ -177,6 +201,21 @@ export function scenarioSteps(s: Scenario): Step[] {
         (s.mode === 'sender' && type === 'receipt') || (s.mode === 'receiver' && type === 'check_reply'),
       title: names[type],
     }));
+    const extra = (s.followups || [])
+      .filter((f) => f.caseId === item.id)
+      .flatMap((f) => {
+        const kinds: Step['type'][] = s.mode === 'sender' ? ['check_reply'] : ['reply', 'check_reply'];
+        return kinds.map((type) => ({
+          id: `${item.id}:${type}:${f.id}`,
+          caseId: item.id,
+          type,
+          side: type === 'reply' ? ('receiver' as const) : ('sender' as const),
+          external: s.mode === 'receiver' && type === 'check_reply',
+          title: `${names[type]} · ${f.name}`,
+          followupId: f.id,
+        }));
+      });
+    return [...base, ...extra];
   });
 }
 export async function definitionFingerprint(s: Scenario) {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onMounted } from 'vue';
+import { expectedMessage } from './messages.ts';
 import CopyValue from '../../CopyValue.vue';
 import type { Run, Step, CaseRecord } from './types.ts';
 const props = defineProps<{
@@ -29,9 +30,7 @@ const emit = defineEmits<{
   select: [id: string];
 }>();
 const item = computed(() => props.run.pack.cases.find((c) => c.id === props.step?.caseId));
-const expected = computed(() =>
-  props.step && ['reply', 'check_reply'].includes(props.step.type) ? item.value?.reply : item.value?.request,
-);
+const expected = computed(() => (props.step ? expectedMessage(props.run, props.step) : null));
 const latest = computed(() => [...props.run.attempts].reverse().find((a) => a.stepId === props.step?.id));
 const instructions = computed(() =>
   props.step?.external
@@ -154,7 +153,7 @@ function select(event: Event) {
       <details v-if="expected">
         <summary>Erwartete Fachdaten und Anlagen</summary>
         <pre>{{ expected.data }}</pre>
-        <CopyValue :value="expected.data" label="Erwarteten Inhalt" />
+        <CopyValue :value="expected.data" label="Erwarteten Inhalt" :show-value="false" />
         <ul>
           <li v-for="a in expected.attachments" :key="a.fileName">{{ a.fileName }} · {{ a.mimeType }}</li>
         </ul>

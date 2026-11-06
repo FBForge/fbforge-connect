@@ -1,6 +1,10 @@
 <script setup>
 import { ref, watch } from 'vue';
-const props = defineProps({ value: String, label: { type: String, required: true } });
+const props = defineProps({
+  value: String,
+  label: { type: String, required: true },
+  showValue: { type: Boolean, default: true },
+});
 const notice = ref('');
 watch(
   () => props.value,
@@ -21,8 +25,8 @@ async function copy() {
 </script>
 <template>
   <span class="copy-value">
-    <code v-if="value">{{ value }}</code>
-    <span v-else>Noch nicht bekannt</span>
+    <code v-if="value && showValue">{{ value }}</code>
+    <span v-else-if="!value">Noch nicht bekannt</span>
     <button
       v-if="value"
       type="button"

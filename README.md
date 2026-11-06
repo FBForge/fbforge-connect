@@ -9,8 +9,9 @@ Die aktuelle Veröffentlichung ist **[0.3.0](https://github.com/FBForge/fbforge-
 Dieser Branch bereitet **0.4.0, noch nicht veröffentlicht** vor.
 
 Neu sind geführte Integrationstests mit externen Gegenstellen, Tests aus Vorgängen,
-variable Testdaten, gezielte Erwartungen, ein begrenzter Wartemodus und der
-Vergleich gespeicherter Durchläufe. Einzelheiten stehen in den [Versionshinweisen](RELEASE_NOTES.md).
+variable Testdaten, Testserien für API v2/v3 und mehrere fachliche Antworten im selben
+Vorgang. Konkrete Unterschiede bleiben mit dem Prüfverlauf gespeichert.
+Einzelheiten stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 
 - Einreichungen und Antworten über API v2/v3 senden, empfangen und prüfen.
 - JSON/XML und Anlagen ansehen, Nachrichten gesammelt herunterladen und annehmen.

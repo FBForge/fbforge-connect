@@ -1,6 +1,8 @@
 import { clone } from './model.ts';
 import { validateTestPack } from '../../test-packs.js';
-import { resolvePack } from './data.ts';
+import { boundedAttempt, validateRunDetails } from './run-details.ts';
+import { requiresV3 } from './messages.ts';
+import { resolveMessages } from './data.ts';
 import {
   definitionFingerprint,
   invalid,
@@ -19,7 +21,7 @@ export async function startRun(
 ): Promise<Run> {
   const snapshot = validateScenario(definition),
     startedAt = new Date().toISOString();
-  if (snapshot.sharedCase && assignment.apiVersion !== 'v3') invalid();
+  if (requiresV3(snapshot) && assignment.apiVersion !== 'v3') invalid();
   const run: Run = {
     format: 'fbforge-connect-scenario-run',
     version: 2,
@@ -30,7 +32,7 @@ export async function startRun(
     environment,
     assignment: clone(assignment),
     startedAt,
-    pack: resolvePack(snapshot, variantId, startedAt),
+    ...resolveMessages(snapshot, variantId, startedAt),
     cursor: 0,
     attempts: [],
     bindings: [],
@@ -60,6 +62,7 @@ export function validateRun(input: unknown): Run {
       'bindings',
       'reference',
       'references',
+      ...['followups', 'replyBindings'].filter((k) => Object.hasOwn(r, k)),
     ]
       .sort()
       .join()
@@ -115,7 +118,17 @@ export function validateRun(input: unknown): Run {
   for (const a of r.attempts)
     if (
       !a ||
-      Object.keys(a).sort().join() !== 'at,detail,recordId,status,stepId' ||
+      Object.keys(a).sort().join() !==
+        [
+          'at',
+          'detail',
+          'recordId',
+          'status',
+          'stepId',
+          ...['differences', 'differencesOmitted', 'context'].filter((k) => Object.hasOwn(a, k)),
+        ]
+          .sort()
+          .join() ||
       !steps.some((s) => s.id === a.stepId) ||
       !['passed', 'failed', 'blocked', 'manual', 'cancelled'].includes(a.status) ||
       !Number.isFinite(Date.parse(a.at)) ||
@@ -145,6 +158,8 @@ export function validateRun(input: unknown): Run {
       invalid();
     ids.add(b.testCaseId);
   }
+  validateRunDetails(r, steps);
+  if (r.followups) validateScenario({ ...r.definition, pack: r.pack, followups: r.followups });
   if (r.reference && !canReference(r)) invalid();
   if (new TextEncoder().encode(JSON.stringify(r)).length > 8 * 1024 * 1024 - 4096)
     throw new Error('scenario_size_limit');
@@ -154,7 +169,7 @@ export function addAttempt(run: Run, result: Omit<Attempt, 'stepId' | 'at'>) {
   const step = scenarioSteps(run.definition)[run.cursor];
   if (!step || run.reference || run.attempts.length >= 480) invalid();
   run.attempts.push({
-    ...result,
+    ...boundedAttempt(run, result),
     detail: result.detail.slice(0, 2048),
     stepId: step.id,
     at: new Date().toISOString(),

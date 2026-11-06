@@ -1,3 +1,5 @@
+import { expectedMessage, scopeFor, replyKey } from './messages.ts';
+import { uuid } from './model.ts';
 import { caseParts, readCaseFile } from '../../cases.js';
 import { profileStatus } from '../../profiles.ts';
 import { loadCaseEventLog, listEventLog, readEventDocument, discardEventLog } from '../../event-log.js';
@@ -20,9 +22,12 @@ export function candidates(records: CaseRecord[], run: Run, step: Step) {
   const binding = run.bindings.find((b) => b.testCaseId === step.caseId),
     reply = ['reply', 'check_reply'].includes(step.type),
     received = ['receive', 'compare', 'check_reply'].includes(step.type);
+  const replyBinding = run.replyBindings?.find((b) => b.messageId === replyKey(step));
   return records.filter(
     (r) =>
       r.available !== false &&
+      uuid(r.caseId) &&
+      (reply ? uuid(r.replyId) : uuid(r.submissionId)) &&
       Date.parse(r.createdAt) >= Date.parse(run.startedAt) &&
       ['sent', 'verified', 'accepted', 'rejected', 'confirmed'].includes(r.status) &&
       r.kind === (reply ? 'reply' : 'submission') &&
@@ -35,10 +40,13 @@ export function candidates(records: CaseRecord[], run: Run, step: Step) {
             ? b.replyId && r.replyId === b.replyId
             : b.submissionId && r.submissionId === b.submissionId),
       ) &&
+      (!reply ||
+        !run.replyBindings?.some((b) => b.messageId !== replyKey(step) && b.replyId === r.replyId)) &&
+      (!replyBinding || r.replyId === replyBinding.replyId) &&
       (!binding ||
         (r.caseId === binding.caseId &&
           (reply
-            ? !binding.replyId || r.replyId === binding.replyId
+            ? step.followupId || !binding.replyId || r.replyId === binding.replyId
             : !binding.submissionId || r.submissionId === binding.submissionId))) &&
       (!run.assignment.receiverDestination ||
         reply ||
@@ -105,8 +113,7 @@ export async function verifyRecord(
 ) {
   if (!candidates([record], run, step).length) throw new Error('scenario_context_changed');
   const item = run.pack.cases.find((c) => c.id === step.caseId)!,
-    reply = ['reply', 'check_reply'].includes(step.type),
-    expected = reply ? item.reply : item.request;
+    expected = expectedMessage(run, step);
   if (!expected) throw new Error('scenario_invalid');
   const parts = await caseParts(invoke, session, record.recordId);
   if (!parts) throw new Error('scenario_invalid');
@@ -125,13 +132,23 @@ export async function verifyRecord(
       expected,
       run.definition,
       item.id,
-      reply ? 'reply' : 'request',
+      scopeFor(step),
       referenceMessage(run, item.id),
     );
     if (differences.length)
       return { passed: false, detail: 'Die Fachdaten erfüllen die Erwartungen nicht.', differences };
     if (parts.filter((p) => p.kind === 'attachment').length !== expected.attachments.length)
-      return { passed: false, detail: 'Die Anzahl der Anlagen weicht ab.', differences: [] };
+      return {
+        passed: false,
+        detail: 'Die Anzahl der Anlagen weicht ab.',
+        differences: [
+          {
+            path: 'Anlagen / Anzahl',
+            expected: String(expected.attachments.length),
+            actual: String(parts.filter((p) => p.kind === 'attachment').length),
+          },
+        ],
+      };
     for (const attachment of expected.attachments) {
       if (!current()) throw new Error('content_cancelled');
       const part = parts.find(
@@ -142,7 +159,13 @@ export async function verifyRecord(
         return {
           passed: false,
           detail: `Anlage fehlt oder hat einen anderen Dateityp: ${attachment.fileName}`,
-          differences: [],
+          differences: [
+            {
+              path: `Anlage / ${attachment.fileName}`,
+              expected: attachment.mimeType,
+              actual: 'Datei fehlt oder Dateityp weicht ab',
+            },
+          ],
         };
       let actual: Uint8Array | undefined;
       try {
@@ -152,7 +175,13 @@ export async function verifyRecord(
           return {
             passed: false,
             detail: `Anlage hat einen anderen Inhalt: ${attachment.fileName}`,
-            differences: [],
+            differences: [
+              {
+                path: `Anlage / ${attachment.fileName}`,
+                expected: `${wanted.length} Bytes, unveränderter Dateiinhalt`,
+                actual: `${actual.length} Bytes, Dateiinhalt weicht ab`,
+              },
+            ],
           };
       } finally {
         actual?.fill(0);

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { xmlPacket } from '../frontend/test-fixtures/xml-message-schema.js';
 import demoPack from '../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 import { openBatch, id as batchId } from '../frontend/test-fixtures/message-batch.js';
+import { captureScenarioHelp } from './capture-scenario-help.mjs';
 
 const output = process.argv[2];
 if (!output || process.argv.length !== 3)
@@ -495,6 +496,7 @@ try {
     'integration-results',
     page.getByRole('heading', { name: 'Ergebnisse dieses Durchlaufs', exact: true }),
   );
+  await captureScenarioHelp(page, capture);
   console.log(`${captures.size} Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {
   await browser.close();

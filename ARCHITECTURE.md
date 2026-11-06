@@ -108,6 +108,19 @@ und sämtliche Prüfversuche. JSON-Feldänderungen erhalten große Zahlen, XML-V
 beachten Namensräume und gemischten Text. Antworten können beobachtete Werte übernehmen,
 ohne die erwartete Einreichung nachträglich zu verändern.
 
+Zusätzliche Antworten erweitern das bestehende Version-2-Format durch optionale
+Felder. Alte Definitionen und Durchläufe behalten ihre Form und Kennungen.
+Jede zusätzliche Antwort hat stabile Prüfschritte und eine eigene Reply-ID-Zuordnung.
+Sie verwendet das vereinbarte Antwortschema der Einreichung. Prozesskennungen werden
+bei der Vorbereitung in deren Antwortangebot übernommen. Bereits gesendete Angebote
+bleiben unveränderlich. Die normalen nativen Versandbestätigungen gelten weiterhin.
+
+Vollständige Vergleiche liefern begrenzte JSON-/XML-Strukturdetails zusätzlich zur
+maßgeblichen Inhaltsprüfung. Höchstens 20 Abweichungen je Versuch, gekürzte Feldwerte
+und insgesamt 128 KiB Vergleichsdetails verhindern unbegrenzte Prüfprotokolle.
+Ein Detail-Limit macht keinen fehlgeschlagenen Vergleich erfolgreich. Ergebnisexporte
+enthalten verglichene Feldwerte nur nach ausdrücklicher Auswahl.
+
 Der Controller trennt Vorbereitung, Durchführung und Vergleich. Er bindet Nachweise
 an Profil, Umgebung, API, Nachricht und Startzeit. Der ausdrücklich gestartete
 Wartemodus liest höchstens fünf Minuten ohne parallele Abfragen und ohne Schreibaktionen.
@@ -115,13 +128,20 @@ Profilwechsel und Abbruch verwerfen verspätete Ergebnisse. Bereits laufende nat
 Leseaufrufe können innerhalb ihrer bestehenden Zeitgrenzen noch auslaufen.
 
 `scenario_library` validiert Definitionen und Durchläufe nochmals nativ. Getrennte
-Sammlungen unter `test-library/scenarios-v2` und `scenario-runs-v2` sind mit Windows-DPAPI
+Sammlungen unter `test-library/scenarios-v2`, `scenario-runs-v2` und `scenario-series-v1` sind mit Windows-DPAPI
 für das Benutzerkonto geschützt, jeweils auf 32 Einträge und 64 MiB begrenzt.
 Einzelne Dokumente bleiben unter 8 MiB. Testdaten, Definitionskopie und Prüfverlauf
 zählen gemeinsam zur Durchlaufgröße. Referenzen erfordern vollständig nachgewiesene
 Schritte und sind bis zur ausdrücklichen Aufhebung gegen Löschen geschützt.
 Vorgangsübernahme kopiert nur freigegebene Inhalte und lokale Schemata in neue Tests.
 Bestehende Pakete und Abläufe bleiben bei der Formatübernahme erhalten.
+
+Testserien speichern eine eigene Definitionskopie und bis zu 32 Kombinationen aus
+Datensatz und API. Sie verknüpfen getrennte Durchläufe, übernehmen deren aktuellen
+Prüfstand und benötigen zum Start jeder Kombination eine ausdrückliche Aktion.
+Native Speicherung prüft Definition, Umgebung, Datensatz und Profilzuordnung der
+verknüpften Durchläufe. Fehlende oder abweichende Durchläufe liefern keinen Erfolg.
+Das Entfernen einer Serie entfernt keine Durchläufe und keine geschützten Referenzen.
 
 Profil-Arbeitsdaten (Destination-Vorlagen, Merkliste und lokale Konfigurationshistorie) liegen getrennt von Credentials und Vorgängen in Windows-DPAPI-Dateien. Zusätzliche Entropie bindet Profil, Umgebung und API. Nur native Engine-Ergebnisse erzeugen Historieneinträge. Vor dem Schreiben wird ein ungewisser Zustand dauerhaft hinterlegt; ein Fehler der abschließenden Speicherung darf einen tatsächlichen Servererfolg nicht als fehlgeschlagenen Versand umdeuten. Profilentfernung löscht auch diese Arbeitsdaten. Profil-Backups enthalten sie nicht.
 

@@ -5,6 +5,8 @@
 Der Release-Branch erweitert die vorhandenen Testfunktionen um geführte Abläufe,
 Tests aus Vorgängen, variable Daten und Datensätze, gezielte Erwartungen,
 einen begrenzten Wartemodus sowie den Vergleich gespeicherter Durchläufe.
+Testserien kombinieren Datensätze und API-Versionen. Unterschiede bleiben im
+Prüfverlauf erhalten. Fachliche Dialoge unterstützen mehrere Antworten im selben Vorgang.
 Die [Versionshinweise](RELEASE_NOTES.md) beschreiben den Umfang. Veröffentlichung
 setzt die Abnahme des endgültigen Releasekandidaten voraus.
 
