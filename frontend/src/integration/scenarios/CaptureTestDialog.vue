@@ -229,6 +229,13 @@ defineExpose({ show });
   display: grid;
   gap: 16px;
 }
+.scenario-capture form > button {
+  justify-self: start;
+  max-width: 100%;
+  min-height: 42px;
+  height: auto;
+  white-space: normal;
+}
 .scenario-capture label {
   display: grid;
   gap: 8px;

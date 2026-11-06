@@ -43,6 +43,15 @@ test('a local case opens the capture dialog and creates a portable test without 
   await button(page, 'Als Test wiederverwenden').click();
   const dialog = page.getByRole('dialog', { name: 'Test aus Vorgang erstellen', exact: true });
   await expect(dialog).toBeVisible();
+  const loadOffer = dialog.getByRole('button', { name: 'Empfängerangebot laden', exact: true });
+  expect((await loadOffer.boundingBox()).width).toBeLessThan(400);
+  for (const width of [640, 420]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect((await loadOffer.boundingBox()).height).toBeGreaterThanOrEqual(42);
+    const audit = await new AxeBuilder({ page }).include('.scenario-capture').analyze();
+    expect(audit.violations.map((v) => v.id)).toEqual([]);
+  }
   await dialog.getByRole('textbox', { name: 'Testname', exact: true }).fill('Fiktiver Vorgang als Test');
   await dialog.getByRole('textbox', { name: 'Leistungskennung', exact: true }).fill('urn:test:leistung');
   await dialog.getByLabel('Fachdaten-Schema', { exact: true }).fill('urn:test:antrag');
