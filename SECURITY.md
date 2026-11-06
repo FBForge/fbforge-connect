@@ -9,13 +9,14 @@ angeben. Keine Secrets, privaten Schlüssel oder echten Antragsdaten mitsenden.
 ## Speicherung und Exporte
 
 Zugänge und Schlüssel bleiben ohne gespeichertes Profil in der Sitzung.
-Gespeicherte Profile, Schlüssel, Vorgänge, Testpakete, Testabläufe, Integrationstests, Durchläufe und
+Gespeicherte Profile, Schlüssel, Vorgänge, Testpakete, Testabläufe, Integrationstests, Testserien, Durchläufe und
 Profil-Arbeitsdaten schützt Windows-DPAPI für das Benutzerkonto. Vorgänge
 gespeicherter Profile werden standardmäßig dauerhaft aufbewahrt. Die Auswahl
 lässt sich pro Profil und API abwählen. Tokens werden nicht gespeichert.
 Profilsicherungen enthalten weder Vorgänge noch Profil-Arbeitsdaten.
 
 Downloads und exportierte Pakete, Abläufe, Vorlagen und Berichte sind unverschlüsselt.
+Ergebnisexporte nehmen verglichene Feldwerte erst nach ausdrücklicher Auswahl auf.
 Sie bleiben beim Löschen eines Profils bestehen. DPAPI schützt nicht vor Schadsoftware
 unter demselben Benutzerkonto. Die Vorgangsablage ist kein revisionssicheres Archiv.
 Löschen garantiert kein physisches Überschreiben. Abmelden widerruft ausgestellte Tokens nicht.

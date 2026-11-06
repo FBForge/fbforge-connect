@@ -2,30 +2,39 @@
 
 ## 0.4.0 in Vorbereitung
 
-Der geprüfte Produktstand ist `40e753abba9a34c89c7c7453c0a1a98b28c6e3d5`.
+Der geprüfte Produktstand ist `46991b21b4d497ce66fc8ea4e3d875318bf1a4d9`.
 Version 0.4.0 ist noch nicht veröffentlicht. Die folgenden Prüfungen verwenden
 fiktive Daten und ersetzen keine installierte Windows- oder FIT-Connect-TEST-Abnahme.
 
 | Prüfung | Tatsächlich geprüfter Umfang |
 | --- | --- |
-| [Checks 42269109724](https://github.com/FBForge/fbforge-connect/actions/runs/42269109724) | `40e753a`, Frontend und Java einschließlich des getrennten SDK3-Merge-Zielpfads, Builds und Abdeckungsgrenzen |
-| [Windows-Checks 42266998953](https://github.com/FBForge/fbforge-connect/actions/runs/42266998953) | `581783e`, native Verträge, Windows-DPAPI, Referenzschutz und vollständige native Windows-Tests mit Abdeckungsmessung. Der native Rust-Code ist in `40e753a` unverändert. |
+| [Checks 42304998045](https://github.com/FBForge/fbforge-connect/actions/runs/42304998045) | `46991b2`, Frontend, Java, native Windows-Verträge und vollständige native Windows-Tests einschließlich ihrer Abdeckungsgrenzen. Neue Serien werden mit Windows-DPAPI gespeichert und mit unveränderten Durchlaufzuordnungen erneut geöffnet. |
 
-Lokal bestehen 372 Node-Tests, sechs Plattformfälle werden übersprungen. Alle
-262 Chromium-Fälle sowie 117 native Verträge unter Linux bestehen. Die neuen
+Lokal bestehen 391 Node-Tests, sechs Plattformfälle werden übersprungen. Alle
+272 Chromium-Fälle sowie 122 native Verträge unter Linux bestehen. Die neuen
 Oberflächen werden in hell/dunkel, schmalen Fenstern, mit vergrößerter Schrift und
-automatischen Barrierefreiheitsprüfungen geprüft. Die 15 Hilfekapitel und 52 Bilder
+automatischen Barrierefreiheitsprüfungen geprüft. Produktions-Build, Bundlebudget,
+Typprüfung, Formatierung und Lizenzprüfung bestehen. Die 15 Hilfekapitel und 55 Bilder
 lassen sich gemeinsam für Website und Wiki exportieren.
 
-Die lokale Node-Messung erreicht 57,21 % Produktzeilen und 85,07 % Zweige,
-die Browsermessung 82,27 % Produktzeilen und 70,18 % Zweige. Fehlende Module zählen
+Zusätzlich geprüft sind Serien aus Datensätzen und API-Versionen, nicht anwendbare
+v2-Kombinationen, falsche oder fehlende Durchlaufverknüpfungen, getrennte Reply-IDs,
+mehrere Antworten nach einer Annahme und persistierte Vergleichsdetails.
+Abweichungen bleiben auch nach erfolgreicher Wiederholung im Prüfverlauf erreichbar.
+Lange Unicode-Werte bleiben beim Kürzen gültiger JSON-Text. Feldwerte werden nur
+nach ausdrücklicher Auswahl exportiert. Bestehende Version-2-Dokumente behalten ihre Form.
+
+Die lokale Node-Messung erreicht 57,93 % Produktzeilen und 85,95 % Zweige,
+die Browsermessung 82,87 % Produktzeilen und 71,23 % Zweige. Fehlende Module zählen
 als ungetestet. Die Umfänge werden nicht zu einer Gesamtquote verrechnet.
 Windows- und Java-Messungen stehen in den zugeordneten CI-Artefakten.
 
 Vor der Veröffentlichung fehlen noch die installierte Windows-Abnahme der neuen
 Integrationstests mit echten TEST-Zugängen, das endgültige signierte Paket samt
-Updater-Abnahme und die Veröffentlichung der 0.4-Anleitung. Der Ablauf und die
-konkreten neuen Testfälle stehen in [RELEASING.md](../../RELEASING.md).
+Updater-Abnahme und die Veröffentlichung der 0.4-Anleitung. Dazu gehören auch
+Serien und frühere Abweichungen nach einem App-Neustart sowie der vollständige
+fachliche Dialog mit mehreren Antworten. Der Ablauf steht in
+[RELEASING.md](../../RELEASING.md). Signierung und Veröffentlichung erfolgen erst nach der Abnahme.
 
 ## Abnahmestand 0.3.0
 

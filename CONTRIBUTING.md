@@ -49,10 +49,11 @@ zählen als ungetestet. Deklarationen, Test-Fixtures und Bibliotheken gehören n
 Installer und ausdrücklich bereitgestellte TEST-Zugänge. Sie werden nicht ausgeliefert.
 `scripts/verify-windows.cmd` ist nur ein manueller Einstieg für einen Teil der Prüfungen.
 
-Die 0.4-Regressionen liegen in `tests/scenarios.test.js`, `tests/ui/scenarios.spec.js`
-und `desktop/src/scenario_library_tests.rs`. Sie prüfen unveränderliche Durchläufe,
-Typen und große Zahlen, XML-Namensräume, Fehler/Wiederholung, Kontextwechsel,
-abbrechbares Warten, Referenzen und geschützte Speicherung. Browser-Fixtures
+Die 0.4-Regressionen liegen in `tests/scenario*.test.js`, `tests/ui/scenario*.spec.js`,
+`desktop/src/scenario_library_tests.rs` und `desktop/src/scenario_series_tests.rs`.
+Sie prüfen unveränderliche Durchläufe und Serien, getrennte Reply-IDs, Typen und
+große Zahlen, XML-Namensräume, dauerhafte Abweichungen, Unicode-Kürzung,
+Fehler/Wiederholung, Kontextwechsel, abbrechbares Warten, Referenzen und geschützte Speicherung. Browser-Fixtures
 ersetzen dabei nur die native Grenze und belegen keinen echten FIT-Connect-Austausch.
 
 ## Anleitung pflegen
