@@ -31,10 +31,14 @@ export async function generateExample(source, mimeType, uri, requestedRoot) {
     try {
       const schemas = bundle?.schemas || [{ name: 'schema.xsd', text: source }],
         properties = Object.create(null);
-      let count = 0;
+      let count = 0,
+        remainingConstraints = 2 * 1024 * 1024 - 64;
       // Collect only string constraints, then evaluate them off the renderer thread.
       xmlExample(schemas, uri, requestedRoot, (constraints, field) => {
-        properties[`field${count++}`] = { ...constraints, title: field };
+        const property = { ...constraints, title: field };
+        remainingConstraints -= new TextEncoder().encode(JSON.stringify(property)).length + 32;
+        if (remainingConstraints < 0) throw new Error('example_unavailable');
+        properties[`field${count++}`] = property;
         return '';
       });
       const values = count ? JSON.parse(await jsonDraft(JSON.stringify({ type: 'object', properties }))) : {};

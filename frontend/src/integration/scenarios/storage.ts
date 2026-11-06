@@ -98,6 +98,8 @@ export async function removeRun(invoke: NativeInvoke, id: string) {
 }
 export function scenarioError(cause: unknown) {
   const code = typeof cause === 'string' ? cause : cause instanceof Error ? cause.message : '';
+  if (code === 'scenario_size_limit')
+    return 'Die Testdaten und Anlagen sind für einen geschützten Durchlauf zu umfangreich. Entfernen Sie nicht benötigte Anlagen oder teilen Sie den Test auf.';
   if (code === 'vault_limit')
     return 'Die geschützte Sammlung ist voll. Exportieren und löschen Sie nicht mehr benötigte Tests oder Durchläufe. Referenzen bleiben geschützt.';
   if (code === 'scenario_reference_protected')

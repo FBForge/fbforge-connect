@@ -5,7 +5,7 @@ const TestFlows = defineAsyncComponent(() => import('./integration/TestFlows.vue
 const ScenarioWorkspace = defineAsyncComponent(() => import('./integration/scenarios/ScenarioWorkspace.vue'));
 const SchemaComparison = defineAsyncComponent(() => import('./SchemaComparison.vue'));
 const ChannelSchemaDesigner = defineAsyncComponent(() => import('./integration/ChannelSchemaDesigner.vue'));
-const props = defineProps({ busy: Boolean, session: Object, testSource: Object });
+const props = defineProps({ busy: Boolean, session: { type: Object, default: null }, testSource: Object });
 const emit = defineEmits(['send', 'busy', 'scanner-changed', 'context', 'activity']);
 const mode = ref('packages');
 const category = ref('tests');

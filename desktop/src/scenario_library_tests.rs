@@ -34,6 +34,21 @@ fn checkpoints_reject_false_references_unknown_proof_steps_and_credentials() {
         document["assignment"][field] = json!("forbidden");
         assert!(serde_json::from_value::<ScenarioRun>(document).is_err());
     }
+    for shared in [false, true] {
+        let mut document = valid.clone();
+        document["definition"]["sharedCase"] = json!(shared);
+        document["bindings"] = json!([
+            {"testCaseId":"antrag-mit-antwort","caseId":"11111111-1111-4111-8111-111111111111","submissionId":null,"replyId":null},
+            {"testCaseId":"xml-antrag","caseId":"22222222-2222-4222-8222-222222222222","submissionId":null,"replyId":null}
+        ]);
+        assert_eq!(
+            serde_json::from_value::<ScenarioRun>(document)
+                .unwrap()
+                .validate()
+                .is_ok(),
+            !shared
+        );
+    }
 }
 #[test]
 fn scenarios_reject_credentials_unknown_fields_unsupported_versions_and_dangling_variants() {
@@ -87,6 +102,39 @@ fn scenario_requests_have_strict_native_actions_and_no_plaintext_fallback() {
         let store = TestLibrary(root.clone());
         let result = store.execute(LibraryRequest::ScenarioList {}).unwrap();
         assert_eq!(result.as_array().unwrap().len(), 1);
+        let mut checkpoint = run();
+        let scenario: Scenario = serde_json::from_value(scenario()).unwrap();
+        let steps = scenario.steps();
+        checkpoint["cursor"] = json!(steps.len());
+        checkpoint["reference"] = json!(true);
+        checkpoint["attempts"] = json!(steps.iter().map(|step| json!({"stepId":step,"at":"2026-11-06T12:00:01Z","status":"passed","detail":"Fiktiver Nachweis","recordId":null})).collect::<Vec<_>>());
+        store
+            .execute(
+                serde_json::from_value(json!({"action":"scenario_run_save","document":checkpoint}))
+                    .unwrap(),
+            )
+            .unwrap();
+        let id = checkpoint["id"].as_str().unwrap().to_owned();
+        assert_eq!(
+            store
+                .execute(LibraryRequest::ScenarioRunRead { id: id.clone() })
+                .unwrap(),
+            checkpoint
+        );
+        assert_eq!(
+            store.execute(LibraryRequest::ScenarioRunDelete { id: id.clone() }),
+            Err("scenario_reference_protected")
+        );
+        checkpoint["reference"] = json!(false);
+        store
+            .execute(
+                serde_json::from_value(json!({"action":"scenario_run_save","document":checkpoint}))
+                    .unwrap(),
+            )
+            .unwrap();
+        store
+            .execute(LibraryRequest::ScenarioRunDelete { id })
+            .unwrap();
         let _ = fs::remove_dir_all(root);
     }
     assert!(serde_json::from_value::<LibraryRequest>(

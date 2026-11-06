@@ -15,8 +15,9 @@ export function resolveUri(reference, base) {
 }
 export function budget() {
   let remaining = 60000;
-  return () => {
-    if (--remaining < 0) throw new Error('schema_view_limit');
+  return (cost = 1) => {
+    if (!Number.isSafeInteger(cost) || cost < 0 || (remaining -= cost) < 0)
+      throw new Error('schema_view_limit');
   };
 }
 export function source(context) {

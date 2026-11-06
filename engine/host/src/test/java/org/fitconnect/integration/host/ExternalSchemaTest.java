@@ -17,6 +17,59 @@ class ExternalSchemaTest {
     private static final String CHILD = "https://example.invalid/person.json";
 
     @Test
+    void directoryPayloadsAreCountedBeforeTheNextZipEntry() throws Exception {
+        String identifier = "urn:xoev-de:test:standard:test_1.0";
+        String root =
+                "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'><xs:element name='r' type='xs:string'/></xs:schema>";
+        for (String name : List.of("padding/", "padding.bin")) {
+            byte[] payload = zip(Map.of(name, "x".repeat(2 * 1024 * 1024 + 1), "root.xsd", root));
+            var sources = new SchemaSources(Map.of(), true, uri -> "", uri -> payload.clone());
+            assertEquals(
+                    "content_limit",
+                    assertThrows(SessionException.class, () -> sources.xmlFiles(identifier))
+                            .code());
+        }
+        byte[] emptyDirectory = zip(Map.of("padding/", "", "root.xsd", root));
+        var sources = new SchemaSources(Map.of(), true, uri -> "", uri -> emptyDirectory.clone());
+        assertEquals(1, sources.xmlFiles(identifier).size());
+        try (var adapters = ReceiverTestSupport.registry()) {
+            var type =
+                    adapters.dependencyClass(ApiVersion.V2)
+                            .getClassLoader()
+                            .loadClass("org.fitconnect.integration.v2.SdkXmlSchemas");
+            var load =
+                    type.getDeclaredMethod("load", String.class, java.util.function.Function.class);
+            load.setAccessible(true);
+            for (String name : List.of("padding/", "padding.bin")) {
+                byte[] payload =
+                        zip(Map.of(name, "x".repeat(2 * 1024 * 1024 + 1), "root.xsd", root));
+                var failure =
+                        assertThrows(
+                                java.lang.reflect.InvocationTargetException.class,
+                                () ->
+                                        load.invoke(
+                                                null,
+                                                identifier,
+                                                (java.util.function.Function<String, byte[]>)
+                                                        uri -> payload.clone()));
+                assertEquals(
+                        "content_limit",
+                        assertInstanceOf(SessionException.class, failure.getCause()).code());
+            }
+            assertEquals(
+                    1,
+                    assertInstanceOf(
+                                    Map.class,
+                                    load.invoke(
+                                            null,
+                                            identifier,
+                                            (java.util.function.Function<String, byte[]>)
+                                                    uri -> emptyDirectory.clone()))
+                            .size());
+        }
+    }
+
+    @Test
     void bothInstalledValidatorsResolveRelativeReferencesThroughOnlyTheBoundedLoader()
             throws Exception {
         for (String version : List.of("v2", "v3"))

@@ -43,6 +43,23 @@ const assignment = {
   receiverDestination: '',
 };
 const scenario = () => scenarioFrom(pack);
+test('a run rejects oversized combined snapshots before it can become active', async () => {
+  const value = structuredClone(pack);
+  value.cases = value.cases.slice(0, 1);
+  value.cases[0].request.attachments = [
+    {
+      fileName: 'fixture.bin',
+      mimeType: 'application/octet-stream',
+      description: null,
+      base64: Buffer.alloc(4 * 1024 * 1024).toString('base64'),
+    },
+  ];
+  const definition = scenarioFrom(value);
+  await assert.rejects(
+    startRun(definition, definition.variants[0].id, 'TEST', assignment),
+    /scenario_size_limit/,
+  );
+});
 test('observed request values drive replies without changing the expected request', async () => {
   const s = scenario(),
     id = s.pack.cases[0].id;

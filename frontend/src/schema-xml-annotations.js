@@ -243,11 +243,12 @@ export function annotateXmlSchema(root, packet, Parser) {
           });
         else if (node.localName === 'attribute') {
           const name = node.getAttribute('name') || node.getAttribute('ref');
-          if (node.getAttribute('use') === 'prohibited')
+          if (node.getAttribute('use') === 'prohibited') {
+            tick(result.attributes.length);
             result.attributes = result.attributes.filter(
               (item) => (item.node.getAttribute('name') || item.node.getAttribute('ref')) !== name,
             );
-          else result.attributes.push(child);
+          } else result.attributes.push(child);
         } else if (['sequence', 'choice', 'all', 'complexContent', 'simpleContent'].includes(node.localName))
           collect(node, child, depth + 1, required);
         else if (['extension', 'restriction'].includes(node.localName)) {
@@ -257,6 +258,7 @@ export function annotateXmlSchema(root, packet, Parser) {
               const base = lookup('complexType', qname),
                 inherited = base && members(base, seen);
               if (inherited) {
+                tick(inherited.elements.length + inherited.attributes.length);
                 result.elements.push(
                   ...inherited.elements.map((item) => ({
                     ...item,
@@ -281,6 +283,7 @@ export function annotateXmlSchema(root, packet, Parser) {
           if (!target || seen.has(target.node)) result.unknown = true;
           else {
             const nested = members(target, seen);
+            tick(nested.elements.length + nested.attributes.length);
             result.elements.push(
               ...nested.elements.map((item) => ({
                 ...item,

@@ -1,4 +1,5 @@
-import { fictionalValues } from './fictional-values.js';
+import { xmlValue, xmlFieldHintText, xmlEnumerationNames } from './xml-example-values.js';
+import { boundedXmlOutput } from './xml-output-budget.js';
 
 const XSD = 'http://www.w3.org/2001/XMLSchema';
 export const xmlMessageKey = (root) => JSON.stringify([root.namespace, root.name]);
@@ -38,6 +39,7 @@ function xmlIndex(schemas, stringValue) {
     namespaces: new Map(),
     roots: [],
     remaining: 2000,
+    enumerationNames: new WeakMap(),
     stringValue,
   };
   const hasProductionTree = schemas.some((entry) => entry.name.startsWith('xsd/'));
@@ -111,14 +113,11 @@ export function xmlExample(schemas, schemaLocation, requestedRoot, stringValue) 
       : null;
   if (!rootDefinition) throw new Error(requestedRoot ? 'example_unavailable' : 'xml_message_required');
   index.root = rootDefinition;
-  const output = window.document.implementation.createDocument(
-    rootDefinition.namespace || null,
-    rootDefinition.name,
-    null,
-  );
+  index.output = boundedXmlOutput();
+  const output = index.output.document(rootDefinition.namespace, rootDefinition.name);
   const root = output.documentElement;
-  if (rootDefinition.namespace) root.setAttribute('xmlns', rootDefinition.namespace);
-  addSchemaLocation(root, rootDefinition.namespace, schemaLocation);
+  if (rootDefinition.namespace) index.output.attribute(root, null, 'xmlns', rootDefinition.namespace);
+  addSchemaLocation(root, rootDefinition.namespace, schemaLocation, index.output);
   populateXmlElement(
     output,
     root,
@@ -188,13 +187,16 @@ function populateXmlElement(output, target, definition, index, activeTypes, dept
   if (resolved?.localName === 'complexType')
     populateXmlType(output, target, resolved, index, activeTypes, depth + 1);
   else if (definition.hasAttribute('fixed') || definition.hasAttribute('default'))
-    target.textContent = definition.getAttribute('fixed') ?? definition.getAttribute('default');
+    index.output.text(target, definition.getAttribute('fixed') ?? definition.getAttribute('default'));
   else
-    target.textContent = resolved
-      ? xmlSimpleValue(resolved, xmlFieldHint(definition), index, depth + 1)
-      : xmlBuiltinValue(index, definition, namedType, xmlFieldHint(definition));
+    index.output.text(
+      target,
+      resolved
+        ? xmlSimpleValue(resolved, xmlFieldHint(definition), index, depth + 1)
+        : xmlBuiltinValue(index, definition, namedType, xmlFieldHint(definition)),
+    );
   if (definition.hasAttribute('fixed') || definition.hasAttribute('default'))
-    target.textContent = definition.getAttribute('fixed') ?? definition.getAttribute('default');
+    index.output.text(target, definition.getAttribute('fixed') ?? definition.getAttribute('default'));
 }
 function xmlBuiltinValue(index, context, name, field) {
   // An unresolved application type is not a string. Do not invent a value for a missing import.
@@ -225,13 +227,17 @@ function populateXmlType(output, target, type, index, activeTypes, depth) {
       const base = derivation.getAttribute('base'),
         baseType = index.types.get(xmlResolveKey(index, derivation, base));
       if (simple) {
-        if (restriction) target.textContent = xmlSimpleValue(content, xmlFieldHint(type), index, depth + 1);
+        if (restriction)
+          index.output.text(target, xmlSimpleValue(content, xmlFieldHint(type), index, depth + 1));
         else if (baseType?.localName === 'complexType')
           populateXmlType(output, target, baseType, index, activeTypes, depth + 1);
         else
-          target.textContent = baseType
-            ? xmlSimpleValue(baseType, xmlFieldHint(type), index, depth + 1)
-            : xmlBuiltinValue(index, derivation, base, xmlFieldHint(type));
+          index.output.text(
+            target,
+            baseType
+              ? xmlSimpleValue(baseType, xmlFieldHint(type), index, depth + 1)
+              : xmlBuiltinValue(index, derivation, base, xmlFieldHint(type)),
+          );
       } else {
         if (restriction && baseType) inheritXmlAttributes(target, baseType, index, depth + 1);
         else if (baseType) populateXmlType(output, target, baseType, index, activeTypes, depth + 1);
@@ -276,9 +282,9 @@ function populateXmlParticle(output, target, particle, index, activeTypes, depth
       if (referenced && ['true', '1'].includes(referenced.getAttribute('abstract')))
         throw new Error('example_unavailable');
       const namespace = xmlElementNamespace(index, particle, particle);
-      const element = namespace ? output.createElementNS(namespace, name) : output.createElement(name);
+      const element = index.output.element(output, namespace, name);
       if (!namespace && target.namespaceURI)
-        element.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns', '');
+        index.output.attribute(element, 'http://www.w3.org/2000/xmlns/', 'xmlns', '');
       target.append(element);
       populateXmlElement(output, element, particle, index, activeTypes, depth + 1);
     } else if (particle.localName === 'group' && particle.hasAttribute('ref')) {
@@ -345,13 +351,16 @@ function addXmlAttributes(target, type, index, depth) {
               depth + 1,
             )
           : xmlBuiltinValue(index, definition, definition.getAttribute('type'), name));
-    if (namespace) target.setAttributeNS(namespace, `a${target.attributes.length}:${name}`, value);
-    else target.setAttribute(name, value);
+    index.output.attribute(
+      target,
+      namespace,
+      namespace ? `a${target.attributes.length}:${name}` : name,
+      value,
+    );
   }
 }
 function xmlFieldHint(element) {
-  const annotation = xmlChild(element, 'annotation');
-  return `${element.getAttribute('name') || ''} ${annotation?.textContent || ''}`;
+  return xmlFieldHintText(element.getAttribute('name'), xmlChild(element, 'annotation'));
 }
 function xmlSimpleValue(type, field = '', index, depth = 0) {
   xmlBudget(index, depth);
@@ -369,9 +378,14 @@ function xmlSimpleValue(type, field = '', index, depth = 0) {
     const associated = enumerations
       .map((item) => ({
         item,
-        names: [...(xmlChild(item, 'annotation')?.getElementsByTagName('*') || [])]
-          .map((node) => node.textContent.trim())
-          .filter((name) => messageNames.has(name)),
+        names: (() => {
+          if (!index.enumerationNames.has(item))
+            index.enumerationNames.set(
+              item,
+              xmlEnumerationNames(xmlChild(item, 'annotation'), messageNames, () => xmlBudget(index, depth)),
+            );
+          return index.enumerationNames.get(item);
+        })(),
       }))
       .filter(({ names }) => names.length);
     const matching = associated.filter(({ names }) => names.includes(index.root.name));
@@ -438,58 +452,11 @@ function xsdStringPattern(pattern) {
   }
   return `^(?:${translated})$`;
 }
-function xmlValue(type, field = '') {
-  const semantic = fictionalValues({ format: type === 'dateTime' ? 'date-time' : type }, field);
-  if (['string', 'normalizedString', 'token', 'date', 'dateTime'].includes(type) && semantic.length)
-    return semantic[0];
-  const values = {
-    language: 'de',
-    Name: 'testwert',
-    NCName: 'testwert',
-    NMTOKEN: 'testwert',
-    NMTOKENS: 'testwert',
-    QName: 'testwert',
-    boolean: 'false',
-    positiveInteger: '1',
-    negativeInteger: '-1',
-    int: '0',
-    integer: '0',
-    long: '0',
-    short: '0',
-    byte: '0',
-    unsignedInt: '0',
-    unsignedLong: '0',
-    unsignedShort: '0',
-    unsignedByte: '0',
-    nonNegativeInteger: '0',
-    nonPositiveInteger: '0',
-    decimal: '0',
-    double: '0',
-    float: '0',
-    date: '2000-01-01',
-    dateTime: '2000-01-01T00:00:00Z',
-    time: '00:00:00Z',
-    duration: 'P0D',
-    dayTimeDuration: 'P0D',
-    yearMonthDuration: 'P0D',
-    gYear: '2000',
-    gYearMonth: '2000-01',
-    gMonth: '--01',
-    gMonthDay: '--01-01',
-    gDay: '---01',
-    anyURI: 'https://example.org/',
-    base64Binary: 'AA==',
-    hexBinary: '00',
-  };
-  if (Object.hasOwn(values, type)) return values[type];
-  if (['string', 'normalizedString', 'token'].includes(type)) return semantic[0] || 'Fiktive Testangabe';
-  throw new Error('example_unavailable');
-}
-function addSchemaLocation(root, namespace, schemaLocation) {
+function addSchemaLocation(root, namespace, schemaLocation, output) {
   if (!schemaLocation) return;
   schemaLocation = schemaLocation.split('#')[0];
   const xsi = 'http://www.w3.org/2001/XMLSchema-instance';
-  root.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xsi', xsi);
-  if (namespace) root.setAttributeNS(xsi, 'xsi:schemaLocation', `${namespace} ${schemaLocation}`);
-  else root.setAttributeNS(xsi, 'xsi:noNamespaceSchemaLocation', schemaLocation);
+  output.attribute(root, 'http://www.w3.org/2000/xmlns/', 'xmlns:xsi', xsi);
+  if (namespace) output.attribute(root, xsi, 'xsi:schemaLocation', `${namespace} ${schemaLocation}`);
+  else output.attribute(root, xsi, 'xsi:noNamespaceSchemaLocation', schemaLocation);
 }

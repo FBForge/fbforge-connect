@@ -14,6 +14,12 @@ const source = await readFile(
   'utf8',
 );
 const pack = () => JSON.parse(source);
+test('attachment decoding rejects invalid and noncanonical padding without a recursive regular expression', () => {
+  const attachment = pack().cases[0].request.attachments[0];
+  for (const base64 of ['AA=', 'AA=Q', 'A===', 'A?AA', 'AB=='])
+    assert.throws(() => attachmentBytes({ ...attachment, base64 }), /test_pack_invalid/);
+  assert.deepEqual([...attachmentBytes({ ...attachment, base64: 'AA==' })], [0]);
+});
 test('portable test packages retain exact JSON/XML bytes, attachments and reply expectations', () => {
   const parsed = parseTestPack(source);
   assert.deepEqual(parseTestPack(serializeTestPack(parsed)), parsed);

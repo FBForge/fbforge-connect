@@ -61,6 +61,7 @@ record EngineRequest(
                                     "replyDocument",
                                     "destinationDocument",
                                     "archiveDocument",
+                                    "itemId",
                                     "bundleId")
                             .contains(key)
                     || values.containsKey(key)) throw new IllegalArgumentException();
@@ -212,7 +213,7 @@ record EngineRequest(
             values.put("submissionId", DestinationAccess.id(values.get("submissionId")));
         if (values.containsKey("proofId"))
             values.put("proofId", DestinationAccess.id(values.get("proofId")));
-        for (String key : List.of("caseId", "replyId", "logId", "eventId", "bundleId"))
+        for (String key : List.of("caseId", "replyId", "logId", "eventId", "bundleId", "itemId"))
             if (values.containsKey(key)) values.put(key, DestinationAccess.id(values.get(key)));
         int offset = values.containsKey("offset") ? Integer.parseInt(values.get("offset")) : 0;
         if (offset < 0 || offset > 10000) throw new IllegalArgumentException();

@@ -101,6 +101,28 @@ SDK-Tests prüfen Verschlüsselung und Rundläufe. Frontend- und native Tests di
 
 Die Testabläufe kombinieren vorhandene Testfälle und prüfen lokale Nachrichtenergebnisse. Sie besitzen keine zusätzliche Schreibberechtigung; Versand, Empfangsbestätigungen und Antworten bleiben hinter ihren bestehenden nativen Bestätigungen. Der Versandabgleich liest signierte SETs anhand bekannter Kennungen und verändert keinen Versandversuch.
 
+Die geführten Integrationstests ab 0.4 liegen in `integration/scenarios`. Versionierte
+Definitionen beschreiben Gegenstellen, Datensätze und Erwartungen. Ein Durchlauf
+enthält eine unveränderliche Definitionskopie, aufgelöste Werte, Kennungszuordnungen
+und sämtliche Prüfversuche. JSON-Feldänderungen erhalten große Zahlen, XML-Vergleiche
+beachten Namensräume und gemischten Text. Antworten können beobachtete Werte übernehmen,
+ohne die erwartete Einreichung nachträglich zu verändern.
+
+Der Controller trennt Vorbereitung, Durchführung und Vergleich. Er bindet Nachweise
+an Profil, Umgebung, API, Nachricht und Startzeit. Der ausdrücklich gestartete
+Wartemodus liest höchstens fünf Minuten ohne parallele Abfragen und ohne Schreibaktionen.
+Profilwechsel und Abbruch verwerfen verspätete Ergebnisse. Bereits laufende native
+Leseaufrufe können innerhalb ihrer bestehenden Zeitgrenzen noch auslaufen.
+
+`scenario_library` validiert Definitionen und Durchläufe nochmals nativ. Getrennte
+Sammlungen unter `test-library/scenarios-v2` und `scenario-runs-v2` sind mit Windows-DPAPI
+für das Benutzerkonto geschützt, jeweils auf 32 Einträge und 64 MiB begrenzt.
+Einzelne Dokumente bleiben unter 8 MiB. Testdaten, Definitionskopie und Prüfverlauf
+zählen gemeinsam zur Durchlaufgröße. Referenzen erfordern vollständig nachgewiesene
+Schritte und sind bis zur ausdrücklichen Aufhebung gegen Löschen geschützt.
+Vorgangsübernahme kopiert nur freigegebene Inhalte und lokale Schemata in neue Tests.
+Bestehende Pakete und Abläufe bleiben bei der Formatübernahme erhalten.
+
 Profil-Arbeitsdaten (Destination-Vorlagen, Merkliste und lokale Konfigurationshistorie) liegen getrennt von Credentials und Vorgängen in Windows-DPAPI-Dateien. Zusätzliche Entropie bindet Profil, Umgebung und API. Nur native Engine-Ergebnisse erzeugen Historieneinträge. Vor dem Schreiben wird ein ungewisser Zustand dauerhaft hinterlegt; ein Fehler der abschließenden Speicherung darf einen tatsächlichen Servererfolg nicht als fehlgeschlagenen Versand umdeuten. Profilentfernung löscht auch diese Arbeitsdaten. Profil-Backups enthalten sie nicht.
 
 Der optionale Scanner ist im gemeinsamen Java-Host hinter beiden SDK-Adaptern angesiedelt. Er prüft nach Kryptografie und vor Inhaltsfreigabe; ausgehende unveränderliche Vorbereitungen werden vor dem tatsächlichen SDK-Schreibaufruf erneut geprüft. Jeder Scan hat ein Gesamtzeitlimit einschließlich DNS, Verbindung, Schreiben und Antwort. Nur ClamAV `stream: OK` oder ICAP 204 ohne Infektionsmeldung gelten als unauffällig. Eigene Gegenstellen werden nativ bestätigt und gelten für die Verbindung. Kein Callback-Dienst oder FBForge-Relay.

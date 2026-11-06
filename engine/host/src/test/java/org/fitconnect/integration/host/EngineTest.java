@@ -8,6 +8,35 @@ import org.junit.jupiter.api.Test;
 
 class EngineTest {
     @Test
+    void inventoryRemovalFramesAcceptOnlyTheBoundItemIdentifier() throws Exception {
+        String item = "AAAAAAAA-1111-4111-8111-111111111111";
+        for (String api : java.util.List.of("v2", "v3")) {
+            String prefix =
+                    "{\"protocolVersion\":1,\"id\":\"inventory-test\",\"command\":\"remove_key_inventory_item\",\"apiVersion\":\""
+                            + api
+                            + "\",\"sessionId\":\"11111111-1111-4111-8111-111111111111\"";
+            String frame = prefix + ",\"itemId\":\"" + item + "\"}";
+            assertEquals(
+                    item.toLowerCase(java.util.Locale.ROOT),
+                    EngineRequest.parse(frame).values().get("itemId"));
+            for (String invalid :
+                    java.util.List.of(
+                            prefix + "}",
+                            prefix + ",\"itemId\":\"not-an-id\"}",
+                            prefix + ",\"itemId\":\"" + item + "\",\"itemId\":\"" + item + "\"}",
+                            frame.replace("remove_key_inventory_item", "loaded_keys"))) {
+                assertThrows(Exception.class, () -> EngineRequest.parse(invalid));
+            }
+            try (var registry = new AdapterRegistry(Path.of("missing-adapters"));
+                    var engine = new Engine(registry)) {
+                String response = engine.handle(frame);
+                assertTrue(response.contains("session_missing"));
+                assertFalse(response.contains("invalid_request"));
+            }
+        }
+    }
+
+    @Test
     void parsedCredentialsNeverEnterTheFrameDiagnosticString() throws Exception {
         String marker = "synthetic-private-marker";
         var request =

@@ -48,10 +48,16 @@ export function attachmentBytes(attachment) {
     !(attachment.description === null || text(attachment.description, 1000)) ||
     typeof attachment.base64 !== 'string' ||
     attachment.base64.length > 6 * 1024 * 1024 ||
-    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(attachment.base64)
+    attachment.base64.length % 4 !== 0 ||
+    /[^A-Za-z0-9+/=]/.test(attachment.base64)
   )
     bad();
-  const binary = atob(attachment.base64);
+  let binary;
+  try {
+    binary = atob(attachment.base64);
+  } catch {
+    bad();
+  }
   const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
   if (btoa(binary) !== attachment.base64 || bytes.length > 4 * 1024 * 1024) bad();
   return bytes;

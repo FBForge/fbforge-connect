@@ -10,6 +10,7 @@
 - Prüfversuche und Ergebnisse geschützt aufbewahren. Vollständig nachgewiesene Durchläufe als Referenz schützen und spätere Ergebnisse vergleichen. Geänderte Testdefinitionen und API-Versionen bleiben erkennbar.
 - Vorhandene Testpakete und Abläufe aus 0.3.0 in das neue Format übernehmen. Die ursprüngliche Sammlung bleibt erhalten.
 - Kompaktere Werkzeugauswahl, klare Vorbereitung/Durchführung/Ergebnisse und Rückweg zum aktuellen Test aus anderen Arbeitsbereichen.
+- Schlüssel im Inventar wieder zuverlässig entfernen. Gültige Testanlagen ohne Parserüberlauf prüfen, Durchlaufgrößen vor dem Start melden und XML-Ansichten/Beispieldaten vor übermäßiger Expansion begrenzen.
 
 Abnahme und Veröffentlichung sind noch offen. Ein bestandener lokaler Test ersetzt keine Windows- oder FIT-Connect-TEST-Abnahme des Releasekandidaten.
 

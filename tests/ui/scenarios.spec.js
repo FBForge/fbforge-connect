@@ -11,6 +11,32 @@ const simple = () => {
   p.cases[0].receipt = 'none';
   return p;
 };
+test('offline preparation has no prop warnings and offers XML-compatible variable types', async ({
+  page,
+}) => {
+  const warnings = [];
+  page.on('console', (message) => {
+    if (/Invalid prop|Unhandled error/.test(message.text())) warnings.push(message.text());
+  });
+  await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html?destinations=1');
+  await button(page, 'Testwerkzeuge').click();
+  await button(page, 'Integration testen').click();
+  const xml = structuredClone(original);
+  xml.cases = [xml.cases[1]];
+  await importPack(page, xml);
+  await expect(button(page, 'Neuen Testdurchlauf starten')).toBeDisabled();
+  await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
+    .selectOption({ index: 1 });
+  await button(page, 'Variable Angabe hinzufügen').click();
+  const kinds = await page
+    .getByRole('combobox', { name: 'Wert erzeugen als', exact: true })
+    .locator('option')
+    .evaluateAll((options) => options.map((option) => option.value));
+  expect(kinds).toEqual(['text', 'date', 'uuid']);
+  expect(warnings).toEqual([]);
+});
 test('a local case opens the capture dialog and creates a portable test without writes', async ({ page }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
   await button(page, 'Fiktiver Antrag auf Testleistung').click();
@@ -40,6 +66,65 @@ async function importPack(page, p) {
   });
   await expect(page.getByRole('textbox', { name: 'Testname', exact: true })).toHaveValue(p.name);
 }
+test('recipient offers recover from missing reply schemas and discard a late result after API changes', async ({
+  page,
+}) => {
+  await open(page);
+  await button(page, 'Einreichung mit Antwort').click();
+  await page.evaluate(() => {
+    const base = window.__TAURI_INTERNALS__.invoke;
+    window.__TAURI_INTERNALS__.invoke = async (command, args) => {
+      if (command !== 'load_send_destination') return base(command, args);
+      if (window.__holdOffer)
+        await new Promise((resolve) => {
+          window.__releaseOffer = resolve;
+        });
+      const schema = { schemaUri: 'urn:test:angebot', mimeType: 'application/json' };
+      const service = { identifier: 'urn:test:leistung', submissionSchemas: [schema] };
+      const document = {
+        destinationId: args.destinationId,
+        publicServices: [
+          { ...service, name: 'Ohne Antwort', replyChannels: {} },
+          {
+            ...service,
+            identifier: 'urn:test:mit-antwort',
+            name: 'Mit Antwort',
+            replyChannels: {
+              fitConnect: { supportedSchemas: [{ ...schema, schemaUri: 'urn:test:antwort' }] },
+            },
+          },
+        ],
+      };
+      return {
+        apiVersion: args.apiVersion,
+        sessionId: args.sessionId,
+        environment: 'TEST',
+        data: { destinationId: args.destinationId, detailsJson: JSON.stringify(document) },
+      };
+    };
+  });
+  await page.getByText('Sender und Empfänger zuordnen', { exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Empfangs-Destination', exact: true })
+    .fill('11111111-1111-4111-8111-111111111111');
+  await page.getByText('Angebot der Gegenstelle übernehmen', { exact: true }).click();
+  await button(page, 'Aktuelles Empfängerangebot laden').click();
+  await button(page, 'Ausgewähltes Angebot übernehmen').click();
+  await expect(page.getByRole('alert')).toContainText('kein passendes Antwortschema');
+  await page.getByRole('combobox', { name: 'Leistungsangebot', exact: true }).selectOption('1');
+  await button(page, 'Ausgewähltes Angebot übernehmen').click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByLabel('Schema-Kennung', { exact: true })).toHaveValue('urn:test:angebot');
+  await page.evaluate(() => {
+    window.__holdOffer = true;
+  });
+  await button(page, 'Aktuelles Empfängerangebot laden').click();
+  await expect(page.getByText('Empfängerangebot wird geladen …', { exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: 'API-Version für diesen Ablauf', exact: true }).selectOption('v2');
+  await page.evaluate(() => window.__releaseOffer());
+  await expect(page.getByText('Empfängerangebot wird geladen …', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Leistungsangebot', exact: true })).toHaveCount(0);
+});
 async function record(page, direction, wrong = false) {
   await page.evaluate(
     ({ direction, wrong, data }) => {

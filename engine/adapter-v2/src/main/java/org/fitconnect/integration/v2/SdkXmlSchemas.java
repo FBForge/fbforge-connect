@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.URI;
 import java.util.*;
 import java.util.function.Function;
+import java.util.zip.ZipInputStream;
 import org.fitconnect.integration.contract.SessionException;
 
 /** The SDK's XÖV archive loader, with credential-free, bounded public transport. */
@@ -43,7 +44,27 @@ final class SdkXmlSchemas implements HttpClient {
                 || type != InputStream.class
                 || !Map.of("Accept", "application/zip").equals(headers))
             throw new SessionException("endpoint_blocked");
-        return new HttpResponse<>(200, type.cast(new ByteArrayInputStream(download.apply(url))));
+        byte[] archive = download.apply(url);
+        checkArchive(archive);
+        return new HttpResponse<>(200, type.cast(new ByteArrayInputStream(archive)));
+    }
+
+    private static void checkArchive(byte[] archive) {
+        if (archive == null || archive.length > 8 * 1024 * 1024)
+            throw new SessionException("content_limit");
+        try (var input = new ZipInputStream(new ByteArrayInputStream(archive))) {
+            int entries = 0;
+            long expanded = 0;
+            while (input.getNextEntry() != null) {
+                if (++entries > 1024) throw new SessionException("content_limit");
+                byte[] data = input.readNBytes(2 * 1024 * 1024 + 1);
+                expanded += data.length;
+                if (data.length > 2 * 1024 * 1024 || expanded > 16 * 1024 * 1024)
+                    throw new SessionException("content_limit");
+            }
+        } catch (IOException invalid) {
+            throw new SessionException("schema_archive_invalid");
+        }
     }
 
     public <P, R> HttpResponse<R> post(String u, Map<String, String> h, P p, Class<R> t) {

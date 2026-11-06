@@ -239,10 +239,10 @@ public final class SchemaSources {
                         || name.contains("\\")
                         || Arrays.asList(name.split("/")).contains("..")
                         || name.contains(":")) throw unavailable();
-                if (entry.isDirectory()) continue;
                 byte[] data = input.readNBytes(2 * 1024 * 1024 + 1);
                 if (data.length > 2 * 1024 * 1024 || (expanded += data.length) > 16 * 1024 * 1024)
                     throw new SessionException("content_limit");
+                if (entry.isDirectory()) continue;
                 if (!name.toLowerCase(Locale.ROOT).endsWith(".xsd")) continue;
                 String base = "https://www.xrepository.de/testclient-archive/" + id + "/";
                 String uri = base + name;

@@ -25,7 +25,7 @@ await writeFile(
   [
     '# Anleitung für 0.4',
     '',
-    'Anleitung für Version 0.4.0. Ältere Anleitungen: [0.2](https://fbforge.de/connect/hilfe/0.2/start) und [0.1](Version-0.1).',
+    'Anleitung für Version 0.4.0. Ältere Anleitungen: [0.3](https://fbforge.de/connect/hilfe/0.3/start), [0.2](https://fbforge.de/connect/hilfe/0.2/start) und [0.1](Version-0.1).',
     '',
     ...chapters,
     '',

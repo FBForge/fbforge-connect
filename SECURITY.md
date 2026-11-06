@@ -9,7 +9,7 @@ angeben. Keine Secrets, privaten Schlüssel oder echten Antragsdaten mitsenden.
 ## Speicherung und Exporte
 
 Zugänge und Schlüssel bleiben ohne gespeichertes Profil in der Sitzung.
-Gespeicherte Profile, Schlüssel, Vorgänge, Testpakete, Testabläufe und
+Gespeicherte Profile, Schlüssel, Vorgänge, Testpakete, Testabläufe, Integrationstests, Durchläufe und
 Profil-Arbeitsdaten schützt Windows-DPAPI für das Benutzerkonto. Vorgänge
 gespeicherter Profile werden standardmäßig dauerhaft aufbewahrt. Die Auswahl
 lässt sich pro Profil und API abwählen. Tokens werden nicht gespeichert.
@@ -70,8 +70,9 @@ und signierte Update-Abnahme: [RELEASING.md](RELEASING.md#update-signierung-einm
 
 ## Bekannte Abhängigkeitsbefunde
 
-Stand der Bewertung: 2. November 2026. Der npm-Abgleich einschließlich der neuen
-Abdeckungswerkzeuge bestätigt die unten genannten Werkzeugbefunde. Lockfiles und Actions-Versionen sind festgelegt.
+Stand des npm-Abgleichs: 6. November 2026. Der npm-Abgleich einschließlich der
+Abdeckungswerkzeuge bestätigt die unten genannten Werkzeugbefunde. Andere
+Abhängigkeitsbewertungen wurden am 2. November 2026 vorgenommen. Lockfiles und Actions-Versionen sind festgelegt.
 Vor Releases npm, Maven und Rust einschließlich plattformspezifischer Pfade erneut
 gegen Sicherheitsmeldungen prüfen. JDK und WebView2 separat aktuell halten.
 

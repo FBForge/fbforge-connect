@@ -146,6 +146,8 @@ export function validateRun(input: unknown): Run {
     ids.add(b.testCaseId);
   }
   if (r.reference && !canReference(r)) invalid();
+  if (new TextEncoder().encode(JSON.stringify(r)).length > 8 * 1024 * 1024 - 4096)
+    throw new Error('scenario_size_limit');
   return clone(r);
 }
 export function addAttempt(run: Run, result: Omit<Attempt, 'stepId' | 'at'>) {

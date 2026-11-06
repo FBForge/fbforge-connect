@@ -12,6 +12,12 @@ function sourceFields(id: string) {
     return [];
   }
 }
+function jsonVariable(variable: Variable) {
+  return (
+    scenario.value.pack.cases.find((c) => c.id === variable.caseId)?.[variable.scope]?.mimeType ===
+    'application/json'
+  );
+}
 function add() {
   if (!selected.value || scenario.value.variables.length >= 32) return;
   scenario.value.variables.push({
@@ -93,8 +99,8 @@ function setValue(variantId: string, variable: Variable, event: Event) {
           Wert erzeugen als
           <select v-model="variable.kind">
             <option value="text">Text</option>
-            <option value="number">Zahl</option>
-            <option value="boolean">Ja oder Nein als true/false</option>
+            <option v-if="jsonVariable(variable)" value="number">Zahl</option>
+            <option v-if="jsonVariable(variable)" value="boolean">Ja oder Nein als true/false</option>
             <option value="date">Datum, leer für heutiges Datum</option>
             <option value="uuid">Neue Kennung pro Durchlauf</option>
             <option v-if="variable.scope === 'reply'" value="reference">Wert aus der Einreichung</option>

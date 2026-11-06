@@ -19,26 +19,26 @@ const offer = ref<RecipientOptions | null>(null),
   error = ref(''),
   notice = ref('');
 const process = computed(() => Boolean(props.item.request.processMessage));
-watch(
+const context = computed(
   () =>
     `${props.session?.sessionId}/${props.assignment.apiVersion}/${props.assignment.receiverDestination}/${process.value}`,
-  () => {
-    offer.value = null;
-    error.value = notice.value = '';
-  },
 );
+watch(context, () => {
+  offer.value = null;
+  error.value = notice.value = '';
+});
 const entries = computed(() => (process.value ? offer.value?.processes || [] : offer.value?.services || []));
 const selected = computed(() => entries.value[index.value]);
 const replies = computed(() => (process.value ? [] : offer.value?.services[index.value]?.replySchemas || []));
 async function load() {
   if (!props.session || pending.value) return;
-  const context = `${props.session.sessionId}/${props.assignment.receiverDestination}`;
+  const stamp = context.value;
   pending.value = true;
   error.value = notice.value = '';
   try {
     if (props.session.apiVersion !== props.assignment.apiVersion) throw Error();
     const result = await loadSendDestination(invoke, props.session, props.assignment.receiverDestination);
-    if (context !== `${props.session?.sessionId}/${props.assignment.receiverDestination}`) return;
+    if (stamp !== context.value) return;
     offer.value = result;
     index.value = schemaIndex.value = replyIndex.value = 0;
   } catch {
@@ -49,6 +49,7 @@ async function load() {
   }
 }
 function apply() {
+  error.value = notice.value = '';
   const entry = selected.value,
     schema = entry?.schemas[schemaIndex.value];
   if (!entry || !schema) return;

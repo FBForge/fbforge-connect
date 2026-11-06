@@ -49,6 +49,12 @@ zählen als ungetestet. Deklarationen, Test-Fixtures und Bibliotheken gehören n
 Installer und ausdrücklich bereitgestellte TEST-Zugänge. Sie werden nicht ausgeliefert.
 `scripts/verify-windows.cmd` ist nur ein manueller Einstieg für einen Teil der Prüfungen.
 
+Die 0.4-Regressionen liegen in `tests/scenarios.test.js`, `tests/ui/scenarios.spec.js`
+und `desktop/src/scenario_library_tests.rs`. Sie prüfen unveränderliche Durchläufe,
+Typen und große Zahlen, XML-Namensräume, Fehler/Wiederholung, Kontextwechsel,
+abbrechbares Warten, Referenzen und geschützte Speicherung. Browser-Fixtures
+ersetzen dabei nur die native Grenze und belegen keinen echten FIT-Connect-Austausch.
+
 ## Anleitung pflegen
 
 Textquelle: `docs/guide/topics.js`, Bilder: `docs/guide/images/`.
@@ -62,7 +68,7 @@ node scripts/export-wiki.mjs <neues-Wikiverzeichnis>
 
 Die Bildaufnahme benötigt einen laufenden Entwicklungsserver und fiktive Daten.
 Bilder vor Übernahme prüfen. Den Webexport in `FBForge/fbforge` unter
-`nginx/connect/hilfe/0.3/` importieren und dort `python3 scripts/brand-guide.py`
+`nginx/connect/hilfe/0.4/` importieren und dort `python3 scripts/brand-guide.py`
 ausführen. Generierte Kapitel nicht unabhängig bearbeiten. Ältere veröffentlichte
 Anleitungen erhalten. Änderungen mit `node --experimental-strip-types --test tests/documentation.test.js` prüfen.
 
