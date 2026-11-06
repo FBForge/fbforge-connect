@@ -162,6 +162,43 @@ class ReceiverPayloadTest extends ReceiverTestSupport {
     }
 
     @Test
+    void fragmentInternalNamesRemainOriginalNamesWithoutAliasingSdkInputs() throws Exception {
+        // Index zero makes a regressed SDK merge lose data, rather than self-append.
+        // No availability-impact fixture is needed to establish the invariant.
+        try (var registry = registry()) {
+            for (var api : ApiVersion.values()) {
+                try (var session = open(registry, api)) {
+                    registry.withSession(
+                            api,
+                            session,
+                            s -> s.importKey(DEST, "decrypt", pem, List.of(registration)));
+                    for (var filename : List.of("fragment_000000.chunk", "FRAGMENT_000000.CHUNK")) {
+                        var fixture = new ReceiverFragmentFixture(api, filename);
+                        try (var scope = new ReceiveAccess(api, DEST, SUB, fixture)) {
+                            var result =
+                                    registry.withSession(
+                                            api,
+                                            session,
+                                            s ->
+                                                    s.receive(
+                                                            DEST,
+                                                            SUB,
+                                                            scope,
+                                                            workspace,
+                                                            fixture.parent.schemas()));
+                            assertEquals(filename, result.attachments().getFirst().fileName());
+                            assertArrayEquals(
+                                    "Testanlage".getBytes(StandardCharsets.UTF_8),
+                                    result.attachments().getFirst().bytes());
+                            assertEquals(2, fixture.downloads.get());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     void unsafeFragmentFilenamesAreRejectedBeforeTheSdkWritesAnyFragment() throws Exception {
         try (var registry = registry()) {
             for (var api : ApiVersion.values())

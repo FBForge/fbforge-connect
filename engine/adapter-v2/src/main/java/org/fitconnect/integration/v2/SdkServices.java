@@ -13,7 +13,6 @@ import dev.fitko.fitconnect.core.auth.DefaultOAuthApiService;
 import dev.fitko.fitconnect.core.cases.*;
 import dev.fitko.fitconnect.core.crypto.*;
 import dev.fitko.fitconnect.core.destination.DestinationApiService;
-import dev.fitko.fitconnect.core.io.FileChunker;
 import dev.fitko.fitconnect.core.keys.PublicKeyApiService;
 import dev.fitko.fitconnect.core.reply.ReplyApiService;
 import dev.fitko.fitconnect.core.schema.SchemaResourceProvider;
@@ -206,6 +205,9 @@ final class SdkServices {
         var storage = new AttachmentStorageResolver(workspace);
         payloads =
                 new AttachmentPayloadHandler(
-                        config.getAttachmentChunkingConfig(), new FileChunker(), storage, hash);
+                        config.getAttachmentChunkingConfig(),
+                        new IncomingFileChunker(),
+                        storage,
+                        hash);
     }
 }
