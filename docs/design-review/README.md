@@ -1,10 +1,39 @@
-# Abnahmestand 0.3.0
+# Abnahmestände
+
+## 0.4.0 in Vorbereitung
+
+Der geprüfte Produktstand ist `40e753abba9a34c89c7c7453c0a1a98b28c6e3d5`.
+Version 0.4.0 ist noch nicht veröffentlicht. Die folgenden Prüfungen verwenden
+fiktive Daten und ersetzen keine installierte Windows- oder FIT-Connect-TEST-Abnahme.
+
+| Prüfung | Tatsächlich geprüfter Umfang |
+| --- | --- |
+| [Checks 42269109724](https://github.com/FBForge/fbforge-connect/actions/runs/42269109724) | `40e753a`, Frontend und Java einschließlich des getrennten SDK3-Merge-Zielpfads, Builds und Abdeckungsgrenzen |
+| [Windows-Checks 42266998953](https://github.com/FBForge/fbforge-connect/actions/runs/42266998953) | `581783e`, native Verträge, Windows-DPAPI, Referenzschutz und vollständige native Windows-Tests mit Abdeckungsmessung. Der native Rust-Code ist in `40e753a` unverändert. |
+
+Lokal bestehen 372 Node-Tests, sechs Plattformfälle werden übersprungen. Alle
+262 Chromium-Fälle sowie 117 native Verträge unter Linux bestehen. Die neuen
+Oberflächen werden in hell/dunkel, schmalen Fenstern, mit vergrößerter Schrift und
+automatischen Barrierefreiheitsprüfungen geprüft. Die 15 Hilfekapitel und 52 Bilder
+lassen sich gemeinsam für Website und Wiki exportieren.
+
+Die lokale Node-Messung erreicht 57,21 % Produktzeilen und 85,07 % Zweige,
+die Browsermessung 82,27 % Produktzeilen und 70,18 % Zweige. Fehlende Module zählen
+als ungetestet. Die Umfänge werden nicht zu einer Gesamtquote verrechnet.
+Windows- und Java-Messungen stehen in den zugeordneten CI-Artefakten.
+
+Vor der Veröffentlichung fehlen noch die installierte Windows-Abnahme der neuen
+Integrationstests mit echten TEST-Zugängen, das endgültige signierte Paket samt
+Updater-Abnahme und die Veröffentlichung der 0.4-Anleitung. Der Ablauf und die
+konkreten neuen Testfälle stehen in [RELEASING.md](../../RELEASING.md).
+
+## Abnahmestand 0.3.0
 
 Version 0.3.0 enthält auch die ursprünglich für 0.2.1 vorgesehenen Korrekturen.
 Der veröffentlichte Quellstand ist `4d5f4b47a0756879ca8ab59add067c2e14a6f1b0`.
 Spätere reine Dokumentationsänderungen verändern weder diesen Tag noch die Pakete.
 
-## Abschließende Bedienkorrekturen
+### Abschließende Bedienkorrekturen
 
 - Empfangsfilter richten Laden, Altersauswahl und Sortierung gemeinsam aus.
   Bei schmalen Fenstern stehen die Bedienelemente untereinander.
@@ -26,7 +55,7 @@ erneute Prüfung, Kontextwechsel, Antworten nach Annahme, Tastaturbedienung,
 Hell-/Dunkelmodus sowie Filterausrichtung und schmale Fenster. Aktuelle Bilder mit
 fiktiven Daten liegen unter `docs/guide/images/`.
 
-## Vorliegende automatisierte Nachweise
+### Vorliegende automatisierte Nachweise
 
 Die Links nennen den tatsächlich geprüften Quellstand. Frühere erfolgreiche Läufe
 sind keine Prüfung späterer Produktänderungen. Main wurde auf denselben vollständigen
@@ -55,7 +84,7 @@ Die spätere Historienkonsolidierung hat den Produktbaum von `8f1153b` unveränd
 Die abschließenden Bedienkorrekturen und Sicherheitskorrekturen sind in den
 oben genannten Prüfungen für `4d5f4b4` enthalten.
 
-## Testabdeckung und Grenzen
+### Testabdeckung und Grenzen
 
 Node/c8, Chromium/V8, JaCoCo und llvm-cov messen getrennte Testumfänge. Fehlende
 Frontend-Module zählen als ungetestet. Die nativen Produktberichte schließen
@@ -83,7 +112,7 @@ Befehle, Berichtspfade und Mindestwerte stehen in
 [BUILDING.md](../../BUILDING.md#testabdeckung-messen). Aktuelle CI-Artefakte enthalten
 die Messungen ihres jeweiligen Quellstands.
 
-## Sicherheitsprüfung
+### Sicherheitsprüfung
 
 Die zusätzliche manuelle Prüfung am früheren Stand `6e390a4` blieb teilweise
 unvollständig. Sie ist keine vollständige Sicherheitsfreigabe. Die lokal
@@ -94,7 +123,7 @@ ClamAV-Datenbanken die untersuchten Risiken. Die abschließenden CodeQL-Prüfung
 sind erfolgreich. Weder diese Prüfungen noch automatisierte Tests garantieren
 Fehlerfreiheit. Sicherheitsmeldungen folgen [SECURITY.md](../../SECURITY.md).
 
-## Freigabe und Veröffentlichung
+### Freigabe und Veröffentlichung
 
 STAGE und PROD sind auf ausdrücklichen Wunsch nicht Teil der Live-Abnahme.
 TEST-Nachweise gelten nicht automatisch für andere Umgebungen oder Berechtigungen.
