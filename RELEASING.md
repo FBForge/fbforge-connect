@@ -6,6 +6,10 @@ die ursprünglich für 0.2.1 vorgesehenen Korrekturen. Der
 und verbleibende Prüfgrenzen. Der folgende Ablauf gilt für künftige Releases.
 Ein erfolgreicher Branch-Test ersetzt keine Freigabe des endgültigen Main-Pakets.
 
+Auf `release/0.4.0` ist die nächste Version noch unveröffentlicht. Browser-Fixtures
+prüfen die neuen Integrationstests mit fiktiven Daten. Vor der Freigabe müssen
+dieselben Abläufe am Windows-Kandidaten mit echten TEST-Zugängen abgenommen werden.
+
 ## Live-Abnahme
 
 1. Nach [BUILDING.md](BUILDING.md) bauen und die normalen `Checks` ausführen.
@@ -73,6 +77,11 @@ V-PKI benötigt vollständige Ketten und erreichbare Sperrprüfungen. Außerdem 
   Daten. Fehlgeschlagene oder abgebrochene Downloads dürfen keine Annahme auslösen.
   Vorbereitete Empfangsaktionen gelten höchstens 60 Sekunden.
 - Geschützte Aufbewahrung, Sicherung, Neustart, Tastatur, Skalierung und Screenreader.
+- Geführte Tests mit externer Gegenstelle und mit beiden Connect-Profilen, Übernahme
+  aus Vorgängen, Datensätze, abweichende Inhalte und Anlagen, signierte
+  Empfangsbestätigungen, Antwortbezüge und v3-Nachreichungen im selben Case.
+  Warten nach Profilwechsel und Abbruch beenden. Durchläufe nach Neustart öffnen,
+  fehlgeschlagene Versuche erhalten und gegen eine geschützte Referenz vergleichen.
 - Abhängigkeiten einschließlich Maven-, Rust- und Plattformpfaden gegen aktuelle
   Meldungen prüfen und [SECURITY.md](SECURITY.md) aktualisieren.
 
@@ -154,7 +163,8 @@ Privaten Schlüssel und Passwort nie in Git, Transkripte oder Artefakte überneh
    Interaktiven Runner bereitstellen und `windows-signing` freigeben.
 3. Den gesamten Lauf einschließlich `verify-package` abwarten. Geprüft werden App,
    Deinstallationsprogramm, Setup, Zeitstempel, Installation und Upgrade.
-4. Einen unveröffentlichten stabilen Release-Entwurf `0.3.0` mit Tag `v0.3.0` und
+4. Einen unveröffentlichten stabilen Release-Entwurf der freizugebenden Version,
+   beispielsweise `0.4.0` mit Tag `v0.4.0`, und
    geprüftem Main-SHA vorbereiten. Beschreibung aus `RELEASE_NOTES.md` übernehmen.
 5. `Attach verified candidate to draft` mit Signierlauf-ID, Commit, Installer-SHA-256,
    Version und Entwurfs-ID ausführen. Zuordnung und Herkunft werden geprüft.
@@ -162,7 +172,7 @@ Privaten Schlüssel und Passwort nie in Git, Transkripte oder Artefakte überneh
    und `latest.json` prüfen. Erst danach den passenden Tag und Entwurf veröffentlichen.
 
 `windows-alpha-signed-setup` ist ein interner Artefaktname, keine Versionsvorgabe.
-Die Paketversion muss 0.3.0 sein. Die Tauri-Signatur entsteht **nach** Authenticode
+Die Paketversion muss der freizugebenden Version entsprechen. Die Tauri-Signatur entsteht **nach** Authenticode
 und bindet mit `--app-version` die Version. `update-release.py` erzeugt das Manifest,
 der unabhängige Runner prüft mit `verify-update`. Nach dieser Prüfung weder
 Installer verändern noch neu bauen oder separat neu signieren.
@@ -217,6 +227,10 @@ endgültigen signierten Pakets.
 Exporte nach [CONTRIBUTING.md](CONTRIBUTING.md#anleitung-pflegen) erzeugen. Die
 [0.3-Anleitung](https://fbforge.de/connect/hilfe/0.3/start) ist auf Website-Main
 veröffentlicht. Die Kennzeichnung als Vorbereitung ist seit dem Software-Release entfernt.
+Die 0.4-Anleitung wird aus diesem Branch exportiert. Vor Freigabe von 0.4.0
+unter `/connect/hilfe/0.4` im Website-Repository bereitstellen und alle Kapitel
+einschließlich `tests` prüfen. Bis dahin bleibt die öffentliche 0.3-Anleitung
+der Einstieg für die veröffentlichte App.
 Bei Änderungen Website und Wiki im Browser prüfen. Ältere Anleitungen erhalten.
 Bei künftigen Veröffentlichungen vorbereitende Kennzeichnungen im Hilfe-Einstieg
 des Website-Repositories entfernen. Die Versions- und Downloadmetadaten werden automatisch aktualisiert.

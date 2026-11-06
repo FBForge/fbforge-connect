@@ -16,9 +16,11 @@ import SettingsView from './app/SettingsView.vue';
 import { provideScannerMonitor } from './app/useScannerMonitor.js';
 import ScannerActivity from './app/ScannerActivity.vue';
 import SaveFeedback from './app/SaveFeedback.vue';
-import AppIcon from './AppIcon.vue';
 import ApplicationChrome from './app/ApplicationChrome.vue';
 import WorkspaceHeading from './app/WorkspaceHeading.vue';
+import WorkspaceNotices from './app/WorkspaceNotices.vue';
+import ScenarioActivity from './app/ScenarioActivity.vue';
+import ApplicationStatus from './app/ApplicationStatus.vue';
 import { createSchemaSourceAccess, schemaSourceAccessKey } from './schema-source-access.js';
 import StartWorkspace from './StartWorkspace.vue';
 import { version } from '../../package.json';
@@ -38,6 +40,8 @@ const ApplicationHelp = defineAsyncComponent(() => import('./ApplicationHelp.vue
 const MalwareScannerSettings = defineAsyncComponent(() => import('./integration/MalwareScannerSettings.vue'));
 const TestTools = defineAsyncComponent(() => import('./TestTools.vue'));
 const testDraft = shallowRef(null);
+const scenarioSource = shallowRef(null);
+const scenarioActivity = shallowRef(null);
 const toolsOpened = ref(false),
   scannerOpened = ref(false);
 const receiveTarget = shallowRef(null);
@@ -169,7 +173,18 @@ function beginTask(name) {
   void navigate(name);
   if (!activeSession.value) showConnection();
 }
-function openTestDraft(value) {
+async function openTestDraft(value) {
+  if (value.flowContext) {
+    await openFlowContext(value.flowContext);
+    if (
+      !activeSession.value ||
+      apiVersion.value !== value.flowContext.apiVersion ||
+      environment.value !== value.flowContext.environment ||
+      (value.flowContext.senderProfileId &&
+        storageStatus.value?.profileId !== value.flowContext.senderProfileId)
+    )
+      return;
+  }
   testDraft.value = { ...value, requestId: crypto.randomUUID() };
   beginTask('Senden');
 }
@@ -192,7 +207,7 @@ useFileNavigationGuard();
 </script>
 <template>
   <ApplicationClose
-    :busy="busy || updates.installing.value"
+    :busy="busy || updates.installing.value || Boolean(scenarioActivity?.pending)"
     :active="Boolean(activeSession)"
     :receive-browser="receiveBrowser"
   />
@@ -216,57 +231,22 @@ useFileNavigationGuard();
       <WorkspaceHeading ref="viewHeading" :section="section" :description="currentView.description" />
       <main id="main" ref="workspace" class="workspace-scroll" tabindex="-1" aria-label="Arbeitsbereich">
         <div :key="environment" class="workspace-content">
-          <div
-            v-if="
-              updates.state.value.version && !updates.state.value.dismissed && section !== 'Einstellungen'
-            "
-            class="connection-notice"
-            role="status"
-          >
-            <div>
-              <strong>FBForge Connect {{ updates.state.value.version }} ist verfügbar.</strong>
-              <p>Aktualisieren Sie die Anwendung, wenn Ihre aktuelle Arbeit abgeschlossen ist.</p>
-            </div>
-            <button class="button secondary" @click="navigate('Einstellungen')">Update ansehen</button>
-            <button class="button secondary" @click="updates.controller.dismiss()">Später</button>
-          </div>
-          <p v-if="environment === 'PROD'" class="environment-warning" role="status">
-            <strong>PROD · Produktivbetrieb</strong>
-            Sie arbeiten mit echten Daten. Prüfen Sie vor jeder Aktion Destination und Inhalt.
-          </p>
-          <p v-else-if="environment === 'STAGE'" class="environment-warning" role="status">
-            <strong>STAGE</strong>
-            V-PKI-Zertifikate und Zugangsdaten dieser Umgebung sind erforderlich.
-          </p>
-          <div
-            v-if="
-              !activeSession &&
-              ![
-                'Start',
-                'Diagnose',
-                'Einstellungen',
-                'Prozesse',
-                'Hilfe',
-                'Testwerkzeuge',
-                'Virenscan',
-              ].includes(section)
-            "
-            class="connection-notice"
-          >
-            <AppIcon name="connection" />
-            <div>
-              <strong>Mit FIT-Connect verbinden</strong>
-              <p>
-                Mit Ihren Zugangsdaten für {{ environment }} stehen Ihnen die Funktionen Ihrer Berechtigungen
-                zur Verfügung.
-              </p>
-            </div>
-            <button type="button" class="button secondary" @click="showConnection">
-              Verbindung herstellen
-            </button>
-          </div>
-          <p v-if="error" class="status-badge error" role="alert">{{ error }}</p>
+          <WorkspaceNotices
+            :update="updates.state.value"
+            :environment="environment"
+            :section="section"
+            :connected="Boolean(activeSession)"
+            :error="error"
+            @connect="showConnection"
+            @update="navigate('Einstellungen')"
+            @dismiss="updates.controller.dismiss()"
+          />
           <SaveFeedback />
+          <ScenarioActivity
+            :activity="scenarioActivity"
+            :visible="section !== 'Testwerkzeuge'"
+            @open="navigate('Testwerkzeuge')"
+          />
           <ScannerActivity
             :visible="['Senden', 'Empfangen'].includes(section)"
             @open="navigate('Virenscan')"
@@ -387,6 +367,12 @@ useFileNavigationGuard();
             />
           </div>
           <CaseWorkspace
+            @test="
+              (pack) => {
+                scenarioSource = { pack, requestId: crypto.randomUUID() };
+                navigate('Testwerkzeuge');
+              }
+            "
             v-show="section === 'Vorgänge'"
             :session="activeSession"
             :busy="busy"
@@ -397,6 +383,8 @@ useFileNavigationGuard();
           />
           <ApplicationHelp v-if="section === 'Hilfe'" />
           <TestTools
+            :test-source="scenarioSource"
+            @activity="scenarioActivity = $event"
             :session="activeSession"
             @busy="resourceBusy"
             v-if="toolsOpened"
@@ -477,17 +465,15 @@ useFileNavigationGuard();
         </div>
       </main>
     </div>
-    <div v-if="storageStatus?.error" class="storage-warning" role="alert">
-      Schlüsselbestand noch nicht gesichert. Bitte unter „Verbinden“ erneut sichern.
-    </div>
-    <footer class="app-statusbar">
-      <span class="status-connection">
-        <span class="connection-dot" :class="{ connected: activeSession }" aria-hidden="true"></span>
-        {{ busy ? 'Aktion läuft …' : activeSession ? 'Angemeldet' : 'Nicht verbunden' }}
-      </span>
-      <span>{{ environment }} · API {{ apiVersion }}</span>
-      <button type="button" @click="navigate('Diagnose')">{{ trace.length }} technische Aufrufe</button>
-    </footer>
+    <ApplicationStatus
+      :storage-error="Boolean(storageStatus?.error)"
+      :busy="busy"
+      :connected="Boolean(activeSession)"
+      :environment="environment"
+      :api-version="apiVersion"
+      :count="trace.length"
+      @diagnostics="navigate('Diagnose')"
+    />
   </div>
   <ConnectionDialog
     :api-version="apiVersion"

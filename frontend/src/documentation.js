@@ -1,4 +1,4 @@
-export const documentationRoot = 'https://fbforge.de/connect/hilfe/0.3';
+export const documentationRoot = 'https://fbforge.de/connect/hilfe/0.4';
 export const documentationTopics = Object.freeze([
   { id: 'start', title: 'Schnellstart' },
   { id: 'connection', title: 'Verbinden und Profile' },
@@ -14,6 +14,7 @@ export const documentationTopics = Object.freeze([
   { id: 'problems', title: 'Probleme verstehen und beheben' },
   { id: 'accessibility', title: 'Tastatur und Lesbarkeit' },
   { id: 'tools', title: 'Testpakete, Antwortschemas und Schema-Vergleich' },
+  { id: 'tests', title: 'Geführte Integrationstests' },
 ]);
 export function documentationUrl(topic = 'start') {
   if (!documentationTopics.some((item) => item.id === topic)) throw new Error('invalid_input');

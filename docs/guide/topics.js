@@ -20,7 +20,7 @@ export const helpTopics = [
       'Bei einer neueren stabilen Windows-x64-Version lesen Sie die Änderungen und wählen „Update herunterladen“. Der Fortschritt bleibt sichtbar. „Download abbrechen“ beendet den Download. Nach erfolgreicher Signaturprüfung sichern Sie offene Entwürfe und wählen „Installieren und neu starten“. Erst die native Bestätigung startet den Installer. Laufende Aktionen und offene Exporte müssen vorher beendet sein.',
     ],
     notes: [
-      'Die Abbildungen zeigen Version 0.3.0 mit ausschließlich fiktiven Testdaten. Download und Versionshinweise beziehen sich auf das veröffentlichte Release.',
+      'Die Abbildungen zeigen ausschließlich fiktive Testdaten. Die Anleitung auf diesem Branch bereitet Version 0.4.0 vor. Download und Versionshinweise beziehen sich auf das jeweils veröffentlichte Release.',
       'Das Werkzeug ersetzt kein produktives Fachverfahren und ist keine offizielle Anwendung der FITKO.',
       'Die Anwendung wird weiterentwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
       'Version 0.2.0 hat keinen integrierten Updater. Die erste Version mit dieser Funktion installieren Sie einmal manuell. Anschließend können neuere kompatible Releases über die App angeboten werden.',
@@ -570,6 +570,47 @@ export const helpTopics = [
       'Abläufe und gespeicherte Durchläufe: jeweils maximal 32 Einträge mit insgesamt 64 MiB und knapp 8 MiB je Ablauf. Sammlungen sind unabhängig vom FIT-Connect-Profil. Der Durchlauf bleibt beim Werkzeug- oder Profilwechsel innerhalb derselben Umgebung geöffnet. Ein ungewisser Versand oder falscher Inhalt bleibt offen. JSON-Objektreihenfolge ist unerheblich, XML wird nach sicherer Syntaxprüfung exakt verglichen. Ergebnisexporte enthalten Nachrichtenkennungen und Prüfzeitpunkte. Nur fiktive Daten teilen.',
       'Eigene Scanner erhalten entschlüsselte Inhalte über unverschlüsseltes TCP und benötigen eine lokale oder anderweitig geschützte Gegenstelle. Metadaten-/Fachdatenfunde, Zeitlimits und unvollständige Scans blockieren die Freigabe. Bei Anlagenfunden bleiben geprüfte übrige Inhalte lesbar, betroffene Dateien gesperrt. Voll-Download und Sammelannahme sind dann gesperrt. Die zusätzlich bestätigte Einzelannahme mit Anlagenproblemen bestätigt die gesamte Nachricht und meldet die betroffenen Kennungen signiert. Kein Sanitizing oder zusätzliche Quarantäne. Kein Fund ist keine Sicherheitsgarantie.',
       'Offline-Installation und Signaturimport benötigen keinen Netzaufruf. Ein abgebrochener Update erhält den bisherigen gültigen Bestand. Temporäre Scannerdateien werden beim Beenden oder nach einem unterbrochenen Lauf beim nächsten Start bereinigt. Ein nicht bereiter Scanner bestätigt keinen erfolgreichen Scan.',
+    ],
+  },
+  {
+    id: 'tests',
+    title: 'Geführte Integrationstests',
+    section: 'Testwerkzeuge',
+    image: 'integration-preparation',
+    caption:
+      'Ein Integrationstest trennt Vorbereitung, Durchführung und Ergebnisse. Alle Inhalte der Abbildung sind fiktiv.',
+    illustrations: [
+      {
+        image: 'integration-run',
+        caption: 'Der aktuelle Schritt nennt die zuständige Seite und die nächste Aktion.',
+      },
+      {
+        image: 'integration-results',
+        caption:
+          'Ergebnisse unterscheiden automatische Nachweise, fehlgeschlagene Prüfungen und manuelle Bestätigungen.',
+      },
+    ],
+    intro:
+      'Ab 0.4.0 verbinden geführte Tests vorhandene Versand-, Empfangs- und Prüffunktionen. Eine externe Gegenstelle übernimmt ihre eigenen Schritte. Schreiben, Annahme und Ablehnung bestätigen Sie weiterhin ausdrücklich.',
+    steps: [
+      'Öffnen Sie „Testwerkzeuge → Integration testen“. Wählen Sie eine Vorlage oder importieren Sie eine Testdefinition, ein bisheriges Testpaket oder einen Ablauf. „Vorhandene 0.3.0-Sammlung laden“ übernimmt gespeicherte Testdaten zur Bearbeitung, ohne die ursprüngliche Sammlung zu ändern.',
+      'Unter „Welche Gegenstelle testen Sie?“ wählen Sie ein empfangendes Fachverfahren, einen sendenden Onlinedienst oder beide Seiten mit Connect. Ordnen Sie passende Profile, API und Destinations zu. TEST ist für die Entwicklung vorgesehen. Die Angaben ersetzen keine Prüfung der tatsächlichen Gegenstelle.',
+      'Mit „Angebot der Gegenstelle übernehmen“ laden Sie Leistungs-, Prozess- und Schemaangaben aus der zugeordneten Empfangs-Destination. Wählen Sie das Angebot und übernehmen Sie es ausdrücklich. Die Fachdaten müssen zu diesen Schemata passen. Prozessnachrichten und Folgeschritte im selben Case benötigen API v3.',
+      'Alternativ öffnen Sie einen verfügbaren Vorgang und wählen „Als Test wiederverwenden“. Wählen Sie Einreichung und gegebenenfalls Antwort. Ergänzen Sie fehlende Leistungs- und Schema-Kennungen. Die Inhalte werden zunächst als neuer Test zur Bearbeitung geöffnet. Prüfen Sie personenbezogene Angaben und verwenden Sie fiktive Testdaten.',
+      'Bearbeiten Sie Fachdaten und Nachrichtenformat unter „Vorbereitung“. „Variable Angaben und Datensätze“ lässt Sie Felder auswählen, Texte, Zahlen und Wahrheitswerte setzen, Datum oder Kennungen erzeugen und Antwortwerte aus der beobachteten Einreichung übernehmen. Jeder Datensatz erhält einen eigenen Durchlauf.',
+      'Unter „Prüferwartungen anpassen“ wählen Sie vollständigen Inhalt, XML-Struktur oder nur ausgewählte Fachdatenfelder. Ergänzen Sie Bedingungen und gegebenenfalls den erwarteten Problemtyp der Empfangsbestätigung. Bei ausgewählten Feldern bleiben alle anderen Fachdatenfelder ausdrücklich ungeprüft. Anlagen werden weiterhin vollständig verglichen.',
+      'Wählen Sie einen Datensatz und starten Sie den Durchlauf. Erzeugte Werte werden für diesen Durchlauf festgeschrieben. „Versandentwurf öffnen“ nutzt den normalen Versand mit Bestätigung. Die passende Arbeitsansicht öffnet Empfang und Antwortfunktionen. „Nachweise aktualisieren“ lädt lokale Kopien. Wählen und prüfen Sie die passende Nachricht.',
+      '„Auf Nachweis warten“ fragt höchstens fünf Minuten nach. Es wird jeweils nur eine Abfrage durchgeführt. Bei Fehlern wächst der Abstand. Sie können Seiten wechseln und das Warten beenden. Bei Profil- oder Umgebungswechsel endet der Wartemodus. Ein gefundener Eintrag muss weiterhin geöffnet und geprüft werden.',
+      'Unter „Ergebnisse“ sehen Sie den Prüfstand und alle Versuche. Fehlgeschlagene, blockierte und manuell bestätigte Schritte sind keine automatischen Erfolgsnachweise. Der Fortschritt wird für das Windows-Benutzerkonto verschlüsselt gespeichert. Ein gespeicherter Durchlauf setzt keine Schreibaktion automatisch fort.',
+      'Vollständig automatisch nachgewiesene Durchläufe können Sie als Referenz festlegen. Wählen Sie später einen gespeicherten Durchlauf zum Vergleich. Abweichende Definitionen, Datensätze, Umgebungen und API-Versionen werden benannt. Zum Löschen einer Referenz müssen Sie deren Schutz zuerst aufheben.',
+    ],
+    notes: [
+      'Testdefinition und Fortschritt sind getrennt. Eine geänderte Vorlage ändert frühere Prüfergebnisse nicht. Beim Fortsetzen bleiben die erzeugten Daten des Durchlaufs erhalten.',
+      'Die Testsammlung und der Durchlaufverlauf sind jeweils auf 32 Einträge, 64 MiB insgesamt und knapp 8 MiB pro Dokument begrenzt. Bestehende Testpaketgrenzen bleiben erhalten. Exportieren und löschen Sie nicht mehr benötigte Einträge, wenn die Sammlung voll ist.',
+      'Der XML-Strukturvergleich berücksichtigt Namensräume und ignoriert die Attributreihenfolge. Text, Leerzeichen und die Reihenfolge der Kindelemente bleiben relevant. Der Vergleich verändert keine verschlüsselten oder signierten Originaldateien.',
+      'Empfangsbestätigungen werden anhand des verifizierten Event Logs geprüft. Inhaltsvergleiche benötigen zusätzlich verfügbare lokale Kopien. Eine manuelle Rückmeldung der Gegenstelle wird gesondert gespeichert und berechtigt nicht zum Festlegen einer vollständig geprüften Referenz.',
+      'Testdefinitionen enthalten Fachdaten und Anlagen und sind nach dem Export unverschlüsselt. Verbindungszugänge, private Schlüssel und alte technische Case-Zuordnungen werden nicht als neue Versandvorgaben exportiert. Ergebnisse sind lokale Prüfnachweise für den definierten Umfang.',
+      'Die Vorlagen sind Ausgangspunkte für Ihre Testvereinbarung. Ein Test ändert keine fremde Destination und richtet kein Fachverfahren automatisch ein.',
     ],
   },
 ];

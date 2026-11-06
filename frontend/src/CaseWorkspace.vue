@@ -13,8 +13,10 @@ import { caseStatus } from './cases.js';
 import StructuredData from './StructuredData.vue';
 import ContentPreview from './ContentPreview.vue';
 import { useCaseWorkspace } from './cases/useCaseWorkspace.js';
+import { defineAsyncComponent } from 'vue';
+const CaptureTestDialog = defineAsyncComponent(() => import('./integration/scenarios/CaptureTestDialog.vue'));
 const props = defineProps({ session: Object, busy: Boolean, visible: Boolean });
-const emit = defineEmits(['busy', 'receive', 'event-log']);
+const emit = defineEmits(['busy', 'receive', 'event-log', 'test']);
 const controller = useCaseWorkspace(props, emit);
 const {
   records,
@@ -262,6 +264,13 @@ const {
         Status dieser Nachricht:
         <strong>{{ caseStatus(selected.status) }}</strong>
       </p>
+      <CaptureTestDialog
+        :session="session"
+        :record="selected"
+        :records="selectedGroup?.messages || []"
+        :disabled="disabled"
+        @created="emit('test', $event)"
+      />
       <p class="small-note">
         Lokale Kopie. Prüfergebnisse stammen vom damaligen Abruf. Serverzustand und Berechtigungen werden
         dadurch nicht erneut bestätigt.

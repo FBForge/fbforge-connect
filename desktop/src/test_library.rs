@@ -14,6 +14,26 @@ const MAX_STORE: u64 = 64 * 1024 * 1024;
 #[derive(Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum LibraryRequest {
+    ScenarioList {},
+    ScenarioRead {
+        id: String,
+    },
+    ScenarioSave {
+        document: scenarios::Scenario,
+    },
+    ScenarioDelete {
+        id: String,
+    },
+    ScenarioRunList {},
+    ScenarioRunRead {
+        id: String,
+    },
+    ScenarioRunSave {
+        document: scenarios::ScenarioRun,
+    },
+    ScenarioRunDelete {
+        id: String,
+    },
     List {},
     Read {
         id: String,
@@ -233,6 +253,12 @@ impl TestLibrary {
         Ok(pack)
     }
     fn save_document(&self, id: &str, document: &Value) -> Result<(), &'static str> {
+        if self.files()?.iter().any(|(saved, _)| saved == id) {
+            return Err("test_library_conflict");
+        }
+        self.upsert_document(id, document)
+    }
+    fn upsert_document(&self, id: &str, document: &Value) -> Result<(), &'static str> {
         let destination = self.path(id)?;
         let mut plain = serde_json::to_vec(document).map_err(|_| "test_pack_invalid")?;
         if plain.len() > MAX_PACK {
@@ -243,11 +269,14 @@ impl TestLibrary {
         plain.fill(0);
         let encrypted = encrypted?;
         let files = self.files()?;
-        if files.iter().any(|(saved, _)| saved == id) {
-            return Err("test_library_conflict");
-        }
-        if files.len() >= MAX_ENTRIES
-            || files.iter().map(|(_, size)| size).sum::<u64>() + encrypted.len() as u64 > MAX_STORE
+        if files.len() >= MAX_ENTRIES && !files.iter().any(|(saved, _)| saved == id)
+            || files
+                .iter()
+                .filter(|(saved, _)| saved != id)
+                .map(|(_, size)| size)
+                .sum::<u64>()
+                + encrypted.len() as u64
+                > MAX_STORE
         {
             return Err("vault_limit");
         }
@@ -272,6 +301,14 @@ impl TestLibrary {
     }
     pub fn execute(&self, request: LibraryRequest) -> Result<Value, &'static str> {
         match request {
+            LibraryRequest::ScenarioList {}
+            | LibraryRequest::ScenarioRead { .. }
+            | LibraryRequest::ScenarioSave { .. }
+            | LibraryRequest::ScenarioDelete { .. }
+            | LibraryRequest::ScenarioRunList {}
+            | LibraryRequest::ScenarioRunRead { .. }
+            | LibraryRequest::ScenarioRunSave { .. }
+            | LibraryRequest::ScenarioRunDelete { .. } => scenarios::execute(self, request),
             LibraryRequest::RunList {}
             | LibraryRequest::RunRead { .. }
             | LibraryRequest::RunSave { .. }
@@ -314,3 +351,6 @@ mod flows;
 
 #[path = "test_run_library.rs"]
 mod runs;
+
+#[path = "scenario_library.rs"]
+mod scenarios;

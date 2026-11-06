@@ -259,6 +259,9 @@
               ),
             ]),
             h(CaseWorkspace, {
+              onTest: (pack) => {
+                state.capturedTest = pack;
+              },
               session: session.value,
               busy: busy.value,
               visible: visible.value,

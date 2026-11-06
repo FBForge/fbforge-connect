@@ -1,0 +1,190 @@
+.scenario-workspace {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.scenario-workspace :is(p, h2, h3, h4) {
+  margin-block: 0 8px;
+}
+.scenario-workspace :is(label, fieldset) {
+  min-width: 0;
+}
+.scenario-workspace label {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.scenario-workspace :is(input, select, textarea) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.scenario-workspace select {
+  padding-inline-end: 36px;
+  min-height: 42px;
+}
+.scenario-workspace textarea {
+  font-family: ui-monospace, monospace;
+  resize: vertical;
+  line-height: 1.5;
+}
+.scenario-workspace button {
+  justify-self: start;
+  white-space: normal;
+  min-height: 42px;
+  max-width: 100%;
+  height: auto;
+}
+.scenario-workspace .client-actions button {
+  flex: 0 1 auto;
+}
+.scenario-workspace .client-actions {
+  margin: 0;
+  gap: 8px;
+}
+.scenario-workspace .tool-section-heading {
+  margin: 0;
+}
+.scenario-workspace .scenario-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.scenario-workspace .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scenario-workspace .checkbox-label input {
+  width: auto;
+  flex: none;
+}
+.scenario-workspace :is(details, .scenario-section, .scenario-preparation) {
+  display: grid;
+  gap: 16px;
+}
+.scenario-workspace details:not([open]) {
+  display: block;
+}
+.scenario-workspace details {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.scenario-workspace details > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.scenario-workspace details[open] > summary {
+  margin-bottom: 16px;
+}
+.scenario-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.scenario-entry {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.scenario-entry legend {
+  overflow-wrap: anywhere;
+}
+.scenario-starters,
+.scenario-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.scenario-tabs {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+.scenario-tabs button[aria-pressed='true'] {
+  background: var(--status-info-bg);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+.scenario-notice {
+  padding: 12px 16px;
+  border: 1px solid var(--status-info-line);
+  border-radius: 8px;
+  background: var(--status-info-bg);
+  color: var(--status-info-ink);
+  overflow-wrap: anywhere;
+}
+.scenario-checks {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.scenario-check {
+  border-inline-start: 4px solid var(--line);
+  padding: 12px 16px;
+  background: var(--surface-soft);
+  display: grid;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.scenario-check.passed {
+  border-color: var(--status-success-line);
+}
+.scenario-check.failed {
+  border-color: var(--status-error-line);
+}
+.scenario-check:is(.blocked, .manual) {
+  border-color: var(--status-warning-line);
+}
+.scenario-workspace progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.scenario-workspace pre {
+  max-height: 24rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.scenario-workspace :is(th, td) {
+  text-align: start;
+  padding: 12px;
+  overflow-wrap: anywhere;
+}
+.scenario-workspace .table-scroll {
+  max-width: 100%;
+  overflow: auto;
+}
+.scenario-workspace .error {
+  border-color: var(--status-error-line);
+  color: var(--status-error-ink);
+  background: var(--status-error-bg);
+}
+@media (max-width: 760px) {
+  .scenario-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .scenario-workspace .client-actions button {
+    flex: 1 1 12rem;
+  }
+  .scenario-tabs button {
+    flex: 1 1 8rem;
+  }
+}
+@media (forced-colors: active) {
+  .scenario-check,
+  .scenario-notice {
+    border: 1px solid CanvasText;
+  }
+  .scenario-tabs button[aria-pressed='true'] {
+    outline: 2px solid Highlight;
+  }
+}

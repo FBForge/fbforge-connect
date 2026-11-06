@@ -97,7 +97,8 @@ async function close(removeEntry = false) {
     <p class="small-note">
       Abläufe mit Testdaten und Anlagen werden lokal für Ihr Windows-Benutzerkonto verschlüsselt gespeichert.
       Sie bleiben nach einem Neustart verfügbar und sind unabhängig vom verbundenen FIT-Connect-Profil.
-      Ergebnisse eines laufenden Durchlaufs bleiben nur in dieser Sitzung.
+      Fortschritt eines Durchlaufs wird getrennt geschützt gespeichert. Frühere Ergebnisse bleiben als
+      historische Prüfungen erkennbar.
     </p>
     <div class="client-actions">
       <button class="button secondary" type="button" :disabled="busy || pending || !flow" @click="save">

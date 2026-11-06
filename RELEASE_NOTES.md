@@ -1,5 +1,18 @@
 # Versionshinweise
 
+## 0.4.0 (unveröffentlicht)
+
+- Geführte Integrationstests für externe Onlinedienste und Fachverfahren oder beide Seiten in Connect. Vorlagen für Annahme, Ablehnung, Antworten und Nachforderung/Nachreichung.
+- Verfügbare Vorgangskopien als neuen Test mit Fachdaten und Anlagen übernehmen. Fehlende Leistungs- und Schemaangaben ergänzen oder aus dem Empfängerangebot laden.
+- Variable Testdaten, mehrere Datensätze und Werteübernahme aus beobachteten Einreichungen. Erzeugte Werte bleiben beim Fortsetzen des Durchlaufs erhalten.
+- Einzelne Felder, Datumswerte, Referenzen und erwartete Problemtypen prüfen. Optionaler XML-Strukturvergleich erhält Text, Leerzeichen, Elementreihenfolge und Attributnamensräume.
+- Begrenzter, abbrechbarer Wartemodus für Eingänge, Antworten und Empfangsbestätigungen. Keine automatischen Schreibaktionen.
+- Prüfversuche und Ergebnisse geschützt aufbewahren. Vollständig nachgewiesene Durchläufe als Referenz schützen und spätere Ergebnisse vergleichen. Geänderte Testdefinitionen und API-Versionen bleiben erkennbar.
+- Vorhandene Testpakete und Abläufe aus 0.3.0 in das neue Format übernehmen. Die ursprüngliche Sammlung bleibt erhalten.
+- Kompaktere Werkzeugauswahl, klare Vorbereitung/Durchführung/Ergebnisse und Rückweg zum aktuellen Test aus anderen Arbeitsbereichen.
+
+Abnahme und Veröffentlichung sind noch offen. Ein bestandener lokaler Test ersetzt keine Windows- oder FIT-Connect-TEST-Abnahme des Releasekandidaten.
+
 ## 0.3.0
 
 ### Integrationen und Testabläufe

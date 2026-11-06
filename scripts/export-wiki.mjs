@@ -7,7 +7,7 @@ if (!process.argv[2] || process.argv.length !== 3)
   throw new Error('Aufruf: node scripts/export-wiki.mjs <neues-Ausgabeverzeichnis>');
 const directory = resolve(process.argv[2]);
 await mkdir(directory);
-await mkdir(join(directory, 'images', '0.3'), { recursive: true });
+await mkdir(join(directory, 'images', '0.4'), { recursive: true });
 if (
   helpTopics.length !== documentationTopics.length ||
   helpTopics.some(
@@ -15,17 +15,17 @@ if (
   )
 )
   throw new Error('Hilfethemen und Anwendung stimmen nicht überein.');
-const chapters = helpTopics.map((topic) => `- [${topic.title}](0.3-${topic.id})`);
+const chapters = helpTopics.map((topic) => `- [${topic.title}](0.4-${topic.id})`);
 await writeFile(
   join(directory, 'Home.md'),
-  '# FBForge Connect · Anleitung\n\n- [Version 0.1](Version-0.1)\n- [Version 0.2](https://fbforge.de/connect/hilfe/0.2/start)\n- [Version 0.3 mit aktuellen Bildern und Beispielen](Version-0.3)\n\n[Projektseite](https://fbforge.de/connect)\n',
+  '# FBForge Connect · Anleitung\n\n- [Version 0.1](Version-0.1)\n- [Version 0.2](https://fbforge.de/connect/hilfe/0.2/start)\n- [Version 0.3](https://fbforge.de/connect/hilfe/0.3/start)\n- [Version 0.4 mit aktuellen Bildern und Beispielen](Version-0.4)\n\n[Projektseite](https://fbforge.de/connect)\n',
 );
 await writeFile(
-  join(directory, 'Version-0.3.md'),
+  join(directory, 'Version-0.4.md'),
   [
-    '# Anleitung für 0.3',
+    '# Anleitung für 0.4',
     '',
-    'Anleitung für Version 0.3.0. Ältere Anleitungen: [0.2](https://fbforge.de/connect/hilfe/0.2/start) und [0.1](Version-0.1).',
+    'Anleitung für Version 0.4.0. Ältere Anleitungen: [0.2](https://fbforge.de/connect/hilfe/0.2/start) und [0.1](Version-0.1).',
     '',
     ...chapters,
     '',
@@ -40,10 +40,11 @@ await writeFile(
   [
     '[**FBForge Connect · Anleitung**](Home)',
     '',
-    '**0.3**',
+    '**0.4**',
     '',
     ...chapters,
     '',
+    '[Anleitung für 0.3](https://fbforge.de/connect/hilfe/0.3/start)',
     '[Anleitung für 0.2](https://fbforge.de/connect/hilfe/0.2/start)',
     '[Anleitung für 0.1](Version-0.1)',
     '',
@@ -58,7 +59,7 @@ for (const topic of helpTopics) {
   const markdown = [
     `# ${topic.title}`,
     '',
-    'Anleitung für Version 0.3.0.',
+    'Anleitung für Version 0.4.0.',
     '',
     topic.intro,
     '',
@@ -68,7 +69,7 @@ for (const topic of helpTopics) {
     '',
     ...pictures.flatMap(({ image, caption }) => {
       images.add(image);
-      const url = `https://raw.githubusercontent.com/wiki/FBForge/fbforge-connect/images/0.3/${image}.png`;
+      const url = `https://raw.githubusercontent.com/wiki/FBForge/fbforge-connect/images/0.4/${image}.png`;
       return [`[![${caption}](${url})](${url})`, '', caption, ''];
     }),
     ...(topic.examples || []).flatMap((example) => [
@@ -84,16 +85,16 @@ for (const topic of helpTopics) {
     '',
     ...topic.notes.map((note) => `- ${note}`),
     '',
-    ...(next ? [`[Weiter: ${next.title}](0.3-${next.id})`, ''] : []),
-    '[Alle Themen](Version-0.3)',
+    ...(next ? [`[Weiter: ${next.title}](0.4-${next.id})`, ''] : []),
+    '[Alle Themen](Version-0.4)',
     '',
   ].join('\n');
-  await writeFile(join(directory, `0.3-${topic.id}.md`), markdown);
+  await writeFile(join(directory, `0.4-${topic.id}.md`), markdown);
 }
 for (const name of images)
   await copyFile(
     new URL(`../docs/guide/images/${name}.png`, import.meta.url),
-    join(directory, 'images', '0.3', `${name}.png`),
+    join(directory, 'images', '0.4', `${name}.png`),
   );
 console.log(
   `${helpTopics.length} Wiki-Kapitel und ${images.size} Bilder exportiert. Ältere Kapitel bleiben unverändert.`,

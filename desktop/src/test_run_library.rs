@@ -9,12 +9,12 @@ pub struct SavedRun {
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct Context {
-    sender_profile_id: String,
-    receiver_profile_id: String,
-    api_version: String,
-    source_destination: String,
-    receiver_destination: String,
+pub(super) struct Context {
+    pub(super) sender_profile_id: String,
+    pub(super) receiver_profile_id: String,
+    pub(super) api_version: String,
+    pub(super) source_destination: String,
+    pub(super) receiver_destination: String,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

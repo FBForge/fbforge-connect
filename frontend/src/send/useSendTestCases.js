@@ -42,7 +42,7 @@ export function useSendTestCases({ act, currentDraft, props, selectSchema, draft
 
   async function importTestCase() {
     if (disabled.value || !pendingTest.value) return;
-    const item = structuredClone(pendingTest.value),
+    const { continuationCaseId, ...item } = structuredClone(pendingTest.value),
       active = { ...props.session },
       destination = target.value.trim().toLowerCase();
     if (item.request.processMessage && active.apiVersion !== 'v3') {
@@ -78,6 +78,7 @@ export function useSendTestCases({ act, currentDraft, props, selectSchema, draft
       if (
         choice < 0 ||
         (request.replyOffer &&
+          !process &&
           !serviceOffer?.replySchemas.some(
             (entry) =>
               entry.schemaUri === request.replyOffer.schemaUri &&
@@ -95,7 +96,13 @@ export function useSendTestCases({ act, currentDraft, props, selectSchema, draft
       selectSchema();
       serviceName.value = request.serviceName;
       region.value = request.region || '';
-      caseId.value = '';
+      caseId.value =
+        process &&
+        active.apiVersion === 'v3' &&
+        typeof continuationCaseId === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(continuationCaseId)
+          ? continuationCaseId
+          : '';
       dataFile.value = null;
       dataText.value = request.data;
       localValidationSchemas.value = item.schemas.map((entry) => ({
@@ -116,8 +123,9 @@ export function useSendTestCases({ act, currentDraft, props, selectSchema, draft
       outcome.value = null;
       pendingTest.value = null;
       packDialog.value.close();
-      stepNotice.value =
-        'Testfall als neuer Entwurf übernommen. Empfängerangebot wurde geprüft, die Case ID wurde geleert. Prüfen Sie die Adressierung und bereiten Sie den Versand anschließend vor.';
+      stepNotice.value = caseId.value
+        ? 'Prozessnachricht als Folgeschritt im zugeordneten Testvorgang vorbereitet. Prüfen Sie Case ID, Adressierung und Inhalt vor der Versandbestätigung.'
+        : 'Testfall als neuer Entwurf übernommen. Empfängerangebot wurde geprüft, die Case ID wurde geleert. Prüfen Sie die Adressierung und bereiten Sie den Versand anschließend vor.';
     });
     if (!pendingTest.value) {
       await nextTick();

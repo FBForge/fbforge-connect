@@ -85,6 +85,9 @@ export function useSubmissionSender(props, emit) {
           reply: props.testDraft.reply,
           receipt: props.testDraft.receipt,
           schemas: props.testDraft.schemas,
+          ...(props.testDraft.continuationCaseId
+            ? { continuationCaseId: props.testDraft.continuationCaseId }
+            : {}),
         });
     },
   );

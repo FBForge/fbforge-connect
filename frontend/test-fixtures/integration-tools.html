@@ -9,6 +9,7 @@
     <div id="app"></div>
     <script type="module">
       import { createApp } from 'vue/dist/vue.esm-bundler.js';
+      import { testLibraryFixture } from './test-library-fixture.js';
       import { ref, provide, watch } from 'vue';
       import MalwareScannerSettings from '../src/integration/MalwareScannerSettings.vue';
       import TestTools from '../src/TestTools.vue';
@@ -56,6 +57,8 @@
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
           fixture.calls.push({ command, args });
+          if (command === 'test_library' && args.request.action.startsWith('scenario_'))
+            return testLibraryFixture(args.request);
           if (command === 'local_scanner_status') return structuredClone(fixture.local);
           if (command === 'cancel_local_scanner_operation') {
             fixture.local.busy = false;
@@ -329,7 +332,7 @@
             },
           };
         },
-        template: `<main class="tool-section"><h1>Integrationstests 0.3</h1><nav class="client-actions"><button @click="mode='tools'">Werkzeuge</button><button @click="mode='scanner'">Virenscan</button><button @click="mode='templates'">Vorlagen</button><button @click="mode='ages'">Eingang</button><button @click="mode='certificates'">Zertifikate</button><button @click="mode='send'">Versand</button><button @click="changeSession">Anderes Profil</button></nav><TestTools v-show="mode==='tools'" :session="session" :busy="busy" @busy="busy=$event" @send="fixture.emitted=$event" @context="fixture.context=$event"/><MalwareScannerSettings v-if="scannerOpened" v-show="mode==='scanner'" :session="session" :busy="busy" @busy="busy=$event"/><DestinationTemplates v-if="mode==='templates'" :session="session" :changes="{name:'Vorlage'}" @apply="fixture.applied=$event"/><InboxAges v-if="mode==='ages'" :session="session" :items="items" @rows="rows=$event" @busy="busy=$event"/><p v-if="mode==='ages'" data-testid="age-result">{{rows.map(row=>row.submissionId+':'+row.collection?.ageDays).join(' | ')}}</p><CertificateResults v-if="mode==='certificates'" :keys="expiry"/><SendReconciliation v-if="mode==='send'" :session="session" :outcome="outcome" :busy="busy" @busy="busy=$event"/></main>`,
+        template: `<main class="tool-section"><h1>Integrationstests 0.4</h1><nav class="client-actions"><button @click="mode='tools'">Werkzeuge</button><button @click="mode='scanner'">Virenscan</button><button @click="mode='templates'">Vorlagen</button><button @click="mode='ages'">Eingang</button><button @click="mode='certificates'">Zertifikate</button><button @click="mode='send'">Versand</button><button @click="changeSession">Anderes Profil</button></nav><TestTools v-show="mode==='tools'" :session="session" :busy="busy" @busy="busy=$event" @send="fixture.emitted=$event" @context="fixture.context=$event"/><MalwareScannerSettings v-if="scannerOpened" v-show="mode==='scanner'" :session="session" :busy="busy" @busy="busy=$event"/><DestinationTemplates v-if="mode==='templates'" :session="session" :changes="{name:'Vorlage'}" @apply="fixture.applied=$event"/><InboxAges v-if="mode==='ages'" :session="session" :items="items" @rows="rows=$event" @busy="busy=$event"/><p v-if="mode==='ages'" data-testid="age-result">{{rows.map(row=>row.submissionId+':'+row.collection?.ageDays).join(' | ')}}</p><CertificateResults v-if="mode==='certificates'" :keys="expiry"/><SendReconciliation v-if="mode==='send'" :session="session" :outcome="outcome" :busy="busy" @busy="busy=$event"/></main>`,
       }).mount('#app');
     </script>
   </body>

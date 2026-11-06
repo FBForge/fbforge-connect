@@ -395,6 +395,7 @@ try {
   await button('Suche und Filter zurücksetzen').click();
   await expect(page.getByRole('list', { name: 'Lokale Vorgänge' }).locator(':scope > li')).toHaveCount(2);
   await button('Fiktiver Antrag auf Testleistung').click();
+  await expect(button('Als Test wiederverwenden')).toBeVisible();
   await capture('cases', page.locator('.case-detail'));
   await page.locator('.case-detail').getByRole('button', { name: 'Ansehen', exact: true }).click();
   await expect(page.locator('.pdf-preview canvas')).toBeVisible();
@@ -473,6 +474,26 @@ try {
   await capture(
     'destination-templates',
     page.getByRole('heading', { name: 'Destination bearbeiten', exact: true }),
+  );
+  await open('test-fixtures/profiles.html?flow-context&destinations=1');
+  await button('Verbindung herstellen').click();
+  await page.locator('#client-id').fill('synthetic-guide-client');
+  await page.locator('#client-secret').fill('synthetic-guide-secret');
+  await button('Anmelden').click();
+  await button('Testwerkzeuge').click();
+  await button('Integration testen').click();
+  await button('Einreichung mit Antwort').click();
+  await capture(
+    'integration-preparation',
+    page.getByRole('heading', { name: 'Integration testen', exact: true }),
+  );
+  await button('Neuen Testdurchlauf starten').click();
+  await expect(page.getByRole('heading', { name: 'Einreichung senden', exact: true })).toBeVisible();
+  await capture('integration-run', page.getByRole('heading', { name: 'Integration testen', exact: true }));
+  await button('Ergebnisse').click();
+  await capture(
+    'integration-results',
+    page.getByRole('heading', { name: 'Ergebnisse dieses Durchlaufs', exact: true }),
   );
   console.log(`${captures.size} Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {

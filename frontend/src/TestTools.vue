@@ -2,16 +2,30 @@
 import { ref, defineAsyncComponent, watch } from 'vue';
 import TestPackages from './TestPackages.vue';
 const TestFlows = defineAsyncComponent(() => import('./integration/TestFlows.vue'));
+const ScenarioWorkspace = defineAsyncComponent(() => import('./integration/scenarios/ScenarioWorkspace.vue'));
 const SchemaComparison = defineAsyncComponent(() => import('./SchemaComparison.vue'));
 const ChannelSchemaDesigner = defineAsyncComponent(() => import('./integration/ChannelSchemaDesigner.vue'));
-defineProps({ busy: Boolean, session: Object });
-const emit = defineEmits(['send', 'busy', 'scanner-changed', 'context']);
+const props = defineProps({ busy: Boolean, session: Object, testSource: Object });
+const emit = defineEmits(['send', 'busy', 'scanner-changed', 'context', 'activity']);
 const mode = ref('packages');
 const category = ref('tests');
 const comparisonOpened = ref(false);
 const flowsOpened = ref(false);
 const schemasOpened = ref(false);
+const guidedOpened = ref(false);
+watch(
+  () => props.testSource?.requestId,
+  () => {
+    if (props.testSource) {
+      category.value = 'tests';
+      guidedOpened.value = true;
+      mode.value = 'guided';
+    }
+  },
+  { immediate: true },
+);
 watch(mode, (value) => {
+  if (value === 'guided') guidedOpened.value = true;
   if (value === 'flows') flowsOpened.value = true;
   if (value === 'comparison') comparisonOpened.value = true;
   if (value === 'schemas') schemasOpened.value = true;
@@ -60,6 +74,7 @@ watch(mode, (value) => {
     >
       <button
         v-for="tool in [
+          { id: 'guided', title: 'Integration testen' },
           { id: 'packages', title: 'Testpakete' },
           { id: 'flows', title: 'Testabläufe' },
         ]"
@@ -71,6 +86,16 @@ watch(mode, (value) => {
         {{ tool.title }}
       </button>
     </div>
+    <ScenarioWorkspace
+      v-if="guidedOpened"
+      v-show="mode === 'guided'"
+      :session="session"
+      :busy="busy"
+      :source="testSource"
+      @send="emit('send', $event)"
+      @context="emit('context', $event)"
+      @activity="emit('activity', $event)"
+    />
     <TestFlows
       v-show="mode === 'flows'"
       v-if="flowsOpened"
@@ -140,7 +165,7 @@ watch(mode, (value) => {
   display: grid;
   gap: 8px;
   text-align: start;
-  padding: 18px;
+  padding: 12px 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
@@ -148,6 +173,7 @@ watch(mode, (value) => {
   cursor: pointer;
 }
 .tool-category span {
+  display: none;
   font-weight: 400;
   color: var(--muted);
   font-size: 13px;
