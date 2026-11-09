@@ -7,6 +7,19 @@ import tempfile
 from candidate import REPOSITORY, api, application_binary, download_candidate, require
 
 
+# Identical to the independently verified signing artifact, as checked before
+# its disposable Actions copy was removed. Refresh after reviewing a new release.
+PUBLISHED_UPGRADE_BASELINE = {
+    "runId": "41542584783",
+    "commit": "4d5f4b47a0756879ca8ab59add067c2e14a6f1b0",
+    "tag": "v0.3.0",
+    "assetId": 703682982,
+    "name": "FBForge-Connect_0.3.0_windows-x64.zip",
+    "bytes": 195721157,
+    "sha256": "7ba72a0ef53802a9490bdea92ab8889e84226f14b6a93ad3cb57608a2d6c4080",
+}
+
+
 def main():
     require(os.environ.get("GITHUB_REPOSITORY") == REPOSITORY, "repository_mismatch")
     run_id = os.environ.get("UPGRADE_RUN", "")
@@ -22,7 +35,7 @@ def main():
                       and run.get("conclusion") == "success"]
         require(bool(candidates), "upgrade_baseline_missing")
         run_id = str(candidates[0]["id"])
-    _, files, manifest = download_candidate(run_id)
+    _, files, manifest = download_candidate(run_id, published_baseline=PUBLISHED_UPGRADE_BASELINE)
     directory = Path(tempfile.mkdtemp(prefix="fbforge-upgrade-", dir=os.environ["RUNNER_TEMP"]))
     installer = directory / manifest["installer"]
     installer.write_bytes(files[manifest["installer"]])

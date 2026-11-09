@@ -14,6 +14,15 @@ wiederfinden und mehrere unterschiedliche Antworten nach der Annahme im selben
 Vorgang nachweisen. Prozessnachrichten bleiben v3 vorbehalten. Alle Serienstarts
 und Schreibaktionen müssen weiterhin ausdrücklich erfolgen.
 
+Der Upgrade-Test darf für die veröffentlichte 0.3.0 auf das dauerhaft gespeicherte
+Release-Paket zurückgreifen, wenn dessen Actions-Kopie abgelaufen oder gelöscht
+ist. Asset-ID, vollständige Archiv-Prüfsumme und ursprünglicher Signiercommit sind
+in `scripts/load-upgrade-baseline.py` festgelegt. Signierlauf, unabhängige
+Paketprüfung, Manifest und Windows-Signatur werden weiterhin geprüft. Nach einer
+neuen Veröffentlichung diesen geprüften Ausgangsstand ausdrücklich aktualisieren.
+Für neue Release-Kandidaten bleiben die zugehörigen Actions-Artefakte erforderlich.
+Unsignierte Windows-Testinstaller werden 14 Tage aufbewahrt.
+
 ## Live-Abnahme
 
 1. Nach [BUILDING.md](BUILDING.md) bauen und die normalen `Checks` ausführen.

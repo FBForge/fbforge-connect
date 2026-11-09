@@ -111,7 +111,38 @@ def read_candidate(archive_bytes, commit, checksum, version, run_id):
     return files, manifest
 
 
-def download_candidate(run_id, commit=None, checksum=None, version=None, *, offline=False):
+def published_upgrade_archive(run_id, commit, pin, offline):
+    # Only explicitly reviewed release bytes may replace a missing temporary
+    # artifact. Publishing a new candidate still requires its Actions artifact.
+    require(
+        isinstance(pin, dict) and not offline
+        and pin.get("runId") == run_id and pin.get("commit") == commit,
+        "published_baseline_source_mismatch",
+    )
+    release = api(f"repos/{REPOSITORY}/releases/tags/{pin['tag']}")
+    require(
+        release.get("draft") is False and bool(release.get("published_at"))
+        and release.get("tag_name") == pin["tag"],
+        "published_baseline_not_published",
+    )
+    assets = [asset for asset in release.get("assets", []) if asset.get("id") == pin["assetId"]]
+    require(len(assets) == 1, "published_baseline_asset_mismatch")
+    asset = assets[0]
+    require(
+        asset.get("name") == pin["name"] and asset.get("size") == pin["bytes"]
+        and asset.get("digest") == "sha256:" + pin["sha256"]
+        and asset.get("state") == "uploaded",
+        "published_baseline_asset_mismatch",
+    )
+    require(0 < pin["bytes"] <= LIMIT, "artifact_too_large")
+    archive_bytes = gh("api", f"repos/{REPOSITORY}/releases/assets/{pin['assetId']}",
+                       "-H", "Accept: application/octet-stream")
+    require(len(archive_bytes) == pin["bytes"], "artifact_size_mismatch")
+    require(hashlib.sha256(archive_bytes).hexdigest() == pin["sha256"], "artifact_digest_mismatch")
+    return archive_bytes
+
+
+def download_candidate(run_id, commit=None, checksum=None, version=None, *, offline=False, published_baseline=None):
     require(bool(re.fullmatch(r"[1-9][0-9]{0,18}", run_id)), "invalid_run")
     base = f"repos/{REPOSITORY}"
     run = api(f"{base}/actions/runs/{run_id}")
@@ -125,12 +156,16 @@ def download_candidate(run_id, commit=None, checksum=None, version=None, *, offl
     require(artifacts.get("total_count", 0) <= 100, "artifact_limit")
     artifact_name = "windows-alpha-signed-offline-setup" if offline else "windows-alpha-signed-setup"
     candidates = [item for item in artifacts["artifacts"] if item["name"] == artifact_name]
-    require(len(candidates) == 1 and not candidates[0]["expired"], "candidate_artifact_missing")
-    artifact = candidates[0]
-    require(artifact["size_in_bytes"] <= LIMIT, "artifact_too_large")
-    archive_bytes = gh("api", f"{base}/actions/artifacts/{artifact['id']}/zip")
-    require(len(archive_bytes) == artifact["size_in_bytes"], "artifact_size_mismatch")
-    require("sha256:" + hashlib.sha256(archive_bytes).hexdigest() == artifact["digest"], "artifact_digest_mismatch")
+    require(len(candidates) <= 1, "candidate_artifact_missing")
+    if candidates and not candidates[0]["expired"]:
+        artifact = candidates[0]
+        require(artifact["size_in_bytes"] <= LIMIT, "artifact_too_large")
+        archive_bytes = gh("api", f"{base}/actions/artifacts/{artifact['id']}/zip")
+        require(len(archive_bytes) == artifact["size_in_bytes"], "artifact_size_mismatch")
+        require("sha256:" + hashlib.sha256(archive_bytes).hexdigest() == artifact["digest"], "artifact_digest_mismatch")
+    else:
+        require(published_baseline is not None, "candidate_artifact_missing")
+        archive_bytes = published_upgrade_archive(run_id, commit, published_baseline, offline)
     # Read bounded metadata to discover the baseline version. The full manifest
     # and every archive entry are validated below before any file is written.
     with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:

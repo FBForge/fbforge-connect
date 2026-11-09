@@ -110,8 +110,48 @@ previous_api = c.api
 c.api = lambda path: release_validation if path.endswith('/100') else previous_api(path)
 assert c.download_candidate(run_id)[2] == manifest
 c.api = previous_api
+# Published upgrade baselines remain usable after disposable Actions artifacts
+# expire. This fallback is explicit, pinned and never hides a corrupted artifact.
+published_pin = dict(runId=run_id, commit=commit, tag='v' + version, assetId=77,
+    name='published-baseline.zip', bytes=len(blob), sha256=hashlib.sha256(blob).hexdigest())
+published_asset = dict(id=77, name='published-baseline.zip', size=len(blob),
+    digest='sha256:' + published_pin['sha256'], state='uploaded')
+release = dict(tag_name='v' + version, draft=False, published_at='2026-10-19T00:00:00Z', assets=[published_asset])
+def published_api(path):
+    if '/artifacts?' in path: return dict(total_count=0, artifacts=[])
+    if '/releases/tags/' in path: return release
+    return previous_api(path)
+c.api = published_api
+rejected(lambda: c.download_candidate(run_id), 'candidate_artifact_missing')
+assert c.download_candidate(run_id, published_baseline=published_pin)[2] == manifest
+c.api = lambda path: dict(total_count=1, artifacts=[dict(artifact, expired=True)]) if '/artifacts?' in path else published_api(path)
+assert c.download_candidate(run_id, published_baseline=published_pin)[2] == manifest
+c.api = published_api
+rejected(lambda: c.download_candidate(run_id, published_baseline=dict(published_pin, runId='124')), 'published_baseline_source_mismatch')
+rejected(lambda: c.download_candidate(run_id, published_baseline=dict(published_pin, commit='f' * 40)), 'published_baseline_source_mismatch')
+rejected(lambda: c.download_candidate(run_id, published_baseline=published_pin, offline=True), 'published_baseline_source_mismatch')
+release['draft'] = True
+rejected(lambda: c.download_candidate(run_id, published_baseline=published_pin), 'published_baseline_not_published')
+release['draft'] = False
+release['tag_name'] = 'v0.9.0'
+rejected(lambda: c.download_candidate(run_id, published_baseline=published_pin), 'published_baseline_not_published')
+release['tag_name'] = 'v' + version
+for key, value in [('id', 78), ('name', 'other.zip'), ('size', 0), ('digest', 'sha256:' + '0' * 64), ('state', 'new')]:
+    saved = published_asset[key]
+    published_asset[key] = value
+    rejected(lambda: c.download_candidate(run_id, published_baseline=published_pin), 'published_baseline_asset_mismatch')
+    published_asset[key] = saved
+c.gh = lambda *args: blob + b'changed'
+rejected(lambda: c.download_candidate(run_id, published_baseline=published_pin), 'artifact_size_mismatch')
+c.gh = lambda *args: b'x' * len(blob)
+rejected(lambda: c.download_candidate(run_id, published_baseline=published_pin), 'artifact_digest_mismatch')
+c.gh = lambda *args: blob
+c.api = lambda path: dict(run, conclusion='failure') if path.endswith('/100') else published_api(path)
+rejected(lambda: c.download_candidate(run_id, published_baseline=published_pin), 'unverified_source')
+c.api = previous_api
 artifact['digest'] = 'sha256:' + '0' * 64
 rejected(lambda: c.download_candidate(run_id), 'artifact_digest_mismatch')
+rejected(lambda: c.download_candidate(run_id, published_baseline=published_pin), 'artifact_digest_mismatch')
 original_run = c.subprocess.run
 try:
     c.subprocess.run = lambda *args, **kwargs: types.SimpleNamespace(returncode=1, stderr=b'private details (HTTP 404)', stdout=b'')

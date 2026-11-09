@@ -13,7 +13,8 @@ spec = importlib.util.spec_from_file_location('upgrade', sys.argv[1])
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 calls = []
-def candidate(run):
+def candidate(run, *, published_baseline):
+    assert published_baseline == module.PUBLISHED_UPGRADE_BASELINE
     calls.append(run)
     return b'', {'setup.exe': b'fixture'}, {'version': '0.2.0' if run == '8' else '0.1.0-alpha.1', 'installer': 'setup.exe', 'certificateThumbprint': 'f' * 40}
 module.download_candidate = candidate
@@ -48,7 +49,7 @@ with tempfile.TemporaryDirectory() as root:
     assert calls == ['4', '8']
     # The full candidate verifier remains responsible for all provenance checks.
     module.api = listing
-    def invalid(run): raise RuntimeError('artifact_digest_mismatch')
+    def invalid(run, **kwargs): raise RuntimeError('artifact_digest_mismatch')
     module.download_candidate = invalid
     try: module.main()
     except RuntimeError as error: assert str(error) == 'artifact_digest_mismatch'
