@@ -2,7 +2,6 @@ import { chromium, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { xmlPacket } from '../frontend/test-fixtures/xml-message-schema.js';
-import demoPack from '../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 import { openBatch, id as batchId } from '../frontend/test-fixtures/message-batch.js';
 import { captureScenarioHelp } from './capture-scenario-help.mjs';
 
@@ -94,13 +93,12 @@ try {
   await capture('appearance');
   await button('System').click();
   await button('Testwerkzeuge').click();
-  await button('Fiktives Testpaket öffnen').click();
   await capture('test-packages');
-  await button('Schema-Vergleich').click();
+  await page.getByRole('tab', { name: 'Schema-Vergleich', exact: true }).click();
   await button('Fiktiven Beispielvergleich öffnen').click();
   await expect(page.locator('.schema-change-list')).toContainText('Jetzt ein Pflichtfeld');
   await capture('schema-comparison');
-  await button('Antwortschemas').click();
+  await page.getByRole('tab', { name: 'Antwortschemas', exact: true }).click();
   await page.getByRole('heading', { name: 'Antwortschema erstellen', exact: true }).waitFor();
   await capture('channel-schemas');
   await capture(
@@ -427,15 +425,6 @@ try {
         : previous(command, args);
   });
   await button('Testwerkzeuge').click();
-  await button('Testfälle und Abläufe').click();
-  await button('Testabläufe').click();
-  await page.locator('#test-flow-file').setInputFiles({
-    name: 'fiktiv.fctest.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(JSON.stringify(demoPack)),
-  });
-  await button('Durchlauf starten').click();
-  await capture('test-flows', page.getByRole('heading', { name: 'Wiederholbare Testabläufe', exact: true }));
   await button('Virenscan').click();
   await page.getByRole('combobox', { name: 'Verfahren', exact: true }).selectOption('clamav');
   await capture(
@@ -482,15 +471,12 @@ try {
   await page.locator('#client-secret').fill('synthetic-guide-secret');
   await button('Anmelden').click();
   await button('Testwerkzeuge').click();
-  await button('Integration testen').click();
-  await button('Einreichung mit Antwort').click();
-  await capture(
-    'integration-preparation',
-    page.getByRole('heading', { name: 'Integration testen', exact: true }),
-  );
-  await button('Neuen Testdurchlauf starten').click();
+  await page.getByRole('combobox', { name: 'Testvorlage', exact: true }).selectOption('reply');
+  await button('Test vorbereiten').click();
+  await capture('integration-preparation', page.getByRole('textbox', { name: 'Testname', exact: true }));
+  await button('Test starten').click();
   await expect(page.getByRole('heading', { name: 'Einreichung senden', exact: true })).toBeVisible();
-  await capture('integration-run', page.getByRole('heading', { name: 'Integration testen', exact: true }));
+  await capture('integration-run', page.locator('.scenario-editor h2').first());
   await button('Ergebnisse').click();
   await capture(
     'integration-results',

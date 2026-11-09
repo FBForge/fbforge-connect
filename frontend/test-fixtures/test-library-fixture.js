@@ -1,12 +1,28 @@
-// Synthetic memory-only storage. Actual DPAPI/restart tests live in native-contracts.
+// Synthetic browser restart fixture. Actual DPAPI/security tests live in native-contracts.
 import { scenarioSteps } from '../src/integration/scenarios/model.ts';
 import { runOutcome } from '../src/integration/scenarios/series.ts';
 const saved = new Map();
 const flows = new Map(),
   runs = new Map();
-const scenarios = new Map(),
-  scenarioRuns = new Map();
-const scenarioSeries = new Map();
+function restoreFixture(name) {
+  try {
+    return new Map(JSON.parse(localStorage.getItem('fixture-protected-' + name) || '[]'));
+  } catch {
+    return new Map();
+  }
+}
+const scenarios = restoreFixture('scenarios'),
+  scenarioRuns = restoreFixture('scenario-runs');
+const scenarioSeries = restoreFixture('scenario-series');
+function persistFixture(store) {
+  const name =
+    store === scenarios ? 'scenarios' : store === scenarioRuns ? 'scenario-runs' : 'scenario-series';
+  try {
+    localStorage.setItem('fixture-protected-' + name, JSON.stringify([...store]));
+  } catch {
+    /* Browser preferences can be blocked. Native profile storage is independent. */
+  }
+}
 export function testLibraryFixture(request) {
   if (request.action.startsWith('scenario_')) {
     const run = request.action.startsWith('scenario_run_'),
@@ -51,11 +67,13 @@ export function testLibraryFixture(request) {
             throw 'scenario_invalid';
         }
       store.set(request.document.id, structuredClone(request.document));
+      persistFixture(store);
       return summary(request.document);
     }
     if (action === 'delete') {
       if (run && store.get(request.id)?.reference) throw 'scenario_reference_protected';
       store.delete(request.id);
+      persistFixture(store);
       return null;
     }
     throw 'scenario_invalid';

@@ -72,20 +72,45 @@ watch(
       </label>
       <label>
         Welche Gegenstelle testen Sie?
-        <select v-model="scenario.mode" :disabled="disabled">
-          <option value="sender">Fachverfahren empfängt, Connect sendet</option>
-          <option value="receiver">Onlinedienst sendet, Connect empfängt</option>
-          <option value="both">Beide Seiten mit Connect</option>
+        <select v-model="scenario.mode" :disabled="disabled" aria-describedby="scenario-mode-hint">
+          <option value="sender">Fachverfahren</option>
+          <option value="receiver">Onlinedienst</option>
+          <option value="both">Beide Seiten</option>
         </select>
       </label>
     </div>
+    <p id="scenario-mode-hint" class="small-note">
+      {{
+        scenario.mode === 'sender'
+          ? 'FBForge Connect sendet an Ihr Fachverfahren und prüft dessen Rückmeldungen.'
+          : scenario.mode === 'receiver'
+            ? 'FBForge Connect empfängt von Ihrem Onlinedienst und prüft dessen Einreichungen.'
+            : 'FBForge Connect übernimmt Sender und Empfänger. Beide Seiten können eigene Profile verwenden.'
+      }}
+    </p>
+    <label>
+      <span id="scenario-destination-label">Empfangs-Destination</span>
+      <input
+        v-model="assignment.receiverDestination"
+        aria-labelledby="scenario-destination-label"
+        aria-describedby="scenario-destination-hint"
+        maxlength="36"
+        :disabled="disabled"
+        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      />
+      <span id="scenario-destination-hint" class="small-note">
+        Destination, an die der Testantrag gesendet wird. Sie können sie auch beim Versand auswählen.
+      </span>
+    </label>
     <TestFlowContext
       v-model:context="assignment"
       :environment="environment as Environment"
       :disabled="disabled"
+      receiver-destination-outside
       @open="emit('context', $event)"
     />
     <ScenarioOffers
+      v-show="Boolean(assignment.receiverDestination)"
       :session="session"
       :assignment="assignment"
       :item="item"
@@ -94,14 +119,15 @@ watch(
     />
     <section class="scenario-section" aria-labelledby="scenario-data-title">
       <h3 id="scenario-data-title">Testdaten</h3>
-      <div class="scenario-fields">
-        <label>
+      <p v-if="scenario.pack.cases.length === 1" class="small-note">{{ item.name }}</p>
+      <div v-if="scenario.pack.cases.length > 1 || options.length > 1" class="scenario-fields">
+        <label v-if="scenario.pack.cases.length > 1">
           Testfall bearbeiten
           <select v-model="selected" :disabled="disabled">
             <option v-for="(c, index) in scenario.pack.cases" :key="c.id" :value="index">{{ c.name }}</option>
           </select>
         </label>
-        <label>
+        <label v-if="options.length > 1">
           Nachricht bearbeiten
           <select v-model="scope" :disabled="disabled">
             <option v-for="o in options" :key="o.value" :value="o.value">{{ o.name }}</option>
@@ -109,30 +135,38 @@ watch(
         </label>
       </div>
       <template v-if="message">
-        <label>
-          Nachrichtenformat
-          <select v-model="message.mimeType" :disabled="disabled || scope.startsWith('reply:')">
-            <option value="application/json">JSON</option>
-            <option value="application/xml">XML</option>
-          </select>
-        </label>
-        <label>
-          Schema-Kennung
-          <input
-            v-model="message.schemaUri"
-            maxlength="4096"
-            :disabled="disabled || scope.startsWith('reply:')"
-          />
-        </label>
+        <div class="scenario-fields">
+          <label>
+            Nachrichtenformat
+            <select v-model="message.mimeType" :disabled="disabled || scope.startsWith('reply:')">
+              <option value="application/json">JSON</option>
+              <option value="application/xml">XML</option>
+            </select>
+          </label>
+          <label>
+            Schema-Kennung
+            <input
+              v-model="message.schemaUri"
+              maxlength="4096"
+              :disabled="disabled || scope.startsWith('reply:')"
+            />
+          </label>
+        </div>
         <label>
           Fachdaten
-          <textarea v-model="message.data" rows="9" spellcheck="false" :disabled="disabled" />
+          <textarea v-model="message.data" rows="6" spellcheck="false" :disabled="disabled" />
         </label>
         <p v-if="syntax" class="small-note scenario-notice error">{{ syntax }}</p>
         <p class="small-note">
-          {{ message.mimeType }} · {{ message.attachments.length }} Anlagen. Technische Prüfung und Virenscan
+          {{ message.mimeType }} · {{ message.attachments.length }}
+          {{ message.attachments.length === 1 ? 'Anlage' : 'Anlagen' }}. Technische Prüfung und Virenscan
           erfolgen über die vorhandenen Versand- und Empfangsfunktionen.
         </p>
+        <ul v-if="message.attachments.length" class="scenario-attachments">
+          <li v-for="attachment in message.attachments" :key="attachment.fileName">
+            {{ attachment.fileName }} · {{ attachment.mimeType }}
+          </li>
+        </ul>
       </template>
       <p v-if="scope.startsWith('reply:')" class="small-note">
         Alle Antworten verwenden das vereinbarte Antwortschema. Format und Schema ändern Sie bei „Erste
@@ -166,15 +200,21 @@ watch(
           bereits gesendetes Angebot lässt sich dadurch nicht ändern.
         </p>
       </details>
-      <ScenarioResponses v-model="scenario" :case-id="item.id" :disabled="disabled" />
-      <label>
-        Erwartete Empfangsbestätigung
-        <select v-model="item.receipt" :disabled="disabled">
-          <option value="none">Keine Empfangsbestätigung prüfen</option>
-          <option value="accept">Annehmen</option>
-          <option value="reject">Ablehnen</option>
-        </select>
-      </label>
+      <ScenarioResponses v-if="item.reply" v-model="scenario" :case-id="item.id" :disabled="disabled" />
+      <div class="scenario-fields">
+        <label v-if="!item.request.processMessage">
+          Leistungskennung
+          <input v-model="item.request.serviceIdentifier" maxlength="4096" :disabled="disabled" />
+        </label>
+        <label>
+          Erwartete Empfangsbestätigung
+          <select v-model="item.receipt" :disabled="disabled">
+            <option value="none">Keine Empfangsbestätigung prüfen</option>
+            <option value="accept">Annehmen</option>
+            <option value="reject">Ablehnen</option>
+          </select>
+        </label>
+      </div>
       <details>
         <summary>Adressierung und Prozessnachricht</summary>
         <label class="checkbox-label">
@@ -208,10 +248,6 @@ watch(
           <input v-model="scenario.sharedCase" type="checkbox" :disabled="disabled" />
           Folgeschritte im selben Vorgang senden (API v3)
         </label>
-        <label>
-          Leistungskennung
-          <input v-model="item.request.serviceIdentifier" maxlength="4096" :disabled="disabled" />
-        </label>
         <p v-if="item.request.processMessage" class="small-note">
           Prozess: {{ item.request.processMessage.processModelId }} · Nachricht:
           {{ item.request.processMessage.messageId }}. Dieses Angebot muss an der Gegenstelle eingerichtet
@@ -220,9 +256,6 @@ watch(
         <p v-if="item.request.replyOffer" class="small-note">
           Antwortangebot: {{ item.request.replyOffer.schemaUri }}
         </p>
-        <ul v-if="message?.attachments.length">
-          <li v-for="a in message.attachments" :key="a.fileName">{{ a.fileName }} · {{ a.mimeType }}</li>
-        </ul>
       </details>
     </section>
     <details>

@@ -93,7 +93,12 @@ test(
       await expect(page.locator('dialog[open]')).not.toContainText('Lizenztexte werden geladen.');
       await page.locator('dialog[open]').getByRole('button', { name: 'Schließen', exact: true }).click();
       await page.getByRole('button', { name: 'Testwerkzeuge', exact: true }).click();
-      await page.getByRole('button', { name: 'Antwortschemas', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Neuen Test vorbereiten', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Test vorbereiten', exact: true }).click();
+      await expect(page.getByRole('textbox', { name: 'Testname', exact: true })).toHaveValue(
+        'Einreichung annehmen',
+      );
+      await page.getByRole('tab', { name: 'Antwortschemas', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Antwortschema erstellen', exact: true })).toBeVisible();
       const download = page.waitForEvent('download');
       await page.getByRole('button', { name: 'JSON-Schema herunterladen', exact: true }).click();

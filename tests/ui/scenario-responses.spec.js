@@ -8,6 +8,8 @@ import {
   openScenario,
   importScenario,
   latestRun,
+  reopenRun,
+  createScenario,
   injectEvidence,
   proveEvidence,
 } from './scenario-helpers.js';
@@ -17,7 +19,7 @@ test('response editing synchronizes process offers, reorders messages and remove
   page,
 }) => {
   await openScenario(page);
-  await button(page, 'Einreichung mit Antwort').click();
+  await createScenario(page, 'reply');
   await page.getByText('Weitere Antworten im selben Vorgang', { exact: true }).click();
   await button(page, 'Weitere Antwort hinzufügen').click();
   await button(page, 'Weitere Antwort hinzufügen').click();
@@ -109,7 +111,7 @@ for (const api of ['v2', 'v3'])
       };
     });
     await importScenario(page, s);
-    await button(page, 'Neuen Testdurchlauf starten').click();
+    await button(page, 'Test starten').click();
     const run = await latestRun(page),
       ids = new Map();
     for (const step of scenarioSteps(run.definition)) {
@@ -136,9 +138,7 @@ for (const api of ['v2', 'v3'])
     expect(new Set(saved.bindings.map((b) => b.caseId)).size).toBe(1);
     await expect(button(page, 'Testergebnis fürs Ticket kopieren')).toBeVisible();
     expect(await page.locator('.scenario-section > .copy-value code').count()).toBe(0);
-    await page.getByText(/Gespeicherte Durchläufe und Referenzen/).click();
-    await page.getByRole('combobox', { name: 'Durchlauf auswählen', exact: true }).selectOption(saved.id);
-    await button(page, 'Durchlauf öffnen').click();
+    await reopenRun(page, saved.id);
     await button(page, 'Ergebnisse').click();
     await expect(page.locator('.scenario-check.passed')).toHaveCount(10);
   });
@@ -150,7 +150,7 @@ test('failed content comparisons survive reopening and exports require opt-in fo
   s.pack.cases[0].request.attachments = [];
   await openScenario(page);
   await importScenario(page, s);
-  await button(page, 'Neuen Testdurchlauf starten').click();
+  await button(page, 'Test starten').click();
   const run = await latestRun(page),
     step = scenarioSteps(run.definition)[0];
   await proveEvidence(
@@ -171,15 +171,13 @@ test('failed content comparisons survive reopening and exports require opt-in fo
       json = await readFile(await file.path(), 'utf8');
     expect(json.includes('PRIVATE_TEST_VALUE')).toBe(values);
   }
-  await button(page, 'Vorbereitung').click();
-  await button(page, 'Neuen Testdurchlauf starten').click();
+  await button(page, 'Vorbereiten').click();
+  await button(page, 'Test starten').click();
   await button(page, 'Ergebnisse').click();
   await expect(
     page.getByRole('checkbox', { name: 'Feldwerte in den Ergebnisexport aufnehmen', exact: true }),
   ).not.toBeChecked();
-  await page.getByText(/Gespeicherte Durchläufe und Referenzen/).click();
-  await page.getByRole('combobox', { name: 'Durchlauf auswählen', exact: true }).selectOption(run.id);
-  await button(page, 'Durchlauf öffnen').click();
+  await reopenRun(page, run.id);
   await button(page, 'Ergebnisse').click();
   await expect(page.locator('.scenario-check.failed')).toContainText('PRIVATE_TEST_VALUE');
   const audit = await new AxeBuilder({ page }).include('.scenario-workspace').analyze();
@@ -193,7 +191,7 @@ test('a successful retry keeps the earlier concrete mismatch accessible after re
   s.pack.cases[0].request.attachments = [];
   await openScenario(page);
   await importScenario(page, s);
-  await button(page, 'Neuen Testdurchlauf starten').click();
+  await button(page, 'Test starten').click();
   const run = await latestRun(page),
     step = scenarioSteps(run.definition)[0];
   await proveEvidence(page, step, '{}');
@@ -202,9 +200,7 @@ test('a successful retry keeps the earlier concrete mismatch accessible after re
   await expect(page.locator('.scenario-check.passed')).toHaveCount(1);
   for (const reopen of [false, true]) {
     if (reopen) {
-      await page.getByText(/Gespeicherte Durchläufe und Referenzen/).click();
-      await page.getByRole('combobox', { name: 'Durchlauf auswählen', exact: true }).selectOption(run.id);
-      await button(page, 'Durchlauf öffnen').click();
+      await reopenRun(page, run.id);
       await button(page, 'Ergebnisse').click();
     }
     await page.getByText('Alle Prüfversuche (2)', { exact: true }).click();
@@ -216,7 +212,7 @@ test('a successful retry keeps the earlier concrete mismatch accessible after re
 });
 test('multiple reply editors reflow without clipped controls in both themes', async ({ page }) => {
   await openScenario(page);
-  await button(page, 'Nachforderung und Nachreichung').click();
+  await createScenario(page, 'process');
   await page.getByText('Weitere Antworten im selben Vorgang', { exact: true }).click();
   await page
     .getByRole('combobox', { name: 'Nachricht bearbeiten', exact: true })

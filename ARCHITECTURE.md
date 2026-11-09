@@ -46,7 +46,20 @@ Verspätete Prüfergebnisse werden nach einem Kontextwechsel verworfen.
 
 JSON/XML-Fachdaten werden im nativen Kern gegen JSON Schema beziehungsweise XSD geprüft. Vor dem Versand ist die Prüfung standardmäßig aktiv. Bewusste Negativtests lassen sich ausdrücklich ohne Fachdatenprüfung vorbereiten. Die Bestätigung weist darauf hin.
 
-Testpakete, Testabläufe und Schema-Vergleich arbeiten lokal. Testpakete und Ablaufdefinitionen werden in getrennten, begrenzten Sammlungen benutzergebunden mit Windows-DPAPI gespeichert. Ablaufdefinitionen enthalten das Testpaket und die geprüfte Schrittfolge, keine Sitzung oder laufenden Testergebnisse. Pakete enthalten fiktive Nutzdaten, Anlagen, lokale Schemata und manuelle Erwartungen. Verbindungsdaten und private Schlüssel werden nicht übernommen. Erst die Übernahme in den normalen Versandablauf ermöglicht einen separat bestätigten Versand.
+Die Testwerkzeuge bieten einen gemeinsamen Bereich „Tests“ mit Übersicht,
+Vorbereitung, Durchführung und Ergebnissen. `ScenarioLibrary` zeigt aktuelle
+Tests sowie bisherige Pakete und Ablaufdefinitionen über `useTestCollection` an.
+Die Speicherformate und ihre geprüften Leser bleiben getrennt. Das Öffnen einer
+alten Definition erzeugt eine bearbeitbare Kopie. Frühere Durchläufe verwenden
+weiterhin den bisherigen Prüfer, damit ihr Fortschritt erhalten bleibt.
+Testserien erhalten eine eigene Ansicht und halten ihre Definition fest.
+
+Tests und Schema-Vergleich arbeiten lokal. Die begrenzten Sammlungen werden
+benutzergebunden mit Windows-DPAPI gespeichert. Ablaufdefinitionen enthalten
+Testdaten und Schrittfolge, keine Sitzung oder laufenden Testergebnisse.
+Pakete enthalten fiktive Nutzdaten, Anlagen, lokale Schemata und Erwartungen.
+Verbindungsdaten und private Schlüssel werden nicht übernommen. Erst die
+Übernahme in den normalen Versandablauf ermöglicht einen separat bestätigten Versand.
 
 ## Anwendungsupdates ab 0.3.0
 

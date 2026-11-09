@@ -2,8 +2,6 @@ import { clone } from './model.ts';
 import { ref, shallowRef, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { invoke } from '../../native.ts';
 import { listCases } from '../../cases.js';
-import { listTestLibrary, readTestLibrary } from '../../test-library.js';
-import { listTestFlows, readTestFlow } from '../test-flow-library.js';
 import { useEnvironment } from '../../environments.js';
 import { downloadLocal } from '../../local-download.js';
 import { scenarioFrom, scenarioSteps, definitionFingerprint } from './model.ts';
@@ -32,11 +30,8 @@ export function useScenarioWorkspace(
     run = ref<Run | null>(null),
     tab = ref('prepare');
   const saved = ref<storage.ScenarioSummary[]>([]),
-    history = ref<storage.RunSummary[]>([]),
-    legacy = ref<{ id: string; name: string; kind: string }[]>([]);
-  const choice = ref(''),
-    runChoice = ref(''),
-    legacyChoice = ref(''),
+    history = ref<storage.RunSummary[]>([]);
+  const runChoice = ref(''),
     variant = ref(''),
     records = ref<CaseRecord[]>([]),
     recordId = ref('');
@@ -168,18 +163,6 @@ export function useScenarioWorkspace(
     records.value = [];
     publish();
   }
-  const reset = () =>
-    act(async (current) => {
-      if (run.value) await storage.saveRun(invoke, clone(run.value));
-      if (!current()) return;
-      stop();
-      definition.value = null;
-      run.value = null;
-      records.value = [];
-      comparison.value = null;
-      tab.value = 'prepare';
-      publish();
-    });
   function cancelWait() {
     if (waitState.value.active && run.value && step.value) {
       addAttempt(run.value, {
@@ -208,31 +191,6 @@ export function useScenarioWorkspace(
       await storage.saveScenario(invoke, definition.value);
       await refresh();
       notice.value = 'Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.';
-    });
-  const load = () => act(async () => open(await storage.readScenario(invoke, choice.value)));
-  const remove = () =>
-    act(async () => {
-      await storage.removeScenario(invoke, choice.value);
-      choice.value = '';
-      await refresh();
-    });
-  const loadLegacy = () =>
-    act(async () => {
-      const [packs, flows] = await Promise.all([listTestLibrary(invoke), listTestFlows(invoke)]);
-      legacy.value = [
-        ...packs.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name, kind: 'pack' })),
-        ...flows.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name, kind: 'flow' })),
-      ];
-    });
-  const openLegacy = () =>
-    act(async () => {
-      const selected = legacy.value.find((v) => `${v.kind}:${v.id}` === legacyChoice.value);
-      if (!selected) return;
-      await open(
-        selected.kind === 'flow'
-          ? await readTestFlow(invoke, selected.id)
-          : await readTestLibrary(invoke, selected.id),
-      );
     });
   const launch = (source: Scenario, selectedVariant: string, context: Assignment) =>
     act(async (current) => {
@@ -273,7 +231,7 @@ export function useScenarioWorkspace(
       definition.value = clone(value.definition);
       assignment.value = clone(value.assignment);
       variant.value = value.variantId;
-      tab.value = 'run';
+      tab.value = value.cursor === scenarioSteps(value.definition).length ? 'results' : 'run';
       notice.value =
         'Historischer Durchlauf geöffnet. Nächste Nachweise werden erneut geprüft. Es wird nichts automatisch gesendet.';
       publish();
@@ -446,10 +404,7 @@ export function useScenarioWorkspace(
     tab,
     saved,
     history,
-    legacy,
-    choice,
     runChoice,
-    legacyChoice,
     variant,
     records,
     recordId,
@@ -466,15 +421,10 @@ export function useScenarioWorkspace(
     act,
     refresh,
     open,
-    reset,
     cancelWait,
     example,
     importFiles,
     save,
-    load,
-    remove,
-    loadLegacy,
-    openLegacy,
     start,
     restore,
     loadRecords,

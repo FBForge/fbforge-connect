@@ -75,8 +75,8 @@ test('signature updates stay visible and cancellable after leaving and returning
   ).toBeVisible();
   expect(await page.evaluate(() => window.__integration.isBusy())).toBe(false);
   await button(page, 'Werkzeuge').click();
-  await button(page, 'Fiktives Testpaket öffnen').click();
-  await expect(page.locator('#test-case-choice')).toBeEnabled();
+  await button(page, 'Test vorbereiten').click();
+  await expect(page.getByLabel('Testname', { exact: true })).toBeEnabled();
   await button(page, 'Virenscan').click();
   await expect(
     page.getByText('Signaturdatenbanken werden geprüft und aktualisiert …', { exact: true }),
@@ -248,8 +248,8 @@ test('the full application keeps navigation and scanner cancellation available d
     await expect(page.getByRole('heading', { name: section, exact: true })).toBeFocused();
     await expect(button(page, 'Scanner-Aktion abbrechen')).toBeEnabled();
   }
-  await button(page, 'Fiktives Testpaket öffnen').click();
-  await expect(page.locator('#test-case-choice')).toBeEnabled();
+  await button(page, 'Test vorbereiten').click();
+  await expect(page.getByLabel('Testname', { exact: true })).toBeEnabled();
   await button(page, 'Scanner-Aktion abbrechen').click();
   await button(page, 'Virenscan').click();
   await expect(page.getByRole('alert')).toContainText('abgebrochen');

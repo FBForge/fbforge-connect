@@ -12,6 +12,7 @@
 - Vollständige JSON/XML-Vergleiche zeigen konkrete Feld-, Struktur- und Reihenfolgeabweichungen. Anlagenabweichungen nennen die betroffene Datei. Begrenzte Details und Nachrichtenkennungen bleiben im Durchlauf erhalten. Ticketzusammenfassung kopieren und Ergebnisse standardmäßig ohne verglichene Feldwerte exportieren.
 - Mehrere fachliche Antworten pro Einreichung definieren, ordnen und getrennt nachweisen. Eigene Reply-IDs verhindern die Wiederverwendung früherer Antworten. Die Dialogvorlage umfasst Bearbeitungsstand, Nachforderung, Nachreichung und Abschluss. Antworten bleiben nach Annahme möglich und verwenden das tatsächlich vereinbarte Antwortschema.
 - Vorhandene Testpakete und Abläufe aus 0.3.0 in das neue Format übernehmen. Die ursprüngliche Sammlung bleibt erhalten.
+- Ein gemeinsamer Bereich „Tests“ ersetzt die getrennten Einstiege für Testpakete und Abläufe. Vorlagen, gespeicherte Tests und Ergebnisse sind direkt erreichbar. Testserien öffnen eine eigene Arbeitsansicht. Frühere Durchläufe lassen sich mit ihrem bisherigen Prüfstand fortsetzen.
 - Kompaktere Werkzeugauswahl, klare Vorbereitung/Durchführung/Ergebnisse und Rückweg zum aktuellen Test aus anderen Arbeitsbereichen.
 - Fragmentierte Anlagen unter API v2 in eine getrennte temporäre Zieldatei zusammenfügen. Originalname, Inhalt und Prüfbezüge bleiben erhalten.
 - Schlüssel im Inventar wieder zuverlässig entfernen. Gültige Testanlagen ohne Parserüberlauf prüfen, Durchlaufgrößen vor dem Start melden und XML-Ansichten/Beispieldaten vor übermäßiger Expansion begrenzen.

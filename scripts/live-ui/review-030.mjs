@@ -1,4 +1,5 @@
-// Real installed WebView2 acceptance. No mocked IPC, traces or credential artifacts.
+// Real installed WebView2 acceptance of the original round trip in the current UI.
+// No mocked IPC, traces or credential artifacts.
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
@@ -16,19 +17,14 @@ import { nativeFile } from './downloads.mjs';
 import { reviewProcessAndInbox, reviewShortcuts } from './review-runtime.mjs';
 import { reviewProfile } from './review-authoring.mjs';
 import { localScannerReady } from './local-tools.mjs';
+import { testTools, testOverview, openStoredTest, checkTestStep } from './test-workspace.mjs';
 
 const button = (page, name) => page.getByRole('button', { name, exact: true });
-const flowPanel = (page) => page.locator('[aria-labelledby="test-flows-title"]');
-async function testTools(page, tab) {
-  await navigate(page, 'Testwerkzeuge');
-  await button(page, 'Testfälle und Abläufe').click();
-  await button(page, tab).click();
-}
 export async function fixturePack(fixture) {
   const pack = JSON.parse(
     await readFile(new URL('../../frontend/src/examples/integration.fctest.json', import.meta.url), 'utf8'),
   );
-  pack.name = 'CI Live 0.3 gespeichertes Testpaket';
+  pack.name = 'CI Live gespeicherter Integrationstest';
   pack.cases = [pack.cases[0]];
   const item = pack.cases[0];
   item.name = 'Echter TEST-Versand mit fiktiven Daten';
@@ -60,15 +56,16 @@ export async function fixturePack(fixture) {
 }
 async function savePack(desktop, fixture, pack) {
   const page = desktop.page;
-  await testTools(page, 'Testpakete');
-  if (!(await page.locator('#test-package-file').isVisible()))
-    await page.getByText('Anderes Paket öffnen oder Beispiel laden', { exact: true }).click();
   const path = join(fixture.directory, 'ui-fixture.fctest.json');
   await writeFile(path, JSON.stringify(pack));
-  await page.locator('#test-package-file').setInputFiles(path);
-  await page.getByRole('heading', { name: pack.name, exact: true }).waitFor();
-  await button(page, 'In Testpaketsammlung speichern').click();
-  await page.getByText('Testpaket dauerhaft und verschlüsselt', { exact: false }).waitFor();
+  await navigate(page, 'Senden');
+  const library = page.locator('.test-case-library');
+  if (!(await library.locator('details').evaluate((element) => element.open)))
+    await library.locator('summary').click();
+  await library.locator('#send-library-import').setInputFiles(path);
+  const choice = library.locator('#send-library-choice');
+  const value = await until(() => savedCaseValue(choice, pack.name), 'live_ui_saved_package_choice_missing');
+  await choice.selectOption(value);
   const exported = await nativeFile(
     desktop,
     fixture,
@@ -86,23 +83,16 @@ async function savePack(desktop, fixture, pack) {
     isDeepStrictEqual(JSON.parse(await readFile(exported, 'utf8')), pack),
     'live_ui_package_export_changed',
   );
-  return path;
+  await openStoredTest(page, 'pack', pack.name);
+  await button(page, 'Test speichern').click();
+  await page
+    .getByText('Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.', { exact: true })
+    .waitFor();
 }
-async function checkStep(page) {
-  await button(page, 'Lokale Ergebnisse laden').click();
-  const choice = page.getByRole('combobox', { name: 'Nachricht für diesen Schritt', exact: true });
-  await choice.waitFor();
-  const options = choice.locator('option:not([value=""])');
-  check((await options.count()) === 1, 'live_ui_flow_evidence_ambiguous');
-  await choice.selectOption(await options.first().getAttribute('value'));
-  await button(page, 'Schritt anhand der Inhalte prüfen').click();
-}
-async function flowReview(desktop, fixture, senders, path, pack) {
+async function flowReview(desktop, fixture, senders, pack) {
   let page = desktop.page;
-  await testTools(page, 'Testabläufe');
-  await page.locator('#test-flow-file').setInputFiles(path);
-  await button(page, 'Ablauf lokal speichern').click();
-  await page.getByText(/wurde dauerhaft für Ihr Windows-Benutzerkonto gespeichert/).waitFor();
+  await testTools(page);
+  await page.getByLabel('Empfangs-Destination', { exact: true }).fill(fixture.destination);
   await page.locator('.flow-context summary').click();
   await button(page, 'Passende Profile laden').click();
   await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).selectOption(senders.v3);
@@ -110,42 +100,42 @@ async function flowReview(desktop, fixture, senders, path, pack) {
     .getByRole('combobox', { name: 'Empfänger-Profil', exact: true })
     .selectOption(fixture.receiverProfiles.find((p) => p.api === 'v3').id);
   await page.getByLabel('Absender-Destination (API v3)', { exact: true }).fill(process.env.SENDERDEST);
-  await page.getByLabel('Empfangs-Destination', { exact: true }).fill(fixture.destination);
-  await button(page, 'Durchlauf starten').click();
+  await button(page, 'Test starten').click();
   const message = await sendSubmission(page, fixture);
-  await testTools(page, 'Testabläufe');
-  await checkStep(page);
-  await page.getByRole('heading', { name: `Eingang prüfen: ${pack.cases[0].name}`, exact: true }).waitFor();
-  await flowPanel(page)
-    .getByText('Fortschritt für Ihr Windows-Benutzerkonto gespeichert', { exact: true })
-    .waitFor();
+  await testTools(page);
+  await checkTestStep(page);
+  await page.getByRole('heading', { name: 'Eingang öffnen', exact: true }).waitFor();
+  await page.getByText('Durchlauf für Ihr Windows-Benutzerkonto gespeichert.', { exact: true }).waitFor();
+  await testOverview(page);
+  const runRow = page.locator('[data-run-id]').filter({ hasText: pack.name });
+  check((await runRow.count()) === 1, 'live_ui_flow_run_ambiguous');
+  const runId = await runRow.getAttribute('data-run-id');
   await desktop.restartGracefully();
   page = desktop.page;
   await connectProfile(page, senders.v3);
   await localScannerReady(page);
-  await testTools(page, 'Testabläufe');
-  await page.locator('.saved-flow-runs summary').click();
+  await testOverview(page);
   await page
-    .getByRole('combobox', { name: 'Durchlauf', exact: true })
-    .selectOption({ label: `${pack.name} · TEST · 1/6 Schritte` });
-  await button(page, 'Durchlauf fortsetzen').click();
-  await page.getByText(/^Durchlauf wiederhergestellt\./).waitFor();
-  const progress = flowPanel(page).getByText('Schritt 2 von 6 · 1 erfolgreich geprüft', { exact: true });
+    .locator(`[data-run-id="${runId}"]`)
+    .getByRole('button', { name: /^Durchlauf öffnen:/ })
+    .click();
+  await page.getByText(/^Historischer Durchlauf geöffnet\./).waitFor();
+  const progress = page.locator('.scenario-workspace').getByText(/Schritt 2 von 6/);
   await progress.waitFor();
-  await page.getByText('Ablauf verwalten oder anderen Ablauf öffnen', { exact: true }).click();
+  await button(page, 'Vorbereiten').click();
   await page.locator('.flow-context summary').click();
-  check(
-    (await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).inputValue()) === senders.v3 &&
+  await until(
+    async () =>
+      (await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).inputValue()) ===
+        senders.v3 &&
       (await page.getByLabel('Empfangs-Destination', { exact: true }).inputValue()) === fixture.destination,
     'live_ui_flow_context_not_restored',
   );
-  await button(page, 'Neuen Durchlauf starten').click();
-  const dialog = page.getByRole('dialog', { name: 'Durchlauf neu starten?', exact: true });
-  await dialog.waitFor();
+  await button(page, 'Ergebnisse').click();
   const exported = await nativeFile(
     desktop,
     fixture,
-    () => dialog.getByRole('button', { name: 'Durchlaufergebnis exportieren', exact: true }).click(),
+    () => button(page, 'Prüfergebnis exportieren').click(),
     'ui-durchlaufergebnis.json',
   );
   await until(
@@ -157,14 +147,14 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   );
   const result = JSON.parse(await readFile(exported, 'utf8'));
   check(
-    result.results.length === 1 &&
-      result.results[0].submissionId === message.submissionId &&
+    result.attempts.length === 1 &&
+      result.attempts[0].context.submissionId === message.submissionId &&
       !('bindings' in result),
     'live_ui_flow_export_invalid',
   );
-  await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
+  await button(page, 'Durchführen').click();
   await progress.waitFor();
-  await button(page, 'Zum Empfänger wechseln').click();
+  await button(page, 'Zur passenden Arbeitsansicht').click();
   await page.getByRole('heading', { name: 'Empfangen', exact: true }).waitFor();
   check(
     (await page.locator('#destination-id').inputValue()) === fixture.destination,
@@ -177,27 +167,36 @@ async function flowReview(desktop, fixture, senders, path, pack) {
   );
   await openSubmission(page, fixture, message);
   await singleFiles(desktop, fixture, message);
-  await testTools(page, 'Testabläufe');
-  await checkStep(page);
-  await checkStep(page);
+  await testTools(page);
+  await checkTestStep(page);
+  await checkTestStep(page);
   await openSubmission(page, fixture, message);
   await acceptReceived(desktop, fixture, message);
-  await testTools(page, 'Testabläufe');
-  await checkStep(page);
+  await testTools(page);
+  await checkTestStep(page);
   await navigate(page, 'Empfangen');
   await sendReplyAfterReceive(desktop, fixture, message);
-  await testTools(page, 'Testabläufe');
-  await checkStep(page);
+  await testTools(page);
+  await checkTestStep(page);
   await connectProfile(page, senders.v3);
   await receiveReply(desktop, fixture, message);
-  await testTools(page, 'Testabläufe');
-  await checkStep(page);
-  await page.getByText('Alle Schritte dieses Testablaufs sind geprüft.', { exact: true }).waitFor();
-  await button(page, 'Neuen Durchlauf starten').click();
-  await button(page, 'Ergebnisse zurücksetzen und neu starten').click();
-  await flowPanel(page).getByText('Schritt 1 von 6 · 0 erfolgreich geprüft', { exact: true }).waitFor();
+  await testTools(page);
+  await checkTestStep(page);
+  await page.getByText('6 von 6 Schritten automatisch nachgewiesen.', { exact: true }).waitFor();
+  await button(page, 'Vorbereiten').click();
+  await button(page, 'Test starten').click();
+  await page
+    .locator('.scenario-workspace')
+    .getByText(/Schritt 1 von 6/)
+    .waitFor();
+  await testOverview(page);
+  check(
+    (await page.locator('[data-run-id]').filter({ hasText: pack.name }).count()) === 2,
+    'live_ui_flow_history_lost',
+  );
+  await page.locator(`[data-run-id="${runId}"]`).getByText('6/6 Schritte', { exact: false }).waitFor();
   console.log(
-    'Real desktop UI: encrypted run and profile context survived normal window close, receiver shortcut and all real flow steps passed, exported evidence matched and explicit restart reset it',
+    'Real desktop UI: encrypted run and context survived restart, all round-trip steps passed, exported proof matched and a new run retained the earlier result',
   );
   return message;
 }
@@ -288,17 +287,12 @@ async function durability(desktop, fixture, senders, pack, message) {
     'live_ui_durable_case_missing',
   );
   await setRetention(restored, true);
-  await testTools(page, 'Testpakete');
-  await button(page, 'Gespeicherte Testpakete laden').click();
-  await page
-    .getByRole('combobox', { name: 'Gespeichertes Testpaket auswählen', exact: true })
-    .selectOption({ label: pack.name });
-  await button(page, 'Gespeichertes Testpaket öffnen').click();
+  await openStoredTest(page, 'test', pack.name);
   const path = await nativeFile(
     desktop,
     fixture,
-    () => button(page, 'Testpaket exportieren').click(),
-    'testpaket-nach-neustart.json',
+    () => button(page, 'Testdatei exportieren').click(),
+    'integrationstest-nach-neustart.json',
   );
   await until(
     async () =>
@@ -307,27 +301,22 @@ async function durability(desktop, fixture, senders, pack, message) {
         .catch(() => false),
     'live_ui_reopened_package_export_missing',
   );
-  check(isDeepStrictEqual(JSON.parse(await readFile(path, 'utf8')), pack), 'live_ui_durable_package_changed');
-  await button(page, 'Testabläufe').click();
-  await button(page, 'Gespeicherte Abläufe laden').click();
-  await page
-    .getByRole('combobox', { name: 'Gespeicherten Ablauf auswählen', exact: true })
-    .selectOption({ label: `${pack.name} · 6 Schritte` });
-  await button(page, 'Gespeicherten Ablauf öffnen').click();
-  await button(page, 'Durchlauf starten').waitFor();
-  await button(page, 'Gespeicherten Ablauf löschen').click();
-  await page
-    .getByRole('dialog', { name: 'Gespeicherten Ablauf löschen?', exact: true })
-    .getByRole('button', { name: 'Abbrechen', exact: true })
-    .click();
-  await button(page, 'Gespeicherten Ablauf löschen').click();
-  await page
-    .getByRole('dialog', { name: 'Gespeicherten Ablauf löschen?', exact: true })
-    .getByRole('button', { name: 'Ablauf löschen', exact: true })
-    .click();
-  await page
-    .getByText('Gespeicherter Ablauf gelöscht. Der geöffnete Ablauf bleibt erhalten.', { exact: true })
-    .waitFor();
+  const restoredTest = JSON.parse(await readFile(path, 'utf8'));
+  check(
+    restoredTest.format === 'fbforge-connect-scenario' && isDeepStrictEqual(restoredTest.pack, pack),
+    'live_ui_durable_package_changed',
+  );
+  await testOverview(page);
+  const row = page.locator('[data-test-entry-id^="test:"]').filter({
+    has: button(page, `Test löschen: ${pack.name}`),
+  });
+  await button(row, `Test löschen: ${pack.name}`).click();
+  const dialog = page.getByRole('dialog', { name: 'Gespeicherten Test löschen?', exact: true });
+  await button(dialog, 'Abbrechen').click();
+  check((await row.count()) === 1, 'live_ui_test_delete_cancel_failed');
+  await button(row, `Test löschen: ${pack.name}`).click();
+  await button(dialog, 'Eintrag löschen').click();
+  await until(async () => (await row.count()) === 0, 'live_ui_test_delete_failed');
   await connectProfile(page, senders.v3);
   await navigate(page, 'Senden');
   await page.locator('#send-target').fill(fixture.destination);
@@ -349,27 +338,26 @@ async function durability(desktop, fixture, senders, pack, message) {
     'live_ui_package_delete_failed',
   );
   console.log(
-    'Real desktop UI: full application restart retained encrypted test packs, flow definitions, archived cases and profile-bound opt-out, then explicit collection deletion passed',
+    'Real desktop UI: application restart retained encrypted tests, original packages, archived cases and profile-bound opt-out, then explicit collection deletion passed',
   );
 }
 export async function review030(desktop, fixture, senders) {
   await connectProfile(desktop.page, senders.v3);
-  console.log('Live 0.3 acceptance: real profile maintenance started');
+  console.log('Live acceptance: real profile maintenance started');
   await reviewProfile(desktop, fixture);
   await connectProfile(desktop.page, senders.v3);
-  console.log('Live 0.3 acceptance: protected collections and real flow started');
+  console.log('Live acceptance: protected collections and real flow started');
   await reviewShortcuts(desktop.page, fixture);
   await reviewProcessAndInbox(desktop, fixture, senders);
   await connectProfile(desktop.page, senders.v3);
   const pack = await fixturePack(fixture);
-  const path = await savePack(desktop, fixture, pack);
+  await savePack(desktop, fixture, pack);
   const message = await flowReview(
     desktop,
     { ...fixture, replyData: pack.cases[0].reply.data },
     senders,
-    path,
     pack,
   );
-  console.log('Live 0.3 acceptance: actual process restart and durable readback started');
+  console.log('Live acceptance: actual process restart and durable readback started');
   await durability(desktop, fixture, senders, pack, message);
 }

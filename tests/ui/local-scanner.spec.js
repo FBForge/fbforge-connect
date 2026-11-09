@@ -1,15 +1,15 @@
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
-import { openTestPackage, selectLocalScanner } from '../../scripts/live-ui/local-tools.mjs';
+import { openTestPreparation, selectLocalScanner } from '../../scripts/live-ui/local-tools.mjs';
 test('live acceptance opens the test package explicitly after the remembered scanner tab', async ({
   page,
 }) => {
   await open(page);
   await page.getByRole('button', { name: 'Werkzeuge', exact: true }).click();
-  await openTestPackage(page);
-  await expect(page.locator('#test-case-choice')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Testpakete', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await openTestPreparation(page);
+  await expect(page.getByLabel('Testname', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Tests', exact: true })).toHaveAttribute(
+    'aria-selected',
     'true',
   );
 });

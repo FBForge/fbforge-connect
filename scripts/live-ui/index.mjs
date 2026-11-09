@@ -152,7 +152,7 @@ export async function exerciseDesktopUI(fixture) {
     }
     // Only fixed source locations, never Playwright's argument values or page contents.
     const location =
-      /live-ui[\\/](?:exchange|desktop|index|readback|downloads|local-tools|scanner|review-030|review-authoring|review-runtime)\.mjs:\d+:\d+/.exec(
+      /live-ui[\\/](?:exchange|desktop|index|readback|downloads|local-tools|test-workspace|scanner|review-030|review-authoring|review-runtime)\.mjs:\d+:\d+/.exec(
         error.stack || '',
       )?.[0];
     const diagnostic = /^live_ui_[a-z_]+$/.test(error.message || '') ? error.message : 'ui_driver_error';

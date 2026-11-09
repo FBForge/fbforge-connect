@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import { watch } from 'vue';
 import TestFlowContext from '../TestFlowContext.vue';
 import { useScenarioSeries } from './useScenarioSeries.ts';
 import { seriesLabels } from './series.ts';
 import type { useScenarioWorkspace } from './useScenarioWorkspace.ts';
 import type { Environment } from '../../contracts.d.ts';
-const props = defineProps<{ controller: ReturnType<typeof useScenarioWorkspace>; disabled: boolean }>();
+const props = defineProps<{
+  controller: ReturnType<typeof useScenarioWorkspace>;
+  disabled: boolean;
+  focused?: boolean;
+}>();
 const c = props.controller;
 const {
   environment,
@@ -30,12 +35,50 @@ const {
   exportResults,
   refresh,
 } = useScenarioSeries(c);
-const emit = defineEmits<{ context: [value: object] }>();
+const emit = defineEmits<{
+  context: [value: object];
+  active: [value: { name: string } | null];
+  focus: [];
+  change: [action: () => Promise<void>, replacesPreparation: boolean];
+}>();
+watch(series, (value) => emit('active', value ? { name: value.name } : null), { immediate: true });
+async function createSeries() {
+  await create();
+  if (series.value) emit('focus');
+}
+async function openSeries() {
+  await open();
+  if (series.value) emit('focus');
+}
+function requestChange(action: () => Promise<void>) {
+  const replaces = Boolean(
+    c.definition.value && JSON.stringify(c.definition.value) !== JSON.stringify(series.value?.definition),
+  );
+  emit('change', action, replaces);
+}
 </script>
 <template>
-  <details class="scenario-series">
-    <summary>Testserien planen und fortsetzen</summary>
-    <div class="scenario-section">
+  <component :is="focused ? 'section' : 'details'" v-if="focused || saved.length" class="scenario-series">
+    <h2 v-if="focused" id="scenario-series-title" tabindex="-1">
+      {{ series ? 'Testserie' : 'Testserie planen' }}
+    </h2>
+    <summary v-else>Gespeicherte Testserien ({{ saved.length }})</summary>
+    <div v-if="!focused" class="scenario-section">
+      <label>
+        Testserie auswählen
+        <select v-model="choice" :disabled="disabled || pending">
+          <option value="">Serie auswählen</option>
+          <option v-for="s in saved" :key="s.id" :value="s.id">
+            {{ s.name }} · {{ s.environment }} · {{ s.total }} Durchläufe
+          </option>
+        </select>
+      </label>
+      <button class="button secondary" :disabled="disabled || pending || !choice" @click="openSeries">
+        Testserie öffnen
+      </button>
+      <p v-if="error" role="alert">{{ error }}</p>
+    </div>
+    <div v-else class="scenario-section">
       <p class="small-note">
         Eine Serie hält die Testdefinition fest und führt durch ausgewählte Datensätze und API-Versionen.
         Jeder Durchlauf wird ausdrücklich gestartet. Versand und Empfangsbestätigung nutzen die normalen
@@ -74,7 +117,7 @@ const emit = defineEmits<{ context: [value: object] }>();
         <button
           class="button secondary"
           :disabled="disabled || pending || !name.trim() || !variants.length || !apis.length"
-          @click="create"
+          @click="createSeries"
         >
           Testserie anlegen
         </button>
@@ -94,7 +137,7 @@ const emit = defineEmits<{ context: [value: object] }>();
             </option>
           </select>
         </label>
-        <button class="button secondary" :disabled="disabled || pending || !choice" @click="open">
+        <button class="button secondary" :disabled="disabled || pending || !choice" @click="openSeries">
           Testserie öffnen
         </button>
       </template>
@@ -145,7 +188,11 @@ const emit = defineEmits<{ context: [value: object] }>();
                       v-if="!r.runId && r.outcome !== 'inapplicable'"
                       class="button secondary"
                       :disabled="disabled || pending || !c.sessionId.value"
-                      @click="launch(r.id)"
+                      @click="
+                        requestChange(async () => {
+                          await launch(r.id);
+                        })
+                      "
                     >
                       Durchlauf starten
                     </button>
@@ -153,7 +200,11 @@ const emit = defineEmits<{ context: [value: object] }>();
                       v-if="r.runId && r.outcome !== 'unavailable'"
                       class="button secondary"
                       :disabled="disabled || pending"
-                      @click="restore(r.runId)"
+                      @click="
+                        requestChange(async () => {
+                          await restore(r.runId!);
+                        })
+                      "
                     >
                       {{
                         ['passed', 'manual'].includes(r.outcome) ? 'Ergebnis öffnen' : 'Durchlauf fortsetzen'
@@ -207,5 +258,5 @@ const emit = defineEmits<{ context: [value: object] }>();
       </template>
       <p v-if="error" role="alert">{{ error }}</p>
     </div>
-  </details>
+  </component>
 </template>

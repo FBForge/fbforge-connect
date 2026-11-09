@@ -54,9 +54,7 @@ for (const api of ['v2', 'v3']) {
     pack.cases[0].receipt = 'none';
     pack.cases[0].request.attachments = [];
     pack.cases[0].request.replyOffer = null;
-    await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
-    await button(page, 'Testfälle und Abläufe').click();
-    await button(page, 'Testabläufe').click();
+    await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?legacy=flows&api=${api}`);
     await page.locator('#test-flow-file').setInputFiles({
       name: 'flow.json',
       mimeType: 'application/json',
@@ -107,8 +105,6 @@ for (const api of ['v2', 'v3']) {
     expect(saved.run.results).toHaveLength(1);
     expect(JSON.stringify(saved)).not.toContain('sessionId');
     await page.reload();
-    await button(page, 'Testfälle und Abläufe').click();
-    await button(page, 'Testabläufe').click();
     await page.getByText('Gespeicherten Durchlauf fortsetzen', { exact: true }).click();
     await page.getByLabel('Durchlauf', { exact: true }).selectOption(saved.run.id);
     await button(page, 'Durchlauf fortsetzen').click();
@@ -123,9 +119,8 @@ for (const api of ['v2', 'v3']) {
       },
       { record, data: pack.cases[0].request.data },
     );
-    await button(page, 'Schema-Vergleich').click();
-    await button(page, 'Testfälle und Abläufe').click();
-    await button(page, 'Testabläufe').click();
+    await button(page, 'Vorlagen').click();
+    await button(page, 'Werkzeuge').click();
     await button(page, 'Anderes Profil').click();
     await expect(
       page.getByRole('heading', { name: `Eingang prüfen: ${pack.cases[0].name}`, exact: true }),
@@ -199,7 +194,7 @@ test('configuration import requires explicit application and never writes to FIT
   await button(page, 'Vorlage geschützt speichern').click();
   await expect(page.getByRole('status')).toContainText('geschützt gespeichert');
   const calls = await page.evaluate(() => window.__integration.calls.map((c) => c.command));
-  expect(calls.every((c) => c === 'profile_workspace')).toBe(true);
+  expect(calls.every((c) => ['profile_workspace', 'test_library'].includes(c))).toBe(true);
 });
 
 test('assigned profiles and destinations persist with the run and context actions never send automatically', async ({
@@ -207,8 +202,7 @@ test('assigned profiles and destinations persist with the run and context action
 }) => {
   const pack = structuredClone(example);
   pack.cases = [pack.cases[0]];
-  await page.goto('http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=v3');
-  await button(page, 'Testabläufe').click();
+  await page.goto('http://127.0.0.1:1420/test-fixtures/integration-tools.html?legacy=flows&api=v3');
   await page.locator('#test-flow-file').setInputFiles({
     name: 'flow.json',
     mimeType: 'application/json',

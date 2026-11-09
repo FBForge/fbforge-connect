@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
+import { createScenario, latestRun } from './scenario-helpers.js';
 import original from '../../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 const simple = () => {
@@ -20,11 +21,11 @@ test('offline preparation has no prop warnings and offers XML-compatible variabl
   });
   await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html?destinations=1');
   await button(page, 'Testwerkzeuge').click();
-  await button(page, 'Integration testen').click();
+  await page.getByRole('tab', { name: 'Tests', exact: true }).click();
   const xml = structuredClone(original);
   xml.cases = [xml.cases[1]];
   await importPack(page, xml);
-  await expect(button(page, 'Neuen Testdurchlauf starten')).toBeDisabled();
+  await expect(button(page, 'Test starten')).toBeDisabled();
   await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
   await page
     .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
@@ -65,9 +66,10 @@ test('a local case opens the capture dialog and creates a portable test without 
 });
 async function open(page, api = 'v3') {
   await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
-  await button(page, 'Integration testen').click();
+  await page.getByRole('tab', { name: 'Tests', exact: true }).click();
 }
 async function importPack(page, p) {
+  await page.getByText('Testdatei importieren', { exact: true }).click();
   await page.locator('#scenario-import').setInputFiles({
     name: 'test.json',
     mimeType: 'application/json',
@@ -79,7 +81,7 @@ test('recipient offers recover from missing reply schemas and discard a late res
   page,
 }) => {
   await open(page);
-  await button(page, 'Einreichung mit Antwort').click();
+  await createScenario(page, 'reply');
   await page.evaluate(() => {
     const base = window.__TAURI_INTERNALS__.invoke;
     window.__TAURI_INTERNALS__.invoke = async (command, args) => {
@@ -113,10 +115,6 @@ test('recipient offers recover from missing reply schemas and discard a late res
     };
   });
   await page
-    .locator('.scenario-preparation')
-    .getByText('Sender und Empfänger zuordnen', { exact: true })
-    .click();
-  await page
     .getByRole('textbox', { name: 'Empfangs-Destination', exact: true })
     .fill('11111111-1111-4111-8111-111111111111');
   await page.getByText('Angebot der Gegenstelle übernehmen', { exact: true }).click();
@@ -132,6 +130,7 @@ test('recipient offers recover from missing reply schemas and discard a late res
   });
   await button(page, 'Aktuelles Empfängerangebot laden').click();
   await expect(page.getByText('Empfängerangebot wird geladen …', { exact: true })).toBeVisible();
+  await page.getByText('Profile und API (optional)', { exact: true }).click();
   await page.getByRole('combobox', { name: 'API-Version für diesen Ablauf', exact: true }).selectOption('v2');
   await page.evaluate(() => window.__releaseOffer());
   await expect(page.getByText('Empfängerangebot wird geladen …', { exact: true })).toHaveCount(0);
@@ -173,7 +172,7 @@ for (const api of ['v2', 'v3'])
   test(`guided runs persist failures and compare with protected references (${api})`, async ({ page }) => {
     await open(page, api);
     await importPack(page, simple());
-    await button(page, 'Neuen Testdurchlauf starten').click();
+    await button(page, 'Test starten').click();
     await expect(page.getByRole('heading', { name: 'Einreichung senden', exact: true })).toBeVisible();
     await record(page, 'sent');
     await record(page, 'received');
@@ -183,23 +182,18 @@ for (const api of ['v2', 'v3'])
     ).toBeVisible();
     await button(page, 'Als Referenz festlegen').click();
     await expect(button(page, 'Referenz aufheben')).toBeVisible();
-    await button(page, 'Vorbereitung').click();
-    await button(page, 'Neuen Testdurchlauf starten').click();
+    const reference = (await latestRun(page)).id;
+    await button(page, 'Vorbereiten').click();
+    await button(page, 'Test starten').click();
     await record(page, 'sent', true);
     await button(page, 'Ergebnisse').click();
     await expect(page.locator('.scenario-check.failed')).toContainText('Fehlgeschlagen');
-    await page.getByText(/Gespeicherte Durchläufe und Referenzen/).click();
-    const choice = page.getByRole('combobox', { name: 'Durchlauf auswählen', exact: true });
-    const reference = await choice
-      .locator('option')
-      .filter({ hasText: /Referenz ·/ })
-      .getAttribute('value');
-    await choice.selectOption(reference);
-    await button(page, 'Mit aktuellem Durchlauf vergleichen').click();
+    await button(page, 'Zur Testübersicht').click();
+    const referenceRow = page.locator('[data-run-id="' + reference + '"]');
+    await referenceRow.getByRole('button', { name: 'Vergleichen', exact: true }).click();
     await expect(page.getByText(/Neue Abweichung/)).toBeVisible();
-    await button(page, 'Durchlauf löschen').click();
-    await page.getByRole('dialog').getByRole('button', { name: 'Eintrag löschen', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('Referenz');
+    await button(page, 'Zur Testübersicht').click();
+    await expect(referenceRow.getByRole('button', { name: /^Durchlauf löschen:/ })).toBeDisabled();
     const writes = await page.evaluate(() =>
       window.__integration.calls.filter((c) =>
         ['execute_send', 'execute_receipt', 'execute_reply'].includes(c.command),
@@ -209,7 +203,7 @@ for (const api of ['v2', 'v3'])
   });
 test('variable editing, variants, selected expectations and legacy imports stay local', async ({ page }) => {
   await open(page);
-  await button(page, 'Einreichung mit Antwort').click();
+  await createScenario(page, 'reply');
   await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
   await page
     .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
@@ -240,7 +234,7 @@ test('waiting remains cancellable after navigation and stops on profile change',
   await page
     .getByRole('combobox', { name: 'Welche Gegenstelle testen Sie?', exact: true })
     .selectOption('receiver');
-  await button(page, 'Neuen Testdurchlauf starten').click();
+  await button(page, 'Test starten').click();
   await button(page, 'Auf Nachweis warten').click();
   await expect(button(page, 'Warten beenden')).toBeVisible();
   await button(page, 'Virenscan').first().click();
@@ -256,8 +250,8 @@ test('new testing surfaces reflow in the real application and expose accessible 
 }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html?destinations=1');
   await button(page, 'Testwerkzeuge').click();
-  await button(page, 'Integration testen').click();
-  await button(page, 'Einreichung mit Antwort').click();
+  await page.getByRole('tab', { name: 'Tests', exact: true }).click();
+  await createScenario(page, 'reply');
   for (const width of [1280, 640, 420]) {
     await page.setViewportSize({ width, height: 900 });
     for (const theme of ['light', 'dark']) {

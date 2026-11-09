@@ -1,7 +1,15 @@
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { scenario } from '../helpers/scenarios.js';
-import { button, openScenario, importScenario, latestRun, proveEvidence } from './scenario-helpers.js';
+import {
+  button,
+  openScenario,
+  importScenario,
+  latestRun,
+  proveEvidence,
+  createScenario,
+  showSeries,
+} from './scenario-helpers.js';
 import { scenarioSteps } from '../../frontend/src/integration/scenarios/model.ts';
 
 const simple = () => {
@@ -18,7 +26,7 @@ test('a series starts only the chosen API/dataset and preserves its snapshot and
   s.variants.push({ id: crypto.randomUUID(), name: 'Zweiter Datensatz', values: [] });
   await openScenario(page);
   await importScenario(page, s);
-  await page.getByText('Testserien planen und fortsetzen', { exact: true }).click();
+  await showSeries(page);
   const series = page.locator('.scenario-series');
   await series.getByRole('checkbox', { name: 'API v2', exact: true }).check();
   await series.getByRole('checkbox', { name: 'Zweiter Datensatz', exact: true }).uncheck();
@@ -31,14 +39,23 @@ test('a series starts only the chosen API/dataset and preserves its snapshot and
   await expect(button(series, 'Aktuellen Durchlauf zuordnen')).toHaveCount(0);
   for (const step of scenarioSteps(run.definition))
     await proveEvidence(page, step, run.pack.cases[0].request.data);
+  await showSeries(page);
   await expect(series.getByText('Erfolgreich', { exact: true })).toBeVisible();
   await expect(series.getByText('Nicht ausgeführt', { exact: true })).toHaveCount(1);
-  await button(page, 'Vorbereitung').click();
+  await button(page, 'Zum geöffneten Test').click();
+  await button(page, 'Vorbereiten').click();
   await page.getByLabel('Testname', { exact: true }).fill('Später geänderte Vorbereitung');
+  await showSeries(page);
   await expect(series.getByRole('heading', { name: s.name + ' · Testserie', exact: true })).toBeVisible();
   await button(series, 'Prüfstand aktualisieren').click();
   await button(row, 'Ergebnis öffnen').click();
-  await expect(page.getByText('Alle Schritte sind bearbeitet.', { exact: false })).toBeVisible();
+  const replace = page.getByRole('dialog', { name: 'Anderen Test öffnen?', exact: true });
+  if (await replace.isVisible())
+    await replace.getByRole('button', { name: 'Test wechseln', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Ergebnisse dieses Durchlaufs', exact: true }),
+  ).toBeVisible();
+  await showSeries(page);
   const download = page.waitForEvent('download');
   await button(series, 'Serienergebnis exportieren').click();
   const file = await download;
@@ -46,10 +63,8 @@ test('a series starts only the chosen API/dataset and preserves its snapshot and
   expect(exported.rows.map((row) => row.status).sort()).toEqual(['not_started', 'passed']);
   expect(JSON.stringify(exported)).not.toContain('base64');
   await button(series, 'Serie entfernen').click();
-  await page.getByText(/Gespeicherte Durchläufe und Referenzen/).click();
-  await expect(
-    page.getByRole('combobox', { name: 'Durchlauf auswählen', exact: true }).locator('option'),
-  ).toHaveCount(2);
+  await button(page, 'Zur Testübersicht').click();
+  await expect(page.locator('[data-run-id]')).toHaveCount(1);
   expect(
     await page.evaluate(() =>
       window.__integration.calls.filter((c) =>
@@ -60,8 +75,8 @@ test('a series starts only the chosen API/dataset and preserves its snapshot and
 });
 test('v3-only series mark v2 as inapplicable and never present it as passed', async ({ page }) => {
   await openScenario(page);
-  await button(page, 'Nachforderung und Nachreichung').click();
-  await page.getByText('Testserien planen und fortsetzen', { exact: true }).click();
+  await createScenario(page, 'process');
+  await showSeries(page);
   const series = page.locator('.scenario-series');
   await series.getByRole('checkbox', { name: 'API v2', exact: true }).check();
   await button(series, 'Testserie anlegen').click();
@@ -76,7 +91,7 @@ test('series reject stale context results, recover a missing run and keep failed
   const s = simple();
   await openScenario(page);
   await importScenario(page, s);
-  await page.getByText('Testserien planen und fortsetzen', { exact: true }).click();
+  await showSeries(page);
   const series = page.locator('.scenario-series');
   await button(series, 'Testserie anlegen').click();
   await button(series, 'Durchlauf starten').click();
@@ -86,6 +101,7 @@ test('series reject stale context results, recover a missing run and keep failed
       window.__TAURI_INTERNALS__.invoke('test_library', { request: { action: 'scenario_run_delete', id } }),
     run.id,
   );
+  await showSeries(page);
   await button(series, 'Prüfstand aktualisieren').click();
   await expect(series.getByText('Durchlauf nicht verfügbar', { exact: true })).toBeVisible();
   await button(series, 'Fehlende Verknüpfung lösen').click();
@@ -114,7 +130,7 @@ test('series planning and result tables fit compact screens, large text and both
 }) => {
   await openScenario(page);
   await importScenario(page, simple());
-  await page.getByText('Testserien planen und fortsetzen', { exact: true }).click();
+  await showSeries(page);
   const series = page.locator('.scenario-series');
   await button(series, 'Testserie anlegen').click();
   for (const width of [1280, 640, 420]) {

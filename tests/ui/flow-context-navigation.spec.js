@@ -23,9 +23,8 @@ test('the real application routes a mapped profile while its automatic key read 
     });
   }, target);
   await button(page, 'Testwerkzeuge').click();
-  await button(page, 'Testfälle und Abläufe').click();
-  await button(page, 'Testabläufe').click();
-  await page.locator('#test-flow-file').setInputFiles({
+  await page.getByText('Testdatei importieren', { exact: true }).click();
+  await page.locator('#scenario-import').setInputFiles({
     name: 'fixture.json',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(pack)),
@@ -33,8 +32,8 @@ test('the real application routes a mapped profile while its automatic key read 
   await page.locator('.flow-context summary').click();
   await button(page, 'Passende Profile laden').click();
   await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).selectOption(target);
-  await button(page, 'Durchlauf starten').click();
-  const shortcut = button(page, 'Zum Sender wechseln');
+  await button(page, 'Test starten').click();
+  const shortcut = button(page, 'Versandentwurf öffnen');
   await expect(shortcut).toBeEnabled();
   await page.evaluate((id) => {
     window.__profilesFixture.holdKeyProfileId = id;

@@ -11,33 +11,44 @@ async function openTools(page) {
   await page.goto(`${base}/test-fixtures/profiles.html?destinations=1`);
   await button(page, 'Testwerkzeuge').click();
 }
+async function importPack(page, pack) {
+  await page.getByText('Testdatei importieren', { exact: true }).click();
+  await page.locator('#scenario-import').setInputFiles({
+    name: 'test.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(pack)),
+  });
+  await expect(page.getByLabel('Testname', { exact: true })).toHaveValue(pack.name);
+}
 test('test packages and schema comparisons work offline and remain available across navigation', async ({
   page,
 }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await openTools(page);
-  await button(page, 'Fiktives Testpaket öffnen').click();
+  await importPack(page, example);
   await expect(
-    page.getByRole('combobox', { name: 'Testfall auswählen', exact: true }).locator('option'),
+    page.getByRole('combobox', { name: 'Testfall bearbeiten', exact: true }).locator('option'),
   ).toHaveCount(2);
-  await page.getByText('Erwartungen für den manuellen Test', { exact: true }).click();
+  await page.getByRole('combobox', { name: 'Nachricht bearbeiten', exact: true }).selectOption('reply');
   await page
-    .locator('#test-expected-reply')
+    .getByRole('textbox', { name: 'Fachdaten', exact: true })
     .fill('{"status":"unterlagen_erforderlich","nachricht":"Fiktive Rückfrage"}');
-  await page.getByRole('combobox', { name: 'Testfall auswählen', exact: true }).selectOption('1');
-  await page.getByRole('combobox', { name: 'Testfall auswählen', exact: true }).selectOption('0');
-  await expect(page.locator('#test-expected-reply')).toHaveValue(/Fiktive Rückfrage/);
-  await button(page, 'Schema-Vergleich').click();
+  await page.getByRole('combobox', { name: 'Testfall bearbeiten', exact: true }).selectOption('1');
+  await page.getByRole('combobox', { name: 'Testfall bearbeiten', exact: true }).selectOption('0');
+  await page.getByRole('combobox', { name: 'Nachricht bearbeiten', exact: true }).selectOption('reply');
+  await expect(page.getByRole('textbox', { name: 'Fachdaten', exact: true })).toHaveValue(
+    /Fiktive Rückfrage/,
+  );
+  await page.getByRole('tab', { name: 'Schema-Vergleich', exact: true }).click();
   await button(page, 'Fiktiven Beispielvergleich öffnen').click();
   await expect(page.locator('.schema-change-list')).toContainText('Jetzt ein Pflichtfeld');
   await expect(page.locator('.schema-change-list')).toContainText('Auswahlwerte entfernt');
   await button(page, 'Start').click();
   await button(page, 'Testwerkzeuge').click();
   await expect(page.locator('.schema-change-list')).toContainText('Jetzt ein Pflichtfeld');
-  await button(page, 'Testfälle und Abläufe').click();
-  await button(page, 'Testpakete').click();
-  await expect(page.getByRole('combobox', { name: 'Testfall auswählen', exact: true })).toHaveValue('0');
+  await page.getByRole('tab', { name: 'Tests', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Testfall bearbeiten', exact: true })).toHaveValue('0');
   expect(
     (await page.evaluate(() => window.__profilesFixture.calls)).map((call) => call.command),
   ).not.toContain('open_session');
@@ -45,16 +56,18 @@ test('test packages and schema comparisons work offline and remain available acr
 });
 test('bad package and schema API error files preserve the previous content', async ({ page }) => {
   await openTools(page);
-  await button(page, 'Fiktives Testpaket öffnen').click();
-  await page.getByText('Anderes Paket öffnen oder Beispiel laden', { exact: true }).click();
+  await importPack(page, example);
+  await button(page, 'Zur Testübersicht').click();
+  await page.getByText('Testdatei importieren', { exact: true }).click();
   await dropFiles(
     page,
-    page.locator('#test-package-file').locator('xpath=ancestor::div[contains(@class,"file-drop-zone")]'),
+    page.locator('#scenario-import').locator('xpath=ancestor::div[contains(@class,"file-drop-zone")]'),
     [{ name: 'kaputt.json', type: 'application/json', content: '{"clientSecret":"never-import"}' }],
   );
-  await expect(page.getByRole('alert')).toContainText('kein gültiges');
+  await expect(page.getByRole('alert')).toBeVisible();
+  await button(page, 'Vorbereitung fortsetzen').click();
   await expect(page.getByRole('heading', { name: 'Fiktiver Integrationstest', exact: true })).toBeVisible();
-  await button(page, 'Schema-Vergleich').click();
+  await page.getByRole('tab', { name: 'Schema-Vergleich', exact: true }).click();
   for (const [id, content] of [
     ['compare-before', '{"type":"object"}'],
     ['compare-after', '{"result":"error","error":{"code":404}}'],
@@ -114,11 +127,14 @@ test('a test package is imported only after confirmation and a matching current 
       return original(command, args);
     };
   }, example);
-  await button(page, 'Fiktives Testpaket öffnen').click();
-  await button(page, 'Als Versandentwurf öffnen').click();
+  await importPack(page, example);
+  await button(page, 'Verbinden').click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await button(page, 'Anmelden').click();
+  await page.getByLabel('Empfangs-Destination', { exact: true }).fill('22222222-2222-4222-8222-222222222222');
+  await button(page, 'Test starten').click();
+  await button(page, 'Versandentwurf öffnen').click();
   await page.locator('#send-target').fill('22222222-2222-4222-8222-222222222222');
   await page.evaluate(() => (window.__offerMatches = false));
   await button(page, 'Testfall übernehmen').click();
@@ -152,9 +168,9 @@ for (const width of [1280, 640, 320])
   test(`test tools reflow and remain accessible at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await openTools(page);
-    await button(page, 'Fiktives Testpaket öffnen').click();
-    for (const mode of ['Testpakete', 'Schema-Vergleich']) {
-      await button(page, mode).click();
+    await importPack(page, example);
+    for (const mode of ['Tests', 'Schema-Vergleich']) {
+      await page.getByRole('tab', { name: mode, exact: true }).click();
       if (mode === 'Schema-Vergleich') await button(page, 'Fiktiven Beispielvergleich öffnen').click();
       for (const [theme, forcedColors] of [
         ['light', 'none'],

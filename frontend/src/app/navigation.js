@@ -41,7 +41,7 @@ export const navigation = [
     name: 'Testwerkzeuge',
     group: 'Werkzeuge und Verwaltung',
     icon: 'tools',
-    description: 'Testfälle und Abläufe verwalten, Antwortschemas erstellen und Schemata vergleichen.',
+    description: 'Tests durchführen, Antwortschemas erstellen und Schemata vergleichen.',
   },
   {
     name: 'Virenscan',

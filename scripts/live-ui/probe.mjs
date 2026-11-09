@@ -3,7 +3,7 @@ import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { nativeFile } from './downloads.mjs';
 import {
-  openTestPackage,
+  openTestPreparation,
   localScannerReady,
   onlineScannerSetup,
   scannerDiagnostics,
@@ -37,11 +37,11 @@ try {
   } else {
     await localScannerReady(desktop.page, false);
     await navigate(desktop.page, 'Testwerkzeuge');
-    await openTestPackage(desktop.page);
+    await openTestPreparation(desktop.page);
     const exported = await nativeFile(
       desktop,
       { directory },
-      () => desktop.page.getByRole('button', { name: 'Testpaket exportieren', exact: true }).click(),
+      () => desktop.page.getByRole('button', { name: 'Testdatei exportieren', exact: true }).click(),
       'native-save-probe.json',
     );
     await until(
@@ -52,10 +52,10 @@ try {
       'live_ui_native_save_probe_missing',
     );
     check(
-      JSON.parse(await readFile(exported, 'utf8')).format === 'fbforge-connect-testpack',
+      JSON.parse(await readFile(exported, 'utf8')).format === 'fbforge-connect-scenario',
       'live_ui_native_save_probe_invalid',
     );
-    await desktop.page.getByRole('button', { name: 'Antwortschemas', exact: true }).click();
+    await desktop.page.getByRole('tab', { name: 'Antwortschemas', exact: true }).click();
     for (const [label, name] of [
       ['JSON-Schema herunterladen', 'probe-schema.json'],
       ['Fiktives Beispiel herunterladen', 'probe-example.json'],

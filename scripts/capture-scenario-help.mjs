@@ -1,7 +1,7 @@
 // Continues capture-help's real application session. Only native replies are synthetic.
 export async function captureScenarioHelp(page, capture) {
   const button = (name) => page.getByRole('button', { name, exact: true });
-  await button('Vorbereitung').click();
+  await button('Vorbereiten').click();
   await page.getByText('Weitere Antworten im selben Vorgang', { exact: true }).click();
   await button('Weitere Antwort hinzufügen').click();
   await page
@@ -22,7 +22,7 @@ export async function captureScenarioHelp(page, capture) {
     'integration-responses',
     page.getByText('Weitere Antworten im selben Vorgang', { exact: true }).locator('..'),
   );
-  await page.getByText('Testserien planen und fortsetzen', { exact: true }).click();
+  await button('Als Testserie planen').click();
   const series = page.locator('.scenario-series');
   for (const api of ['v2', 'v3'])
     await series.getByRole('checkbox', { name: `API ${api}`, exact: true }).check();
@@ -97,5 +97,6 @@ export async function captureScenarioHelp(page, capture) {
     'integration-differences',
     page.getByRole('heading', { name: 'Ergebnisse dieses Durchlaufs', exact: true }),
   );
+  await button('Zur Testserie').click();
   await capture('integration-series', series);
 }

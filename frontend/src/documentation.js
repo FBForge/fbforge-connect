@@ -13,7 +13,7 @@ export const documentationTopics = Object.freeze([
   { id: 'diagnostics', title: 'Technische Aufrufe verstehen' },
   { id: 'problems', title: 'Probleme verstehen und beheben' },
   { id: 'accessibility', title: 'Tastatur und Lesbarkeit' },
-  { id: 'tools', title: 'Testpakete, Antwortschemas und Schema-Vergleich' },
+  { id: 'tools', title: 'Antwortschemas, Schema-Vergleich und Virenscan' },
   { id: 'tests', title: 'Geführte Integrationstests' },
 ]);
 export function documentationUrl(topic = 'start') {

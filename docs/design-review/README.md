@@ -2,7 +2,35 @@
 
 ## 0.4.0 in Vorbereitung
 
-Der geprüfte Produktstand ist `46991b21b4d497ce66fc8ea4e3d875318bf1a4d9`.
+### Vereinfachte Testwerkzeuge – 9. November 2026
+
+Ein gemeinsamer Bereich „Tests“ ersetzt die getrennten Einstiege für Pakete,
+Abläufe und Integrationstests. Vorlagen, bestehende Sammlungen und Ergebnisse
+stehen in derselben Übersicht. Die Vorbereitung bleibt beim Wechsel zur
+Übersicht erhalten. Ein anderer Test ersetzt ungespeicherte Änderungen erst
+nach Bestätigung. Testserien öffnen eine eigene Ansicht. Frühere Durchläufe
+behalten ihren bisherigen Prüfer und ihren gespeicherten Fortschritt.
+
+Die laufende Oberfläche wurde mit fiktiven nativen Antworten visuell geprüft,
+einschließlich Hell-/Dunkelmodus, schmaler Fenster, Tastaturbedienung und
+vergrößerter Schrift. Die Anleitung beschreibt denselben Ablauf und enthält
+15 Kapitel mit 54 referenzierten Bildern. Das gemeinsame Speichermodell und
+die weiterhin getrennten Formate sind in [ARCHITECTURE.md](../../ARCHITECTURE.md)
+beschrieben. Diese Browserprüfung ersetzt keine native Windows-Abnahme des
+geänderten Produktstands.
+
+Lokal bestehen 391 Node-Tests, sechs Plattformfälle werden übersprungen. Die
+vollständige Chromium-Suite besteht mit 279 Fällen. Zwei zusätzliche gezielte
+Browserfälle prüfen die aktualisierten Navigationstreiber der nativen Abnahme,
+einschließlich alter Sammlungen und einer mehrdeutigen Nachweisauswahl.
+Build, Bundlebudget und Ausführung des Produktionsbundles, Typprüfung, Lint,
+Formatierung, Dateigrößenprüfung und Lizenzprüfung bestehen. Die vollständige
+installierte Live-Abnahme wurde für diese Oberflächenänderung nicht erneut
+ausgeführt. Dafür ist ein neuer Windows-Kandidat erforderlich.
+
+### Frühere Funktionsprüfung
+
+Der folgende Nachweis bezieht sich auf `46991b21b4d497ce66fc8ea4e3d875318bf1a4d9`.
 Version 0.4.0 ist noch nicht veröffentlicht. Die folgenden Prüfungen verwenden
 fiktive Daten und ersetzen keine installierte Windows- oder FIT-Connect-TEST-Abnahme.
 

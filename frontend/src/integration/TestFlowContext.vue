@@ -9,6 +9,7 @@ const props = defineProps<{
   disabled?: boolean;
   side?: FlowContext['side'];
   fixedApi?: boolean;
+  receiverDestinationOutside?: boolean;
 }>();
 const emit = defineEmits<{
   'update:context': [context: FlowAssignment];
@@ -44,7 +45,9 @@ function changeApi(event: Event) {
 </script>
 <template>
   <details class="flow-context">
-    <summary>Sender und Empfänger zuordnen</summary>
+    <summary>
+      {{ receiverDestinationOutside ? 'Profile und API (optional)' : 'Sender und Empfänger zuordnen' }}
+    </summary>
     <p class="small-note">
       Nur Profilkennungen und Destinations werden gespeichert. Zugangsdaten bleiben im geschützten Profil.
       Jeder Versand wird weiterhin einzeln bestätigt.
@@ -83,7 +86,7 @@ function changeApi(event: Event) {
             </option>
           </select>
         </label>
-        <label>
+        <label v-if="!(receiverDestinationOutside && item.side === 'receiver')">
           {{ item.side === 'sender' ? 'Absender-Destination (API v3)' : 'Empfangs-Destination' }}
           <input
             :value="context[item.side === 'sender' ? 'sourceDestination' : 'receiverDestination']"

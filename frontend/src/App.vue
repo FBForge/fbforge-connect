@@ -383,6 +383,7 @@ useFileNavigationGuard();
           />
           <ApplicationHelp v-if="section === 'Hilfe'" />
           <TestTools
+            :active="section === 'Testwerkzeuge'"
             :test-source="scenarioSource"
             @activity="scenarioActivity = $event"
             :session="activeSession"

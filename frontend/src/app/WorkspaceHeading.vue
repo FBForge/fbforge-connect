@@ -9,7 +9,7 @@ const topics = {
   'Event Log': 'events',
   Destinations: 'destinations',
   Prozesse: 'processes',
-  Testwerkzeuge: 'tools',
+  Testwerkzeuge: 'tests',
   Virenscan: 'tools',
 };
 defineExpose({ focus: (options) => heading.value?.focus(options) });

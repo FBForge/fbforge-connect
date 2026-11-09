@@ -177,7 +177,7 @@ async function installOffer(page, fixture, path, uri) {
 export async function reviewAuthoring(desktop, fixture, senders) {
   const page = desktop.page;
   await navigate(page, 'Testwerkzeuge');
-  await button(page, 'Antwortschemas').click();
+  await page.getByRole('tab', { name: 'Antwortschemas', exact: true }).click();
   const uri = 'urn:fbforge:connect:ci:reply:status:1';
   await page.locator('#channel-uri').fill(uri);
   await page.locator('#channel-title').fill('Fiktive Live-Statusmitteilung');

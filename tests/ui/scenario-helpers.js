@@ -2,9 +2,10 @@ import { expect } from './fixtures.js';
 export const button = (page, name) => page.getByRole('button', { name, exact: true });
 export async function openScenario(page, api = 'v3') {
   await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
-  await button(page, 'Integration testen').click();
+  await page.getByRole('tab', { name: 'Tests', exact: true }).click();
 }
 export async function importScenario(page, definition) {
+  await page.getByText('Testdatei importieren', { exact: true }).click();
   await page.locator('#scenario-import').setInputFiles({
     name: 'test.json',
     mimeType: 'application/json',
@@ -19,6 +20,32 @@ export async function latestRun(page) {
         (c) => c.command === 'test_library' && c.args.request.action === 'scenario_run_save',
       ).args.request.document,
   );
+}
+export async function reopenRun(page, id) {
+  await button(page, 'Zur Testübersicht').click();
+  await page
+    .locator(`[data-run-id="${id}"]`)
+    .getByRole('button', { name: /^Durchlauf öffnen:/ })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Anderen Test öffnen?', exact: true });
+  if (await dialog.isVisible())
+    await dialog.getByRole('button', { name: 'Test wechseln', exact: true }).click();
+}
+export async function createScenario(page, kind = 'accept') {
+  await page.getByRole('combobox', { name: 'Testvorlage', exact: true }).selectOption(kind);
+  await button(page, 'Test vorbereiten').click();
+  await expect(page.getByLabel('Testname', { exact: true })).toBeVisible();
+}
+export async function showSeries(page) {
+  const series = page.locator('section.scenario-series');
+  if (await series.isVisible()) return series;
+  const back = button(page, 'Zur Testserie');
+  const active = button(page, 'Aktive Testserie öffnen');
+  if (await back.isVisible()) await back.click();
+  else if (await active.isVisible()) await active.click();
+  else await button(page, 'Als Testserie planen').click();
+  await expect(series).toBeVisible();
+  return series;
 }
 export async function injectEvidence(page, step, data, replyId = null) {
   await page.evaluate(

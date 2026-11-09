@@ -142,18 +142,26 @@ export async function keySetup(page, fixture, api) {
   );
 }
 
-export async function openTestPackage(page) {
-  await page.getByRole('button', { name: 'Testfälle und Abläufe', exact: true }).click();
-  await page.getByRole('button', { name: 'Testpakete', exact: true }).click();
-  await page.getByRole('button', { name: 'Fiktives Testpaket öffnen', exact: true }).click();
-  await page.locator('#test-case-choice').waitFor();
-  check((await page.locator('#test-case-choice option').count()) > 0, 'live_ui_test_pack_empty');
+export async function openTestPreparation(page) {
+  await page.getByRole('tab', { name: 'Tests', exact: true }).click();
+  const overview = page.getByRole('button', { name: 'Zur Testübersicht', exact: true });
+  if (await overview.isVisible()) await overview.click();
+  await page.getByRole('combobox', { name: 'Testvorlage', exact: true }).selectOption('accept');
+  await page.getByRole('button', { name: 'Test vorbereiten', exact: true }).click();
+  const replace = page.getByRole('dialog', { name: 'Anderen Test öffnen?', exact: true });
+  if (await replace.isVisible())
+    await replace.getByRole('button', { name: 'Test wechseln', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Testname', exact: true }).waitFor();
+  check(
+    (await page.getByRole('textbox', { name: 'Fachdaten', exact: true }).inputValue()).length > 0,
+    'live_ui_test_data_empty',
+  );
 }
 
 export async function localTools(page) {
   await navigate(page, 'Testwerkzeuge');
-  await openTestPackage(page);
-  await page.getByRole('button', { name: 'Schema-Vergleich', exact: true }).click();
+  await openTestPreparation(page);
+  await page.getByRole('tab', { name: 'Schema-Vergleich', exact: true }).click();
   await page.getByRole('button', { name: 'Fiktiven Beispielvergleich öffnen', exact: true }).click();
   await page.locator('.comparison-result-heading').waitFor();
   check((await page.locator('.schema-change-list > li').count()) > 0, 'live_ui_schema_comparison_empty');

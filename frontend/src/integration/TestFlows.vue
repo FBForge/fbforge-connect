@@ -22,7 +22,7 @@ import {
   validateTestFlow,
   eligibleFlowRecord,
 } from './test-flows.js';
-const props = defineProps({ session: Object, busy: Boolean });
+const props = defineProps({ session: Object, busy: Boolean, initialRun: String });
 const emit = defineEmits(['send', 'busy', 'context']);
 const persistence = useSavedTestRuns();
 const context = ref({
@@ -55,6 +55,18 @@ const flow = shallowRef(null),
   pending = ref(false),
   error = ref(''),
   notice = ref('');
+let restoredInitial = '';
+watch(persistence.saved, (rows) => {
+  if (
+    props.initialRun &&
+    props.initialRun !== restoredInitial &&
+    rows.some((row) => row.id === props.initialRun)
+  ) {
+    restoredInitial = props.initialRun;
+    persistence.selected.value = props.initialRun;
+    void restoreRun();
+  }
+});
 watch(
   [() => run.value, context],
   () => {
@@ -228,7 +240,9 @@ const verify = useFlowVerification({
 </script>
 <template>
   <section class="tool-section" aria-labelledby="test-flows-title">
-    <h2 id="test-flows-title">Wiederholbare Testabläufe</h2>
+    <h2 id="test-flows-title">
+      {{ initialRun ? 'Durchlauf aus 0.3 fortsetzen' : 'Wiederholbare Testabläufe' }}
+    </h2>
     <p>
       Testfälle Schritt für Schritt durchführen und anhand lokaler Nachrichten prüfen. Senden, Antworten und
       Empfangsbestätigungen bestätigen Sie weiterhin einzeln.

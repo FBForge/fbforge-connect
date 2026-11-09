@@ -2,12 +2,10 @@ import { test, expect } from './fixtures.js';
 import pack from '../../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 for (const api of ['v2', 'v3']) {
-  test(`test flows save, reopen and delete with explicit consent independently of a run (${api})`, async ({
+  test(`legacy test flows save, reopen and delete with explicit consent independently of a run (${api})`, async ({
     page,
   }) => {
-    await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
-    await button(page, 'Testfälle und Abläufe').click();
-    await button(page, 'Testabläufe').click();
+    await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?legacy=flows&api=${api}`);
     await expect(button(page, 'Ablauf lokal speichern')).toBeDisabled();
     await page.locator('#test-flow-file').setInputFiles({
       name: 'pack.json',

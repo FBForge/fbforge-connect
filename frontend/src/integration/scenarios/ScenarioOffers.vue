@@ -95,7 +95,7 @@ function apply() {
       Aktuelles Empfängerangebot laden
     </button>
     <p v-if="!assignment.receiverDestination" class="small-note">
-      Tragen Sie zuerst unter „Sender und Empfänger zuordnen“ die Empfangs-Destination ein.
+      Tragen Sie zuerst die Empfangs-Destination ein.
     </p>
     <template v-if="offer">
       <label>

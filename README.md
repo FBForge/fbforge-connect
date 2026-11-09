@@ -17,7 +17,7 @@ Einzelheiten stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 - JSON/XML und Anlagen ansehen, Nachrichten gesammelt herunterladen und annehmen.
 - Profile und Schlüssel geschützt speichern. Vorgänge gespeicherter Profile bleiben standardmäßig dauerhaft erhalten.
 - Event Logs prüfen, v3-Destinations verwalten und BPMN-Nachrichten auswählen.
-- Testpakete und Abläufe mit Profilzuordnung und gespeichertem Fortschritt wiederverwenden.
+- Tests an einer Stelle vorbereiten, durchführen und auswerten, mit Profilzuordnung und gespeichertem Fortschritt.
 - Eigene JSON-Antwortschemas erstellen, Schemata und erwartete Inhalte vergleichen.
 - Optional lokal mit ClamAV oder einer eigenen ClamAV-/ICAP-Gegenstelle scannen.
 - Bei Bedarf einen HTTP-Proxy unter „Einstellungen → Netzwerk und Proxy“ einrichten.

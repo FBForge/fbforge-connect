@@ -2,50 +2,47 @@ import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import pack from '../../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 const button = (page, name) => page.getByRole('button', { name, exact: true });
-async function tools(page, tab = 'Testpakete') {
-  await page.goto('http://127.0.0.1:1420/test-fixtures/integration-tools.html');
-  await button(page, 'Testfälle und Abläufe').click();
-  await button(page, tab).click();
+async function tools(page, legacy = false) {
+  await page.goto(
+    'http://127.0.0.1:1420/test-fixtures/integration-tools.html' + (legacy ? '?legacy=flows' : ''),
+  );
 }
 for (const api of ['v2', 'v3']) {
-  test(`edited test packages survive reopening through the shared protected collection (${api})`, async ({
-    page,
-  }) => {
+  test(`edited tests survive reopening through the common collection (${api})`, async ({ page }) => {
     await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);
-    await button(page, 'Testfälle und Abläufe').click();
-    await button(page, 'Fiktives Testpaket öffnen').click();
-    await page.getByText('Bezeichnungen ändern', { exact: true }).click();
-    await page.getByLabel('Paketname', { exact: true }).fill('Abnahmetest gespeichert');
-    await button(page, 'In Testpaketsammlung speichern').click();
-    await expect(page.getByRole('status')).toContainText('dauerhaft und verschlüsselt');
-    const saved = await page.evaluate(() => Object.values(window.__integration.savedPacks)[0]);
-    expect(saved).toEqual({ ...pack, name: 'Abnahmetest gespeichert' });
+    await page.getByText('Testdatei importieren', { exact: true }).click();
+    await page.locator('#scenario-import').setInputFiles({
+      name: 'test.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(pack)),
+    });
+    await page.getByLabel('Testname', { exact: true }).fill('Abnahmetest gespeichert');
+    await button(page, 'Test speichern').click();
+    await expect(page.getByRole('status')).toContainText('dauerhaft');
     const download = page.waitForEvent('download');
-    await button(page, 'Testpaket exportieren').click();
-    expect((await download).suggestedFilename()).toBe('testpaket.fctest.json');
-    expect(await page.evaluate(() => Object.keys(window.__integration.savedPacks).length)).toBe(1);
+    await button(page, 'Testdatei exportieren').click();
+    expect((await download).suggestedFilename()).toBe('integrationstest.fcscenario.json');
     await page.reload();
-    await button(page, 'Testfälle und Abläufe').click();
-    await button(page, 'Gespeicherte Testpakete laden').click();
-    await page
-      .getByLabel('Gespeichertes Testpaket auswählen', { exact: true })
-      .selectOption({ label: 'Abnahmetest gespeichert' });
-    await button(page, 'Gespeichertes Testpaket öffnen').click();
+    await page.getByRole('button', { name: 'Test öffnen: Abnahmetest gespeichert', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Abnahmetest gespeichert', exact: true })).toBeFocused();
-    await button(page, 'Als Versandentwurf öffnen').click();
-    expect(await page.evaluate(() => window.__integration.emitted)).toEqual(pack.cases[0]);
-    await button(page, 'Testabläufe').click();
-    await button(page, 'Gespeicherte Testpakete laden').click();
-    await page.getByLabel('Testpaket', { exact: true }).selectOption({ label: 'Abnahmetest gespeichert' });
-    await button(page, 'Ablauf aus Testpaket erstellen').click();
-    await expect(page.getByRole('heading', { name: 'Abnahmetest gespeichert', exact: true })).toBeVisible();
+    await button(page, 'Test starten').click();
+    await button(page, 'Versandentwurf öffnen').click();
+    const emitted = await page.evaluate(() => window.__integration.emitted);
+    expect(emitted.request).toEqual(pack.cases[0].request);
+    expect(emitted.id).toBe(pack.cases[0].id);
+    const writes = await page.evaluate(() =>
+      window.__integration.calls.filter((c) =>
+        ['execute_send', 'execute_reply', 'execute_receipt'].includes(c.command),
+      ),
+    );
+    expect(writes).toEqual([]);
   });
 }
 test('running steps precede management, use contextual guidance and keep actions and saved picker spaced', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1180, height: 800 });
-  await tools(page, 'Testabläufe');
+  await tools(page, true);
   const value = structuredClone(pack);
   value.cases = [value.cases[0]];
   await page.locator('#test-flow-file').setInputFiles({

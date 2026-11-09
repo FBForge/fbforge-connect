@@ -503,11 +503,10 @@ export const helpTopics = [
   },
   {
     id: 'tools',
-    title: 'Testpakete, Antwortschemas und Schema-Vergleich',
+    title: 'Antwortschemas, Schema-Vergleich und Virenscan',
     section: 'Testwerkzeuge',
-    image: 'test-packages',
-    caption:
-      'Ein fiktives Testpaket mit auswählbaren Testfällen, Fachdaten, Anlagen und erwarteten Antworten.',
+    image: 'channel-schemas',
+    caption: 'Eigene Antwortschemas beschreiben vereinbarte fachliche Statusmeldungen und Nachforderungen.',
     illustrations: [
       {
         image: 'test-case-library',
@@ -519,19 +518,9 @@ export const helpTopics = [
           'Lokaler Vergleich zweier JSON-Schemata mit sichtbaren Änderungen an Pflichtfeldern und Auswahlwerten.',
       },
       {
-        image: 'channel-schemas',
-        caption:
-          'Eigene fachliche Statusmeldungen und Nachforderungen als JSON-Schema mit bearbeitbaren Feldern definieren.',
-      },
-      {
         image: 'channel-schema-export',
         caption:
           'Schema, fiktives Beispiel und bearbeitbaren Entwurf getrennt exportieren. Beide Seiten benötigen dieselbe Definition.',
-      },
-      {
-        image: 'test-flows',
-        caption:
-          'Ein neuer Testablauf kombiniert bestehende Testfälle und prüft die Ergebnisse Schritt für Schritt.',
       },
       {
         image: 'malware-scanner',
@@ -545,15 +534,9 @@ export const helpTopics = [
       },
     ],
     intro:
-      'Testpakete und Schema-Vergleich funktionieren lokal. Zum tatsächlichen Senden und Empfangen wechseln Sie in die gewohnten geführten Abläufe.',
+      'Antwortschemas und Schema-Vergleich funktionieren lokal. Für geführte Integrationstests öffnen Sie den gemeinsamen Reiter „Tests“. Den Virenscan finden Sie direkt in der Hauptnavigation.',
     steps: [
-      'Öffnen Sie „Testwerkzeuge → Testfälle und Abläufe → Testpakete“. Laden Sie ein gespeichertes Paket, eine Datei oder das fiktive Beispiel. Eine Anmeldung ist dafür nicht erforderlich.',
-      'Wählen Sie einen Testfall. „Fachdaten und Anlagen ansehen“ zeigt den Inhalt. „Erwartungen für den manuellen Test“ enthält Antwortinhalt und Empfangsbestätigung, versendet aber nichts. Unter „Bezeichnungen ändern“ passen Sie Paket- und Testfallnamen an.',
-      'Speichern Sie den bearbeiteten Stand mit „In Testpaketsammlung speichern“ verschlüsselt für Ihr Windows-Benutzerkonto. „Gespeicherte Testpakete laden“ öffnet dieselbe Sammlung wie im Versand und in Testabläufen. „Testpaket exportieren“ erzeugt eine unverschlüsselte Datei. Unter „Weitere Testfälle hinzufügen“ führen Sie Pakete zusammen.',
-      '„Als Versandentwurf öffnen“ führt zu „Senden“ und gegebenenfalls zur Anmeldung. Geben Sie eine Ziel-Destination ein und wählen Sie „Testfall übernehmen“. Nach Bestätigung prüft die App das aktuelle Empfängerangebot. Nur bei passender Leistung, Prozessnachricht und Schema ersetzt sie Fachdaten, Anlagen und Antwortangebot. Die Case ID wird geleert. Bestätigen Sie den Versand anschließend separat.',
       'Einen eigenen Versandentwurf bewahren Sie unter „Entwurf als Testfall wiederverwenden“ mit „Testfall speichern“ geschützt auf. Unter „Meine Testfälle“ können Sie ihn wieder laden. „Testpakete importieren, exportieren und löschen“ verwaltet die Sammlung. Verbindungsdaten, private Schlüssel und bisherige Nachrichtenkennungen werden nicht übernommen.',
-      'Unter „Testabläufe“ öffnen Sie ein Testpaket aus der Sammlung oder einer Datei. „Ablauf lokal speichern“ bewahrt Definition und Testpaket verschlüsselt auf. „Gespeicherte Abläufe laden“ und „Gespeicherten Ablauf öffnen“ stellen sie nach einem Neustart wieder bereit. Starten Sie einen Durchlauf, führen Sie die jeweilige Aktion im Arbeitsbereich aus und wählen Sie danach die passende lokale Nachricht zur Prüfung. Die Schritte vergleichen Fachdaten und Anlagen, Empfangsbestätigungen und Antworten. Unter „Sender und Empfänger zuordnen“ hinterlegen Sie Profile derselben Umgebung, API-Version und Destinations. „Zum Sender wechseln“ und „Zum Empfänger wechseln“ führen zur passenden Aufgabe. Abweichungen zeigen JSON-Feldpfad, Soll- und Istwert oder die betroffene Anlage.',
-      'Der aktuelle Schritt steht vor der Ablaufverwaltung und erhält den Tastaturfokus. Ein neuer Durchlauf oder ein anderer Ablauf verlangt bei vorhandenen Prüfergebnissen eine Bestätigung. „Abbrechen“ erhält den Fortschritt. Vor dem Zurücksetzen können Sie das Durchlaufergebnis exportieren. Definition und Ergebnis sind getrennte unverschlüsselte Exporte. Ablauf, Profilzuordnung und Fortschritt eines gestarteten Durchlaufs werden für Ihr Windows-Benutzerkonto verschlüsselt gespeichert. Unter „Gespeicherten Durchlauf fortsetzen“ können Sie ihn nach einem Neustart wieder öffnen oder bewusst löschen. Frühere Ergebnisse sind historische Prüfungen. Die nächste Nachricht müssen Sie erneut laden und prüfen. Es erfolgt kein automatischer Versand.',
       'Unter „Schema-Vergleich“ wählen Sie bisheriges und neues JSON-Schema oder XSD. „Schemata vergleichen“ zeigt hinzugefügte, entfernte und geänderte Einträge. Suchen Sie nach Feldern und vergleichen Sie deren Regeln. „Vergleich speichern“ exportiert den Bericht als JSON.',
       'Unter „Antwortschemas“ definieren Sie eine vereinbarte HTTPS- oder URN-Kennung mit Version, Bezeichnung, Statuswerten und zusätzlichen Feldern. Vorlagen ersetzen den Entwurf. „JSON-Schema herunterladen“, „Fiktives Beispiel herunterladen“ und „Schemaentwurf speichern“ exportieren Definition, Beispiel und bearbeitbare Einstellungen getrennt. Den Entwurf können Sie wieder öffnen. Der Assistent bearbeitet keine beliebigen fremden Schemas unter Verlust unbekannter Regeln.',
       '„Antwortschema mit der Gegenstelle verwenden“ erklärt die Einrichtung: Der Empfänger bietet die Kennung an seiner Leistung an. Die Destination-Verwaltung kann sie aus der Schemadatei übernehmen, ohne diese hochzuladen. Der Sender lädt das aktuelle Angebot und wählt genau dieses Schema. Stellen Sie beiden Seiten dieselbe Datei lokal oder über eine eigene HTTPS-Quelle bereit. FIT-Connect überträgt die Kennung, nicht automatisch die Definition. Eine URN ist keine Downloadadresse. Eine fachliche Statusmeldung ersetzt keine technische Annahme oder Ablehnung.',
@@ -576,10 +559,14 @@ export const helpTopics = [
     id: 'tests',
     title: 'Geführte Integrationstests',
     section: 'Testwerkzeuge',
-    image: 'integration-preparation',
+    image: 'test-packages',
     caption:
-      'Ein Integrationstest trennt Vorbereitung, Durchführung und Ergebnisse. Alle Inhalte der Abbildung sind fiktiv.',
+      'Ein gemeinsamer Einstieg für Vorlagen, gespeicherte Tests und bisherige Sammlungen. Alle Inhalte der Abbildung sind fiktiv.',
     illustrations: [
+      {
+        image: 'integration-preparation',
+        caption: 'Vorbereiten, Durchführen und Ergebnisse bilden einen gemeinsamen Testablauf.',
+      },
       {
         image: 'integration-run',
         caption: 'Der aktuelle Schritt nennt die zuständige Seite und die nächste Aktion.',
@@ -606,18 +593,19 @@ export const helpTopics = [
     intro:
       'Ab 0.4.0 verbinden geführte Tests vorhandene Versand-, Empfangs- und Prüffunktionen. Eine externe Gegenstelle übernimmt ihre eigenen Schritte. Schreiben, Annahme und Ablehnung bestätigen Sie weiterhin ausdrücklich.',
     steps: [
-      'Öffnen Sie „Testwerkzeuge → Integration testen“. Wählen Sie eine Vorlage oder importieren Sie eine Testdefinition, ein bisheriges Testpaket oder einen Ablauf. „Vorhandene 0.3.0-Sammlung laden“ übernimmt gespeicherte Testdaten zur Bearbeitung, ohne die ursprüngliche Sammlung zu ändern.',
-      'Unter „Welche Gegenstelle testen Sie?“ wählen Sie ein empfangendes Fachverfahren, einen sendenden Onlinedienst oder beide Seiten mit Connect. Ordnen Sie passende Profile, API und Destinations zu. TEST ist für die Entwicklung vorgesehen. Die Angaben ersetzen keine Prüfung der tatsächlichen Gegenstelle.',
+      'Öffnen Sie „Testwerkzeuge → Tests“. Wählen Sie eine Testvorlage und „Test vorbereiten“. Alternativ öffnen Sie einen Eintrag unter „Meine Tests“ oder unter „Testdatei importieren“ eine Datei. Bisherige Testpakete und Ablaufdefinitionen erscheinen automatisch in derselben Sammlung. Ihre Originale bleiben beim Bearbeiten erhalten.',
+      'Unter „Welche Gegenstelle testen Sie?“ wählen Sie Fachverfahren, Onlinedienst oder beide Seiten. Tragen Sie die Empfangs-Destination direkt ein. Unter „Profile und API (optional)“ ordnen Sie passende Profile derselben Umgebung, die API-Version und eine Antwort-Destination zu. TEST ist für die Entwicklung vorgesehen. Die Angaben ersetzen keine Prüfung der tatsächlichen Gegenstelle.',
       'Mit „Angebot der Gegenstelle übernehmen“ laden Sie Leistungs-, Prozess- und Schemaangaben aus der zugeordneten Empfangs-Destination. Wählen Sie das Angebot und übernehmen Sie es ausdrücklich. Die Fachdaten müssen zu diesen Schemata passen. Prozessnachrichten und Folgeschritte im selben Case benötigen API v3.',
       'Alternativ öffnen Sie einen verfügbaren Vorgang und wählen „Als Test wiederverwenden“. Wählen Sie Einreichung und gegebenenfalls Antwort. Ergänzen Sie fehlende Leistungs- und Schema-Kennungen. Die Inhalte werden zunächst als neuer Test zur Bearbeitung geöffnet. Prüfen Sie personenbezogene Angaben und verwenden Sie fiktive Testdaten.',
-      'Bearbeiten Sie Fachdaten und Nachrichtenformat unter „Vorbereitung“. „Variable Angaben und Datensätze“ lässt Sie Felder auswählen, Texte, Zahlen und Wahrheitswerte setzen, Datum oder Kennungen erzeugen und Antwortwerte aus der beobachteten Einreichung übernehmen. Jeder Datensatz erhält einen eigenen Durchlauf.',
+      'Unter „Vorbereiten“ bearbeiten Sie Fachdaten, Nachrichtenformat, Schema und Erwartungen. Enthält die Datei mehrere Testfälle oder Nachrichten, erscheint die passende Auswahl. „Variable Angaben und Datensätze“ lässt Sie Felder auswählen, Texte, Zahlen und Wahrheitswerte setzen, Datum oder Kennungen erzeugen und Antwortwerte aus der beobachteten Einreichung übernehmen. Jeder Datensatz erhält einen eigenen Durchlauf.',
       'Unter „Weitere Antworten im selben Vorgang“ ergänzen, benennen und ordnen Sie fachliche Rückmeldungen. „Nachricht bearbeiten“ öffnet deren Inhalte. Alle Antworten verwenden das vereinbarte Antwortschema. Prozesskennungen werden bei der Vorbereitung in das Antwortangebot der Einreichung übernommen. Bereits gesendete Angebote ändern sich dadurch nicht. Die Vorlage „Nachforderung und Nachreichung“ zeigt Bearbeitungsstand, Nachforderung, Nachreichung und Abschluss.',
       'Unter „Prüferwartungen anpassen“ wählen Sie vollständigen Inhalt, XML-Struktur oder nur ausgewählte Fachdatenfelder. Ergänzen Sie Bedingungen und gegebenenfalls den erwarteten Problemtyp der Empfangsbestätigung. Bei ausgewählten Feldern bleiben alle anderen Fachdatenfelder ausdrücklich ungeprüft. Anlagen werden weiterhin vollständig verglichen.',
-      'Wählen Sie einen Datensatz und starten Sie den Durchlauf. Erzeugte Werte werden für diesen Durchlauf festgeschrieben. „Versandentwurf öffnen“ nutzt den normalen Versand mit Bestätigung. Die passende Arbeitsansicht öffnet Empfang und Antwortfunktionen. „Nachweise aktualisieren“ lädt lokale Kopien. Wählen und prüfen Sie die passende Nachricht.',
+      '„Test speichern“ bewahrt die Vorbereitung verschlüsselt im Windows-Benutzerkonto auf. „Testdatei exportieren“ erzeugt eine unverschlüsselte Datei. „Zur Testübersicht“ erhält die geöffnete Vorbereitung, mit „Vorbereitung fortsetzen“ kehren Sie zurück. Vor dem Wechsel zu einem anderen Test fragt die App bei ungespeicherten Änderungen nach.',
+      'Verbinden Sie ein Profil und wählen Sie „Test starten“. Unter „Durchführen“ führt die App durch den aktuellen Schritt. Erzeugte Werte werden für diesen Durchlauf festgeschrieben. „Versandentwurf öffnen“ nutzt den normalen Versand mit Bestätigung. Die passende Arbeitsansicht öffnet Empfang und Antwortfunktionen. „Nachweise aktualisieren“ lädt lokale Kopien. Wählen und prüfen Sie die passende Nachricht.',
       '„Auf Nachweis warten“ fragt höchstens fünf Minuten nach. Es wird jeweils nur eine Abfrage durchgeführt. Bei Fehlern wächst der Abstand. Sie können Seiten wechseln und das Warten beenden. Bei Profil- oder Umgebungswechsel endet der Wartemodus. Ein gefundener Eintrag muss weiterhin geöffnet und geprüft werden.',
-      'Unter „Ergebnisse“ sehen Sie den Prüfstand und alle Versuche. Fehlgeschlagene, blockierte und manuell bestätigte Schritte sind keine automatischen Erfolgsnachweise. Der Fortschritt wird für das Windows-Benutzerkonto verschlüsselt gespeichert. Ein gespeicherter Durchlauf setzt keine Schreibaktion automatisch fort.',
+      'Unter „Ergebnisse“ sehen Sie den Prüfstand und alle Versuche. Fehlgeschlagene, blockierte und manuell bestätigte Schritte sind keine automatischen Erfolgsnachweise. Der Fortschritt wird für das Windows-Benutzerkonto verschlüsselt gespeichert. In der Testübersicht öffnen, vergleichen und löschen Sie gespeicherte Durchläufe direkt in ihrer Zeile. „Früheren Durchlauf öffnen“ setzt einen Durchlauf aus 0.3 mit seinem bisherigen Prüfstand fort. Ein gespeicherter Durchlauf setzt keine Schreibaktion automatisch fort.',
       'Vollständige Vergleiche zeigen konkrete JSON-Felder, XML-Attribute, Texte und Reihenfolgeabweichungen. Bei Anlagen werden Anzahl, Dateiname, Dateityp und Inhalt geprüft. Bis zu 20 Abweichungen und gekürzte Feldwerte je Versuch bleiben gespeichert. „Testergebnis fürs Ticket kopieren“ kopiert eine kurze Zusammenfassung. „Prüfergebnis exportieren“ nimmt verglichene Feldwerte erst nach ausdrücklicher Auswahl auf.',
-      'Mit „Testserien planen und fortsetzen“ wählen Sie Datensätze, API v2/v3 und die Profilzuordnung pro API. Benennen und speichern Sie die Serie. Jede Kombination erhält einen ausdrücklich gestarteten Durchlauf. „Passendes Profil öffnen“ hilft beim Wechsel. „Ergebnis öffnen“ beziehungsweise „Durchlauf fortsetzen“ führt zum gespeicherten Stand. Die Serie hält ihre Definition fest und übernimmt spätere Änderungen an der Vorbereitung nicht.',
+      'Mit „Als Testserie planen“ öffnen Sie eine eigene Ansicht für Datensätze, API v2/v3 und die Profilzuordnung pro API. Benennen und speichern Sie die Serie. Jede Kombination erhält einen ausdrücklich gestarteten Durchlauf. „Passendes Profil öffnen“ hilft beim Wechsel. „Ergebnis öffnen“ beziehungsweise „Durchlauf fortsetzen“ führt zum gespeicherten Stand, „Zur Testserie“ zurück zur Serie. In der Testübersicht finden Sie aktive und gespeicherte Serien wieder. Die Serie hält ihre Definition fest und übernimmt spätere Änderungen an der Vorbereitung nicht.',
       'Vollständig automatisch nachgewiesene Durchläufe können Sie als Referenz festlegen. Wählen Sie später einen gespeicherten Durchlauf zum Vergleich. Abweichende Definitionen, Datensätze, Umgebungen und API-Versionen werden benannt. Zum Löschen einer Referenz müssen Sie deren Schutz zuerst aufheben.',
     ],
     notes: [
