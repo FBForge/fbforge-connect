@@ -132,7 +132,11 @@ Vollständige Vergleiche liefern begrenzte JSON-/XML-Strukturdetails zusätzlich
 maßgeblichen Inhaltsprüfung. Höchstens 20 Abweichungen je Versuch, gekürzte Feldwerte
 und insgesamt 128 KiB Vergleichsdetails verhindern unbegrenzte Prüfprotokolle.
 Ein Detail-Limit macht keinen fehlgeschlagenen Vergleich erfolgreich. Ergebnisexporte
-enthalten verglichene Feldwerte nur nach ausdrücklicher Auswahl.
+enthalten verglichene Feldwerte nur nach ausdrücklicher Auswahl. Der Modus
+`field-exceptions` maskiert ausschließlich skalare Werte nach erfüllter
+Feldbedingung. Alle übrigen Strukturen und Anlagen bleiben vollständig relevant.
+JSON-Zahlen werden als unveränderte Tokens verglichen und formatiert.
+Ergebnisexporte nennen den Vergleichsmodus und die hinterlegten Bedingungen.
 
 Der Controller trennt Vorbereitung, Durchführung und Vergleich. Er bindet Nachweise
 an Profil, Umgebung, API, Nachricht und Startzeit. Der ausdrücklich gestartete
@@ -147,7 +151,19 @@ Einzelne Dokumente bleiben unter 8 MiB. Testdaten, Definitionskopie und Prüfver
 zählen gemeinsam zur Durchlaufgröße. Referenzen erfordern vollständig nachgewiesene
 Schritte und sind bis zur ausdrücklichen Aufhebung gegen Löschen geschützt.
 Vorgangsübernahme kopiert nur freigegebene Inhalte und lokale Schemata in neue Tests.
-Bestehende Pakete und Abläufe bleiben bei der Formatübernahme erhalten.
+Bestehende Pakete und Abläufe behalten bei der Formatübernahme ihre Originale bis
+zur ausdrücklichen Löschung. Stabile IDs aus Quellformat und ursprünglicher ID
+verhindern doppelte Einträge beim erneuten Öffnen. Eine Kopie entsteht ausdrücklich.
+Versand und Testwerkzeuge verwenden denselben Sammlungsadapter.
+
+Automatische Vorbereitungssicherungen liegen getrennt unter
+`test-library/preparations-v1/<environment>`. Je Umgebung gibt es einen begrenzten,
+DPAPI-geschützten Arbeitsstand, der auch unfertiges JSON/XML enthalten darf.
+Die vollständige Definition wird vor Speichern oder Teststart erneut geprüft.
+Eine Warteschlange sichert Änderungen nach kurzer Pause und beim normalen Beenden.
+Dateiimporte müssen vorher abgeschlossen sein. Eine unlesbare frühere Sicherung
+wird bis zum erfolgreichen Lesen oder ausdrücklichen Verwerfen nicht überschrieben.
+Die Wiederherstellung öffnet nur bearbeitbare Daten und startet keine Aktion.
 
 Testserien speichern eine eigene Definitionskopie und bis zu 32 Kombinationen aus
 Datensatz und API. Sie verknüpfen getrennte Durchläufe, übernehmen deren aktuellen
@@ -163,3 +179,25 @@ Der optionale Scanner ist im gemeinsamen Java-Host hinter beiden SDK-Adaptern an
 Die native Schicht verwaltet optional einen lokalen ClamAV als Benutzerprozess. Festes Manifest, offizieller Talos-Schlüssel, Archiv-/Dateihashes und signierte CVD-Dateien bilden die Vertrauensgrenze. ZIP-Importe sind begrenzt; Engine und Datenbanken werden vor atomarer Übernahme geprüft. Online-Installationen verwenden je Versuch einen eigenen Arbeitsbereich, damit ein abgebrochener oder unter Windows gesperrter Download den nächsten Versuch nicht blockiert. Zurückgebliebene Download-Arbeitsbereiche werden beim Öffnen der Laufzeit bereinigt. Unterbrochene Verzeichnis-/Einstellungstausche stellen beim nächsten Start den vorhandenen Vorgänger wieder her; eigene temporäre Scannerdateien werden beim Stoppen und nächsten Start bereinigt. Windows-Jobobjekte beenden ausschließlich eigene Prozesse auch bei erzwungenem App-Ende; Bereitschaft erfordert einen dem Prozess zugeordneten Loopback-Port. Der Renderer liefert weder Programmpfade noch Download-URLs. Updates der Signaturen sind gesondert zustimmungspflichtig. Ihr Beschäftigt-Zustand ist vom Java-Nachrichtenstrom getrennt. Globale Statusanzeige und Abbruch bleiben beim Seitenwechsel erreichbar. Statusabfragen warten nicht auf laufende Komponentenupdates und melden einen beschäftigten Scanner niemals als ausgeschaltet. Komponente und Einstellungen liegen unter dem lokalen App-Datenverzeichnis, unabhängig von FIT-Connect-Profilen.
 
 Anlagenfunde entfernen ausschließlich betroffene Bytes aus dem freigegebenen Snapshot. `scan-report` speichert begrenzte Kennungen und Namen im geschützten lokalen Vorgang. Ein vollständiger Originalexport ist dann nativ gesperrt. Hostseitig gebundene Problem-IDs bleiben mit den ursprünglichen Authentifizierungstags verbunden und werden im signierten Accept als `problems` gemeldet. Dafür ist eine zusätzliche native Bestätigung nötig; Sammelannahme bleibt gesperrt. Metadaten-/Fachdatenfunde und unvollständige Scans geben keinen Annahmenachweis frei.
+
+## Zusätzliche HTTPS-Vertrauensanker
+
+Netzwerkeinstellungen speichern bis zu acht ausdrücklich importierte öffentliche
+CA-Zertifikate zusammen mit den Proxy-Einstellungen geschützt für das Windows-Konto.
+Die native Grenze prüft DER, CA- und Signaturverwendung, Größe, Gültigkeit und
+eindeutige SHA-256-Fingerabdrücke. Nur aktive zusätzliche CAs erweitern Transportvertrauen.
+
+Reqwest ergänzt seine normalen Vertrauensanker. Ein nativ erzeugtes öffentliches
+PEM mit Fingerabdruckliste erreicht den eigenen Java-Prozess. Dieser verbindet
+seine normalen Aussteller mit den zusätzlichen CAs und initialisiert vor den
+isolierten SDKs den gemeinsamen TLS-Kontext und einen temporären PKCS12-Speicher.
+FreshClam erhält ein eigenes öffentliches Bundle aus den paketierten JDK-CAs und
+aktiven Ergänzungen. Temporäre Dateien bleiben an den jeweiligen Prozess gebunden.
+Hostnamenprüfung, V-PKI-Nachrichtenzertifikate und die separate Signaturprüfung
+von Virendatenbanken werden dadurch nicht aufgehoben.
+
+Manuelle Proxy-Zugangsdaten bleiben an den ausdrücklich konfigurierten Proxy
+gebunden. Native Übergabe und Java-Konfiguration geben sie im System- und
+Direktmodus nicht weiter. Eine vom Betriebssystem gewählte Route erhält keine
+Zugangsdaten einer früheren manuellen Route. Die getrennte Authentifizierungsprüfung
+gilt auch für vorhandene Authenticator-Instanzen und die SDK-/Schema-Verbindungen.

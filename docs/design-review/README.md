@@ -2,6 +2,42 @@
 
 ## 0.4.0 in Vorbereitung
 
+### Abschließende Bedien- und Netzwerkprüfung – 11. November 2026
+
+Der geprüfte Produktstand ist `0747b7f` auf `release/0.4.0`.
+
+Versand und Testbereich verwenden dieselbe gespeicherte Sammlung. Übernahmen
+haben stabile Kennungen, Kopien sind ausdrücklich gekennzeichnet. Testfälle,
+erste Antworten und erwartete Anlagen lassen sich direkt bearbeiten.
+Feldbedingungen können einen vollständigen Vergleich ergänzen. Der ausgewiesene
+Prüfumfang enthält weiterhin alle übrigen Felder, Strukturen und Anlagen.
+Unfertige Vorbereitungen werden je Umgebung geschützt gesichert und nur nach
+ausdrücklicher Auswahl wiederhergestellt. Ein Lesefehler verhindert das
+Überschreiben einer vorhandenen Sicherung.
+
+Die laufenden Oberflächen wurden mit fiktiven Daten in hellen und dunklen,
+schmalen und breiten Ansichten geprüft. Das aktive Profil, die gemeinsame
+Sammlung, der Editor, die Nachweisauswahl und zusätzliche CA-Zertifikate sind
+dabei sichtbar geprüft. Die 15 Hilfekapitel verwenden 54 aktuelle Aufnahmen.
+37 davon wurden gegenüber dem vorherigen Stand ersetzt.
+
+Lokal bestehen 404 Node-Tests bei sechs Plattformausnahmen und 128 native
+Verträge. Der Java-Gesamtlauf besteht mit 283 Tests. Ergänzend bestehen vier
+TLS-Vertrauenstests und zuletzt neun gezielte Netzwerk-/Proxytests einschließlich
+der beiden neuen Tests zur Bindung manueller Zugangsdaten. Die vollständige
+Chromium-Suite wurde ausgeführt. Nach der Korrektur zweier Testannahmen und
+erneuter Prüfung eines Zeitlimits bestehen insgesamt 292 Fälle. Ein Fall mit
+einer nicht vorhandenen externen Schema-Fixture bleibt übersprungen. Die
+betroffenen 20 Browserfälle bestehen gemeinsam im abschließenden Lauf.
+
+Typprüfung, Lint, beide Formatter, Dateigrößen- und Lizenzprüfung sowie der
+Produktionsbundle mit Größenbudget bestehen. Der Windows-GNU-Quellstand lässt
+sich vollständig prüfen. Die neu zusammengestellte Java-Laufzeit besteht den
+Pakettest mit beiden SDK-Versionen. Diese Nachweise ersetzen weder eine
+installierte Windows-Abnahme mit DPAPI noch echte FIT-Connect-TEST-Verbindungen
+oder eine Prüfung des Firmenproxies vor Ort. Ein neuer Installer, Signierung
+und Veröffentlichung bleiben bis zur Abnahme offen.
+
 ### Vereinfachte Testwerkzeuge – 9. November 2026
 
 Ein gemeinsamer Bereich „Tests“ ersetzt die getrennten Einstiege für Pakete,

@@ -11,11 +11,17 @@
 - Testserien aus ausgewählten Datensätzen und API v2/v3 zusammenstellen, geschützt speichern und einzeln fortsetzen. Nicht ausgeführte, blockierte, manuelle und automatisch nachgewiesene Ergebnisse bleiben unterscheidbar. Schritte mit Prozessnachrichten oder Nachreichungen im selben Case sind unter v2 ausdrücklich nicht anwendbar.
 - Vollständige JSON/XML-Vergleiche zeigen konkrete Feld-, Struktur- und Reihenfolgeabweichungen. Anlagenabweichungen nennen die betroffene Datei. Begrenzte Details und Nachrichtenkennungen bleiben im Durchlauf erhalten. Ticketzusammenfassung kopieren und Ergebnisse standardmäßig ohne verglichene Feldwerte exportieren.
 - Mehrere fachliche Antworten pro Einreichung definieren, ordnen und getrennt nachweisen. Eigene Reply-IDs verhindern die Wiederverwendung früherer Antworten. Die Dialogvorlage umfasst Bearbeitungsstand, Nachforderung, Nachreichung und Abschluss. Antworten bleiben nach Annahme möglich und verwenden das tatsächlich vereinbarte Antwortschema.
-- Vorhandene Testpakete und Abläufe aus 0.3.0 in das neue Format übernehmen. Die ursprüngliche Sammlung bleibt erhalten.
+- Vorhandene Testpakete und Abläufe aus 0.3.0 mit stabiler Kennung übernehmen. Originale bleiben bis zur ausdrücklichen Löschung erhalten. Kopien entstehen nur über „Kopie erstellen“. Dieselbe Sammlung ist auch im Versand erreichbar.
 - Ein gemeinsamer Bereich „Tests“ ersetzt die getrennten Einstiege für Testpakete und Abläufe. Vorlagen, gespeicherte Tests und Ergebnisse sind direkt erreichbar. Testserien öffnen eine eigene Arbeitsansicht. Frühere Durchläufe lassen sich mit ihrem bisherigen Prüfstand fortsetzen.
 - Kompaktere Werkzeugauswahl, klare Vorbereitung/Durchführung/Ergebnisse und Rückweg zum aktuellen Test aus anderen Arbeitsbereichen.
 - Fragmentierte Anlagen unter API v2 in eine getrennte temporäre Zieldatei zusammenfügen. Originalname, Inhalt und Prüfbezüge bleiben erhalten.
 - Schlüssel im Inventar wieder zuverlässig entfernen. Gültige Testanlagen ohne Parserüberlauf prüfen, Durchlaufgrößen vor dem Start melden und XML-Ansichten/Beispieldaten vor übermäßiger Expansion begrenzen.
+
+- Einzelne Testfälle umbenennen, duplizieren oder entfernen. Die erste Antwort ergänzen und erwartete Anlagen hinzufügen, gezielt ersetzen oder entfernen. JSON ohne Änderung großer Zahlen formatieren.
+- Unfertige Testvorbereitungen je Umgebung automatisch geschützt sichern und nach einem Neustart ausdrücklich wiederherstellen. Die Abwahl beschränkt Änderungen auf die Sitzung. Unlesbare Sicherungen werden nicht überschrieben.
+- Vollständige Inhaltsvergleiche mit Feldbedingungen erlauben gezielte dynamische Werte und prüfen alle übrigen Felder, Strukturen und Anlagen weiterhin vollständig. Ergebnisse und Exporte benennen den tatsächlichen Prüfumfang.
+- Das aktive Profil im Kopf anzeigen, Tests direkt von Start ohne Verbindung vorbereiten und passende Nachweise über „Prüfen und weiter“ prüfen. Mehrdeutige Treffer benötigen eine ausdrückliche Auswahl.
+- Zusätzliche öffentliche CA-Zertifikate für Firmenproxies appbezogen freigeben. Die Freigabe gilt für Java, beide SDKs, Schemaquellen, native HTTPS-Downloads und FreshClam. Normale Vertrauensanker, Hostnamenprüfung und die Signaturprüfung von Virendatenbanken bleiben erhalten. Konkrete Netzfehler ersetzen allgemeine Anmeldefehler. Beim Wechsel zu System- oder Direktverbindung werden keine gespeicherten manuellen Proxy-Zugangsdaten an die Java-Verbindungen weitergegeben.
 
 Abnahme und Veröffentlichung sind noch offen. Ein bestandener lokaler Test ersetzt keine Windows- oder FIT-Connect-TEST-Abnahme des Releasekandidaten.
 

@@ -31,8 +31,15 @@ Löschen garantiert kein physisches Überschreiben. Abmelden widerruft ausgestel
   benötigen zusätzlich eine native Bestätigung. Der Server prüft Berechtigungen.
 - Öffentliche Schemaquellen benötigen Freigabe und erhalten Schema-URIs. Die optionale
   FIM-Abfrage überträgt LeiKa-Kennungen, keine Zugangsdaten oder Fachdaten.
-  Proxy-Anmeldedaten werden nur beim CONNECT an den konfigurierten Proxy verwendet.
+  Gespeicherte manuelle Proxy-Anmeldedaten sind ausschließlich im manuellen Modus
+  für den konfigurierten Proxy verfügbar. System- und Direktmodus übernehmen diese
+  Zugangsdaten nicht. Die Schemaabfrage verwendet sie nur beim CONNECT zum Proxy.
   Ein konfigurierter Proxy bestimmt die Tunnel-Zielauflösung und muss vertrauenswürdig sein.
+  Zusätzliche öffentliche CA-Zertifikate erweitern nach ausdrücklicher Freigabe
+  ausschließlich das HTTPS-Vertrauen von FBForge Connect. Normale Vertrauensanker
+  und Hostnamenprüfung bleiben aktiv. Inaktive Ergänzungen gewähren kein Vertrauen.
+  Diese Freigabe ändert weder V-PKI-Vertrauensanker noch die Signaturprüfung von
+  Scannerpaketen und Virendatenbanken.
   Schemaauswertung und Provenienzaufbau bleiben durch Eingabe- und Operationsgrenzen begrenzt.
 - Kryptografisch geprüfte Inhalte bleiben trotz Schemaabweichung lesbar. Einzelannahme
   benötigt dann zusätzliche native Bestätigung. Fehlerhafte Sammelfälle bleiben manuell.

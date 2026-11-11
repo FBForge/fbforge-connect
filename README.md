@@ -10,7 +10,9 @@ Dieser Branch bereitet **0.4.0, noch nicht veröffentlicht** vor.
 
 Neu sind geführte Integrationstests mit externen Gegenstellen, Tests aus Vorgängen,
 variable Testdaten, Testserien für API v2/v3 und mehrere fachliche Antworten im selben
-Vorgang. Konkrete Unterschiede bleiben mit dem Prüfverlauf gespeichert.
+Vorgang. Unfertige Vorbereitungen werden geschützt gesichert. Vollständige Vergleiche
+mit Feldbedingungen und eine gemeinsame Testsammlung vereinfachen wiederholte Prüfungen.
+Konkrete Unterschiede bleiben mit dem Prüfverlauf gespeichert.
 Einzelheiten stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 
 - Einreichungen und Antworten über API v2/v3 senden, empfangen und prüfen.
@@ -20,7 +22,7 @@ Einzelheiten stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 - Tests an einer Stelle vorbereiten, durchführen und auswerten, mit Profilzuordnung und gespeichertem Fortschritt.
 - Eigene JSON-Antwortschemas erstellen, Schemata und erwartete Inhalte vergleichen.
 - Optional lokal mit ClamAV oder einer eigenen ClamAV-/ICAP-Gegenstelle scannen.
-- Bei Bedarf einen HTTP-Proxy unter „Einstellungen → Netzwerk und Proxy“ einrichten.
+- Bei Bedarf einen HTTP-Proxy und ausdrücklich freigegebene zusätzliche CA-Zertifikate unter „Einstellungen → Netzwerk und Proxy“ einrichten.
 - Neue stabile Versionen finden und signierte Updates nach Bestätigung installieren.
 
 Für **Windows x64 und FIT-Connect TEST, STAGE und PROD**. STAGE und PROD benötigen

@@ -35,7 +35,10 @@ npm run stage:engine
 npm run test:engine
 ```
 
-`stage:engine` kopiert beide SDK-Adapter und erzeugt mit `jlink` eine lokale Java-Laufzeit unter `desktop/resources/engine/`. Diese generierten Dateien werden nicht eingecheckt. Nach Änderungen am Java-Code die letzten drei Befehle erneut ausführen.
+`stage:engine` kopiert beide SDK-Adapter und erzeugt mit `jlink` eine lokale Java-Laufzeit unter `desktop/resources/engine/`. Dabei wird auch `ca-roots.pem` aus dem Zertifikatsspeicher der erzeugten Laufzeit
+exportiert. FreshClam verwendet diese normalen Vertrauensanker zusammen mit
+ausdrücklich freigegebenen zusätzlichen CAs. Diese generierten Dateien werden
+nicht eingecheckt. Nach Änderungen am Java-Code die letzten drei Befehle erneut ausführen.
 
 ### Anwendung entwickeln
 
