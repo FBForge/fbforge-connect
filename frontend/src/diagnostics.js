@@ -19,7 +19,7 @@ export async function probeAdapter(invoke, apiVersion, environment = 'TEST') {
 }
 
 export function errorMessage(code) {
-  const receiveCode = typeof code === 'string' ? code : code?.message;
+  const receiveCode = typeof code === 'string' ? code : (code?.code ?? code?.message);
   if (typeof receiveCode === 'string' && Object.hasOwn(receiveFailures, receiveCode))
     return receiveFailures[receiveCode].message;
   const messages = {
@@ -76,6 +76,8 @@ export function errorMessage(code) {
       'Bitte eine Client-ID und ein Client-Secret innerhalb der zulässigen Länge eingeben.',
     reply_metadata_required:
       'An der Absender-Destination fehlt eine passende Metadatenversion für Replies. Der Betreiber muss in der Destination-Verwaltung 2.0.0 oder 3.0.0 freigeben. Prozessantworten benötigen 3.0.0. Es wurde nichts versendet.',
+    verification_failed:
+      'Die Prüfung durch das FIT-Connect-SDK ist fehlgeschlagen. Prüfen Sie die technischen Fehlerangaben und das Event Log.',
     reply_channel_missing:
       'Diese Einreichung bietet keinen unterstützten FIT-Connect-Antwortkanal an. Für einen Antworttest muss der Absender beim Versand ein Antwortangebot mitgeben.',
     schema_id_mismatch:
@@ -107,7 +109,7 @@ export function errorMessage(code) {
       'Ein unzulässiges Ziel oder eine Weiterleitung wurde blockiert. Erlaubt sind ausschließlich die festen Endpunkte der gewählten Umgebung.',
     session_missing: 'Diese Sitzung ist nicht mehr verfügbar. Bitte erneut anmelden.',
   };
-  const key = typeof code === 'string' ? code : code?.message;
+  const key = typeof code === 'string' ? code : (code?.code ?? code?.message);
   return typeof key === 'string' && Object.hasOwn(messages, key)
     ? messages[key]
     : 'Die lokale Aktion ist fehlgeschlagen.';
@@ -199,13 +201,13 @@ const reportableCodes = new Set([
   'content_cleanup_failed',
 ]);
 export function diagnosticCode(cause) {
-  const code = typeof cause === 'string' ? cause : cause?.message;
+  const code = typeof cause === 'string' ? cause : (cause?.code ?? cause?.message);
   return typeof code === 'string' && reportableCodes.has(code) ? code : 'unknown_error';
 }
 
 /** Preserve fatal transport failures so callers retire native session handles after an uncertain write. */
 export function uncertainOperationError(cause) {
-  const code = typeof cause === 'string' ? cause : cause?.message;
+  const code = typeof cause === 'string' ? cause : (cause?.code ?? cause?.message);
   return [
     'engine_timeout',
     'engine_disconnected',

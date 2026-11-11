@@ -3,6 +3,7 @@ import type { Session } from '../contracts.d.ts';
 import { invoke } from '../native.ts';
 import { loadReplyTarget } from '../reply-sending.js';
 import { diagnosticCode } from '../diagnostics.js';
+import { sdkDiagnostics, type SdkDiagnostic } from '../sdk-diagnostics.ts';
 
 type ProofIdentity = {
   proofId: string;
@@ -16,7 +17,8 @@ type Context = {
   reply?: boolean;
 };
 export type ReplyAvailability =
-  { status: 'idle' | 'pending' | 'available' } | { status: 'missing' | 'failed'; code: string };
+  | { status: 'idle' | 'pending' | 'available' }
+  | { status: 'missing' | 'failed'; code: string; diagnostics?: SdkDiagnostic[] };
 
 // This reads the native, verified reception context. It never sends a reply.
 export function useReplyAvailability(context: () => Context) {
@@ -37,7 +39,11 @@ export function useReplyAvailability(context: () => Context) {
     } catch (cause) {
       if (!alive || revision !== generation) return;
       const code = diagnosticCode(cause);
-      state.value = { status: code === 'reply_channel_missing' ? 'missing' : 'failed', code };
+      state.value = {
+        status: code === 'reply_channel_missing' ? 'missing' : 'failed',
+        code,
+        diagnostics: sdkDiagnostics(cause),
+      };
     }
   }
   watch(

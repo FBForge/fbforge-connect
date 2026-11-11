@@ -23,6 +23,7 @@ const emit = defineEmits(['reply', 'retry']);
       title="Antwortkanal konnte nicht geprüft werden"
       :message="explain(state.code)"
       :code="state.code"
+      :diagnostics="state.diagnostics || []"
       tone="error"
     />
     <button class="button secondary" type="button" :disabled="disabled" @click="emit('retry')">

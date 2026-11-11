@@ -1,7 +1,7 @@
 //! Tauri adapter for the shared native write gate.
 use crate::protocol::{ApiVersion, SessionResource};
 use crate::write_gate::{Context, Effect};
-use crate::{cases, profiles, request, EngineState};
+use crate::{cases, profiles, EngineState};
 
 struct DesktopContext<'a> {
     app: &'a tauri::AppHandle,
@@ -10,11 +10,12 @@ struct DesktopContext<'a> {
     id: &'a str,
 }
 impl Context for DesktopContext<'_> {
+    type Error = crate::command_error::CommandError;
     fn environment(&self) -> crate::environments::Environment {
         self.state.environment()
     }
-    async fn request(&self, command: serde_json::Value) -> Result<SessionResource, &'static str> {
-        request(self.app, self.state, command).await
+    async fn request(&self, command: serde_json::Value) -> Result<SessionResource, Self::Error> {
+        crate::engine::request_detailed(self.app, self.state, command).await
     }
     async fn effect(&self, effect: Effect<'_>) -> Result<(), &'static str> {
         let Self {
@@ -66,6 +67,17 @@ pub(crate) async fn resource_action(
     id: &str,
     command: serde_json::Value,
 ) -> Result<SessionResource, &'static str> {
+    resource_action_detailed(app, state, version, id, command)
+        .await
+        .map_err(|failure| failure.code())
+}
+pub(crate) async fn resource_action_detailed(
+    app: &tauri::AppHandle,
+    state: &EngineState,
+    version: ApiVersion,
+    id: &str,
+    command: serde_json::Value,
+) -> Result<SessionResource, crate::command_error::CommandError> {
     crate::write_gate::run(
         &DesktopContext {
             app,

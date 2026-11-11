@@ -18,21 +18,22 @@ pub(crate) enum Effect<'a> {
     RecordCaseError(Option<&'static str>),
 }
 pub(crate) trait Context: Sync {
+    type Error: From<&'static str> + Send;
     fn environment(&self) -> Environment;
     fn request(
         &self,
         command: Value,
-    ) -> impl Future<Output = Result<SessionResource, &'static str>> + Send;
+    ) -> impl Future<Output = Result<SessionResource, Self::Error>> + Send;
     fn effect(&self, effect: Effect<'_>) -> impl Future<Output = Result<(), &'static str>> + Send;
 }
-pub(crate) async fn run(
-    context: &impl Context,
+pub(crate) async fn run<C: Context>(
+    context: &C,
     version: ApiVersion,
     id: &str,
     mut command: Value,
-) -> Result<SessionResource, &'static str> {
+) -> Result<SessionResource, C::Error> {
     if !valid_session_id(id) {
-        return Err("session_missing");
+        return Err("session_missing".into());
     }
     command["apiVersion"] = serde_json::to_value(version).map_err(|_| "invalid_input")?;
     command["sessionId"] = id.into();
@@ -52,7 +53,7 @@ pub(crate) async fn run(
         if let Some(action) = crate::environments::production_action(&operation) {
             context.effect(Effect::ConfirmProduction(action)).await?;
             if context.environment() != crate::environments::Environment::PROD {
-                return Err("environment_mismatch");
+                return Err("environment_mismatch".into());
             }
         }
     }
@@ -96,7 +97,7 @@ pub(crate) async fn run(
                 Some("prepared" | "expired")
             )
         {
-            return Err("engine_protocol_error");
+            return Err("engine_protocol_error".into());
         }
         if operation == "execute_destination_creation" {
             if intent.data["bundleId"].is_null() {
@@ -111,7 +112,7 @@ pub(crate) async fn run(
                         .iter()
                         .any(|key| document.get(key).is_some())
                 {
-                    return Err("engine_protocol_error");
+                    return Err("engine_protocol_error".into());
                 }
             } else {
                 context.effect(Effect::RequireProfile).await?;
@@ -133,7 +134,7 @@ pub(crate) async fn run(
             "apiVersion": version, "sessionId": id, "attemptId": command["attemptId"]
         })).await?;
         if !review.validate(version, id) || review.data.as_object().map(|o| o.len()) != Some(2) {
-            return Err("engine_protocol_error");
+            return Err("engine_protocol_error".into());
         }
         let requires_confirmation = review.data["requiresConfirmation"]
             .as_bool()
@@ -143,7 +144,7 @@ pub(crate) async fn run(
             .filter(|n| *n <= 39)
             .ok_or("engine_protocol_error")?;
         if blocked > 0 && !requires_confirmation {
-            return Err("engine_protocol_error");
+            return Err("engine_protocol_error".into());
         }
         if requires_confirmation {
             if blocked > 0 {
@@ -167,7 +168,7 @@ pub(crate) async fn run(
     let value: SessionResource = context.request(command).await?;
     if !value.validate(version, id) {
         context.effect(Effect::InvalidateEngine).await?;
-        return Err("engine_protocol_error");
+        return Err("engine_protocol_error".into());
     }
     if matches!(
         operation.as_str(),
@@ -222,7 +223,7 @@ pub(crate) async fn run(
                 operation.as_str(),
                 "import_certified_keys" | "generate_test_keys" | "remove_key_inventory_item"
             ) {
-                return Err(code);
+                return Err(code.into());
             }
             if matches!(
                 operation.as_str(),
@@ -236,7 +237,7 @@ pub(crate) async fn run(
                     };
                     let _: Result<SessionResource,_> = context.request(serde_json::json!({"command":cancel,"apiVersion":version,"sessionId":id,"attemptId":attempt})).await;
                 }
-                return Err(code);
+                return Err(code.into());
             }
             if operation == "prepare_send" {
                 // A reply key must be durable before its offer can be dispatched.
@@ -248,7 +249,7 @@ pub(crate) async fn run(
                 {
                     let _: Result<SessionResource,_> = context.request(serde_json::json!({"command":"cancel_send","apiVersion":version,"sessionId":id,"attemptId":attempt})).await;
                 }
-                return Err(code);
+                return Err(code.into());
             }
             // Preserve the actual send outcome; profile_status reports a failed checkpoint separately.
         }

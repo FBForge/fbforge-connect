@@ -358,7 +358,19 @@ final class Engine implements AutoCloseable {
                         > FrameCodec.MAX_BYTES) return error(id, "invalid_resource");
                 return response;
             } catch (SessionException e) {
-                return error(id, e.code());
+                if (e.diagnostics().isEmpty()) return error(id, e.code());
+                return json.toJson(
+                        Map.of(
+                                "protocolVersion",
+                                1,
+                                "id",
+                                id,
+                                "ok",
+                                false,
+                                "error",
+                                e.code(),
+                                "diagnostics",
+                                e.diagnostics()));
             } catch (Exception | LinkageError e) {
                 return error(
                         id,

@@ -442,17 +442,26 @@ export const helpTopics = [
     image: 'diagnostics',
     caption: 'Technische Aufrufe mit getrenntem Kontext, verständlichem Ergebnis und optionalem Fehlercode.',
     intro:
-      'Die Diagnose zeigt die letzten 100 technischen Aufrufe dieser Programmsitzung. Sie hilft, Fehler einzugrenzen, ohne Antragsdaten oder Schlüssel offenzulegen.',
+      'Die Diagnose zeigt die letzten 100 technischen Aufrufe dieser Programmsitzung. Bei SDK-Fehlern bleiben neben dem Fehlercode die konkrete Meldung und die betroffene Prüfphase verfügbar.',
     steps: [
       'Öffnen Sie „Diagnose“ und lesen Sie unter „Technische Aufrufe“ die gewünschte Aktion.',
       '„Lokal“ kennzeichnet lokale Vorgänge wie die Prüfung des Speicherstatus. „API v2“ und „API v3“ zeigen den verwendeten API-Kontext an.',
       'Das Ergebnis beschreibt den technischen Aufruf. „Erfolgreich“ bestätigt weder die fachliche Annahme eines Antrags noch einen abgeschlossenen Prozess. „Keine Aktion offen“ bedeutet, dass keine vorbereitete Aktion aussteht.',
       'Bei einem Fehler öffnen Sie „Fehlercode anzeigen“. Notieren Sie Aktion, API, Version und Fehlercode für eine Fehlermeldung.',
+      'Ab 0.4.0 finden Sie dort bei Fehlern der Inhaltsprüfung auch „SDK-Meldungen“ mit Prüfphase und Fehlertyp. Beispielsweise bleibt sichtbar, ob der angebotene Antwortkanal nicht unterstützt wird oder das Event Log fehlerhaft ist. Mit „Kopieren“ unterhalb der SDK-Meldungen übernehmen Sie die angezeigten Texte.',
       'Bei Bedarf sehen Sie den Diagnosebericht vor dem Speichern durch. „Verlauf leeren“ entfernt nur die lokale Liste der technischen Aufrufe.',
     ],
     notes: [
       'Die Liste ist kein Event Log. Für den Transportstatus einer Einreichung oder Antwort verwenden Sie die Suche über Case ID, Submission ID oder Reply ID.',
       'Fachdaten, Secrets, Schlüssel, Dateinamen und Nachrichtenkennungen gehören nicht in einen öffentlichen Diagnosebericht.',
+      'SDK-Meldungen bleiben nur im lokalen Sitzungsverlauf und werden nicht in den standardmäßigen Diagnoseexport übernommen. Sie können Angaben aus der Nachricht enthalten. Prüfen Sie den Text, bevor Sie ihn kopieren oder teilen.',
+    ],
+    illustrations: [
+      {
+        image: 'sdk-error-log',
+        caption:
+          'Fiktive SDK-Meldungen im lokalen technischen Verlauf. Die Meldungstexte fehlen im standardmäßigen Diagnoseexport.',
+      },
     ],
   },
   {
@@ -468,6 +477,7 @@ export const helpTopics = [
       '„Schlüssel fehlt“: Wählen Sie „Schlüssel einrichten“ und laden Sie einen passenden privaten Entschlüsselungsschlüssel. Ein öffentlicher JWK allein reicht nicht.',
       '„Öffentliche Schemaquellen laden?“: Bestätigen Sie den Abruf im Dialog oder brechen Sie ab und hinterlegen Sie ein lokales Schema. Nach Ihrer Zustimmung wird die angefangene Prüfung fortgesetzt. Eine erteilte Freigabe gilt für die aktive Verbindung. Sie wird nicht gespeichert.',
       'Unter „Technische Fehlerangaben“ finden Sie API-Version und kopierbaren Fehlercode.',
+      'Ab 0.4.0 enthält dieser Bereich bei fehlgeschlagenen SDK-Prüfungen zusätzlich den konkreten SDK-Grund. Lesen Sie dort die SDK-Meldungen bei der Prüfung von Einreichungen, Antworten, Antwortkanälen und Event Logs. Ein nicht unterstützter Antwortkanal muss beispielsweise beim Absender oder in der Empfänger-Konfiguration korrigiert werden. Eine fehlgeschlagene Prüfung gibt keine Inhalte zur Annahme frei.',
       'Schlüssel abgewiesen: Vergleichen Sie Destination, Verwendungszweck und aktuelle Schlüsselregistrierung. Alte Nachrichten können einen früheren privaten Schlüssel benötigen.',
       'Schema nicht verfügbar: Prüfen Sie die Schema-URI in den Metadaten. Erlauben Sie bei Bedarf öffentliche Quellen oder laden Sie ein lokales Schema mit passender absoluter $id.',
       'Zugriff verweigert: Prüfen Sie Client-Rolle, API-Version und Zugehörigkeit der Destination. Eine fremde Destination wird durch ihre ID nicht zu Ihrer eigenen.',
@@ -478,6 +488,13 @@ export const helpTopics = [
       'Diagnoseberichte enthalten nur freigegebene technische Angaben. Fachdaten, Secrets, Schlüssel, Dateinamen und Nachrichtenkennungen werden nicht aufgenommen.',
       'Teilen Sie keine Secrets oder privaten Schlüssel in öffentlichen GitHub-Issues oder Screenshots. Für Fehlermeldungen reichen zunächst Version, API, Aktion und freigegebener Fehlercode.',
       'Ausführliche Informationen zu FIT-Connect, Schnittstellen und Schemakonventionen finden Sie in der offiziellen Dokumentation des Dienstes.',
+    ],
+    illustrations: [
+      {
+        image: 'receive-sdk-error',
+        caption:
+          'Fiktiver nicht unterstützter Antwortkanal mit konkreter SDK-Meldung. Die Inhaltsprüfung bleibt gestoppt.',
+      },
     ],
   },
   {

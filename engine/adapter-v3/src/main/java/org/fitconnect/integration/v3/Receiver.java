@@ -27,7 +27,7 @@ import org.fitconnect.integration.contract.*;
 final class Receiver {
     private ReceiptEvidence evidence;
     private ReplyRecipient replyRecipient;
-    private String replyFailure = "reply_channel_missing";
+    private SessionException replyFailure = new SessionException("reply_channel_missing");
 
     ReceivedContent receive(
             AuthorizationHeaderProvider auth,
@@ -39,7 +39,7 @@ final class Receiver {
             Map<String, String> schemas) {
         evidence = null;
         replyRecipient = null;
-        replyFailure = "reply_channel_missing";
+        replyFailure = new SessionException("reply_channel_missing");
         ReceiverTransport transport = null;
         try {
             var services =
@@ -53,9 +53,10 @@ final class Receiver {
                 throw new SessionException("receive_message_mismatch");
             if (!result.acceptable())
                 throw new SessionException(
-                        services.http().schemaFailed()
-                                ? services.http().schemaFailureCode
-                                : "verification_failed");
+                                services.http().schemaFailed()
+                                        ? services.http().schemaFailureCode
+                                        : "verification_failed")
+                        .withDiagnostics(ReceiveDiagnostics.report(result.report()));
             var attachments = new ArrayList<ReceivedContent.Attachment>();
             for (var attachment : result.getAttachments()) {
                 try (var stream = attachment.openStream()) {
@@ -150,13 +151,14 @@ final class Receiver {
                                     ReplyMessageOffers.read(result.getMetadata()));
                 }
             } catch (Exception failure) {
-                replyFailure = "verification_failed";
+                replyFailure =
+                        SdkDiagnostic.failure("verification_failed", "REPLY_CHANNEL", failure);
             }
             return content;
         } catch (Exception failure) {
             if (transport != null && transport.readFailure() != null) throw transport.readFailure();
             if (failure instanceof SessionException known) throw known;
-            throw new SessionException("verification_failed");
+            throw ReceiveDiagnostics.failure("verification_failed", "RECEIVE", failure);
         }
     }
 
@@ -295,7 +297,7 @@ final class Receiver {
 
     ReplyRecipient replyRecipient(String destination, String submission) {
         evidence(destination, submission);
-        if (replyRecipient == null) throw new SessionException(replyFailure);
+        if (replyRecipient == null) throw replyFailure;
         return replyRecipient;
     }
 

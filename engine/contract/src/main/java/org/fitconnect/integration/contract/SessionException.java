@@ -1,5 +1,6 @@
 package org.fitconnect.integration.contract;
 
+import java.util.List;
 import java.util.Set;
 
 public final class SessionException extends RuntimeException {
@@ -61,6 +62,7 @@ public final class SessionException extends RuntimeException {
                     "data_format_invalid");
     private final Integer httpStatus;
     private final String problemType;
+    private final List<SdkDiagnostic> diagnostics;
 
     public SessionException(String code) {
         this(code, null, null);
@@ -80,6 +82,22 @@ public final class SessionException extends RuntimeException {
                                         "https://schema\\.fitko\\.de/fit-connect/(?:submission-api|destination-api)/problems/[a-z][a-z0-9-]{0,127}")
                         ? problemType.substring(problemType.lastIndexOf('/') + 1)
                         : null;
+        this.diagnostics = List.of();
+    }
+
+    private SessionException(SessionException original, List<SdkDiagnostic> diagnostics) {
+        super(original.code());
+        this.httpStatus = original.httpStatus;
+        this.problemType = original.problemType;
+        this.diagnostics = SdkDiagnostic.bounded(diagnostics);
+    }
+
+    public SessionException withDiagnostics(List<SdkDiagnostic> details) {
+        return new SessionException(this, details);
+    }
+
+    public List<SdkDiagnostic> diagnostics() {
+        return diagnostics;
     }
 
     public String code() {

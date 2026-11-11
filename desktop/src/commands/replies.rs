@@ -1,6 +1,7 @@
 //! Replies commands. All resource calls pass through the central policy.
+use crate::command_error::CommandError;
 use crate::protocol::{valid_session_id, ApiVersion, SessionResource};
-use crate::resource_action;
+use crate::write_policy::resource_action_detailed as resource_action;
 use crate::EngineState;
 use tauri::State;
 
@@ -12,9 +13,9 @@ pub(crate) async fn reply_target(
     session_id: String,
     proof_id: String,
     offset: u32,
-) -> Result<SessionResource, &'static str> {
+) -> Result<SessionResource, CommandError> {
     if !valid_session_id(&proof_id) || offset > 64 || offset % 2 != 0 {
-        return Err("invalid_input");
+        return Err("invalid_input".into());
     }
     resource_action(
         &app,
@@ -33,9 +34,9 @@ pub(crate) async fn prepare_reply(
     api_version: ApiVersion,
     session_id: String,
     reply_document: String,
-) -> Result<SessionResource, &'static str> {
+) -> Result<SessionResource, CommandError> {
     if reply_document.len() > 24 * 1024 {
-        return Err("invalid_submission");
+        return Err("invalid_submission".into());
     }
     resource_action(
         &app,
@@ -54,9 +55,9 @@ pub(crate) async fn execute_reply(
     api_version: ApiVersion,
     session_id: String,
     attempt_id: String,
-) -> Result<SessionResource, &'static str> {
+) -> Result<SessionResource, CommandError> {
     if !valid_session_id(&attempt_id) {
-        return Err("invalid_input");
+        return Err("invalid_input".into());
     }
     resource_action(
         &app,
@@ -75,9 +76,9 @@ pub(crate) async fn cancel_reply(
     api_version: ApiVersion,
     session_id: String,
     attempt_id: String,
-) -> Result<SessionResource, &'static str> {
+) -> Result<SessionResource, CommandError> {
     if !valid_session_id(&attempt_id) {
-        return Err("invalid_input");
+        return Err("invalid_input".into());
     }
     resource_action(
         &app,
@@ -95,7 +96,7 @@ pub(crate) async fn reply_state(
     state: State<'_, EngineState>,
     api_version: ApiVersion,
     session_id: String,
-) -> Result<SessionResource, &'static str> {
+) -> Result<SessionResource, CommandError> {
     resource_action(
         &app,
         &state,
@@ -114,9 +115,9 @@ pub(crate) async fn load_reply_schema(
     session_id: String,
     proof_id: String,
     schema_document: String,
-) -> Result<SessionResource, &'static str> {
+) -> Result<SessionResource, CommandError> {
     if !valid_session_id(&proof_id) || schema_document.len() > 24 * 1024 {
-        return Err("invalid_input");
+        return Err("invalid_input".into());
     }
     resource_action(&app, &state, api_version, &session_id,
         serde_json::json!({"command":"load_reply_schema","proofId":proof_id,"schemaDocument":schema_document})).await
@@ -131,12 +132,12 @@ pub(crate) async fn read_reply_schema(
     proof_id: String,
     content_id: String,
     byte_offset: u32,
-) -> Result<SessionResource, &'static str> {
+) -> Result<SessionResource, CommandError> {
     if !valid_session_id(&proof_id)
         || !valid_session_id(&content_id)
         || byte_offset > 24 * 1024 * 1024
     {
-        return Err("invalid_input");
+        return Err("invalid_input".into());
     }
     resource_action(&app, &state, api_version, &session_id,
         serde_json::json!({"command":"read_reply_schema","proofId":proof_id,"contentId":content_id,"byteOffset":byte_offset})).await

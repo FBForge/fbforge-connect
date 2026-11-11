@@ -1,4 +1,6 @@
 //! Protocol and storage tests runnable without WebView/GTK build dependencies.
+#[path = "../src/command_error.rs"]
+pub mod command_error;
 #[path = "../src/protocol.rs"]
 pub mod protocol;
 #[path = "../src/vault.rs"]

@@ -2,6 +2,8 @@
 
 ## 0.4.0 (unveröffentlicht)
 
+- Konkrete SDK-Fehler beim Abrufen und Prüfen von Einreichungen, Antworten und Event Logs anzeigen. „Technische Fehlerangaben“ enthält Prüfphase, Fehlertyp und kopierbare SDK-Meldungen, etwa bei einem nicht angebotenen Antwortkanal. Der lokale technische Verlauf erhält dieselben Meldungen. Der standardmäßige Diagnoseexport lässt sie aus. Fehlgeschlagene Prüfungen geben weiterhin keine Inhalte oder Annahme frei.
+
 - Geführte Integrationstests für externe Onlinedienste und Fachverfahren oder beide Seiten in Connect. Vorlagen für Annahme, Ablehnung, Antworten und Nachforderung/Nachreichung.
 - Verfügbare Vorgangskopien als neuen Test mit Fachdaten und Anlagen übernehmen. Fehlende Leistungs- und Schemaangaben ergänzen oder aus dem Empfängerangebot laden.
 - Variable Testdaten, mehrere Datensätze und Werteübernahme aus beobachteten Einreichungen. Erzeugte Werte bleiben beim Fortsetzen des Durchlaufs erhalten.

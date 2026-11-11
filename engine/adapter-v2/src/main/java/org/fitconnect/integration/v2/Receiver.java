@@ -13,7 +13,7 @@ import org.fitconnect.integration.contract.*;
 final class Receiver {
     private ReceiptEvidence evidence;
     private ReplyRecipient replyRecipient;
-    private String replyFailure = "reply_channel_missing";
+    private SessionException replyFailure = new SessionException("reply_channel_missing");
 
     ReceivedContent receive(
             DefaultOAuthApiService auth,
@@ -25,12 +25,13 @@ final class Receiver {
             Map<String, String> schemas) {
         evidence = null;
         replyRecipient = null;
-        replyFailure = "reply_channel_missing";
+        replyFailure = new SessionException("reply_channel_missing");
         var transport = new ReceiverTransport(read, schemas);
+        SdkServices sdk = null;
         try {
             var crypto = new ReceiveCrypto();
             var captured = new ValidatedAuthenticationTags[1];
-            var sdk =
+            sdk =
                     new SdkServices(
                             auth,
                             transport,
@@ -120,14 +121,23 @@ final class Receiver {
                                     schemasOffered);
                 }
             } catch (Exception failure) {
-                replyFailure = "verification_failed";
+                replyFailure =
+                        SdkDiagnostic.failure("verification_failed", "REPLY_CHANNEL", failure);
             }
             return content;
         } catch (Exception failure) {
-            if (transport.readFailure() != null) throw transport.readFailure();
-            if (failure instanceof SessionException known) throw known;
-            throw new SessionException(
-                    transport.schemaFailed() ? transport.schemaFailureCode : "verification_failed");
+            var base =
+                    transport.readFailure() != null
+                            ? transport.readFailure()
+                            : failure instanceof SessionException known
+                                    ? known
+                                    : new SessionException(
+                                            transport.schemaFailed()
+                                                    ? transport.schemaFailureCode
+                                                    : "verification_failed");
+            throw sdk == null
+                    ? SdkDiagnostic.failure(base, "RECEIVE", failure)
+                    : sdk.receiveFailure(base, "RECEIVE", failure);
         }
     }
 
@@ -141,7 +151,7 @@ final class Receiver {
 
     ReplyRecipient replyRecipient(String destination, String submission) {
         evidence(destination, submission);
-        if (replyRecipient == null) throw new SessionException(replyFailure);
+        if (replyRecipient == null) throw replyFailure;
         return replyRecipient;
     }
 

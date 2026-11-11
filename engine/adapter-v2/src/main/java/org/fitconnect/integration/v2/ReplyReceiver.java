@@ -18,10 +18,11 @@ final class ReplyReceiver {
             Path workspace,
             Map<String, String> schemas) {
         var transport = new ReceiverTransport(source, schemas);
+        SdkServices sdk = null;
         try {
             var captured = new ValidatedAuthenticationTags[1];
             var crypto = new ReceiveCrypto();
-            var sdk =
+            sdk =
                     new SdkServices(
                             auth,
                             transport,
@@ -90,11 +91,19 @@ final class ReplyReceiver {
                             transport.validation.snapshot(result.getDataSchemaUri().toString()));
             keys.recover(selected, caseId);
             return content;
-        } catch (SessionException failure) {
-            throw failure;
         } catch (Exception failure) {
-            throw new SessionException(
-                    transport.schemaFailed() ? transport.schemaFailureCode : "verification_failed");
+            var base =
+                    transport.readFailure() != null
+                            ? transport.readFailure()
+                            : failure instanceof SessionException known
+                                    ? known
+                                    : new SessionException(
+                                            transport.schemaFailed()
+                                                    ? transport.schemaFailureCode
+                                                    : "verification_failed");
+            throw sdk == null
+                    ? SdkDiagnostic.failure(base, "REPLY", failure)
+                    : sdk.receiveFailure(base, "REPLY", failure);
         }
     }
 }

@@ -17,6 +17,7 @@ mod message_export_stream;
 mod message_exports;
 mod profile_backup;
 use cases::case_workspace;
+mod command_error;
 mod local_scanner;
 mod malware_scanner;
 mod profile_archive;

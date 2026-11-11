@@ -33,10 +33,11 @@ final class EventLogs {
     static VerifiedCaseEventLog caseLog(
             DefaultOAuthApiService auth, UUID caseId, EventLogSource source, Path workspace) {
         var http = new ReceiverTransport(source, Map.of());
+        SdkServices sdk = null;
         try {
             if (caseId == null || source == null || workspace == null)
                 throw new SessionException("invalid_input");
-            var sdk =
+            sdk =
                     new SdkServices(
                             auth,
                             http,
@@ -79,9 +80,15 @@ final class EventLogs {
             }
             return new VerifiedCaseEventLog(caseId, entries);
         } catch (Exception failure) {
-            if (http.readFailure() != null) throw http.readFailure();
-            if (failure instanceof SessionException known) throw known;
-            throw new SessionException("verification_failed");
+            var base =
+                    http.readFailure() != null
+                            ? http.readFailure()
+                            : failure instanceof SessionException known
+                                    ? known
+                                    : new SessionException("verification_failed");
+            throw sdk == null
+                    ? SdkDiagnostic.failure(base, "EVENT_LOG", failure)
+                    : sdk.receiveFailure(base, "EVENT_LOG", failure);
         }
     }
 
@@ -103,13 +110,14 @@ final class EventLogs {
             Path workspace,
             boolean reply) {
         var http = new ReceiverTransport(source, Map.of());
+        SdkServices sdk = null;
         try {
             if (!reply && destination == null
                     || caseId == null
                     || submission == null
                     || source == null
                     || workspace == null) throw new SessionException("invalid_input");
-            var sdk =
+            sdk =
                     new SdkServices(
                             auth,
                             http,
@@ -179,9 +187,15 @@ final class EventLogs {
                     ? VerifiedEventLog.reply(caseId, submission, entries)
                     : new VerifiedEventLog(destination, caseId, submission, entries);
         } catch (Exception failure) {
-            if (http.readFailure() != null) throw http.readFailure();
-            if (failure instanceof SessionException known) throw known;
-            throw new SessionException("verification_failed");
+            var base =
+                    http.readFailure() != null
+                            ? http.readFailure()
+                            : failure instanceof SessionException known
+                                    ? known
+                                    : new SessionException("verification_failed");
+            throw sdk == null
+                    ? SdkDiagnostic.failure(base, "EVENT_LOG", failure)
+                    : sdk.receiveFailure(base, "EVENT_LOG", failure);
         }
     }
 }

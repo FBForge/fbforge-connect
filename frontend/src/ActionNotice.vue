@@ -1,12 +1,14 @@
 <script setup>
 import { ref, useId } from 'vue';
 import CopyValue from './CopyValue.vue';
+import SdkDiagnostics from './SdkDiagnostics.vue';
 defineProps({
   title: { type: String, required: true },
   message: { type: String, required: true },
   tone: { type: String, default: 'error' },
   code: String,
   apiVersion: String,
+  diagnostics: { type: Array, default: () => [] },
 });
 const titleId = useId();
 const heading = ref(null);
@@ -26,6 +28,7 @@ defineExpose({
       <summary>Technische Fehlerangaben</summary>
       <p v-if="apiVersion">API {{ apiVersion }}</p>
       <CopyValue :value="code" label="Fehlercode" />
+      <SdkDiagnostics :diagnostics="diagnostics" />
     </details>
   </section>
 </template>

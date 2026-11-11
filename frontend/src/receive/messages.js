@@ -10,7 +10,7 @@ export function receiveMessages(reply) {
     test_certificate_required:
       'Für diese Destination fehlt eine gültige Registrierung mit selbstsigniertem Testzertifikat.',
     verification_failed:
-      'Die technische Prüfung der Einreichung ist fehlgeschlagen. Prüfen Sie Schlüssel, Event Log und Inhalte. Es liegt kein vollständiges Prüfergebnis vor.',
+      'Die technische Prüfung der Einreichung ist fehlgeschlagen. Es liegt kein vollständiges Prüfergebnis vor.',
     schema_consent_required:
       'Das Schema benötigt eine öffentliche Quelle. Erlauben Sie den Abruf oder fügen Sie ein passendes lokales Schema hinzu.',
     schema_unavailable:

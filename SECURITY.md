@@ -21,6 +21,13 @@ Sie bleiben beim Löschen eines Profils bestehen. DPAPI schützt nicht vor Schad
 unter demselben Benutzerkonto. Die Vorgangsablage ist kein revisionssicheres Archiv.
 Löschen garantiert kein physisches Überschreiben. Abmelden widerruft ausgestellte Tokens nicht.
 
+Konkrete SDK-Fehler beim Empfang und beim Event Log bleiben mit Prüfphase und
+Fehlertyp im lokalen Verlauf der letzten 100 technischen Aufrufe sichtbar.
+Erkennbare Zugangsdaten, Schlüsselmaterial und Parser-Quelltextauszüge werden
+entfernt. SDK-Meldungen können weiterhin Nachrichtenkennungen oder andere Angaben
+aus der Verarbeitung enthalten. Vor dem Kopieren oder Teilen prüfen.
+Der standardmäßige Diagnoseexport übernimmt diese Meldungstexte nicht.
+
 ## Schutzgrenzen
 
 - Keine allgemeinen HTTP-, Shell- oder Dateisystemrechte im Renderer. Schreibaktionen

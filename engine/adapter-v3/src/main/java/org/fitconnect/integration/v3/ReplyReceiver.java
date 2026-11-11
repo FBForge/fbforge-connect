@@ -51,9 +51,11 @@ final class ReplyReceiver {
             var result = services.receiver().openReply(replyId);
             if (services.http().schemaFailed())
                 throw new SessionException(services.http().schemaFailureCode);
+            if (!result.report().acceptable())
+                throw new SessionException("verification_failed")
+                        .withDiagnostics(ReceiveDiagnostics.report(result.report()));
             if (!replyId.equals(result.id())
                     || !caseId.equals(result.caseId())
-                    || !result.report().acceptable()
                     || captured[0] == null) throw new SessionException("verification_failed");
             selected.check(
                     result.getDataSchemaUri(),
@@ -116,7 +118,7 @@ final class ReplyReceiver {
         } catch (SessionException failure) {
             throw failure;
         } catch (Exception failure) {
-            throw new SessionException("verification_failed");
+            throw ReceiveDiagnostics.failure("verification_failed", "REPLY", failure);
         }
     }
 }

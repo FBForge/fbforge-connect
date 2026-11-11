@@ -59,6 +59,7 @@ impl SessionResource {
 pub enum EngineFailure {
     Fatal(&'static str),
     Remote(&'static str),
+    Detailed(crate::command_error::CommandError),
 }
 
 #[derive(Deserialize)]
@@ -69,19 +70,20 @@ pub struct EngineResponse<T = ProbeResult> {
     pub ok: bool,
     pub result: Option<T>,
     pub error: Option<String>,
+    pub diagnostics: Option<Vec<crate::command_error::SdkDiagnostic>>,
 }
 
 impl<T> EngineResponse<T> {
     pub fn payload(self, id: &str) -> Result<T, EngineFailure> {
         if self.protocol_version != 1
             || self.id != id
-            || (self.ok && self.error.is_some())
+            || (self.ok && (self.error.is_some() || self.diagnostics.is_some()))
             || (!self.ok && self.result.is_some())
         {
             return Err(EngineFailure::Fatal("engine_protocol_error"));
         }
         if !self.ok {
-            return Err(match self.error.as_deref() {
+            let failure = match self.error.as_deref() {
                 Some("adapter_unavailable") => EngineFailure::Remote("adapter_unavailable"),
                 Some("authentication_failed") => EngineFailure::Remote("authentication_failed"),
                 Some("auth_unavailable") => EngineFailure::Remote("auth_unavailable"),
@@ -166,6 +168,15 @@ impl<T> EngineResponse<T> {
                 Some("reply_channel_missing") => EngineFailure::Remote("reply_channel_missing"),
                 Some("send_locked") => EngineFailure::Remote("send_locked"),
                 _ => EngineFailure::Fatal("engine_protocol_error"),
+            };
+            return Err(match (failure, self.diagnostics) {
+                (EngineFailure::Remote(code), Some(details)) => {
+                    crate::command_error::CommandError::detailed(code, details)
+                        .map(EngineFailure::Detailed)
+                        .unwrap_or(EngineFailure::Fatal("engine_protocol_error"))
+                }
+                (failure, None) => failure,
+                _ => EngineFailure::Fatal("engine_protocol_error"),
             });
         }
         self.result
@@ -223,6 +234,7 @@ mod tests {
             id: "op-1".into(),
             ok: true,
             error: None,
+            diagnostics: None,
             result: Some(ProbeResult {
                 api_version: version,
                 sdk_version: "3.5.2".into(),
@@ -296,6 +308,7 @@ mod tests {
             ok: false,
             result: None,
             error: Some("authentication_failed".into()),
+            diagnostics: None,
         };
         assert!(matches!(
             authentication.payload("op-1"),
@@ -368,6 +381,7 @@ mod tests {
                 ok: false,
                 result: None,
                 error: Some(code.into()),
+                diagnostics: None,
             };
             assert!(
                 matches!(response.payload("op-1"), Err(EngineFailure::Remote(value)) if value == code)

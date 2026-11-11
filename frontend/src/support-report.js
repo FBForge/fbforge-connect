@@ -1,7 +1,8 @@
 import { diagnosticCode } from './diagnostics.js';
+import { sdkDiagnostics } from './sdk-diagnostics.ts';
 import { productName } from './product.js';
 
-// Deliberately exclude arguments, response bodies, identifiers, paths and free-form messages.
+// Arguments and response bodies stay private. Structured SDK details are local-only and excluded from exports.
 export const operationLabels = Object.freeze({
   install_local_scanner: 'Lokalen Scanner installieren',
   update_local_scanner_database: 'Virensignaturen aktualisieren',
@@ -182,13 +183,15 @@ export function diagnosticResult(entry) {
     tone: ['failed', 'uncertain', 'partial', 'conflict', 'expired'].includes(entry.state) ? 'warn' : 'info',
   };
 }
-function safeEntry(entry) {
+function safeEntry(entry, includeSdk = false) {
   if (!entry || !Object.hasOwn(operationLabels, entry.command)) return null;
+  const details = includeSdk ? sdkDiagnostics(entry) : [];
   return Object.freeze({
     time:
       typeof entry.time === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(entry.time)
         ? entry.time
         : null,
+    ...(details.length ? { diagnostics: Object.freeze(details) } : {}),
     command: entry.command,
     apiVersion: api(entry.apiVersion),
     result: entry.result === 'returned' ? 'returned' : 'rejected',
@@ -214,7 +217,7 @@ export function createDiagnosticLog() {
   };
   return {
     record(entry) {
-      const safe = safeEntry(entry);
+      const safe = safeEntry(entry, true);
       if (safe) {
         entries = [safe, ...entries].slice(0, 100);
         notify();
@@ -236,7 +239,8 @@ export function observeInvoke(operation, record, clock = () => performance.now()
     const started = clock();
     let result = 'returned',
       code = null,
-      state = null;
+      state = null,
+      diagnostics = [];
     try {
       const response = await operation(command, args);
       const data = response?.data ?? response;
@@ -246,6 +250,7 @@ export function observeInvoke(operation, record, clock = () => performance.now()
     } catch (cause) {
       result = 'rejected';
       code = diagnosticCode(cause);
+      diagnostics = sdkDiagnostics(cause);
       throw cause;
     } finally {
       try {
@@ -257,6 +262,7 @@ export function observeInvoke(operation, record, clock = () => performance.now()
           state,
           code,
           durationMs: Math.round(clock() - started),
+          ...(diagnostics.length ? { diagnostics } : {}),
         });
       } catch {
         /* A diagnostic failure must not replace a result or cause a retry. */
@@ -287,6 +293,9 @@ export function buildSupportReport({
         probes[apiVersion]?.environment === environment &&
         probes[apiVersion]?.apiVersion === apiVersion,
     })),
-    operations: entries.slice(0, 100).map(safeEntry).filter(Boolean),
+    operations: entries
+      .slice(0, 100)
+      .map((entry) => safeEntry(entry))
+      .filter(Boolean),
   };
 }

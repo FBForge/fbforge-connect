@@ -1,6 +1,7 @@
 <script setup>
 import EventDetails from './events/EventDetails.vue';
 import CopyValue from './CopyValue.vue';
+import ActionNotice from './ActionNotice.vue';
 
 import ContentPreview from './ContentPreview.vue';
 import { useEventLogPanel } from './events/useEventLogPanel.js';
@@ -15,6 +16,7 @@ const emit = defineEmits(['busy', 'activity', 'fatal']);
 const controller = useEventLogPanel(props, emit);
 const {
   diagnostic,
+  sdkDetails,
   eventDetails,
   recent,
   mode,
@@ -154,12 +156,14 @@ const {
       </div>
     </form>
     <p v-if="pending" role="status">Event Log wird verarbeitet …</p>
-    <p v-if="error" role="alert">{{ error }}</p>
-    <p v-if="error && diagnostic" class="small-note">
-      Diagnose: {{ session?.apiVersion }} ·
-      <code>{{ diagnostic }}</code>
-      . Diesen Code können Sie im Fehlerbericht angeben.
-    </p>
+    <ActionNotice
+      v-if="error"
+      title="Event Log konnte nicht geprüft werden"
+      :message="error"
+      :code="diagnostic"
+      :api-version="session?.apiVersion"
+      :diagnostics="sdkDetails"
+    />
     <template v-if="result">
       <div class="tool-section-heading">
         <h3 ref="heading" tabindex="-1">{{ result.total }} geprüfte Ereignisse</h3>

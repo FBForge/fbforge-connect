@@ -103,7 +103,7 @@ final class EventLogs {
         } catch (Exception failure) {
             if (http.readFailure() != null) throw http.readFailure();
             if (failure instanceof SessionException known) throw known;
-            throw new SessionException("verification_failed");
+            throw ReceiveDiagnostics.failure("verification_failed", "EVENT_LOG", failure);
         }
     }
 
@@ -213,7 +213,7 @@ final class EventLogs {
         } catch (Exception failure) {
             if (http.readFailure() != null) throw http.readFailure();
             if (failure instanceof SessionException known) throw known;
-            throw new SessionException("verification_failed");
+            throw ReceiveDiagnostics.failure("verification_failed", "EVENT_LOG", failure);
         }
     }
 }

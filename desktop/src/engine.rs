@@ -162,11 +162,20 @@ impl EngineProcess {
 pub(crate) async fn request<T: DeserializeOwned>(
     app: &tauri::AppHandle,
     state: &EngineState,
-    mut command: serde_json::Value,
+    command: serde_json::Value,
 ) -> Result<T, &'static str> {
+    request_detailed(app, state, command)
+        .await
+        .map_err(|failure| failure.code())
+}
+pub(crate) async fn request_detailed<T: DeserializeOwned>(
+    app: &tauri::AppHandle,
+    state: &EngineState,
+    mut command: serde_json::Value,
+) -> Result<T, crate::command_error::CommandError> {
     let mut guard = state.process.try_lock().map_err(|_| "engine_busy")?;
     if state.updating.load(Ordering::Acquire) {
-        return Err("update_activity_pending");
+        return Err("update_activity_pending".into());
     }
     if guard.is_none() {
         let resources = app.path().resource_dir().map_err(|_| "engine_not_staged")?;
@@ -208,7 +217,7 @@ pub(crate) async fn request<T: DeserializeOwned>(
     drop(command);
     if bytes.len() > MAX_FRAME_BYTES {
         bytes.fill(0);
-        return Err("invalid_input");
+        return Err("invalid_input".into());
     }
     let result = tokio::time::timeout(
         Duration::from_secs(timeout_seconds),
@@ -218,14 +227,15 @@ pub(crate) async fn request<T: DeserializeOwned>(
     bytes.fill(0);
     match result {
         Ok(Ok(value)) => Ok(value),
-        Ok(Err(EngineFailure::Remote(code))) => Err(code),
+        Ok(Err(EngineFailure::Remote(code))) => Err(code.into()),
+        Ok(Err(EngineFailure::Detailed(failure))) => Err(failure),
         Ok(Err(EngineFailure::Fatal(code))) => {
             *guard = None;
-            Err(code)
+            Err(code.into())
         }
         Err(_) => {
             *guard = None;
-            Err("engine_timeout")
+            Err("engine_timeout".into())
         }
     }
 }

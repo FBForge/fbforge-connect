@@ -52,6 +52,7 @@ const {
   allowExternalSchemas,
   schemaAccess,
   diagnostic,
+  sdkDetails,
   errorNotice,
   schemaSettings,
   applicationSchema,
@@ -198,6 +199,7 @@ defineExpose({
         :message="error"
         :tone="diagnostic === 'schema_consent_required' ? 'warning' : 'error'"
         :code="diagnostic"
+        :diagnostics="sdkDetails"
         :api-version="session?.apiVersion"
       >
         <button

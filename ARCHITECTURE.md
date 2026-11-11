@@ -24,6 +24,23 @@ Schlüssel, Profile und Vorgänge bleiben nach API getrennt.
 
 Rust trennt Befehle unter `commands`, Prozesskommunikation in `engine.rs` und die zentrale Schreibabsicherung in `write_policy.rs`. Der Java-Host prüft Frames in `EngineRequest` und delegiert über `SessionManager` an fachliche Koordinatoren. `SessionState` besitzt die SDK-Sitzungen und räumt deren Ressourcen auf. SDK-spezifische Sitzungen und Destination-Aufrufe bleiben in ihrem Adapter.
 
+SDK-Fehler beim Empfang, bei Antwortkanälen und beim Event Log behalten ihren
+festen Fehlercode. Ein optionales Feld `diagnostics` enthält höchstens acht
+SDK-Meldungen mit Prüfphase, Fehlertyp und begrenztem Text. Die Adapter übernehmen
+sowohl Ausnahmen als auch abgelehnte SDK-Prüfberichte. Bei SDK3 werden zusätzlich
+Validierungsergebnisse und Probleme mit Authentifizierungstags erfasst, bevor das
+SDK sie zu einer allgemeinen Ausnahme zusammenfasst. Der gemeinsame Schreibschutz
+reicht den typisierten Fehler unverändert weiter. Unbekannte Codes, widersprüchliche
+Frames und ungültige Detailfelder bleiben Protokollfehler.
+
+`SdkDiagnostic` begrenzt die Meldungen und entfernt erkennbare Zugangsdaten,
+Schlüsselmaterial und Parser-Quelltextauszüge. Rust und Frontend prüfen den
+Detailvertrag erneut. Die Oberfläche zeigt den Text ausschließlich als Text an.
+Er bleibt im lokalen Sitzungsverlauf und fehlt im standardmäßigen Diagnoseexport.
+SDK-Meldungen sind trotzdem keine zugesicherte Anonymisierung und können Angaben
+aus der Nachricht enthalten. Ein fehlgeschlagener SDK-Bericht gibt weder Inhalte
+noch einen Nachweis für die Annahme frei.
+
 Globale Netzwerk-, Proxy- und Updateoptionen liegen unter „Einstellungen“, gefolgt
 von Programm- und Lizenzinformationen. Der Browser-Kontextmenüschutz beeinflusst
 keine fachlichen Berechtigungen. Der Empfang prüft das Antwortangebot ausschließlich

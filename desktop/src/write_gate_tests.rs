@@ -55,6 +55,7 @@ impl Fake {
     }
 }
 impl Context for Fake {
+    type Error = &'static str;
     fn environment(&self) -> Environment {
         Environment::from_code(self.environment.load(Ordering::Relaxed))
     }

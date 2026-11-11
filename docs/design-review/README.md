@@ -2,6 +2,39 @@
 
 ## 0.4.0 in Vorbereitung
 
+### Konkrete SDK-Fehler beim Empfang – 11. November 2026
+
+Empfang, Antworten und Event Logs behalten neben dem stabilen Fehlercode die
+konkreten SDK-Gründe mit Prüfphase und Fehlertyp. SDK v2 liefert diese teilweise
+als Validierungsprobleme oder ungültige Authentifizierungs-Tags, SDK v3 auch als
+Prüfbericht. Diese Angaben werden vor der bisherigen Verkürzung erfasst und
+durch Java-Protokoll, native Schreibfreigabe und Oberfläche weitergereicht.
+Eine fehlgeschlagene Prüfung erteilt weiterhin keine Annahmefreigabe.
+
+Die aufklappbaren technischen Angaben und das lokale Aufrufprotokoll zeigen
+dieselben Meldungen. Sie lassen sich ausdrücklich kopieren. Der gewöhnliche
+Supportbericht enthält weiterhin nur technische Codes. SDK-Texte bleiben lokal,
+sind begrenzt und werden als Text dargestellt. Erkennbare Zugangsdaten und
+Schlüsselmaterial werden entfernt. Die zwei neuen Aufnahmen verwenden fiktive
+Fehler und ergänzen die 15 Hilfekapitel auf 56 Bilder.
+
+Der vollständige Java-Lauf besteht mit 295 Tests. Nach den abschließenden
+Änderungen an Textbegrenzung und Berichtsauswertung bestehen die sechs gezielten
+SDK-Regressionen erneut. Sie verwenden beide echten SDK-Laufzeiten mit lokal
+erzeugten verschlüsselten Nachrichten, einem nicht angebotenen Antwortkanal
+und manipulierten signierten Event Logs. Der neu zusammengestellte Java-Kern
+besteht zusätzlich den Pakettest mit beiden APIs.
+
+Lokal bestehen 406 Node-Tests bei sechs Plattformausnahmen, 131 native Verträge
+unter Linux und 22 betroffene Browserfälle. Die Browserprüfung umfasst beide
+APIs, Hell/Dunkel, schmale Fenster, erneute Prüfung, Kopieren, Aufrufprotokoll,
+Event-Log-Fehler und weiterhin erreichbare manuelle Ablehnung. Typprüfung, Lint,
+Formatierung, Größenbudget und die Ausführung des Produktionsbundles bestehen.
+Der vollständige Windows-GNU-Quellstand einschließlich Testcode lässt sich
+prüfen. Diese Nachweise ersetzen keine ausgeführte Windows-Installation und
+keinen erneuten Abruf der konkreten Kundeneinreichung. Signierung und
+Veröffentlichung bleiben bis zur Abnahme offen.
+
 ### Abschließende Bedien- und Netzwerkprüfung – 11. November 2026
 
 Der geprüfte Produktstand ist `0747b7f` auf `release/0.4.0`.

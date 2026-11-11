@@ -10,11 +10,13 @@ import {
   discardEventLog,
 } from '../event-log.js';
 import { errorMessage, diagnosticCode } from '../diagnostics.js';
+import { sdkDiagnostics } from '../sdk-diagnostics.ts';
 import { resetsSessions } from '../sessions.ts';
 
 // Owns event log panel state and its session-bound lifecycle.
 export function useEventLogPanel(props, emit) {
   const diagnostic = ref('');
+  const sdkDetails = ref([]);
   const eventDetails = shallowRef({});
   const recent = computed(() =>
     (props.knownTargets || []).filter(
@@ -155,6 +157,7 @@ export function useEventLogPanel(props, emit) {
     () => {
       error.value = '';
       diagnostic.value = '';
+      sdkDetails.value = [];
       void reset();
     },
     { flush: 'sync' },
@@ -164,6 +167,7 @@ export function useEventLogPanel(props, emit) {
     () => {
       error.value = '';
       diagnostic.value = '';
+      sdkDetails.value = [];
       void reset();
     },
     { flush: 'sync' },
@@ -205,17 +209,19 @@ export function useEventLogPanel(props, emit) {
     pending.value = true;
     error.value = '';
     diagnostic.value = '';
+    sdkDetails.value = [];
     emit('busy', true);
     let status = 'Erfolgreich';
     try {
       await operation(active, current);
       if (!current()) status = 'Abgebrochen';
     } catch (cause) {
-      const code = typeof cause === 'string' ? cause : cause?.message;
+      const code = diagnosticCode(cause);
       status = code === 'content_cancelled' ? 'Abgebrochen' : 'Fehlgeschlagen';
       if (current() && code !== 'content_cancelled') {
         error.value = messages[code] || errorMessage(cause);
         diagnostic.value = diagnosticCode(cause);
+        sdkDetails.value = sdkDiagnostics(cause);
       }
       if (resetsSessions(cause)) emit('fatal', cause);
     } finally {
@@ -306,6 +312,7 @@ export function useEventLogPanel(props, emit) {
   }
   return {
     diagnostic,
+    sdkDetails,
     eventDetails,
     recent,
     mode,

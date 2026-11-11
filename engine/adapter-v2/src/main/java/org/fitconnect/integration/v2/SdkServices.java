@@ -33,6 +33,58 @@ final class SdkServices {
     final AttachmentPayloadHandler payloads;
     final DefaultValidationService validation;
     final EventLogVerifier events;
+    private final List<org.fitconnect.integration.contract.SdkDiagnostic> receiveDiagnostics =
+            new ArrayList<>();
+
+    private void observeTags(
+            dev.fitko.fitconnect.api.domain.model.event.authtags.ValidatedAuthenticationTags tags) {
+        if (tags == null || tags.isValid() || receiveDiagnostics.size() >= 8) return;
+        var problem = tags.getProblem();
+        String message = tags.getErrorMessage();
+        if ((message == null || message.isBlank()) && problem != null)
+            message =
+                    problem.getTitle()
+                            + (problem.getDetail() == null ? "" : ": " + problem.getDetail());
+        receiveDiagnostics.add(
+                new org.fitconnect.integration.contract.SdkDiagnostic(
+                        "EVENT_LOG",
+                        problem == null ? "AuthenticationTags" : problem.getClass().getSimpleName(),
+                        message));
+    }
+
+    private dev.fitko.fitconnect.api.domain.validation.ValidationResult observeValidation(
+            String stage, dev.fitko.fitconnect.api.domain.validation.ValidationResult result) {
+        if (result.hasError())
+            receiveDiagnostics.addAll(
+                    org.fitconnect.integration.contract.SdkDiagnostic.failure(
+                                    "verification_failed", stage, result.getError())
+                            .diagnostics());
+        if (result.hasProblems())
+            for (var problem : result.getProblems()) {
+                String message =
+                        problem.getTitle()
+                                + (problem.getDetail() == null ? "" : ": " + problem.getDetail());
+                receiveDiagnostics.add(
+                        new org.fitconnect.integration.contract.SdkDiagnostic(
+                                stage, problem.getClass().getSimpleName(), message));
+                if (receiveDiagnostics.size() >= 8) break;
+            }
+        var bounded = org.fitconnect.integration.contract.SdkDiagnostic.bounded(receiveDiagnostics);
+        receiveDiagnostics.clear();
+        receiveDiagnostics.addAll(bounded);
+        return result;
+    }
+
+    org.fitconnect.integration.contract.SessionException receiveFailure(
+            org.fitconnect.integration.contract.SessionException base,
+            String stage,
+            Throwable failure) {
+        var details = new ArrayList<>(receiveDiagnostics);
+        details.addAll(
+                org.fitconnect.integration.contract.SdkDiagnostic.failure(base, stage, failure)
+                        .diagnostics());
+        return base.withDiagnostics(details);
+    }
 
     SdkServices(
             DefaultOAuthApiService auth, HttpClient http, Path workspace, CryptoService crypto) {
@@ -103,6 +155,42 @@ final class SdkServices {
                         roots) {
                     @Override
                     public dev.fitko.fitconnect.api.domain.validation.ValidationResult
+                            validateSubmissionMetadata(
+                                    dev.fitko.fitconnect.api.domain.model.metadata.Metadata
+                                            metadata,
+                                    dev.fitko.fitconnect.api.domain.model.submission.Submission
+                                            submission,
+                                    dev.fitko.fitconnect.api.domain.model.destination
+                                                    .PublicDestination
+                                            destination,
+                                    dev.fitko.fitconnect.api.domain.model.event.authtags
+                                                    .AuthenticationTags
+                                            tags) {
+                        return observeValidation(
+                                "METADATA",
+                                super.validateSubmissionMetadata(
+                                        metadata, submission, destination, tags));
+                    }
+
+                    @Override
+                    public dev.fitko.fitconnect.api.domain.validation.ValidationResult
+                            validateReplyMetadata(
+                                    dev.fitko.fitconnect.api.domain.model.metadata.Metadata
+                                            metadata,
+                                    dev.fitko.fitconnect.api.domain.model.reply.Reply reply,
+                                    dev.fitko.fitconnect.api.domain.model.destination
+                                                    .PublicDestination
+                                            destination,
+                                    dev.fitko.fitconnect.api.domain.model.event.authtags
+                                                    .AuthenticationTags
+                                            tags) {
+                        return observeValidation(
+                                "METADATA",
+                                super.validateReplyMetadata(metadata, reply, destination, tags));
+                    }
+
+                    @Override
+                    public dev.fitko.fitconnect.api.domain.validation.ValidationResult
                             validateJsonFormat(byte[] data) {
                         var result = super.validateJsonFormat(data);
                         if (http instanceof SenderTransport && result.hasError())
@@ -154,7 +242,19 @@ final class SdkServices {
                     }
                 };
         var keys = new PublicKeyApiService(config, http, auth, validation);
-        events = new EventLogVerifier(keys, validation);
+        events =
+                new EventLogVerifier(keys, validation) {
+                    @Override
+                    public List<dev.fitko.fitconnect.api.domain.validation.ValidationResult>
+                            validateEventLogs(
+                                    dev.fitko.fitconnect.api.domain.validation.ValidationContext
+                                            context,
+                                    List<com.nimbusds.jwt.SignedJWT> logs) {
+                        var results = super.validateEventLogs(context, logs);
+                        for (var result : results) observeValidation("EVENT_LOG", result);
+                        return results;
+                    }
+                };
         service =
                 FitConnectDefaultService.builder()
                         .submissionService(
@@ -173,6 +273,7 @@ final class SdkServices {
                                                                     .Submission
                                                             submission) {
                                         var result = super.getAuthenticationTags(submission);
+                                        observeTags(result);
                                         observedTags.accept(result);
                                         return result;
                                     }
@@ -185,6 +286,7 @@ final class SdkServices {
                                                                     .Reply
                                                             reply) {
                                         var result = super.getAuthenticationTags(reply);
+                                        observeTags(result);
                                         observedTags.accept(result);
                                         return result;
                                     }

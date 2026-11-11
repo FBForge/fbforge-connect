@@ -1,5 +1,6 @@
 <script setup>
 import { operationLabels, diagnosticContext, diagnosticResult } from '../support-report.js';
+import SdkDiagnostics from '../SdkDiagnostics.vue';
 defineProps({
   busy: Boolean,
   pendingAction: String,
@@ -49,7 +50,8 @@ const emit = defineEmits(['probe', 'export', 'clear']);
       <p>
         Der Bericht enthält nur festgelegte technische Angaben: Aktion, API, Zeitpunkt, Dauer und freigegebene
         Fehlercodes. Zugangsdaten, Kennungen, Schlüssel, Dateinamen und Einreichungsinhalte werden nicht
-        aufgenommen. Er wird lokal gespeichert und nicht automatisch versendet.
+        aufgenommen. SDK-Meldungen bleiben im lokalen Verlauf und werden nicht in diesen Bericht übernommen.
+        Er wird lokal gespeichert und nicht automatisch versendet.
       </p>
       <details>
         <summary>Berichtsinhalt vor dem Speichern ansehen</summary>
@@ -61,8 +63,8 @@ const emit = defineEmits(['probe', 'export', 'clear']);
         <div>
           <h2 id="trace-title">Technische Aufrufe</h2>
           <p>
-            Die letzten 100 technischen Aufrufe dieser Sitzung. Fehlercodes können Sie direkt am Eintrag
-            öffnen.
+            Die letzten 100 technischen Aufrufe dieser Sitzung. Fehlercodes und SDK-Meldungen können Sie
+            direkt am Eintrag öffnen.
           </p>
         </div>
         <button
@@ -100,6 +102,7 @@ const emit = defineEmits(['probe', 'export', 'clear']);
                 <details v-if="entry.code" class="trace-details">
                   <summary>Fehlercode anzeigen</summary>
                   <code>{{ entry.code }}</code>
+                  <SdkDiagnostics :diagnostics="entry.diagnostics || []" />
                 </details>
               </td>
               <td data-label="Dauer">

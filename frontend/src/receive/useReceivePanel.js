@@ -13,6 +13,7 @@ import {
 import { uploadContent, discardContent } from '../content.js';
 import { createPreview, disposePreview } from '../submission-preview.js';
 import { errorMessage, diagnosticCode } from '../diagnostics.js';
+import { sdkDiagnostics } from '../sdk-diagnostics.ts';
 import { resetsSessions } from '../sessions.ts';
 import { useSchemaSourceAccess, withSchemaSourceAccess } from '../schema-source-access.js';
 import { readReceivedSchema } from '../received-schema.js';
@@ -32,6 +33,7 @@ export function useReceivePanel(props, emit) {
   const allowExternalSchemas = useSchemaSourceAccess(() => props.session);
   const schemaAccess = ref(null);
   const diagnostic = ref('');
+  const sdkDetails = ref([]);
   const errorNotice = ref(null);
   const schemaSettings = ref(null);
   const applicationSchema = ref(null);
@@ -100,10 +102,12 @@ export function useReceivePanel(props, emit) {
     alive = true;
   function showError(cause) {
     diagnostic.value = diagnosticCode(cause);
+    sdkDetails.value = sdkDiagnostics(cause);
     const message = Object.hasOwn(messages, diagnostic.value)
       ? messages[diagnostic.value]
       : errorMessage(cause);
     error.value = message.replaceAll('Einreichung', subject.value);
+    if (sdkDetails.value.length) error.value += ' Den SDK-Grund finden Sie unter „Technische Fehlerangaben“.';
   }
   function closePreview() {
     disposePreview(preview.value);
@@ -113,9 +117,9 @@ export function useReceivePanel(props, emit) {
     try {
       await operation();
     } catch (cause) {
-      const code = typeof cause === 'string' ? cause : cause?.message;
+      const code = diagnosticCode(cause);
       if (!['session_missing', 'invalid_resource', 'resource_missing'].includes(code) && alive)
-        error.value = messages.content_cleanup_failed;
+        showError('content_cleanup_failed');
       if (resetsSessions(cause) && alive) emit('fatal', cause);
     }
   }
@@ -148,6 +152,7 @@ export function useReceivePanel(props, emit) {
     () => {
       error.value = '';
       diagnostic.value = '';
+      sdkDetails.value = [];
       void resetAll();
     },
     { flush: 'sync' },
@@ -157,6 +162,7 @@ export function useReceivePanel(props, emit) {
     () => {
       error.value = '';
       diagnostic.value = '';
+      sdkDetails.value = [];
       void resetProof();
     },
     { flush: 'sync' },
@@ -186,6 +192,7 @@ export function useReceivePanel(props, emit) {
     action.value = name;
     error.value = '';
     diagnostic.value = '';
+    sdkDetails.value = [];
     emit('busy', true);
     let status = 'Erfolgreich';
     try {
@@ -193,7 +200,7 @@ export function useReceivePanel(props, emit) {
       if (['Fehlgeschlagen', 'Abgebrochen'].includes(result)) status = result;
       if (!current()) status = 'Abgebrochen';
     } catch (cause) {
-      const code = typeof cause === 'string' ? cause : cause?.message;
+      const code = diagnosticCode(cause);
       status = code === 'content_cancelled' ? 'Abgebrochen' : 'Fehlgeschlagen';
       if (current() && code !== 'content_cancelled') {
         showError(cause);
@@ -411,7 +418,7 @@ export function useReceivePanel(props, emit) {
             };
           }
         } catch (cause) {
-          const code = typeof cause === 'string' ? cause : cause?.message;
+          const code = diagnosticCode(cause);
           if (current() && code !== 'content_cancelled') {
             showError(cause);
             void resetProof();
@@ -452,6 +459,7 @@ export function useReceivePanel(props, emit) {
     allowExternalSchemas,
     schemaAccess,
     diagnostic,
+    sdkDetails,
     errorNotice,
     schemaSettings,
     applicationSchema,
