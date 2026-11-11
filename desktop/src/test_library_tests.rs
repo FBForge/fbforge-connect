@@ -124,21 +124,39 @@ fn protected_restart_roundtrip_preserves_exact_pack_and_isolates_tampered_entrie
 }
 #[cfg(windows)]
 #[test]
-fn quotas_and_interrupted_staging_never_replace_a_saved_pack() {
+fn legacy_staging_does_not_block_saving_and_conflicts_or_quotas_never_replace_packs() {
     let path = root();
     let store = TestLibrary(path.clone());
     fs::create_dir_all(&path).unwrap();
     let staging = store.path(ID).unwrap().with_extension("pending");
     fs::write(&staging, b"previous encrypted staging").unwrap();
+    store
+        .execute(LibraryRequest::Save {
+            id: ID.into(),
+            pack: pack(),
+        })
+        .unwrap();
+    assert_eq!(fs::read(&staging).unwrap(), b"previous encrypted staging");
+    assert_eq!(
+        store
+            .execute(LibraryRequest::Read { id: ID.into() })
+            .unwrap(),
+        source()
+    );
+    let saved = fs::read(store.path(ID).unwrap()).unwrap();
+    let mut replacement = pack();
+    replacement.name = "Must not overwrite the saved pack".into();
     assert_eq!(
         store.execute(LibraryRequest::Save {
             id: ID.into(),
-            pack: pack()
+            pack: replacement,
         }),
-        Err("vault_unavailable")
+        Err("test_library_conflict")
     );
-    assert_eq!(fs::read(&staging).unwrap(), b"previous encrypted staging");
-    assert!(!store.path(ID).unwrap().exists());
+    assert_eq!(fs::read(store.path(ID).unwrap()).unwrap(), saved);
+    store
+        .execute(LibraryRequest::Delete { id: ID.into() })
+        .unwrap();
     fs::remove_file(staging).unwrap();
     for n in 0..MAX_ENTRIES {
         let id = format!("33333333-3333-4333-8333-{n:012}");
