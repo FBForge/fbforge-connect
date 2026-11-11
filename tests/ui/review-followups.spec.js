@@ -20,7 +20,7 @@ test('integration preparation opens directly from Start without requiring a conn
 });
 test('test editor can add a reply, edit its attachments and manage individual cases locally', async ({
   page,
-}) => {
+}, testInfo) => {
   await openScenario(page);
   await createScenario(page);
   await page.getByRole('checkbox', { name: 'Fachliche Antwort erwarten', exact: true }).check();
@@ -48,7 +48,7 @@ test('test editor can add a reply, edit its attachments and manage individual ca
   expect(
     await page.evaluate(() => window.__integration.calls.some((c) => c.command.startsWith('execute_'))),
   ).toBe(false);
-  await page.screenshot({ path: '/workspace/scratch/connect040-editor.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('editor.png'), fullPage: true });
 });
 test('unfinished JSON is recovered after restart and still cannot start a test', async ({ page }) => {
   await openScenario(page);
@@ -94,7 +94,9 @@ test('session-only preparation removes its recovery snapshot and stays unpersist
   await expect(button(page, 'Vorbereitung wiederherstellen')).toHaveCount(0);
 });
 for (const width of [1180, 420, 320])
-  test(`field conditions and editing controls remain accessible at ${width}px`, async ({ page }) => {
+  test(`field conditions and editing controls remain accessible at ${width}px`, async ({
+    page,
+  }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     await openScenario(page);
     await createScenario(page, 'reply');
@@ -108,11 +110,11 @@ for (const width of [1180, 420, 320])
     const audit = await new AxeBuilder({ page }).include('.scenario-workspace').analyze();
     expect(audit.violations.map((v) => v.id)).toEqual([]);
     if (width === 1180)
-      await page.screenshot({ path: '/workspace/scratch/connect040-comparison.png', fullPage: true });
+      await page.screenshot({ path: testInfo.outputPath('comparison.png'), fullPage: true });
   });
 test('additional CA preview requires explicit application and keeps private keys out of settings', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto(root + '/test-fixtures/lifecycle.html');
   await page.evaluate(() => {
     const base = window.__TAURI_INTERNALS__.invoke;
@@ -147,7 +149,7 @@ test('additional CA preview requires explicit application and keeps private keys
   expect(saved.trustedCertificates).toEqual(['cHVibGljLWNh']);
   expect(saved.password).toBeNull();
   await expect(button(page, 'Entfernen vormerken: Fiktive Behörden-CA')).toBeVisible();
-  await page.screenshot({ path: '/workspace/scratch/connect040-network.png', fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('network.png'), fullPage: true });
 });
 
 test('closing waits for an attachment import and then flushes the newest protected preparation', async ({
@@ -293,7 +295,7 @@ test('check and continue accepts one matching proof but asks explicitly when sev
 
 test('Send uses the same protected test collection and keeps its first destination field near the top', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto(root + '/test-fixtures/profiles.html');
   await button(page, 'Testwerkzeuge').click();
   await createScenario(page);
@@ -310,5 +312,5 @@ test('Send uses the same protected test collection and keeps its first destinati
   await expect(page.locator('#send-library-choice')).not.toBeVisible();
   await page.getByText('Gespeicherten Test verwenden', { exact: true }).click();
   await expect(page.locator('#send-library-choice')).toContainText('Gemeinsamer Integrationstest');
-  await page.screenshot({ path: '/workspace/scratch/connect040-sender.png' });
+  await page.screenshot({ path: testInfo.outputPath('sender.png') });
 });
