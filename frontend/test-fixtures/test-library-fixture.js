@@ -2,6 +2,7 @@
 import { scenarioSteps } from '../src/integration/scenarios/model.ts';
 import { runOutcome } from '../src/integration/scenarios/series.ts';
 const saved = new Map();
+const preparations = restoreFixture('preparations');
 const flows = new Map(),
   runs = new Map();
 function restoreFixture(name) {
@@ -16,7 +17,13 @@ const scenarios = restoreFixture('scenarios'),
 const scenarioSeries = restoreFixture('scenario-series');
 function persistFixture(store) {
   const name =
-    store === scenarios ? 'scenarios' : store === scenarioRuns ? 'scenario-runs' : 'scenario-series';
+    store === preparations
+      ? 'preparations'
+      : store === scenarios
+        ? 'scenarios'
+        : store === scenarioRuns
+          ? 'scenario-runs'
+          : 'scenario-series';
   try {
     localStorage.setItem('fixture-protected-' + name, JSON.stringify([...store]));
   } catch {
@@ -24,6 +31,16 @@ function persistFixture(store) {
   }
 }
 export function testLibraryFixture(request) {
+  if (request.action.startsWith('preparation_')) {
+    if (request.action === 'preparation_read')
+      return structuredClone(preparations.get(request.environment) || null);
+    if (request.action === 'preparation_save')
+      preparations.set(request.document.environment, structuredClone(request.document));
+    else if (request.action === 'preparation_delete') preparations.delete(request.environment);
+    else throw 'scenario_invalid';
+    persistFixture(preparations);
+    return null;
+  }
   if (request.action.startsWith('scenario_')) {
     const run = request.action.startsWith('scenario_run_'),
       series = request.action.startsWith('scenario_series_'),

@@ -143,7 +143,7 @@ try {
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await button('Anmelden').click();
   await expect(page.getByRole('dialog')).toBeHidden();
-  await button('Verbunden').click();
+  await page.locator('.connection-button').click();
   await expect(page.locator('.connection-identity')).toContainText('synthetic-client');
   await capture('connection-identity');
   await page.keyboard.press('Escape');
@@ -275,7 +275,9 @@ try {
   await button('Testfall speichern').click();
   await expect(page.locator('#send-library-choice')).toContainText('Fiktive XBau-Anzeige mit Beispieldaten');
   await capture('send-test-cases', page.locator('.save-test-case'));
+  await page.getByText('Gespeicherten Test verwenden', { exact: true }).click();
   await capture('test-case-library', page.locator('.test-case-library'));
+  await page.getByText('Gespeicherten Test verwenden', { exact: true }).click();
   await button('Versand vorbereiten').click();
   const confirmation = page.getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true });
   await expect(confirmation.locator('dt:has-text("Antwortangebot") + dd')).toHaveText('Nicht angeboten');

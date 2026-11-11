@@ -4,7 +4,7 @@ import { openStoredTest, testOverview, checkTestStep } from '../../scripts/live-
 import { button, openScenario, importScenario, injectEvidence } from './scenario-helpers.js';
 import { scenarioFrom, scenarioSteps } from '../../frontend/src/integration/scenarios/model.ts';
 
-test('the native acceptance driver opens original and current tests through the real application overview', async ({
+test('the native acceptance driver opens a converted test through one stable collection entry', async ({
   page,
 }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html?destinations=1');
@@ -28,7 +28,14 @@ test('the native acceptance driver opens original and current tests through the 
   await openStoredTest(page, 'test', pack.name);
   await expect(page.getByLabel('Testname', { exact: true })).toHaveValue(pack.name);
   await testOverview(page);
-  await expect(page.locator('[data-test-entry-id]')).toHaveCount(2);
+  await expect(page.locator('[data-test-entry-id]')).toHaveCount(1);
+  expect(
+    await page.evaluate(() =>
+      window.__TAURI_INTERNALS__
+        .invoke('test_library', { request: { action: 'list' } })
+        .then((rows) => rows.length),
+    ),
+  ).toBe(1);
 });
 
 test('the native acceptance driver advances proven contents and refuses ambiguous evidence', async ({

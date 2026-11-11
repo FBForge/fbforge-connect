@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-inspect-network-certificate"
+description = "Enables the inspect_network_certificate command without any pre-configured scope."
+commands.allow = ["inspect_network_certificate"]
+
+[[permission]]
+identifier = "deny-inspect-network-certificate"
+description = "Denies the inspect_network_certificate command without any pre-configured scope."
+commands.deny = ["inspect_network_certificate"]

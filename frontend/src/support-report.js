@@ -135,6 +135,12 @@ const codeLabels = new Map([
   ['data_schema_invalid', 'Fachdaten passen nicht zum Schema'],
   ['message_content_missing', 'Noch keine entschlüsselten Fachdaten verfügbar'],
   ['data_format_invalid', 'Datenformat ungültig'],
+  ['network_tls_error', 'TLS-Verbindung abgelehnt'],
+  ['network_dns_error', 'Namensauflösung fehlgeschlagen'],
+  ['network_timeout', 'Netzwerk-Zeitlimit'],
+  ['network_connection_failed', 'Verbindung fehlgeschlagen'],
+  ['proxy_authentication_required', 'Proxy-Anmeldung erforderlich'],
+  ['network_trust_unavailable', 'Zusätzliche CA nicht verfügbar'],
   ['schema_tls_error', 'Schema-Verbindung nicht sicher'],
   ['schema_network_error', 'Schemaquelle nicht erreichbar'],
   ['schema_http_error', 'Schemaquelle meldet einen Fehler'],
@@ -164,6 +170,8 @@ const codeLabels = new Map([
 ]);
 export function diagnosticContext(entry) {
   const version = api(entry.apiVersion);
+  if (['open_saved_profile', 'open_session', 'check_session', 'open_session_for_api'].includes(entry.command))
+    return version ? `Anmeldedienst · API ${version}` : 'Anmeldedienst';
   return version ? `API ${version}` : 'Lokal';
 }
 export function diagnosticResult(entry) {

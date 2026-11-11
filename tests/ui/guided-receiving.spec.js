@@ -270,7 +270,7 @@ test('changing API or reconnecting preserves an unsent reply until explicit disc
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Empfangen', exact: true }).click();
   await expect(page.locator('#reply-data')).toHaveValue(draft);
-  await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+  await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
   await page.locator('#client-id').fill('synthetic-replacement');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await page.getByRole('button', { name: 'Mit anderen Zugangsdaten anmelden', exact: true }).click();

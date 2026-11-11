@@ -80,3 +80,8 @@ pub(crate) mod update_install;
 
 #[path = "../src/scanner_download.rs"]
 pub mod scanner_download;
+
+#[path = "../src/network_trust.rs"]
+mod network_trust;
+#[path = "../src/network_trust_bundle.rs"]
+mod network_trust_bundle;

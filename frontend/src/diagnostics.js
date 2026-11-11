@@ -90,6 +90,18 @@ export function errorMessage(code) {
     certificate_status_unknown:
       'Der Sperrstatus des V-PKI-Zertifikats konnte nicht sicher festgestellt werden. Bitte die Erreichbarkeit der Zertifikatsdienste prüfen und erneut versuchen. Die Aktion wurde nicht freigegeben.',
     authentication_failed: 'Die Anmeldung ist fehlgeschlagen. Bitte Client-ID und Client-Secret prüfen.',
+    network_tls_error:
+      'Die TLS-Verbindung wurde abgelehnt. Prüfen Sie das Zertifikat der Gegenstelle und bei HTTPS-Prüfung durch Ihren Proxy das von Ihrer IT freigegebene CA-Zertifikat unter Einstellungen → Netzwerk und Proxy.',
+    network_dns_error:
+      'Der Servername konnte nicht aufgelöst werden. Prüfen Sie DNS, Proxy-Host und Netzwerkverbindung.',
+    network_timeout:
+      'Die Netzwerkverbindung hat das Zeitlimit überschritten. Prüfen Sie Proxy, Firewall und die Erreichbarkeit des Dienstes.',
+    network_connection_failed:
+      'Die Verbindung konnte nicht aufgebaut werden. Prüfen Sie Proxy-Host, Port und Firewall.',
+    proxy_authentication_required:
+      'Der Proxy verlangt eine Anmeldung. Hinterlegen Sie die freigegebenen Proxy-Zugangsdaten unter Einstellungen → Netzwerk und Proxy.',
+    network_trust_unavailable:
+      'Die zusätzlichen CA-Zertifikate konnten nicht sicher eingerichtet werden. Prüfen Sie die Netzwerkeinstellungen und verbinden Sie das Profil erneut.',
     auth_unavailable: 'Der Anmeldedienst konnte nicht sicher erreicht werden. Bitte erneut versuchen.',
     endpoint_blocked:
       'Ein unzulässiges Ziel oder eine Weiterleitung wurde blockiert. Erlaubt sind ausschließlich die festen Endpunkte der gewählten Umgebung.',
@@ -149,6 +161,12 @@ const reportableCodes = new Set([
   'engine_protocol_error',
   'invalid_credentials',
   'authentication_failed',
+  'network_tls_error',
+  'network_dns_error',
+  'network_timeout',
+  'network_connection_failed',
+  'proxy_authentication_required',
+  'network_trust_unavailable',
   'auth_unavailable',
   'endpoint_blocked',
   'session_missing',

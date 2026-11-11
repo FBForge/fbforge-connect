@@ -9,6 +9,7 @@
     <div id="app"></div>
     <script type="module">
       import { createApp, ref, h } from 'vue';
+      import { testLibraryFixture } from './test-library-fixture.js';
       import { productName } from '../src/product.js';
       import SaveFeedback from '../src/app/SaveFeedback.vue';
       import ReceivePanel from '../src/ReceivePanel.vue';
@@ -124,6 +125,7 @@
             if (action === 'run_read') return runs[id];
           }
 
+          if (command === 'test_library') return testLibraryFixture(args.request);
           if (wholeApp) {
             if (command === 'list_profiles') return [];
             if (command === 'profile_status') return { profileId: null, saved: false, error: null };

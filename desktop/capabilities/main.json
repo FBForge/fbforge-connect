@@ -8,6 +8,7 @@
     "allow-lookup-service-names",
     "allow-close-application",
     "allow-network-settings",
+    "allow-inspect-network-certificate",
     "allow-save-network-settings",
     "allow-application-update-status",
     "allow-open-update-download",

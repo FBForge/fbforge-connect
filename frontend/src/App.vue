@@ -83,6 +83,7 @@ const {
   error,
   sessions,
   activeSession,
+  activeProfileName,
   selectedDestination,
   defaultDestinations,
   storageStatus,
@@ -171,7 +172,7 @@ async function navigate(name) {
 function beginTask(name) {
   if (name === 'Empfangen') receiveTab.value = 'submissions';
   void navigate(name);
-  if (!activeSession.value) showConnection();
+  if (!activeSession.value && name !== 'Testwerkzeuge') showConnection();
 }
 async function openTestDraft(value) {
   if (value.flowContext) {
@@ -217,6 +218,7 @@ useFileNavigationGuard();
       :api-version="apiVersion"
       :busy="busy"
       :active-session="activeSession"
+      :profile-name="activeProfileName"
       :theme="theme"
       :theme-preference="preference"
       :section="section"
@@ -261,6 +263,7 @@ useFileNavigationGuard();
             @task="beginTask"
           />
           <SubmissionSender
+            @navigate="navigate"
             @cases="navigate('Vorgänge')"
             :visible="section === 'Senden'"
             :default-source="defaultDestinations?.sourceDestination || ''"

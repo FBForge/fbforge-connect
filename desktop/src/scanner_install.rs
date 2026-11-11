@@ -12,7 +12,10 @@ use std::{
     time::Duration,
 };
 
-fn freshclam_command(engine: &Path, configuration: &Path) -> Result<Command, &'static str> {
+fn freshclam_command(
+    engine: &Path,
+    configuration: &Path,
+) -> Result<(Command, Option<crate::network_trust_bundle::TrustBundle>), &'static str> {
     let mut command = Command::new(engine.join("freshclam.exe"));
     // FreshClam's progress output can exceed the bounded helper pipe even on success.
     // The native operation state supplies UI progress, so retain only errors here.
@@ -22,7 +25,8 @@ fn freshclam_command(engine: &Path, configuration: &Path) -> Result<Command, &'s
         .arg("--config-file")
         .arg(configuration);
     crate::network_settings::downloader(&mut command)?;
-    Ok(command)
+    let trust = crate::network_settings::download_trust(&mut command)?;
+    Ok((command, trust))
 }
 impl Runtime {
     pub fn install_offline(&mut self, archive: &Path) -> Result<(), &'static str> {
@@ -93,12 +97,9 @@ impl Runtime {
             freshclam_configuration(&database, &engine.join("certs"))?,
         )
         .map_err(failure)?;
-        scanner_process::output_with_cancel(
-            &mut freshclam_command(&engine, &conf)?,
-            Duration::from_secs(240),
-            &self.cancel,
-        )
-        .map_err(|error| {
+        let (mut command, _trust) = freshclam_command(&engine, &conf)?;
+        scanner_process::output_with_cancel(&mut command, Duration::from_secs(240), &self.cancel)
+            .map_err(|error| {
             if error == "content_cancelled" {
                 error
             } else {
@@ -171,8 +172,9 @@ impl Runtime {
                 freshclam_configuration(&database, &engine.join("certs"))?,
             )
             .map_err(failure)?;
+            let (mut command, _trust) = freshclam_command(&engine, &conf)?;
             scanner_process::output_with_cancel(
-                &mut freshclam_command(&engine, &conf)?,
+                &mut command,
                 Duration::from_secs(240),
                 &self.cancel,
             )
@@ -290,7 +292,8 @@ mod tests {
             ),
             Err("scanner_scan_failed")
         );
-        let mut configured = freshclam_command(&root, &root.join("freshclam.conf")).unwrap();
+        let (mut configured, _trust) =
+            freshclam_command(&root, &root.join("freshclam.conf")).unwrap();
         assert_eq!(
             scanner_process::output_with_cancel(
                 &mut configured,

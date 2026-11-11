@@ -18,7 +18,7 @@ for (const api of ['v2', 'v3']) {
     });
     await page.getByLabel('Testname', { exact: true }).fill('Abnahmetest gespeichert');
     await button(page, 'Test speichern').click();
-    await expect(page.getByRole('status')).toContainText('dauerhaft');
+    await expect(page.getByRole('status').filter({ hasText: 'dauerhaft' })).toBeVisible();
     const download = page.waitForEvent('download');
     await button(page, 'Testdatei exportieren').click();
     expect((await download).suggestedFilename()).toBe('integrationstest.fcscenario.json');

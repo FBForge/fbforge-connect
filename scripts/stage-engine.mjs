@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, readFile, rename, rm, stat } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, writeFile, rename, rm, stat } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,6 +47,37 @@ try {
     );
   });
   if (process.platform !== 'win32') await makeGeneratedFilesWritable(join(temporary, 'runtime'));
+  const caRoots = await new Promise((resolve, reject) => {
+    const child = spawn(
+      executable('keytool'),
+      [
+        '-list',
+        '-rfc',
+        '-keystore',
+        join(temporary, 'runtime/lib/security/cacerts'),
+        '-storepass',
+        'changeit',
+      ],
+      { stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    const chunks = [];
+    let size = 0;
+    child.stdout.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > 1024 * 1024) child.kill();
+      else chunks.push(chunk);
+    });
+    child.stderr.resume();
+    child.on('error', reject);
+    child.on('exit', (code) =>
+      code === 0 && size <= 1024 * 1024
+        ? resolve(Buffer.concat(chunks).toString('utf8'))
+        : reject(new Error('Public CA roots could not be staged.')),
+    );
+  });
+  const certificates = caRoots.match(/-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g);
+  if (!certificates?.length) throw new Error('Public CA roots are missing.');
+  await writeFile(join(temporary, 'ca-roots.pem'), certificates.join('\n') + '\n', { flag: 'wx' });
   await mkdir(join(temporary, 'adapters'));
   for (const [source, target] of artifacts) await cp(join(root, 'engine', source), join(temporary, target));
   await cp(join(root, 'LICENSE'), join(temporary, 'LICENSE'));

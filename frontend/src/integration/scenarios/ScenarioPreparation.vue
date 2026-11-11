@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import ScenarioAttachments from './ScenarioAttachments.vue';
+import { duplicateCase, removeCase, setFirstReply } from './authoring.ts';
+import { formatTestJson } from './json-format.ts';
 import ScenarioResponses from './ScenarioResponses.vue';
 import { messageFor, messageOptions } from './messages.ts';
 import { synchronizeReplyOffers } from './response-offers.ts';
@@ -16,7 +19,32 @@ const environment = useEnvironment();
 const scenario = defineModel<Scenario>({ required: true });
 const assignment = defineModel<Assignment>('assignment', { required: true });
 defineProps<{ disabled: boolean; session: Session | null }>();
-const emit = defineEmits<{ context: [value: object] }>();
+const emit = defineEmits<{ context: [value: object]; busy: [value: boolean] }>();
+const authoringError = ref('');
+function duplicate() {
+  try {
+    const id = duplicateCase(scenario.value, item.value.id);
+    selected.value = scenario.value.pack.cases.findIndex((c) => c.id === id);
+    authoringError.value = '';
+  } catch {
+    authoringError.value =
+      'Die Kopie würde die Grenze für Testfälle oder Testdaten überschreiten. Entfernen Sie nicht benötigte Daten.';
+  }
+}
+function remove() {
+  removeCase(scenario.value, item.value.id);
+  selected.value = Math.min(selected.value, scenario.value.pack.cases.length - 1);
+}
+function format() {
+  if (!message.value) return;
+  try {
+    message.value.data = formatTestJson(message.value.data);
+    authoringError.value = '';
+  } catch {
+    authoringError.value =
+      'JSON konnte nicht formatiert werden. Prüfen Sie die Syntax und Größe. Der Inhalt bleibt erhalten.';
+  }
+}
 const selected = ref(0),
   scope = ref<Scope>('request');
 const item = computed(() => scenario.value.pack.cases[selected.value] || scenario.value.pack.cases[0]);
@@ -134,6 +162,35 @@ watch(
           </select>
         </label>
       </div>
+      <details>
+        <summary>Testfall verwalten</summary>
+        <label>
+          Testfallname
+          <input v-model="item.name" maxlength="160" :disabled="disabled" />
+        </label>
+        <div class="client-actions">
+          <button class="button secondary" :disabled="disabled" @click="duplicate">
+            Testfall duplizieren
+          </button>
+          <button
+            class="button secondary"
+            :disabled="disabled || scenario.pack.cases.length === 1"
+            @click="remove"
+          >
+            Testfall entfernen
+          </button>
+        </div>
+      </details>
+      <p v-if="authoringError" role="alert">{{ authoringError }}</p>
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          :checked="Boolean(item.reply)"
+          :disabled="disabled"
+          @change="setFirstReply(scenario, item.id, ($event.target as HTMLInputElement).checked)"
+        />
+        Fachliche Antwort erwarten
+      </label>
       <template v-if="message">
         <div class="scenario-fields">
           <label>
@@ -156,17 +213,27 @@ watch(
           Fachdaten
           <textarea v-model="message.data" rows="6" spellcheck="false" :disabled="disabled" />
         </label>
+        <button
+          v-if="message.mimeType === 'application/json'"
+          class="button secondary"
+          :disabled="disabled || Boolean(syntax)"
+          @click="format"
+        >
+          JSON formatieren
+        </button>
         <p v-if="syntax" class="small-note scenario-notice error">{{ syntax }}</p>
         <p class="small-note">
           {{ message.mimeType }} · {{ message.attachments.length }}
           {{ message.attachments.length === 1 ? 'Anlage' : 'Anlagen' }}. Technische Prüfung und Virenscan
           erfolgen über die vorhandenen Versand- und Empfangsfunktionen.
         </p>
-        <ul v-if="message.attachments.length" class="scenario-attachments">
-          <li v-for="attachment in message.attachments" :key="attachment.fileName">
-            {{ attachment.fileName }} · {{ attachment.mimeType }}
-          </li>
-        </ul>
+        <ScenarioAttachments
+          :message="message"
+          :scenario="scenario"
+          :disabled="disabled"
+          @update="message.attachments = $event"
+          @busy="emit('busy', $event)"
+        />
       </template>
       <p v-if="scope.startsWith('reply:')" class="small-note">
         Alle Antworten verwenden das vereinbarte Antwortschema. Format und Schema ändern Sie bei „Erste
@@ -260,11 +327,15 @@ watch(
     </section>
     <details>
       <summary>Variable Angaben und Datensätze</summary>
-      <ScenarioVariables v-model="scenario" />
+      <fieldset class="scenario-flat-group" :disabled="disabled">
+        <ScenarioVariables v-model="scenario" />
+      </fieldset>
     </details>
     <details>
       <summary>Prüferwartungen anpassen</summary>
-      <ScenarioExpectations v-model="scenario" />
+      <fieldset class="scenario-flat-group" :disabled="disabled">
+        <ScenarioExpectations v-model="scenario" />
+      </fieldset>
     </details>
   </div>
 </template>

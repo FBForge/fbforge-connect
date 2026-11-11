@@ -5,6 +5,7 @@ import java.nio.file.Path;
 
 public final class Main {
     public static void main(String[] args) {
+        org.fitconnect.integration.contract.NetworkTrust.initialize();
         org.fitconnect.integration.contract.NetworkProxy.initialize();
         if (args.length != 0) System.exit(2);
         org.fitconnect.integration.contract.IntegrationEnvironment.current();

@@ -21,7 +21,7 @@ test('topbar reuses a temporary login and retains both API sessions without retu
   const original = await login(page);
   await page.locator('#session-api').selectOption('v3');
   await expect(page.locator('#session-api')).toHaveValue('v3');
-  await expect(page.getByRole('button', { name: 'Verbunden', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Verbunden(?:\s|$)/ })).toBeVisible();
   const result = await page.evaluate(() => window.__profilesFixture);
   expect(result.profiles).toHaveLength(0);
   expect(Object.keys(result.sessions)).toHaveLength(2);
@@ -30,7 +30,7 @@ test('topbar reuses a temporary login and retains both API sessions without retu
   expect(calls[0].args).toEqual({ apiVersion: 'v2', sessionId: original, targetApiVersion: 'v3' });
   await page.locator('#session-api').selectOption('v2');
   await expect(page.locator('#session-api')).toHaveValue('v2');
-  await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+  await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
   await expect(page.locator('.connection-identity')).toContainText('synthetic-switch-client');
   await expect(page.locator('.connection-identity')).toContainText('API v2');
   await expect(page.locator('#client-secret')).toHaveValue('');
@@ -61,7 +61,7 @@ test('topbar reuses saved credentials while preserving the original profile and 
   await expect(page.locator('#session-api')).toHaveValue('v3');
   fixture = await page.evaluate(() => window.__profilesFixture);
   expect(fixture.calls.filter((c) => c.command === 'copy_profile_for_api')).toHaveLength(1);
-  await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+  await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
   await expect(page.locator('.connection-identity')).toContainText('synthetic-switch-client');
   await expect(page.locator('.connection-identity')).toContainText('API v3');
 });
@@ -79,7 +79,7 @@ test('disabled target API preserves the original login for temporary and saved c
     await page.locator('#session-api').selectOption('v3');
     await expect(page.locator('main').getByRole('alert')).toContainText('Freischaltung und Berechtigungen');
     await expect(page.locator('#session-api')).toHaveValue('v2');
-    await expect(page.getByRole('button', { name: 'Verbunden', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Verbunden(?:\s|$)/ })).toBeVisible();
     const fixture = await page.evaluate(() => window.__profilesFixture);
     expect(Object.keys(fixture.sessions)).toEqual([original]);
     expect(fixture.profiles).toHaveLength(saved ? 1 : 0);
@@ -90,7 +90,7 @@ test('topbar does not replace an already connected different identity', async ({
   const original = await login(page);
   await page.locator('#session-api').selectOption('v3');
   await expect(page.locator('#session-api')).toHaveValue('v3');
-  await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+  await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
   await page.locator('#client-id').fill('synthetic-other-client');
   await page.locator('#client-secret').fill('synthetic-other-secret');
   await page.getByRole('button', { name: 'Mit anderen Zugangsdaten anmelden', exact: true }).click();

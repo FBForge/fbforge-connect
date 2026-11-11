@@ -1,9 +1,19 @@
 <script setup>
+import NetworkCertificates from './NetworkCertificates.vue';
 import { ref, onMounted } from 'vue';
 import { invoke } from '../native.ts';
 const props = defineProps({ busy: Boolean });
 const emit = defineEmits(['changed', 'busy']);
-const settings = ref({ mode: 'system', host: '', port: 8080, username: '', password: null });
+const settings = ref({
+  mode: 'system',
+  host: '',
+  port: 8080,
+  username: '',
+  password: null,
+  trustedCertificates: [],
+});
+const certificateInfo = ref([]),
+  certificateBusy = ref(false);
 const hasPassword = ref(false),
   working = ref(false),
   error = ref(''),
@@ -13,12 +23,14 @@ onMounted(async () => {
   try {
     const value = await invoke('network_settings');
     hasPassword.value = value.hasPassword;
+    certificateInfo.value = value.trustedCertificates || [];
     settings.value = {
       mode: value.mode,
       host: value.host,
       port: value.port || 8080,
       username: value.username,
       password: null,
+      trustedCertificates: certificateInfo.value.map((info) => info.der),
     };
   } catch {
     error.value =
@@ -26,7 +38,7 @@ onMounted(async () => {
   }
 });
 async function save() {
-  if (working.value || props.busy) return;
+  if (working.value || props.busy || certificateBusy.value) return;
   working.value = true;
   emit('busy', true);
   error.value = '';
@@ -34,6 +46,7 @@ async function save() {
   dialog.value.close();
   try {
     await invoke('save_network_settings', { settings: settings.value });
+    if (settings.value.password !== null) hasPassword.value = Boolean(settings.value.password);
     settings.value.password = null;
     emit('changed');
     notice.value = 'Netzwerkeinstellungen gespeichert. Verbinden Sie Ihr Profil erneut.';
@@ -108,8 +121,18 @@ async function save() {
         Windows-Benutzerkonto. Es wird nicht zurück an die Oberfläche übertragen.
       </p>
     </template>
+    <NetworkCertificates
+      v-model="settings.trustedCertificates"
+      :initial="certificateInfo"
+      :disabled="busy || working"
+      @busy="certificateBusy = $event"
+    />
     <div class="client-actions">
-      <button class="button secondary" :disabled="busy || working" @click="dialog.showModal()">
+      <button
+        class="button secondary"
+        :disabled="busy || working || certificateBusy"
+        @click="dialog.showModal()"
+      >
         Netzwerkeinstellungen übernehmen
       </button>
     </div>
@@ -118,8 +141,9 @@ async function save() {
     <dialog ref="dialog" class="tool-dialog" aria-labelledby="network-change-title">
       <h2 id="network-change-title">Verbindung neu einrichten?</h2>
       <p>
-        Offene Verbindungen werden beendet. Sichern Sie offene Entwürfe vorher. Gespeicherte Profile und
-        Vorgänge bleiben erhalten.
+        Die vorgemerkten Proxy- und CA-Einstellungen werden für diese Anwendung übernommen. Offene
+        Verbindungen werden beendet. Sichern Sie offene Entwürfe vorher. Gespeicherte Profile und Vorgänge
+        bleiben erhalten.
       </p>
       <div class="client-actions">
         <button class="button secondary" autofocus @click="dialog.close()">Abbrechen</button>

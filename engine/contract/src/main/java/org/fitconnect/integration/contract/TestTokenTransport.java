@@ -45,6 +45,8 @@ public final class TestTokenTransport implements TokenExchange, AutoCloseable {
                         || response.statusCode() == 401
                         || response.statusCode() == 403)
                     throw new SessionException("authentication_failed");
+                if (response.statusCode() == 407)
+                    throw new SessionException("proxy_authentication_required");
                 if (response.statusCode() != 200) throw new SessionException("auth_unavailable");
                 var timeout =
                         deadlines.schedule(
@@ -74,7 +76,7 @@ public final class TestTokenTransport implements TokenExchange, AutoCloseable {
             Thread.currentThread().interrupt();
             throw new SessionException("auth_unavailable");
         } catch (Exception e) {
-            throw new SessionException("auth_unavailable");
+            throw new SessionException(NetworkFailure.code(e));
         }
     }
 

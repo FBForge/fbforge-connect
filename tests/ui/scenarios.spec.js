@@ -162,6 +162,8 @@ async function record(page, direction, wrong = false) {
     },
     { direction, wrong, data: simple().cases[0].request.data },
   );
+  if (!(await button(page, 'Nachweise aktualisieren').isVisible()))
+    await page.getByText('Nachweis gezielt auswählen', { exact: true }).click();
   await button(page, 'Nachweise aktualisieren').click();
   await expect(
     page.getByRole('combobox', { name: 'Nachricht für diesen Testschritt', exact: true }),
@@ -222,7 +224,7 @@ test('variable editing, variants, selected expectations and legacy imports stay 
   await page.getByRole('combobox', { name: 'Inhaltsvergleich', exact: true }).selectOption('rules');
   await expect(page.getByText(/Andere Fachdatenfelder werden nicht verglichen/)).toBeVisible();
   await button(page, 'Test speichern').click();
-  await expect(page.getByRole('status')).toContainText('dauerhaft');
+  await expect(page.getByRole('status').filter({ hasText: 'dauerhaft' })).toBeVisible();
   const calls = await page.evaluate(() => window.__integration.calls.map((c) => c.command));
   expect(calls).not.toContain('prepare_send');
   expect(calls).not.toContain('execute_send');

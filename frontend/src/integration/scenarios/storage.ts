@@ -1,3 +1,4 @@
+import { testPackError } from '../../test-packs.js';
 import { invalid, uuid, validateScenario } from './model.ts';
 import { validateRun } from './runs.ts';
 import type { NativeInvoke } from '../../contracts.d.ts';
@@ -107,6 +108,16 @@ export async function removeRun(invoke: NativeInvoke, id: string) {
 }
 export function scenarioError(cause: unknown) {
   const code = typeof cause === 'string' ? cause : cause instanceof Error ? cause.message : '';
+  if (
+    code.startsWith('test_pack_') ||
+    ['test_data_invalid', 'test_schema_invalid', 'test_reply_mismatch', 'schema_id_mismatch'].includes(
+      code,
+    ) ||
+    ['invalid_data', 'invalid_schema', 'invalid_reply_offer'].includes(code)
+  )
+    return testPackError(cause);
+  if (code === 'scenario_authoring_limit')
+    return 'Die Grenze für Testfälle, variable Angaben oder Testdaten ist erreicht. Entfernen Sie nicht benötigte Daten.';
   if (code === 'scenario_size_limit')
     return 'Die Testdaten und Anlagen sind für einen geschützten Durchlauf zu umfangreich. Entfernen Sie nicht benötigte Anlagen oder teilen Sie den Test auf.';
   if (code === 'vault_limit')

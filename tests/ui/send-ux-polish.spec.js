@@ -18,6 +18,7 @@ test('ten profiles expose just the selected identity and keep secondary actions 
       clientId: `synthetic-client-${n + 1}`,
       apiVersion: n % 2 ? 'v2' : 'v3',
       role: 'online-service',
+      environment: 'TEST',
       keyCount: n,
       available: true,
     })),
@@ -121,6 +122,7 @@ test('named test cases can be saved, restored, exported and deleted without send
   await expect(page.locator('.save-test-case').getByRole('status')).toContainText('nach einem Neustart');
   await button(page, 'Fachdaten').click();
   await page.locator('#send-data').fill('{"ersetzt":true}');
+  await page.getByText('Gespeicherten Test verwenden', { exact: true }).click();
   await button(page, 'Testfall laden').click();
   const dialog = page.getByRole('dialog', { name: 'Testfall als neuen Entwurf übernehmen?', exact: true });
   await expect(dialog).toBeVisible();
@@ -128,7 +130,7 @@ test('named test cases can be saved, restored, exported and deleted without send
   await dialog.getByRole('button', { name: 'Entwurf ersetzen', exact: true }).click();
   await button(page, 'Weiter: Fachdaten').click();
   await expect(page.locator('#send-data')).toHaveValue(original);
-  await page.getByText('Testpakete importieren, exportieren und löschen', { exact: true }).click();
+  await page.getByText('Tests importieren, exportieren und löschen', { exact: true }).click();
   const downloading = page.waitForEvent('download');
   await button(page, 'Testpaket exportieren').click();
   const saved = JSON.parse(await readFile(await (await downloading).path(), 'utf8'));

@@ -13,6 +13,8 @@ pub struct NetworkSettings {
     pub port: u16,
     pub username: String,
     pub password: String,
+    #[serde(default)]
+    pub trusted_certificates: Vec<String>,
 }
 fn system() -> String {
     "system".into()
@@ -41,13 +43,14 @@ impl NetworkSettings {
         {
             return Err("proxy_invalid");
         }
+        crate::network_trust::validate(&self.trusted_certificates)?;
         Ok(())
     }
     pub fn load(path: &Path) -> Result<Self, &'static str> {
         if !path.try_exists().map_err(|_| "vault_unavailable")? {
             return Ok(Self::defaults());
         }
-        let encrypted = crate::vault::read_bounded(path, 16 * 1024)?;
+        let encrypted = crate::vault::read_bounded(path, 400 * 1024)?;
         let mut plain = crate::vault::protection::transform_with_purpose(
             &encrypted,
             false,
@@ -72,13 +75,42 @@ impl NetworkSettings {
             .map_err(|_| "vault_unavailable")?;
         crate::vault::write_protected(path, &encrypted?)
     }
-    pub fn apply_engine(&self, command: &mut tokio::process::Command) {
+    pub fn apply_engine(
+        &self,
+        command: &mut tokio::process::Command,
+    ) -> Result<Option<crate::network_trust_bundle::TrustBundle>, &'static str> {
+        let manual = self.mode == "manual";
         command
             .env("FBFORGE_PROXY_MODE", &self.mode)
-            .env("FBFORGE_PROXY_HOST", &self.host)
-            .env("FBFORGE_PROXY_PORT", self.port.to_string())
-            .env("FBFORGE_PROXY_USERNAME", &self.username)
-            .env("FBFORGE_PROXY_PASSWORD", &self.password);
+            .env("FBFORGE_PROXY_HOST", if manual { &self.host } else { "" })
+            .env(
+                "FBFORGE_PROXY_PORT",
+                if manual { self.port } else { 0 }.to_string(),
+            )
+            .env(
+                "FBFORGE_PROXY_USERNAME",
+                if manual { &self.username } else { "" },
+            )
+            .env(
+                "FBFORGE_PROXY_PASSWORD",
+                if manual { &self.password } else { "" },
+            );
+        for key in [
+            "FBFORGE_TRUST_PEM",
+            "FBFORGE_TRUST_STORE",
+            "FBFORGE_TRUST_FINGERPRINTS",
+        ] {
+            command.env_remove(key);
+        }
+        let bundle =
+            crate::network_trust_bundle::TrustBundle::create(&self.trusted_certificates, None)?;
+        if let Some(b) = &bundle {
+            command
+                .env("FBFORGE_TRUST_PEM", &b.pem)
+                .env("FBFORGE_TRUST_STORE", &b.store)
+                .env("FBFORGE_TRUST_FINGERPRINTS", &b.fingerprints);
+        }
+        Ok(bundle)
     }
 }
 static CURRENT: OnceLock<Mutex<Result<NetworkSettings, &'static str>>> = OnceLock::new();
@@ -99,6 +131,7 @@ pub fn current() -> Result<NetworkSettings, &'static str> {
 }
 pub fn client(builder: reqwest::ClientBuilder) -> Result<reqwest::ClientBuilder, &'static str> {
     let settings = current()?;
+    let builder = crate::network_trust::client(builder, &settings.trusted_certificates)?;
     if settings.mode == "direct" {
         return Ok(builder.no_proxy());
     }
@@ -139,6 +172,60 @@ mod tests {
             settings.host = host.into();
             assert_eq!(settings.validate(), Err("proxy_invalid"));
         }
+    }
+    #[test]
+    fn manual_proxy_credentials_are_not_exported_in_system_or_direct_mode() {
+        let mut settings = NetworkSettings::defaults();
+        settings.host = "manual-proxy.example".into();
+        settings.port = 8080;
+        settings.username = "synthetic-proxy-user".into();
+        settings.password = "synthetic-proxy-secret".into();
+        for mode in ["manual", "system", "direct"] {
+            settings.mode = mode.into();
+            let mut command = tokio::process::Command::new("not-executed");
+            let _bundle = settings.apply_engine(&mut command).unwrap();
+            let fields: std::collections::HashMap<_, _> = command
+                .as_std()
+                .get_envs()
+                .filter_map(|(key, value)| {
+                    value.map(|value| {
+                        (
+                            key.to_string_lossy().into_owned(),
+                            value.to_string_lossy().into_owned(),
+                        )
+                    })
+                })
+                .collect();
+            assert_eq!(
+                fields["FBFORGE_PROXY_USERNAME"],
+                if mode == "manual" {
+                    "synthetic-proxy-user"
+                } else {
+                    ""
+                }
+            );
+            assert_eq!(
+                fields["FBFORGE_PROXY_PASSWORD"],
+                if mode == "manual" {
+                    "synthetic-proxy-secret"
+                } else {
+                    ""
+                }
+            );
+            assert_eq!(
+                fields["FBFORGE_PROXY_HOST"],
+                if mode == "manual" {
+                    "manual-proxy.example"
+                } else {
+                    ""
+                }
+            );
+            assert_eq!(
+                fields["FBFORGE_PROXY_PORT"],
+                if mode == "manual" { "8080" } else { "0" }
+            );
+        }
+        assert_eq!(settings.password, "synthetic-proxy-secret");
     }
     #[test]
     fn saved_proxy_passwords_are_user_protected_and_not_plaintext() {
@@ -215,4 +302,17 @@ pub fn downloader(
         command.env("NO_PROXY", "").env("no_proxy", "");
     }
     Ok(command)
+}
+
+pub fn download_trust(
+    command: &mut std::process::Command,
+) -> Result<Option<crate::network_trust_bundle::TrustBundle>, &'static str> {
+    let bundle =
+        crate::network_trust_bundle::TrustBundle::downloader(&current()?.trusted_certificates)?;
+    if let Some(b) = &bundle {
+        command
+            .env("CURL_CA_BUNDLE", &b.pem)
+            .env("SSL_CERT_FILE", &b.pem);
+    }
+    Ok(bundle)
 }

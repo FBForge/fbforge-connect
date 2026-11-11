@@ -52,9 +52,7 @@
 .scenario-workspace .scenario-toolbar {
   display: grid;
   gap: 8px;
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
+  position: static;
   background: var(--surface);
   padding: 12px 0;
   border-top: 1px solid var(--line);
@@ -305,4 +303,11 @@
   color: var(--status-warning-ink);
   border-color: var(--status-warning-line);
   background: var(--status-warning-bg);
+}
+
+.scenario-flat-group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }

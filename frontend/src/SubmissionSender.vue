@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 import ActionNotice from './ActionNotice.vue';
 import SaveTestCase from './send/SaveTestCase.vue';
-import TestCaseLibrary from './send/TestCaseLibrary.vue';
+import { defineAsyncComponent } from 'vue';
+const TestCaseLibrary = defineAsyncComponent(() => import('./send/TestCaseLibrary.vue'));
 import SendConfirmation from './send/SendConfirmation.vue';
 import SendReconciliation from './integration/SendReconciliation.vue';
 import ReplyAttachmentsStep from './send/ReplyAttachmentsStep.vue';
@@ -20,7 +21,7 @@ const props = defineProps({
   defaultSource: String,
   visible: { type: Boolean, default: true },
 });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'cases']);
+const emit = defineEmits(['busy', 'activity', 'fatal', 'event-log', 'cases', 'navigate']);
 const controller = useSubmissionSender(props, emit);
 const testLibrary = ref(null);
 const {
@@ -66,7 +67,6 @@ const {
   <section class="tool-section" aria-labelledby="send-title">
     <ExampleDraftDialog ref="exampleDialog" :context-key="schemaContext" />
     <h2 id="send-title">Neue Einreichung</h2>
-    <p>In drei Schritten zur Einreichung. Sie prüfen die Angaben vor dem Senden.</p>
     <div v-if="pendingTest" class="tool-section">
       <h3>Testfall bereit: {{ pendingTest.name }}</h3>
       <p>
@@ -104,6 +104,7 @@ const {
       :disabled="disabled"
       ref="testLibrary"
       :create-pack="createTestPack"
+      @manage="emit('navigate', 'Testwerkzeuge')"
       @choose="
         (item) => {
           pendingTest = item;

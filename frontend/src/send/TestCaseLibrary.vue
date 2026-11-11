@@ -1,20 +1,20 @@
 <script setup>
 import { computed, watch, ref, shallowRef, nextTick } from 'vue';
 import { invoke } from '../native.ts';
-import {
-  listTestLibrary,
-  readTestLibrary,
-  saveTestLibrary,
-  deleteTestLibrary,
-  testLibraryError,
-} from '../test-library.js';
-import { parseTestPack, serializeTestPack, testPackError, TEST_PACK_BYTES } from '../test-packs.js';
+import { saveTestLibrary, readTestLibrary, testLibraryError } from '../test-library.js';
+import { readTestFlow } from '../integration/test-flow-library.js';
+import { listTests, readTest, removeTest } from '../integration/scenarios/collection.ts';
+import { saveScenario } from '../integration/scenarios/storage.ts';
+import { scenarioFrom } from '../integration/scenarios/model.ts';
+import { serializeTestPack, TEST_PACK_BYTES } from '../test-packs.js';
 import { downloadLocal } from '../local-download.js';
 import FileDropInput from '../FileDropInput.vue';
 const props = defineProps({ disabled: Boolean, createPack: Function });
-const emit = defineEmits(['choose', 'busy']);
+const emit = defineEmits(['choose', 'busy', 'manage']);
 const entries = shallowRef([]),
-  choice = ref('');
+  choice = ref(''),
+  caseId = ref(''),
+  document = shallowRef(null);
 const pending = ref(false),
   error = ref(''),
   notice = ref(''),
@@ -22,11 +22,7 @@ const pending = ref(false),
   removeDialog = ref(null),
   removeButton = ref(null),
   managementSummary = ref(null);
-const selected = computed(() => {
-  const [id, caseId] = choice.value.split(':');
-  const entry = entries.value.find((item) => item.id === id);
-  return entry && { entry, caseId };
-});
+const selected = computed(() => entries.value.find((entry) => `${entry.kind}:${entry.id}` === choice.value));
 const messageScope = ref('library');
 const saveNotice = computed(() => (messageScope.value === 'save' ? notice.value : ''));
 const saveError = computed(() => (messageScope.value === 'save' ? error.value : ''));
@@ -53,10 +49,21 @@ async function act(operation, scope = 'library') {
     }
   }
 }
+async function readSelection() {
+  document.value = null;
+  caseId.value = '';
+  if (!selected.value) return;
+  const entry = selected.value,
+    value = await readTest(invoke, entry);
+  if (selected.value !== entry) return;
+  document.value = value;
+  caseId.value = value.pack.cases[0].id;
+}
 async function refresh() {
-  entries.value = await listTestLibrary(invoke);
-  if (!selected.value && entries.value.length)
-    choice.value = `${entries.value[0].id}:${entries.value[0].cases[0].id}`;
+  entries.value = await listTests(invoke);
+  if (!selected.value)
+    choice.value = entries.value.length ? `${entries.value[0].kind}:${entries.value[0].id}` : '';
+  await readSelection();
 }
 let loaded = false;
 watch(
@@ -69,11 +76,14 @@ watch(
   },
   { immediate: true },
 );
+function chooseEntry() {
+  void act(readSelection);
+}
 async function store(pack) {
   claimBusy();
   const entry = await saveTestLibrary(invoke, pack);
-  entries.value = [...entries.value, entry];
-  choice.value = `${entry.id}:${entry.cases[0].id}`;
+  choice.value = `pack:${entry.id}`;
+  await refresh();
   notice.value =
     'Testfall geschützt auf diesem Windows-Benutzerkonto gespeichert. Er bleibt nach einem Neustart verfügbar.';
 }
@@ -92,13 +102,12 @@ function saveDraft(name, exportOnly = false) {
   }, 'save');
 }
 function load() {
-  const value = selected.value;
-  if (!value) return;
-  act(async () => {
+  if (!selected.value) return;
+  void act(async () => {
     claimBusy();
-    const pack = await readTestLibrary(invoke, value.entry.id);
-    const item = pack.cases.find((item) => item.id === value.caseId);
-    if (!item) throw new Error('test_pack_invalid');
+    const value = await readTest(invoke, selected.value);
+    const item = value.pack.cases.find((item) => item.id === caseId.value);
+    if (!item) throw Error('test_pack_invalid');
     ownsBusy = false;
     emit('busy', false);
     await nextTick();
@@ -106,31 +115,37 @@ function load() {
   });
 }
 function exportSelected() {
-  const value = selected.value;
-  if (value)
-    act(async () =>
-      downloadLocal(
-        serializeTestPack(await readTestLibrary(invoke, value.entry.id)),
-        'testpaket.fctest.json',
-      ),
-    );
+  if (selected.value)
+    void act(async () => {
+      const entry = selected.value;
+      const value =
+        entry.kind === 'pack'
+          ? await readTestLibrary(invoke, entry.id)
+          : entry.kind === 'flow'
+            ? await readTestFlow(invoke, entry.id)
+            : await readTest(invoke, entry);
+      await downloadLocal(JSON.stringify(value, null, 2), 'testpaket.fctest.json');
+    });
 }
 function importPack(files) {
   if (!files[0]) return;
-  act(async () => {
-    if (files[0].size > TEST_PACK_BYTES) throw new Error('test_pack_limit');
-    let pack;
-    try {
-      pack = parseTestPack(new TextDecoder('utf-8', { fatal: true }).decode(await files[0].arrayBuffer()));
-    } catch (cause) {
-      error.value = testPackError(cause);
-      return;
+  void act(async () => {
+    if (files[0].size > TEST_PACK_BYTES) throw Error('test_pack_limit');
+    const value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(await files[0].arrayBuffer()));
+    if (value.format === 'fbforge-connect-testpack') await store(value);
+    else {
+      const definition = scenarioFrom(value);
+      definition.id = crypto.randomUUID();
+      claimBusy();
+      await saveScenario(invoke, definition);
+      choice.value = `test:${definition.id}`;
+      await refresh();
+      notice.value = 'Test geschützt gespeichert. Er bleibt nach einem Neustart verfügbar.';
     }
-    await store(pack);
   });
 }
 async function confirmRemoval() {
-  removal.value = selected.value?.entry;
+  removal.value = selected.value;
   await nextTick();
   removeDialog.value.showModal();
 }
@@ -142,17 +157,15 @@ function closeRemoval() {
   }
 }
 function remove() {
-  const entry = removal.value;
-  if (!entry) return;
-  act(async () => {
+  if (!removal.value) return;
+  void act(async () => {
     claimBusy();
-    await deleteTestLibrary(invoke, entry.id);
-    entries.value = entries.value.filter((item) => item.id !== entry.id);
-    if (!selected.value)
-      choice.value = entries.value.length ? `${entries.value[0].id}:${entries.value[0].cases[0].id}` : '';
+    await removeTest(invoke, removal.value);
+    await refresh();
     removeDialog.value.close();
     removal.value = null;
-    notice.value = 'Testpaket aus der lokalen Sammlung gelöscht. Exportierte Dateien bleiben erhalten.';
+    notice.value =
+      'Test aus der lokalen Sammlung gelöscht. Bisherige Durchläufe und exportierte Dateien bleiben erhalten.';
     await nextTick();
     managementSummary.value?.focus();
   });
@@ -160,38 +173,51 @@ function remove() {
 defineExpose({ saveDraft, saveNotice, saveError, pending });
 </script>
 <template>
-  <section class="test-case-library" :aria-labelledby="entries.length ? 'send-library-title' : undefined">
-    <h3 v-if="entries.length" id="send-library-title">Meine Testfälle</h3>
+  <details class="test-case-library">
+    <summary>Gespeicherten Test verwenden</summary>
     <div v-if="entries.length" class="test-case-choice">
       <label for="send-library-choice">
-        Gespeicherten Testfall auswählen
-        <select id="send-library-choice" v-model="choice" :disabled="disabled || pending">
-          <optgroup v-for="entry in entries" :key="entry.id" :label="entry.name">
-            <option v-for="item in entry.cases" :key="item.id" :value="`${entry.id}:${item.id}`">
-              {{ item.name }}
-            </option>
-          </optgroup>
+        Gespeicherten Test auswählen
+        <select
+          id="send-library-choice"
+          v-model="choice"
+          :disabled="disabled || pending"
+          @change="chooseEntry"
+        >
+          <option v-for="entry in entries" :key="entry.kind + entry.id" :value="`${entry.kind}:${entry.id}`">
+            {{ entry.name }}
+          </option>
+        </select>
+      </label>
+      <label v-if="document && document.pack.cases.length > 1">
+        Testfall auswählen
+        <select v-model="caseId" :disabled="disabled || pending">
+          <option v-for="item in document.pack.cases" :key="item.id" :value="item.id">{{ item.name }}</option>
         </select>
       </label>
       <button
         class="button secondary"
         type="button"
-        :disabled="disabled || pending || !selected"
+        :disabled="disabled || pending || !document"
         @click="load"
       >
         Testfall laden
       </button>
     </div>
-    <p class="small-note">
-      Gespeicherte Testpakete bleiben nach einem Neustart erhalten. Die lokale Sammlung ist für Ihr
-      Windows-Benutzerkonto verschlüsselt und unabhängig vom verbundenen FIT-Connect-Profil.
+    <p v-else-if="!pending" class="small-note">
+      Noch keine Tests gespeichert. Sie können diesen Entwurf als Testfall speichern.
     </p>
+    <p class="small-note">
+      Ihre geschützte Sammlung steht auch unter „Integration testen“ zur Verfügung und bleibt nach einem
+      Neustart erhalten.
+    </p>
+    <button class="button secondary" :disabled="disabled || pending" @click="emit('manage')">
+      Tests bearbeiten und durchführen
+    </button>
     <details>
-      <summary ref="managementSummary">
-        {{ entries.length ? 'Testpakete importieren, exportieren und löschen' : 'Testpaket importieren' }}
-      </summary>
+      <summary ref="managementSummary">Tests importieren, exportieren und löschen</summary>
       <p class="small-note">
-        Die lokale Sammlung ist für Ihr Windows-Benutzerkonto verschlüsselt. Exportierte Testpakete sind
+        Die lokale Sammlung ist für Ihr Windows-Benutzerkonto verschlüsselt. Exportierte Dateien sind
         unverschlüsselt. Verwenden Sie fiktive Daten.
       </p>
       <div v-if="entries.length" class="client-actions">
@@ -221,7 +247,7 @@ defineExpose({ saveDraft, saveNotice, saveError, pending });
         @files="importPack"
       />
     </details>
-    <p v-if="pending && messageScope !== 'save'" role="status">Testfallsammlung wird verarbeitet …</p>
+    <p v-if="pending && messageScope !== 'save'" role="status">Testsammlung wird verarbeitet …</p>
     <p v-if="notice && messageScope !== 'save'" role="status">{{ notice }}</p>
     <p v-if="error && messageScope !== 'save'" role="alert">{{ error }}</p>
     <dialog
@@ -230,10 +256,10 @@ defineExpose({ saveDraft, saveNotice, saveError, pending });
       aria-labelledby="delete-test-title"
       @cancel.prevent="closeRemoval"
     >
-      <h2 id="delete-test-title">Testpaket aus der Sammlung löschen?</h2>
+      <h2 id="delete-test-title">Test aus der Sammlung löschen?</h2>
       <p>
-        {{ removal?.name }} · {{ removal?.cases.length }} Testfälle. Ihr aktueller Entwurf und exportierte
-        Dateien bleiben erhalten.
+        {{ removal?.name }}. Der Test und seine ursprüngliche Vorlage werden entfernt. Ihr aktueller Entwurf,
+        bisherige Durchläufe und exportierte Dateien bleiben erhalten.
       </p>
       <p v-if="error && messageScope !== 'save'" role="alert">{{ error }}</p>
       <div class="client-actions">
@@ -243,5 +269,5 @@ defineExpose({ saveDraft, saveNotice, saveError, pending });
         <button class="button" type="button" :disabled="pending" @click="remove">Endgültig löschen</button>
       </div>
     </dialog>
-  </section>
+  </details>
 </template>

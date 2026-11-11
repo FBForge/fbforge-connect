@@ -11,6 +11,7 @@ defineProps({
   apiVersion: String,
   busy: Boolean,
   activeSession: Object,
+  profileName: String,
   theme: String,
   themePreference: String,
   section: String,
@@ -48,7 +49,17 @@ const emit = defineEmits(['api', 'connection', 'theme', 'navigate', 'environment
       </label>
       <button class="connection-button" type="button" @click="emit('connection')">
         <span class="connection-dot" :class="{ connected: activeSession }" aria-hidden="true"></span>
-        {{ activeSession ? 'Verbunden' : 'Verbinden' }}
+        <span>
+          {{ activeSession ? 'Verbunden' : 'Verbinden' }}
+          <span
+            v-if="activeSession && profileName"
+            id="active-profile-name"
+            class="connection-profile"
+            :title="profileName"
+          >
+            {{ profileName }}
+          </span>
+        </span>
         <AppIcon name="connection" />
       </button>
       <AppearancePicker :theme="theme" :preference="themePreference" @change="emit('theme', $event)" />
@@ -84,3 +95,15 @@ const emit = defineEmits(['api', 'connection', 'theme', 'navigate', 'environment
     </div>
   </aside>
 </template>
+
+<style scoped>
+.connection-profile {
+  display: block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+</style>

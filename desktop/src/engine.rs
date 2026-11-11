@@ -17,6 +17,7 @@ use tokio::{
 };
 pub(crate) struct EngineProcess {
     child: Child,
+    _trust_bundle: Option<crate::network_trust_bundle::TrustBundle>,
     environment: Environment,
     stdin: Option<ChildStdin>,
     stdout: ChildStdout,
@@ -76,7 +77,7 @@ impl EngineProcess {
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .kill_on_drop(true);
-        crate::network_settings::current()?.apply_engine(&mut command);
+        let trust_bundle = crate::network_settings::current()?.apply_engine(&mut command)?;
         // These inherited settings can inject agents, JVM arguments or another module path.
         for key in [
             "JAVA_TOOL_OPTIONS",
@@ -95,6 +96,7 @@ impl EngineProcess {
         let stdout = child.stdout.take().ok_or("engine_start_failed")?;
         Ok(Self {
             child,
+            _trust_bundle: trust_bundle,
             environment,
             stdin: Some(stdin),
             stdout,

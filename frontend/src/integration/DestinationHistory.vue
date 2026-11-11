@@ -6,7 +6,8 @@ const props = defineProps({ session: Object, busy: Boolean, revision: String });
 const rows = ref([]),
   error = ref(''),
   pending = ref(false),
-  available = ref(false);
+  available = ref(false),
+  loaded = ref(false);
 let generation = 0;
 watch(
   () => props.session?.sessionId,
@@ -14,6 +15,7 @@ watch(
     generation++;
     rows.value = [];
     available.value = false;
+    loaded.value = false;
     error.value = '';
   },
 );
@@ -27,6 +29,7 @@ async function load() {
     if (stamp === generation) {
       rows.value = data?.history || [];
       available.value = Boolean(data);
+      loaded.value = true;
     }
   } catch {
     if (stamp === generation) error.value = 'Änderungshistorie konnte nicht gelesen werden.';
@@ -48,8 +51,12 @@ async function load() {
       Historie laden
     </button>
     <p v-if="error" role="alert">{{ error }}</p>
-    <p v-if="!available">Für die dauerhafte Historie muss ein gespeichertes Profil verbunden sein.</p>
-    <p v-else-if="!rows.length">Noch keine Änderungen aufgezeichnet.</p>
+    <p v-if="pending" role="status">Änderungshistorie wird geladen …</p>
+    <p v-else-if="!loaded && !error">Laden Sie die lokale Historie für das verbundene Profil.</p>
+    <p v-else-if="loaded && !available && !error">
+      Für die dauerhafte Historie muss ein gespeichertes Profil verbunden sein.
+    </p>
+    <p v-else-if="loaded && available && !rows.length && !error">Noch keine Änderungen aufgezeichnet.</p>
     <details v-for="row in rows" :key="row.snapshot.attemptId">
       <summary>
         {{ new Date(row.recordedAt).toLocaleString('de-DE') }} · {{ row.snapshot.status }} ·

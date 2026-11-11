@@ -25,6 +25,8 @@ export async function openStoredTest(page, kind, name) {
 }
 export async function checkTestStep(page) {
   const refresh = button(page, 'Nachweise aktualisieren');
+  if (!(await refresh.isVisible()))
+    await page.getByText('Nachweis gezielt auswählen', { exact: true }).click();
   const ready = () =>
     until(
       async () => (await refresh.count()) === 0 || !(await refresh.isDisabled()),

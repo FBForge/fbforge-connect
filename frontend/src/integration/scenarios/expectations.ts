@@ -1,6 +1,6 @@
 import { contentDifferences } from './content-differences.ts';
 import { compareTestContent } from '../test-flows.js';
-import { messageFields, structuralXml } from './fields.ts';
+import { messageFields, structuralXml, maskFields } from './fields.ts';
 import type { Field } from './fields.ts';
 import type { Message, Scenario, Rule, Scope } from './types.ts';
 
@@ -47,13 +47,6 @@ export function checkMessage(
     rows: Difference[] = [];
   try {
     const fields = messageFields(actual, expected.mimeType);
-    if (scenario.comparison !== 'rules') {
-      const equal =
-        scenario.comparison === 'xml-structure' && expected.mimeType === 'application/xml'
-          ? structuralXml(actual) === structuralXml(expected.data)
-          : compareTestContent(actual, expected.data, expected.mimeType);
-      if (!equal) rows.push(...contentDifferences(actual, expected.data, expected.mimeType));
-    }
     if (scenario.comparison === 'rules' && !rules.length)
       rows.push({
         path: 'Prüfumfang',
@@ -61,16 +54,17 @@ export function checkMessage(
         actual: 'Keine Erwartung hinterlegt',
       });
     const expectedFields = messageFields(expected.data, expected.mimeType);
+    const permitted = new Set<string>();
     for (const rule of rules) {
       const field = fields.find((f) => f.path === rule.path);
-      if (
-        !matches(
-          rule,
-          field,
-          expectedFields.find((f) => f.path === rule.path),
-          reference,
-        )
-      )
+      const passed = matches(
+        rule,
+        field,
+        expectedFields.find((f) => f.path === rule.path),
+        reference,
+      );
+      if (passed && expectedFields.some((field) => field.path === rule.path)) permitted.add(rule.path);
+      if (!passed)
         rows.push({
           path: rule.path,
           expected:
@@ -83,6 +77,16 @@ export function checkMessage(
                   : `Wie Antragsfeld ${rule.value}`,
           actual: field === undefined ? 'Feld fehlt' : field.raw.slice(0, 300),
         });
+    }
+    if (scenario.comparison !== 'rules') {
+      const exceptions = scenario.comparison === 'field-exceptions';
+      const left = exceptions ? maskFields(actual, expected.mimeType, permitted) : actual;
+      const right = exceptions ? maskFields(expected.data, expected.mimeType, permitted) : expected.data;
+      const equal =
+        (scenario.comparison === 'xml-structure' || exceptions) && expected.mimeType === 'application/xml'
+          ? structuralXml(left) === structuralXml(right)
+          : compareTestContent(left, right, expected.mimeType);
+      if (!equal) rows.push(...contentDifferences(left, right, expected.mimeType));
     }
   } catch {
     rows.push({

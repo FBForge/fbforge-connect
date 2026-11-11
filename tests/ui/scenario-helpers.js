@@ -78,6 +78,8 @@ export async function injectEvidence(page, step, data, replyId = null) {
     },
     { step, data, replyId },
   );
+  if (!(await button(page, 'Nachweise aktualisieren').isVisible()))
+    await page.getByText('Nachweis gezielt auswählen', { exact: true }).click();
   await button(page, 'Nachweise aktualisieren').click();
 }
 export async function proveEvidence(page, step, data, replyId = null) {

@@ -85,6 +85,18 @@ impl<T> EngineResponse<T> {
                 Some("adapter_unavailable") => EngineFailure::Remote("adapter_unavailable"),
                 Some("authentication_failed") => EngineFailure::Remote("authentication_failed"),
                 Some("auth_unavailable") => EngineFailure::Remote("auth_unavailable"),
+                Some("network_tls_error") => EngineFailure::Remote("network_tls_error"),
+                Some("network_dns_error") => EngineFailure::Remote("network_dns_error"),
+                Some("network_timeout") => EngineFailure::Remote("network_timeout"),
+                Some("network_connection_failed") => {
+                    EngineFailure::Remote("network_connection_failed")
+                }
+                Some("proxy_authentication_required") => {
+                    EngineFailure::Remote("proxy_authentication_required")
+                }
+                Some("network_trust_unavailable") => {
+                    EngineFailure::Remote("network_trust_unavailable")
+                }
                 Some("endpoint_blocked") => EngineFailure::Remote("endpoint_blocked"),
                 Some("invalid_credentials") => EngineFailure::Remote("invalid_credentials"),
                 Some("session_missing") => EngineFailure::Remote("session_missing"),

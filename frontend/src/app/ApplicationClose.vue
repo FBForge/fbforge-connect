@@ -2,11 +2,13 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { flushPreparations } from '../integration/scenarios/preparation-flush.ts';
 import { invoke } from '../native.ts';
 const props = defineProps({ busy: Boolean, active: Boolean, receiveBrowser: Object });
 const dialog = ref(null),
   error = ref(''),
-  closing = ref(false);
+  closing = ref(false),
+  recoveryFailed = ref(false);
 let unlisten;
 async function requestClose() {
   if (closing.value) return;
@@ -16,16 +18,25 @@ async function requestClose() {
   await nextTick();
   if (!dialog.value.open) dialog.value.showModal();
 }
-async function close() {
+async function close(withoutPreparation = false) {
   if (props.busy || closing.value || (await props.receiveBrowser?.confirmLeave()) === false) return;
   closing.value = true;
+  let preparationSaved = false;
   try {
+    if (!withoutPreparation) await flushPreparations();
+    preparationSaved = true;
     await invoke('close_application');
   } catch (cause) {
+    const code = typeof cause === 'string' ? cause : cause?.message;
+    recoveryFailed.value = !preparationSaved && code !== 'preparation_pending';
     error.value =
-      cause === 'application_activity_pending'
-        ? 'Eine Aktion oder ein Dateiexport ist noch offen. Schließen Sie diese Aktion zuerst ab.'
-        : 'Die Sitzung konnte nicht vollständig gesichert werden. Die Anwendung bleibt geöffnet.';
+      code === 'preparation_pending'
+        ? 'Anlagen werden noch eingelesen. Warten Sie auf das Ergebnis, bevor Sie die Anwendung beenden.'
+        : code === 'preparation_unavailable'
+          ? 'Die Vorbereitung konnte nicht gesichert werden. Wiederholen Sie das Speichern oder beenden Sie ausdrücklich ohne diese Sicherung.'
+          : cause === 'application_activity_pending'
+            ? 'Eine Aktion oder ein Dateiexport ist noch offen. Schließen Sie diese Aktion zuerst ab.'
+            : 'Die Sitzung konnte nicht vollständig gesichert werden. Die Anwendung bleibt geöffnet.';
   } finally {
     closing.value = false;
   }
@@ -59,7 +70,10 @@ defineExpose({ requestClose });
       <button class="button secondary" autofocus :disabled="closing" @click="dialog.close()">
         Zurück zur Anwendung
       </button>
-      <button class="button" :disabled="busy || closing" @click="close">
+      <button v-if="recoveryFailed" class="button secondary" :disabled="busy || closing" @click="close(true)">
+        Ohne Vorbereitungssicherung beenden
+      </button>
+      <button class="button" :disabled="busy || closing" @click="close()">
         {{ closing ? 'Sitzung wird gesichert' : 'Anwendung beenden' }}
       </button>
     </div>

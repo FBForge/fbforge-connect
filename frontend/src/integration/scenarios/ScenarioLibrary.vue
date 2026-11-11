@@ -12,6 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   create: [kind: string];
   open: [entry: TestEntry];
+  copy: [entry: TestEntry];
   import: [files: File[]];
   resume: [];
   restore: [id: string];
@@ -124,6 +125,14 @@ async function refresh() {
             @click="emit('open', entry)"
           >
             Öffnen
+          </button>
+          <button
+            class="button secondary"
+            :aria-label="`Kopie erstellen: ${entry.name}`"
+            :disabled="disabled"
+            @click="emit('copy', entry)"
+          >
+            Kopie erstellen
           </button>
           <button
             class="button secondary"

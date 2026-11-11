@@ -31,6 +31,7 @@ function add() {
       Inhaltsvergleich
       <select v-model="scenario.comparison">
         <option value="exact">Vollständiger Inhalt</option>
+        <option value="field-exceptions">Vollständiger Inhalt mit Feldbedingungen</option>
         <option value="xml-structure">XML-Struktur, JSON vollständig</option>
         <option value="rules">Nur ausgewählte Fachdatenfelder</option>
       </select>
@@ -39,18 +40,23 @@ function add() {
       Andere Fachdatenfelder werden nicht verglichen. Hinterlegen Sie für jede Nachricht mindestens eine
       Erwartung. Anlagen werden weiterhin vollständig verglichen.
     </p>
+    <p v-else-if="scenario.comparison === 'field-exceptions'" class="small-note">
+      Nur Werte mit erfüllten Feldbedingungen dürfen abweichen. Alle übrigen Felder, die Struktur und
+      sämtliche Anlagen werden vollständig geprüft. Bei XML dürfen Attributreihenfolge und gleichbedeutende
+      Namensraumpräfixe abweichen. Text und Elementreihenfolge bleiben relevant.
+    </p>
     <p v-else-if="scenario.comparison === 'xml-structure'" class="small-note">
       XML-Attributreihenfolge und gleichbedeutende Namensraumpräfixe dürfen abweichen. Text, Leerzeichen und
       Elementreihenfolge bleiben relevant.
     </p>
     <div class="scenario-fields">
-      <label>
+      <label v-if="scenario.pack.cases.length > 1">
         Testfall für Erwartung
         <select v-model="caseId">
           <option v-for="c in scenario.pack.cases" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
       </label>
-      <label>
+      <label v-if="options.length > 1">
         Nachricht für Erwartung
         <select v-model="scope">
           <option v-for="o in options" :key="o.value" :value="o.value">{{ o.name }}</option>

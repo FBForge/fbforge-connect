@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { invoke } from '../../native.ts';
+import { readTest } from './collection.ts';
 import { watch, computed, ref, nextTick } from 'vue';
+import { usePreparationRecovery } from './usePreparationRecovery.ts';
 import TestDifferences from '../TestDifferences.vue';
 import ScenarioLibrary from './ScenarioLibrary.vue';
 import ScenarioSeries from './ScenarioSeries.vue';
@@ -54,7 +57,9 @@ const {
   available,
   includeValues,
 } = controller;
-const disabled = computed(() => pending.value || props.busy);
+const editorBusy = ref(false);
+const recovery = usePreparationRecovery(controller, editorBusy);
+const disabled = computed(() => pending.value || props.busy || editorBusy.value);
 const overview = ref(true),
   dirty = ref(false),
   seriesView = ref(false),
@@ -114,6 +119,16 @@ function create(kind: string) {
 function open(entry: TestEntry) {
   changeTest(() => collection.open(entry));
 }
+function copy(entry: TestEntry) {
+  changeTest(() =>
+    controller.act(async () => {
+      const value = await readTest(invoke, entry);
+      value.id = crypto.randomUUID();
+      value.name = `${value.name.slice(0, 150)} – Kopie`;
+      await controller.open(value);
+    }),
+  );
+}
 function importFiles(files: File[]) {
   changeTest(() => controller.importFiles(files));
 }
@@ -142,7 +157,11 @@ watch(seriesView, async (focused) => {
 });
 async function saveTest() {
   await controller.save();
-  if (!error.value) dirty.value = false;
+  if (!error.value) {
+    dirty.value = false;
+    await recovery.clear();
+    await collection.refresh();
+  }
 }
 watch(
   definition,
@@ -153,6 +172,15 @@ watch(
     } else dirty.value = true;
   },
   { deep: true },
+);
+watch(
+  () => run.value?.id,
+  (value, previous) => {
+    if (value && value !== previous)
+      void recovery.clear().catch((cause) => {
+        error.value = storage.scenarioError(cause);
+      });
+  },
 );
 watch(comparison, (value) => {
   if (value) void reveal();
@@ -178,6 +206,35 @@ watch(
 </script>
 <template>
   <section ref="panel" class="tool-section scenario-workspace" aria-label="Tests">
+    <section v-if="recovery.found.value" class="scenario-notice" aria-label="Gesicherte Vorbereitung">
+      <strong>Eine nicht abgeschlossene Vorbereitung ist vorhanden</strong>
+      <p>
+        {{ recovery.found.value.definition.name }} ·
+        {{ new Date(recovery.found.value.savedAt).toLocaleString('de-DE') }}
+      </p>
+      <div class="client-actions">
+        <button
+          class="button"
+          :disabled="disabled"
+          @click="
+            recovery.restore();
+            nextTick(() => (dirty = true));
+          "
+        >
+          Vorbereitung wiederherstellen
+        </button>
+        <button class="button secondary" :disabled="disabled" @click="ask('recovery', recovery.discard)">
+          Vorbereitung verwerfen
+        </button>
+      </div>
+    </section>
+    <p v-if="recovery.error.value" role="alert">
+      {{ recovery.error.value }}
+      <button class="button secondary" @click="recovery.retry">Erneut lesen</button>
+      <button class="button secondary" :disabled="disabled" @click="ask('recovery', recovery.discard)">
+        Gesicherte Vorbereitung verwerfen
+      </button>
+    </p>
     <p v-if="error" role="alert" class="scenario-notice error">{{ error }}</p>
     <p v-if="notice" role="status" class="small-note">{{ notice }}</p>
     <div v-show="overview && !seriesView" class="scenario-library">
@@ -194,6 +251,7 @@ watch(
         :disabled="disabled"
         @create="create"
         @open="open"
+        @copy="copy"
         @import="importFiles"
         @resume="reveal"
         @restore="restore"
@@ -240,6 +298,7 @@ watch(
           v-model:assignment="assignment"
           :disabled="disabled"
           @context="emit('context', $event)"
+          @busy="editorBusy = $event"
         />
         <label v-if="definition.variants.length > 1">
           Datensatz für den nächsten Durchlauf
@@ -247,6 +306,21 @@ watch(
             <option v-for="v in definition.variants" :key="v.id" :value="v.id">{{ v.name }}</option>
           </select>
         </label>
+        <label class="checkbox-label">
+          <input v-model="recovery.enabled.value" type="checkbox" :disabled="disabled" />
+          Vorbereitung automatisch geschützt speichern
+        </label>
+        <p class="small-note" role="status">
+          {{
+            !recovery.enabled.value
+              ? 'Änderungen bleiben nur in dieser Sitzung.'
+              : recovery.state.value === 'saved'
+                ? 'Vorbereitung für Ihr Windows-Benutzerkonto gesichert.'
+                : recovery.state.value === 'saving'
+                  ? 'Vorbereitung wird gesichert …'
+                  : 'Ungespeicherte Änderungen werden nach kurzer Pause gesichert.'
+          }}
+        </p>
         <div class="scenario-toolbar">
           <p v-if="!session" class="small-note">
             Zum Starten ein Profil verbinden. Vorbereiten und Speichern funktionieren auch ohne Verbindung.
@@ -282,6 +356,7 @@ watch(
         @navigate="controller.navigate"
         @draft="controller.draft"
         @refresh="controller.loadRecords"
+        @advance="controller.checkAndContinue"
         @verify="controller.verify"
         @manual="controller.manual"
         @wait="controller.wait"
@@ -341,24 +416,36 @@ watch(
       >
         <h2 id="scenario-dialog-title">
           {{
-            dialogKind === 'replace'
-              ? 'Anderen Test öffnen?'
-              : dialogKind === 'test'
-                ? 'Gespeicherten Test löschen?'
-                : 'Gespeicherten Durchlauf löschen?'
+            dialogKind === 'recovery'
+              ? 'Gesicherte Vorbereitung verwerfen?'
+              : dialogKind === 'replace'
+                ? 'Anderen Test öffnen?'
+                : dialogKind === 'test'
+                  ? 'Gespeicherten Test löschen?'
+                  : 'Gespeicherten Durchlauf löschen?'
           }}
         </h2>
         <p id="scenario-dialog-description">
           {{
-            dialogKind === 'replace'
-              ? 'Ungespeicherte Änderungen an der Vorbereitung werden ersetzt. Gespeicherte Tests und bisherige Durchläufe bleiben erhalten.'
-              : 'Der ausgewählte Eintrag wird aus der lokalen Sammlung entfernt. Geschützte Referenzen bleiben erhalten.'
+            dialogKind === 'recovery'
+              ? 'Die automatisch gesicherte Vorbereitung wird dauerhaft entfernt. Gespeicherte Tests und Durchläufe bleiben erhalten.'
+              : dialogKind === 'replace'
+                ? 'Ungespeicherte Änderungen an der Vorbereitung werden ersetzt. Gespeicherte Tests und bisherige Durchläufe bleiben erhalten.'
+                : dialogKind === 'test'
+                  ? 'Der Test und seine ursprüngliche Vorlage werden aus der lokalen Sammlung entfernt. Bisherige Durchläufe und exportierte Dateien bleiben erhalten.'
+                  : 'Der ausgewählte Durchlauf wird aus der lokalen Sammlung entfernt. Geschützte Referenzen bleiben erhalten.'
           }}
         </p>
         <div class="client-actions">
           <button class="button secondary" autofocus @click="closeDialog()">Abbrechen</button>
           <button class="button" @click="closeDialog(true)">
-            {{ dialogKind === 'replace' ? 'Test wechseln' : 'Eintrag löschen' }}
+            {{
+              dialogKind === 'replace'
+                ? 'Test wechseln'
+                : dialogKind === 'recovery'
+                  ? 'Vorbereitung verwerfen'
+                  : 'Eintrag löschen'
+            }}
           </button>
         </div>
       </dialog>

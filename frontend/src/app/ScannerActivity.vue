@@ -58,9 +58,6 @@ async function cancel() {
       <p v-if="local?.busy" class="small-note">
         Aktualisierung läuft im Hintergrund. Eine erfolgreiche Dateiprüfung wird erst nach dem Scan bestätigt.
       </p>
-      <p v-else class="small-note">
-        Das Ergebnis für Metadaten, Fachdaten und Anlagen erscheint nach der Inhaltsprüfung.
-      </p>
       <p v-if="cancelError" role="alert">{{ cancelError }}</p>
     </div>
     <button v-if="local?.busy" type="button" class="button secondary" @click="cancel">

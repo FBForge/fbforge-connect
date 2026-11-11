@@ -2,11 +2,7 @@
 use crate::{protocol::valid_session_id, vault::protection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{
-    fs,
-    io::{Read, Write},
-    path::PathBuf,
-};
+use std::{fs, io::Read, path::PathBuf};
 
 const MAX_PACK: usize = 8 * 1024 * 1024 - 4096;
 const MAX_ENTRIES: usize = 32;
@@ -14,6 +10,15 @@ const MAX_STORE: u64 = 64 * 1024 * 1024;
 #[derive(Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum LibraryRequest {
+    PreparationRead {
+        environment: String,
+    },
+    PreparationSave {
+        document: scenarios::recovery::Preparation,
+    },
+    PreparationDelete {
+        environment: String,
+    },
     ScenarioSeriesList {},
     ScenarioSeriesRead {
         id: String,
@@ -291,26 +296,15 @@ impl TestLibrary {
             return Err("vault_limit");
         }
         fs::create_dir_all(&self.0).map_err(|_| "vault_unavailable")?;
-        let temp = destination.with_extension("pending");
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&temp)
-            .map_err(|_| "vault_unavailable")?;
-        let result = (|| {
-            file.write_all(&encrypted)
-                .and_then(|_| file.sync_all())
-                .map_err(|_| "vault_unavailable")?;
-            drop(file);
-            protection::replace(&temp, &destination)
-        })();
-        if result.is_err() {
-            let _ = fs::remove_file(&temp);
-        }
-        result
+        crate::vault::write_protected(&destination, &encrypted)
     }
     pub fn execute(&self, request: LibraryRequest) -> Result<Value, &'static str> {
         match request {
+            LibraryRequest::PreparationRead { .. }
+            | LibraryRequest::PreparationSave { .. }
+            | LibraryRequest::PreparationDelete { .. } => {
+                scenarios::recovery::execute(self, request)
+            }
             LibraryRequest::ScenarioSeriesList {}
             | LibraryRequest::ScenarioSeriesRead { .. }
             | LibraryRequest::ScenarioSeriesSave { .. }

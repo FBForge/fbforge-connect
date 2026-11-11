@@ -222,3 +222,22 @@ export function structuralXml(source: string): string {
   ];
   return JSON.stringify(canonical(xmlTree(source)));
 }
+
+/** Mask only scalar leaves already proven by field conditions. Containers stay intact. */
+export function maskFields(source: string, mime: string, paths: Set<string>) {
+  if (mime === 'application/json') {
+    let output = source;
+    const fields = jsonFields(source)
+      .filter((field) => paths.has(field.path))
+      .sort((a, b) => b.start! - a.start!);
+    for (const field of fields) output = output.slice(0, field.start) + 'null' + output.slice(field.end);
+    return output;
+  }
+  const root = xmlTree(source);
+  walkXml(root, (field, node, attr) => {
+    if (!paths.has(field.path)) return;
+    if (attr) node.attrs[attr] = 'fbforge-proven-field';
+    else node.content = ['fbforge-proven-field'];
+  });
+  return serialize(root);
+}

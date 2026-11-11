@@ -10,6 +10,7 @@ publish = false
 tauri-build = { version = "=2.7.3", features = [] }
 
 [dependencies]
+x509-parser = "=0.18.0"
 sha2 = "=0.10.9"
 zip = { version = "=9.1.3", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 tauri = { version = "=2.12.4", features = [] }

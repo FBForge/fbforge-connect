@@ -65,7 +65,7 @@ export interface Scenario {
   variables: Variable[];
   variants: { id: string; name: string; values: { variableId: string; value: string }[] }[];
   rules: Rule[];
-  comparison: 'exact' | 'xml-structure' | 'rules';
+  comparison: 'exact' | 'xml-structure' | 'rules' | 'field-exceptions';
   expectedProblem: string;
   followups?: Followup[];
 }

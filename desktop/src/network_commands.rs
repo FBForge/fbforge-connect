@@ -12,12 +12,13 @@ pub struct Change {
     port: u16,
     username: String,
     password: Option<String>,
+    trusted_certificates: Option<Vec<String>>,
 }
 #[tauri::command]
 pub fn network_settings() -> Result<serde_json::Value, &'static str> {
     let settings = network_settings::current()?;
     Ok(
-        serde_json::json!({"mode":settings.mode,"host":settings.host,"port":settings.port,"username":settings.username,"hasPassword":!settings.password.is_empty()}),
+        serde_json::json!({"mode":settings.mode,"host":settings.host,"port":settings.port,"username":settings.username,"hasPassword":!settings.password.is_empty(),"trustedCertificates":crate::network_trust::validate(&settings.trusted_certificates)?}),
     )
 }
 #[tauri::command]
@@ -36,6 +37,14 @@ pub async fn save_network_settings(
         return Err("application_activity_pending");
     }
     let old = network_settings::current().unwrap_or_else(|_| NetworkSettings::defaults());
+    let trusted_certificates = settings
+        .trusted_certificates
+        .unwrap_or_else(|| old.trusted_certificates.clone());
+    for info in crate::network_trust::validate(&trusted_certificates)? {
+        if !info.active && !old.trusted_certificates.contains(&info.der) {
+            return Err("network_certificate_expired");
+        }
+    }
     let password = settings.password.unwrap_or_else(|| {
         if settings.host == old.host
             && settings.port == old.port
@@ -52,6 +61,7 @@ pub async fn save_network_settings(
         port: settings.port,
         username: settings.username,
         password,
+        trusted_certificates,
     };
     updated.validate()?;
     let profiles: Vec<_> = state
@@ -125,4 +135,15 @@ pub async fn lookup_service_names(code: String) -> Result<serde_json::Value, &'s
         bytes.extend_from_slice(&chunk);
     }
     serde_json::from_slice(&bytes).map_err(|_| "service_names_unavailable")
+}
+
+#[tauri::command]
+pub fn inspect_network_certificate(
+    content: String,
+) -> Result<crate::network_trust::CertificateInfo, &'static str> {
+    let info = crate::network_trust::inspect_file(&content)?;
+    if !info.active {
+        return Err("network_certificate_expired");
+    }
+    Ok(info)
 }

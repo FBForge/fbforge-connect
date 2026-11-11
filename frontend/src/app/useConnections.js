@@ -43,6 +43,16 @@ export function useConnections({
   const selectedDestination = ref('');
   const defaultDestinations = shallowRef(null);
   const activeSession = computed(() => sessions.value[apiVersion.value]);
+  const activeProfileName = computed(() => {
+    const active = activeSession.value;
+    if (!active) return '';
+    return (
+      profiles.value.find(
+        (profile) =>
+          profile.profileId === storageStatus.value?.profileId && profile.clientId === active.clientId,
+      )?.name || (storageStatus.value?.saved ? 'Gespeichertes Profil' : 'Sitzungsprofil')
+    );
+  });
   const connectionDialog = ref(null);
   watch(apiVersion, () => {
     clientId.value = '';
@@ -374,6 +384,7 @@ export function useConnections({
     selectedDestination,
     defaultDestinations,
     activeSession,
+    activeProfileName,
     connectionDialog,
     sessionAction,
     showConnection,

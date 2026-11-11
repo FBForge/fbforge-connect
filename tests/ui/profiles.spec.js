@@ -59,7 +59,7 @@ test('connection identity remains visible for temporary and restored profiles in
     await page.locator('#client-id').fill(`synthetic-client-${api}`);
     await page.locator('#client-secret').fill('synthetic-secret-marker');
     await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-    await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+    await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
     const identity = page.locator('.connection-identity');
     await identity.getByText(`synthetic-client-${api}`, { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Sitzung prüfen', exact: true }).click();
@@ -73,11 +73,12 @@ test('connection identity remains visible for temporary and restored profiles in
     await page.getByRole('checkbox', { name: /Zugangsdaten und Schlüssel/ }).check();
     await page.locator('#profile-name').fill(`Testsender ${api}`);
     await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-    await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+    await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
     await page.getByRole('button', { name: 'Mit Profil verbinden', exact: true }).click();
-    await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+    await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
     await identity.getByText(`saved-client-${api}`, { exact: true }).waitFor();
     await identity.getByRole('heading', { name: `Testsender ${api}`, exact: true }).waitFor();
+    assert.equal(await page.locator('#active-profile-name').textContent(), `Testsender ${api}`);
     assert.equal((await page.getByRole('dialog').textContent()).includes('synthetic-secret-marker'), false);
   }
 });

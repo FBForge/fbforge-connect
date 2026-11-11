@@ -15,9 +15,12 @@ public final class NetworkProxy {
     private NetworkProxy() {}
 
     public static void initialize() {
-        configure(System.getenv());
+        initialize(System.getenv(), ProxySelector.getDefault());
+    }
+
+    static void initialize(Map<String, String> values, ProxySelector selector) {
+        configure(values);
         if (mode.equals("system")) {
-            var selector = ProxySelector.getDefault();
             if (selector != null)
                 for (var proxy :
                         selector.select(
@@ -30,7 +33,7 @@ public final class NetworkProxy {
                     }
                 }
         }
-        if (manual() && !username.isEmpty()) {
+        if (hasCredentials()) {
             System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "");
             Authenticator.setDefault(authenticator());
         }
@@ -38,6 +41,13 @@ public final class NetworkProxy {
 
     public static void configure(Map<String, String> values) {
         mode = values.getOrDefault("FBFORGE_PROXY_MODE", "system");
+        if (!Set.of("system", "direct", "manual").contains(mode))
+            throw new SessionException("proxy_invalid");
+        // Saved manual settings are dormant in system/direct mode. A newly selected
+        // system route must never inherit another proxy's credential or stale host.
+        host = username = password = "";
+        port = 0;
+        if (!mode.equals("manual")) return;
         host = values.getOrDefault("FBFORGE_PROXY_HOST", "");
         username = values.getOrDefault("FBFORGE_PROXY_USERNAME", "");
         password = values.getOrDefault("FBFORGE_PROXY_PASSWORD", "");
@@ -46,15 +56,19 @@ public final class NetworkProxy {
         } catch (NumberFormatException e) {
             throw new SessionException("proxy_invalid");
         }
-        if (!Set.of("system", "direct", "manual").contains(mode)
-                || mode.equals("manual")
-                        && (host.isBlank()
-                                || host.length() > 253
-                                || !host.matches("[A-Za-z0-9.:-]+")
-                                || port < 1
-                                || port > 65535)) throw new SessionException("proxy_invalid");
+        if (host.isBlank()
+                || host.length() > 253
+                || !host.matches("[A-Za-z0-9.:-]+")
+                || port < 1
+                || port > 65535) throw new SessionException("proxy_invalid");
     }
 
+    private static boolean hasCredentials() {
+        return mode.equals("manual") && !username.isEmpty();
+    }
+
+    // Effective proxy route, including a route selected by the OS. Authentication
+    // is independently restricted to explicit manual configuration.
     public static boolean manual() {
         return !mode.equals("direct") && !host.isEmpty() && port > 0;
     }
@@ -97,14 +111,15 @@ public final class NetworkProxy {
                         public void connectFailed(
                                 URI uri, SocketAddress address, java.io.IOException e) {}
                     });
-        if (manual() && !username.isEmpty()) builder.authenticator(authenticator());
+        if (hasCredentials()) builder.authenticator(authenticator());
         return builder;
     }
 
     private static Authenticator authenticator() {
         return new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return getRequestorType() == RequestorType.PROXY
+                return hasCredentials()
+                                && getRequestorType() == RequestorType.PROXY
                                 && host.equalsIgnoreCase(getRequestingHost())
                                 && port == getRequestingPort()
                         ? new PasswordAuthentication(username, password.toCharArray())

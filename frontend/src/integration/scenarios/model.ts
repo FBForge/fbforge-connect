@@ -37,7 +37,7 @@ export function validateScenario(input: unknown): Scenario {
     !title(s.name) ||
     typeof s.sharedCase !== 'boolean' ||
     !['sender', 'receiver', 'both'].includes(s.mode) ||
-    !['exact', 'xml-structure', 'rules'].includes(s.comparison) ||
+    !['exact', 'xml-structure', 'rules', 'field-exceptions'].includes(s.comparison) ||
     typeof s.expectedProblem !== 'string' ||
     s.expectedProblem.length > 4096 ||
     /[\x00-\x20]/.test(s.expectedProblem)

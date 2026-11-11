@@ -12,6 +12,27 @@ const props = defineProps<{
   pending: boolean;
   waiting: { active: boolean; remaining: number; lastChecked: number | null; message: string };
 }>();
+const manualDetails = ref<HTMLDetailsElement>();
+watch(
+  () => props.candidates.length,
+  async (count) => {
+    if (count > 1) {
+      await nextTick();
+      if (manualDetails.value) manualDetails.value.open = true;
+    }
+  },
+);
+const navigationLabel = computed(
+  () =>
+    ({
+      send: 'Versandentwurf öffnen',
+      receive: 'Einreichung im Empfang öffnen',
+      compare: 'Inhalte im Empfang öffnen',
+      receipt: 'Empfang bestätigen',
+      reply: 'Antwort im Empfang verfassen',
+      check_reply: 'Antwort im Empfang öffnen',
+    })[props.step?.type || 'send'],
+);
 const heading = ref<HTMLElement>();
 async function focusStep() {
   await nextTick();
@@ -23,6 +44,7 @@ const emit = defineEmits<{
   navigate: [];
   draft: [];
   refresh: [];
+  advance: [];
   verify: [];
   manual: [];
   wait: [];
@@ -80,22 +102,31 @@ function select(event: Event) {
           :disabled="pending"
           @click="step.type === 'send' ? emit('draft') : emit('navigate')"
         >
-          {{ step.type === 'send' ? 'Versandentwurf öffnen' : 'Zur passenden Arbeitsansicht' }}
+          {{ navigationLabel }}
         </button>
+        <button
+          v-if="step.type === 'receipt' || !step.external"
+          class="button secondary"
+          :disabled="pending"
+          @click="emit('advance')"
+        >
+          Prüfen und weiter
+        </button>
+      </div>
+      <details ref="manualDetails">
+        <summary>Nachweis gezielt auswählen</summary>
         <button class="button secondary" :disabled="pending" @click="emit('refresh')">
           Nachweise aktualisieren
         </button>
-      </div>
-      <label v-if="candidates.length && step.type !== 'receipt'">
-        Nachricht für diesen Testschritt
-        <select :value="selected" :disabled="pending" @change="select">
-          <option value="">Nachricht auswählen</option>
-          <option v-for="record in candidates" :key="record.recordId" :value="record.recordId">
-            {{ record.title }} · {{ record.submissionId || record.replyId }}
-          </option>
-        </select>
-      </label>
-      <div class="client-actions">
+        <label v-if="candidates.length && step.type !== 'receipt'">
+          Nachricht für diesen Testschritt
+          <select :value="selected" :disabled="pending" @change="select">
+            <option value="">Nachricht auswählen</option>
+            <option v-for="record in candidates" :key="record.recordId" :value="record.recordId">
+              {{ record.title }} · {{ record.submissionId || record.replyId }}
+            </option>
+          </select>
+        </label>
         <button
           v-if="step.type === 'receipt' || !step.external"
           class="button secondary"
@@ -104,6 +135,8 @@ function select(event: Event) {
         >
           {{ step.type === 'receipt' ? 'Empfangsbestätigung nachweisen' : 'Ausgewählte Nachricht prüfen' }}
         </button>
+      </details>
+      <div class="client-actions">
         <button
           v-if="
             !waiting.active &&

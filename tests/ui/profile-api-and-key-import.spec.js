@@ -12,7 +12,7 @@ test('saved credentials can set up both APIs and reuse an existing API profile w
   await page.getByRole('checkbox', { name: /Zugangsdaten und Schlüssel/ }).check();
   await page.locator('#profile-name').fill('Gemeinsamer Zugang');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+  await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
   await page.locator('#saved-profile-api').selectOption('v3');
   await page.getByRole('button', { name: 'Mit API v3 verbinden', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true })).toBeHidden();
@@ -21,7 +21,7 @@ test('saved credentials can set up both APIs and reuse an existing API profile w
   const profiles = await page.evaluate(() => window.__profilesFixture.profiles);
   expect(profiles.find((p) => p.apiVersion === 'v2').keyCount).toBeGreaterThan(0);
   expect(profiles.find((p) => p.apiVersion === 'v3').keyCount).toBe(0);
-  await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+  await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
   await page
     .locator('#saved-profile-choice')
     .selectOption(profiles.find((p) => p.apiVersion === 'v2').profileId);
@@ -30,7 +30,7 @@ test('saved credentials can set up both APIs and reuse an existing API profile w
   await expect(page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true })).toBeHidden();
   expect(await page.evaluate(() => window.__profilesFixture.profiles.length)).toBe(2);
   expect(await page.locator('#client-secret').inputValue()).toBe('');
-  await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+  await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
   expect(
     await page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true }).textContent(),
   ).not.toContain('synthetic-secret-marker');
@@ -101,7 +101,7 @@ test('a disabled second API leaves the original profile and its keys intact', as
   await page.getByRole('checkbox', { name: /Zugangsdaten und Schlüssel/ }).check();
   await page.locator('#profile-name').fill('Nur v2 freigeschaltet');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await page.getByRole('button', { name: 'Verbunden', exact: true }).click();
+  await page.getByRole('button', { name: /^Verbunden(?:\s|$)/ }).click();
   await page.evaluate(() => (window.__profilesFixture.failApiCopy = true));
   await page.locator('#saved-profile-api').selectOption('v3');
   await page.getByRole('button', { name: 'Mit API v3 verbinden', exact: true }).click();

@@ -6,6 +6,8 @@ use std::collections::HashSet;
 mod checkpoint;
 #[path = "scenario_messages.rs"]
 mod messages;
+#[path = "scenario_recovery.rs"]
+pub(super) mod recovery;
 #[path = "scenario_series.rs"]
 pub(super) mod series;
 
@@ -72,7 +74,8 @@ impl Scenario {
             || !valid_session_id(&self.id)
             || !name(&self.name, 160)
             || !["sender", "receiver", "both"].contains(&self.mode.as_str())
-            || !["exact", "xml-structure", "rules"].contains(&self.comparison.as_str())
+            || !["exact", "xml-structure", "rules", "field-exceptions"]
+                .contains(&self.comparison.as_str())
             || self.expected_problem.len() > 4096
             || self.expected_problem.chars().any(char::is_whitespace)
             || cases.len() != self.pack.cases.len()

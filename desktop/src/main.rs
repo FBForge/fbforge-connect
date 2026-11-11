@@ -78,6 +78,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             application_close::close_application,
             network_commands::network_settings,
+            network_commands::inspect_network_certificate,
             network_commands::lookup_service_names,
             network_commands::save_network_settings,
             application_updates::application_update_status,
@@ -213,6 +214,11 @@ fn main() {
                 .build(),
         )
         .setup(|app| {
+            network_trust_bundle::set_default_roots(
+                app.path()
+                    .resource_dir()?
+                    .join("resources/engine/ca-roots.pem"),
+            );
             let config = app
                 .path()
                 .app_data_dir()
@@ -253,3 +259,8 @@ fn main() {
 }
 
 mod scanner_install;
+
+#[path = "network_trust.rs"]
+mod network_trust;
+#[path = "network_trust_bundle.rs"]
+mod network_trust_bundle;

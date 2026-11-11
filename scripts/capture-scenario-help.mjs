@@ -90,6 +90,7 @@ export async function captureScenarioHelp(page, capture) {
       return { apiVersion: args.apiVersion, sessionId: args.sessionId, environment: 'TEST', data };
     };
   });
+  await page.getByText('Nachweis gezielt auswählen', { exact: true }).click();
   await button('Nachweise aktualisieren').click();
   await button('Ausgewählte Nachricht prüfen').click();
   await button('Ergebnisse').click();

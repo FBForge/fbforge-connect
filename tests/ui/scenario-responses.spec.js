@@ -116,7 +116,7 @@ for (const api of ['v2', 'v3'])
       ids = new Map();
     for (const step of scenarioSteps(run.definition)) {
       if (step.type === 'receipt') {
-        await button(page, 'Empfangsbestätigung nachweisen').click();
+        await button(page, 'Prüfen und weiter').click();
         continue;
       }
       const message = expectedMessage(run, step),

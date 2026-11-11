@@ -4,7 +4,7 @@ import { latestChecks } from './model.ts';
 import CopyValue from '../../CopyValue.vue';
 import ScenarioAttemptDetails from './ScenarioAttemptDetails.vue';
 import ScenarioAttemptHistory from './ScenarioAttemptHistory.vue';
-import { ticketResult } from './report.ts';
+import { ticketResult, comparisonLabels } from './report.ts';
 import { compareRuns } from './runs.ts';
 import type { Run } from './types.ts';
 const props = defineProps<{ run: Run; comparison: Run | null }>();
@@ -35,6 +35,15 @@ const comparison = computed(() => (props.comparison ? compareRuns(props.run, pro
       </strong>
       {{ checks.filter((c) => c.attempt?.status === 'manual').length }} manuell bestätigt.
     </p>
+    <details>
+      <summary>Prüfumfang dieses Durchlaufs</summary>
+      <p>{{ comparisonLabels[run.definition.comparison] }} · Anlagen vollständig</p>
+      <ul v-if="run.definition.rules.length">
+        <li v-for="rule in run.definition.rules" :key="rule.id">
+          {{ rule.scope === 'request' ? 'Einreichung' : 'Antwort' }} · {{ rule.path }} · {{ rule.operator }}
+        </li>
+      </ul>
+    </details>
     <ol class="scenario-checks">
       <li
         v-for="check in checks"

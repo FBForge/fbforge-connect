@@ -11,6 +11,7 @@ fn main() {
         tauri_build::AppManifest::new().commands(&[
             "close_application",
             "network_settings",
+            "inspect_network_certificate",
             "lookup_service_names",
             "save_network_settings",
             "application_update_status",

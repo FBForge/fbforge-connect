@@ -8,6 +8,8 @@
     <div id="app"></div>
     <script type="module">
       import { createApp, ref } from 'vue/dist/vue.esm-bundler.js';
+      import ScenarioWorkspace from '../src/integration/scenarios/ScenarioWorkspace.vue';
+      import { testLibraryFixture } from './test-library-fixture.js';
       import ApplicationClose from '../src/app/ApplicationClose.vue';
       import NetworkSettings from '../src/app/NetworkSettings.vue';
       import '../src/styles/index.css';
@@ -40,6 +42,7 @@
             listeners.set(args.event, args.handler);
             return args.handler;
           }
+          if (command === 'test_library') return testLibraryFixture(args.request);
           if (command === 'network_settings')
             return {
               mode: 'manual',
@@ -54,14 +57,14 @@
         },
       };
       createApp({
-        components: { ApplicationClose, NetworkSettings },
+        components: { ApplicationClose, NetworkSettings, ScenarioWorkspace },
         setup() {
           const close = ref(null),
             busy = ref(false);
           window.__lifecycle.setBusy = (value) => (busy.value = value);
-          return { close, busy };
+          return { close, busy, preparation: new URLSearchParams(location.search).has('preparation') };
         },
-        template: `<main><h1>Lokale Sitzung</h1><button @click="close.requestClose()">Fenster schließen</button><ApplicationClose ref="close" :busy="busy" :active="true"/><NetworkSettings :busy="busy"/></main>`,
+        template: `<main><h1>Lokale Sitzung</h1><button @click="close.requestClose()">Fenster schließen</button><ApplicationClose ref="close" :busy="busy" :active="true"/><NetworkSettings v-if="!preparation" :busy="busy"/><ScenarioWorkspace v-else :session="null" :busy="busy"/></main>`,
       }).mount('#app');
     </script>
   </body>

@@ -31,6 +31,13 @@ __pycache__/
 *.msi
 *:Zone.Identifier
 
+# Public synthetic TLS fixtures. These are test-only, never application trust roots.
+!/tests/fixtures/network-trust/ca.pem
+!/tests/fixtures/network-trust/expired-ca.pem
+!/tests/fixtures/network-trust/unrelated-ca.pem
+!/tests/fixtures/network-trust/localhost.pem
+!/tests/fixtures/network-trust/localhost-test-key.pem
+
 # Local project documentation and development guidance
 /docs/*
 !/docs/guide/

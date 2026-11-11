@@ -7,6 +7,12 @@ public final class SessionException extends RuntimeException {
             Set.of(
                     "authentication_failed",
                     "auth_unavailable",
+                    "network_tls_error",
+                    "network_dns_error",
+                    "network_timeout",
+                    "network_connection_failed",
+                    "proxy_authentication_required",
+                    "network_trust_unavailable",
                     "endpoint_blocked",
                     "session_missing",
                     "invalid_credentials",

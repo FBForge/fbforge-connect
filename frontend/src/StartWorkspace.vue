@@ -23,6 +23,15 @@ const tasks = [
     destination: 'Empfangen',
     icon: 'receive',
   },
+  {
+    id: 'test',
+    title: 'Integration testen',
+    purpose: 'Einen Nachrichtenfluss Schritt für Schritt prüfen.',
+    description:
+      'Tests vorbereiten, wiederverwenden und mit Nachweisen durchführen. Die Vorbereitung funktioniert ohne Verbindung.',
+    destination: 'Testwerkzeuge',
+    icon: 'tools',
+  },
 ];
 </script>
 
@@ -31,7 +40,9 @@ const tasks = [
     <section class="start-task-section" aria-labelledby="start-tasks-title">
       <p class="start-eyebrow">IHRE AUFGABE</p>
       <h2 id="start-tasks-title">Was möchten Sie tun?</h2>
-      <p class="start-description">Senden Sie eine Einreichung oder prüfen Sie eingegangene Nachrichten.</p>
+      <p class="start-description">
+        Senden, empfangen oder einen wiederholbaren Integrationstest vorbereiten.
+      </p>
       <div class="start-tasks">
         <div v-for="task in tasks" :key="task.id" class="start-task">
           <AppIcon :name="task.icon" />
@@ -54,7 +65,7 @@ const tasks = [
       <div>
         <p class="start-eyebrow">IHR FIT-CONNECT-ZUGANG</p>
         <h2 id="start-connection-title">
-          {{ session ? 'Ihre Verbindung ist bereit' : 'Ihr Zugang ist noch nicht verbunden' }}
+          {{ session ? 'Bei FIT-Connect angemeldet' : 'Ihr Zugang ist noch nicht verbunden' }}
         </h2>
         <p v-if="session">
           Sie sind bei FIT-Connect {{ environment }} über API {{ apiVersion }} angemeldet. Die verfügbaren
@@ -138,7 +149,7 @@ const tasks = [
 }
 .start-tasks {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   margin-top: 20px;
 }
@@ -217,7 +228,7 @@ const tasks = [
     align-items: flex-start;
   }
 }
-@media (max-width: 650px) {
+@media (max-width: 1000px) {
   .start-tasks {
     grid-template-columns: 1fr;
   }

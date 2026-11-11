@@ -209,6 +209,7 @@ export function useScenarioWorkspace(
       tab.value = 'run';
       records.value = [];
       await persist();
+      await refresh();
       publish();
     });
   const start = () =>
@@ -316,6 +317,23 @@ export function useScenarioWorkspace(
         throw cause;
       }
     });
+  async function checkAndContinue() {
+    const runId = run.value?.id,
+      stepId = step.value?.id,
+      sessionId = props.session?.sessionId;
+    await loadRecords();
+    if (
+      error.value ||
+      run.value?.id !== runId ||
+      step.value?.id !== stepId ||
+      props.session?.sessionId !== sessionId
+    )
+      return;
+    if (step.value?.type === 'receipt' || (available.value.length === 1 && recordId.value)) await verify();
+    else if (available.value.length > 1)
+      notice.value =
+        'Mehrere passende Nachrichten gefunden. Wählen Sie den Nachweis für diesen Testschritt ausdrücklich aus.';
+  }
   function navigate() {
     if (!run.value || !step.value) return;
     stop();
@@ -428,6 +446,7 @@ export function useScenarioWorkspace(
     start,
     restore,
     loadRecords,
+    checkAndContinue,
     verify,
     navigate,
     draft,

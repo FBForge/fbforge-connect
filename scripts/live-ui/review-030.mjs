@@ -60,8 +60,9 @@ async function savePack(desktop, fixture, pack) {
   await writeFile(path, JSON.stringify(pack));
   await navigate(page, 'Senden');
   const library = page.locator('.test-case-library');
+  if (!(await library.evaluate((element) => element.open))) await library.locator(':scope > summary').click();
   if (!(await library.locator('details').evaluate((element) => element.open)))
-    await library.locator('summary').click();
+    await library.getByText('Tests importieren, exportieren und löschen', { exact: true }).click();
   await library.locator('#send-library-import').setInputFiles(path);
   const choice = library.locator('#send-library-choice');
   const value = await until(() => savedCaseValue(choice, pack.name), 'live_ui_saved_package_choice_missing');
@@ -267,7 +268,8 @@ export async function savedCaseValue(choice, packName) {
   return choice.evaluateAll(
     (selects, name) =>
       Array.from(selects[0]?.options || []).find(
-        (option) => option.parentElement?.getAttribute('label') === name,
+        (option) =>
+          option.parentElement?.getAttribute('label') === name || option.textContent.trim() === name,
       )?.value || null,
     packName,
   );
@@ -323,20 +325,9 @@ async function durability(desktop, fixture, senders, pack, message) {
   await button(page, 'Aus Favoriten entfernen').click();
   await button(page, 'Als Favorit merken').waitFor();
   const library = page.locator('.test-case-library');
+  if (!(await library.evaluate((element) => element.open))) await library.locator(':scope > summary').click();
   const choice = library.locator('#send-library-choice');
-  await choice.waitFor();
-  const saved = await until(() => savedCaseValue(choice, pack.name), 'live_ui_saved_package_choice_missing');
-  await choice.selectOption(saved);
-  await library.getByText('Testpakete importieren, exportieren und löschen', { exact: true }).click();
-  await library.getByRole('button', { name: 'Testpaket löschen', exact: true }).click();
-  await page
-    .getByRole('dialog', { name: 'Testpaket aus der Sammlung löschen?', exact: true })
-    .getByRole('button', { name: 'Endgültig löschen', exact: true })
-    .click();
-  await until(
-    async () => (await savedCaseValue(choice, pack.name)) === null,
-    'live_ui_package_delete_failed',
-  );
+  check((await savedCaseValue(choice, pack.name)) === null, 'live_ui_deleted_test_source_reappeared');
   console.log(
     'Real desktop UI: application restart retained encrypted tests, original packages, archived cases and profile-bound opt-out, then explicit collection deletion passed',
   );
