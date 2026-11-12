@@ -44,6 +44,12 @@ export async function exerciseDesktopUI(fixture) {
   try {
     desktop = await createDesktop(fixture.directory, fixture.receiverProfiles);
     const { page } = desktop;
+    // Network changes deliberately reject active scanner setup. Finish the optional
+    // offline first-start adoption before asking the installed client to reconnect.
+    if (process.env.FBFORGE_UI_SCANNER_ONLINE !== 'true') {
+      stage = 'optional_local_scanner';
+      await localScannerReady(page, false);
+    }
     stage = 'proxy_configuration';
     proxy = await acceptanceProxy();
     await configureAcceptanceProxy(page, proxy);
@@ -158,7 +164,7 @@ export async function exerciseDesktopUI(fixture) {
     }
     // Only fixed source locations, never Playwright's argument values or page contents.
     const location =
-      /live-ui[\\/](?:exchange|desktop|index|readback|downloads|local-tools|test-workspace|scanner|review-030|review-authoring|review-runtime|review-destination-backups|review-integration-040)\.mjs:\d+:\d+/.exec(
+      /live-ui[\\/](?:exchange|desktop|index|proxy|readback|downloads|local-tools|test-workspace|scanner|review-030|review-authoring|review-runtime|review-destination-backups|review-integration-040)\.mjs:\d+:\d+/.exec(
         error.stack || '',
       )?.[0];
     const diagnostic = /^live_ui_[a-z_]+$/.test(error.message || '') ? error.message : 'ui_driver_error';

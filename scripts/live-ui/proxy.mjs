@@ -69,20 +69,58 @@ export async function acceptanceProxy(dial = (host) => connect({ host, port: 443
   };
 }
 export async function configureAcceptanceProxy(page, proxy) {
-  await navigate(page, 'Einstellungen');
-  await page.getByLabel('Verbindung', { exact: true }).selectOption('manual');
-  await page.getByLabel('Proxy-Host', { exact: true }).fill('127.0.0.1');
-  await page.getByLabel('Port', { exact: true }).fill(String(proxy.port));
-  await page.getByLabel('Benutzername (optional)', { exact: true }).fill(username);
-  await page.getByLabel('Passwort (optional)', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Netzwerkeinstellungen übernehmen', exact: true }).click();
-  await page
-    .getByRole('dialog', { name: 'Verbindung neu einrichten?', exact: true })
-    .getByRole('button', { name: 'Übernehmen und trennen', exact: true })
-    .click();
-  await page
-    .getByText('Netzwerkeinstellungen gespeichert. Verbinden Sie Ihr Profil erneut.', { exact: true })
-    .waitFor();
+  let phase = 'navigation';
+  try {
+    await navigate(page, 'Einstellungen');
+    phase = 'mode';
+    await page.getByLabel('Verbindung', { exact: true }).selectOption('manual');
+    phase = 'host';
+    await page.getByLabel('Proxy-Host', { exact: true }).fill('127.0.0.1');
+    phase = 'port';
+    await page.getByLabel('Port', { exact: true }).fill(String(proxy.port));
+    phase = 'username';
+    await page.getByLabel('Benutzername (optional)', { exact: true }).fill(username);
+    phase = 'password';
+    await page.getByLabel('Passwort (optional)', { exact: true }).fill(password);
+    phase = 'confirmation';
+    await page.getByRole('button', { name: 'Netzwerkeinstellungen übernehmen', exact: true }).click();
+    phase = 'save';
+    await page
+      .getByRole('dialog', { name: 'Verbindung neu einrichten?', exact: true })
+      .getByRole('button', { name: 'Übernehmen und trennen', exact: true })
+      .click();
+    phase = 'readback';
+    await page
+      .getByText('Netzwerkeinstellungen gespeichert. Verbinden Sie Ihr Profil erneut.', { exact: true })
+      .waitFor();
+  } catch (error) {
+    // Fixed booleans and enums only. Never log credentials, addresses, page text or IPC payloads.
+    const state = await page
+      .evaluate(async () => {
+        const read = async (command) => {
+          try {
+            return await window.__TAURI_INTERNALS__.invoke(command);
+          } catch {
+            return null;
+          }
+        };
+        const network = await read('network_settings');
+        const scanner = await read('local_scanner_status');
+        return {
+          networkAvailable: network !== null,
+          manual: network?.mode === 'manual',
+          hasPassword: network?.hasPassword === true,
+          scannerBusy: scanner?.busy === true,
+          scannerReady: scanner?.ready === true,
+          visibleAlert: Array.from(document.querySelectorAll('.settings-view [role="alert"]')).some(
+            (element) => element.checkVisibility(),
+          ),
+        };
+      })
+      .catch(() => ({ unavailable: true }));
+    console.error(`Real desktop UI proxy phase ${phase}: ${JSON.stringify(state)}`);
+    throw error;
+  }
 }
 export function verifyAcceptanceProxy(proxy) {
   for (const host of ['auth-testing.fit-connect.fitko.dev', 'test.fit-connect.fitko.dev'])
