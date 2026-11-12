@@ -6,6 +6,13 @@ import { check, until } from './desktop.mjs';
 import { connectProfile, navigate } from './exchange.mjs';
 import { nativeFile, nativeOpenFile } from './downloads.mjs';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
+const ownListReady = (page) =>
+  until(
+    async () =>
+      (await page.locator('.destination-manager-table').isVisible()) &&
+      !(await button(page, 'Eigene Destinations laden').isDisabled()),
+    'live_ui_backup_list_pending',
+  );
 function publicOnly(value) {
   if (!value || typeof value !== 'object') return true;
   return Object.entries(value).every(
@@ -61,6 +68,7 @@ export async function reviewDestinationBackups(desktop, fixture) {
   await connectProfile(page, profile);
   await navigate(page, 'Destinations');
   await button(page, 'Bestehende Destinations').click();
+  await ownListReady(page);
   const own = page.locator(`[data-open-destination="${fixture.destination}"]`);
   for (let i = 0; i < 200 && !(await own.isVisible()); i += 20) {
     const next = button(page, 'Nächste Seite');
@@ -217,6 +225,7 @@ export async function reviewDestinationBackups(desktop, fixture) {
 async function reviewBulkEdit(page, fixture, cloneId, cloneName) {
   await button(page, 'Bestehende Destinations').click();
   await button(page, 'Eigene Destinations laden').click();
+  await ownListReady(page);
   const wanted = new Set([fixture.destination, cloneId]);
   for (let offset = 0; offset <= 200 && wanted.size; offset += 20) {
     for (const [id, fixtureName] of [
