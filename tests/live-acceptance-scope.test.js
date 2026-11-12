@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { acceptanceScope, exerciseAcceptance } from '../scripts/live-acceptance-scope.mjs';
+import { independentReviews } from '../scripts/live-ui/reviews.mjs';
 
 test('default acceptance still requires the SDK matrix before all installed UI checks', async () => {
   const calls = [];
@@ -50,4 +51,25 @@ test('failures propagate without retries or declaring an unexecuted UI test succ
     exerciseAcceptance(acceptanceScope({ uiOnly: true, installer: 'validated-setup.exe' }), {}),
     /desktop_acceptance_missing/,
   );
+});
+test('independent installed feature groups continue once and retain every failure in the acceptance result', async () => {
+  const calls = [],
+    failures = [];
+  const result = await independentReviews(
+    [
+      { label: 'first', run: async () => calls.push('first') },
+      {
+        label: 'broken',
+        run: async () => {
+          calls.push('broken');
+          throw new Error('synthetic failure');
+        },
+      },
+      { label: 'last', run: async () => calls.push('last') },
+    ],
+    async (label, error) => failures.push({ label, message: error.message }),
+  );
+  assert.deepEqual(calls, ['first', 'broken', 'last']);
+  assert.deepEqual(result, { passed: ['first', 'last'], failed: ['broken'] });
+  assert.deepEqual(failures, [{ label: 'broken', message: 'synthetic failure' }]);
 });

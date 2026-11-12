@@ -1,6 +1,8 @@
 //! CI-only checkpoint bridge using the actual product vault. Not part of the desktop bundle.
 //! Private archive JSON travels through pipes; the on-disk representation is always Windows DPAPI.
 use fbforge_connect_native_contracts::{
+    destination_backup_model::Backup,
+    environments::Environment,
     protocol::{ApiVersion, SessionRole},
     vault::{Profile, ProfileDefaults, Vault},
 };
@@ -16,6 +18,25 @@ fn run() -> Result<(), &'static str> {
     }
     let vault = Vault::new(PathBuf::from(&args[2]));
     match args[1].as_str() {
+        // Read the actual Java/SDK snapshot through the product's public backup
+        // validator. No file is written and no snapshot is printed.
+        "public-backup" => {
+            let mut input = Vec::new();
+            std::io::stdin()
+                .take(8 * 1024 * 1024 + 1)
+                .read_to_end(&mut input)
+                .map_err(|_| "backup_unavailable")?;
+            if input.len() > 8 * 1024 * 1024 {
+                return Err("backup_invalid");
+            }
+            let parsed = serde_json::from_slice::<Backup>(&input);
+            input.fill(0);
+            let backup = parsed.map_err(|_| "backup_invalid")?;
+            if backup.source_destination_id != args[3] || backup.environment != Environment::TEST {
+                return Err("invalid_input");
+            }
+            backup.validate()
+        }
         // Installation acceptance uses a native fixture, avoiding shell JSON/pipe encodings.
         // This mode never reads or writes actual OAuth credentials or private keys.
         "fixture" => vault.save(&installation_fixture(&args[3])),

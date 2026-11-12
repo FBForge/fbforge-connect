@@ -12,6 +12,7 @@ import { probeSenderRestrictions } from './live-sender-restrictions.mjs';
 import { scannerFixture } from './live-scanner-fixture.mjs';
 import { probeReplyOffers } from './live-destination-offers.mjs';
 import { acceptanceScope, exerciseAcceptance } from './live-acceptance-scope.mjs';
+import { probePublicBackup } from './live-destination-backup.mjs';
 
 const requireCheck = (value, code = 'acceptance_check_failed') => {
   if (!value) throw new Error(code);
@@ -650,6 +651,16 @@ try {
   console.log('Management capability hint agrees with the server-authorized owned destination update');
   console.log(
     'Native destination creation, exact registration readback, DPAPI checkpoint/restart and separate activation passed',
+  );
+  stage = 'public_destination_backup_contract';
+  await probePublicBackup({
+    engine: receiverV3,
+    destination,
+    name: runName,
+    validate: (backupDocument) => protectedBridge('public-backup', destination, backupDocument),
+  });
+  console.log(
+    'Actual authenticated SDK destination and public keys satisfy the product Rust backup validator',
   );
   const completedScope = await exerciseAcceptance(scope, {
     native: async () => {

@@ -35,8 +35,8 @@ import { review030 } from './review-030.mjs';
 import { reviewAuthoring } from './review-authoring.mjs';
 import { reviewIntegrationAuthoring } from './review-integration-040.mjs';
 import { reviewDestinationBackups } from './review-destination-backups.mjs';
-import { diagnosticCode } from '../../frontend/src/diagnostics.js';
-import { sendDiagnostics } from './send-diagnostics.mjs';
+import { failureDiagnostics } from './failure-diagnostics.mjs';
+import { independentReviews } from './reviews.mjs';
 
 export async function exerciseDesktopUI(fixture) {
   let desktop,
@@ -69,110 +69,95 @@ export async function exerciseDesktopUI(fixture) {
       'live_ui_api_switch_failed',
     );
     console.log('Real desktop UI: v2/v3 switch with actual credentials and no re-entry passed');
+    verifyAcceptanceProxy(proxy);
+    const reviews = [];
+    const addReview = (label, operation) =>
+      reviews.push({
+        label,
+        run: async () => {
+          stage = label;
+          await operation();
+        },
+      });
     const focused = process.env.FBFORGE_UI_REVIEW_ONLY === 'true';
     if (!focused) {
       for (const api of ['v3', 'v2']) {
-        stage = `${api}_sender_profile`;
-        await connectProfile(page, senders[api]);
-        stage = `${api}_json_send`;
-        const message = await sendSubmission(page, fixture, api);
-        stage = `${api}_receiver_profile`;
-        await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === api).id);
-        stage = `${api}_private_key_import`;
-        await keySetup(page, fixture, api);
-        stage = `${api}_json_receive`;
-        await openSubmission(page, fixture, message);
-        if (api === 'v3') {
-          stage = 'received_screen_accessibility';
-          await auditScreen(page);
-          stage = 'transferred_pdf_preview';
-          await previewPdf(page);
-          stage = 'submission_download';
-          await downloadMessage(desktop, fixture, message);
-        }
-        stage = `${api}_reply_accept_event_log`;
-        await replyAndAccept(desktop, fixture, message, api === 'v2');
-        stage = `${api}_sender_restore_reply_receive`;
-        await connectProfile(page, senders[api]);
-        await receiveReply(desktop, fixture, message, api === 'v3');
-        stage = `${api}_local_case`;
-        await caseWorkspace(page, message);
+        addReview(`${api}_roundtrip`, async () => {
+          const page = desktop.page;
+          stage = `${api}_sender_profile`;
+          await connectProfile(page, senders[api]);
+          stage = `${api}_json_send`;
+          const message = await sendSubmission(page, fixture, api);
+          stage = `${api}_receiver_profile`;
+          await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === api).id);
+          stage = `${api}_private_key_import`;
+          await keySetup(page, fixture, api);
+          stage = `${api}_json_receive`;
+          await openSubmission(page, fixture, message);
+          if (api === 'v3') {
+            stage = 'received_screen_accessibility';
+            await auditScreen(page);
+            stage = 'transferred_pdf_preview';
+            await previewPdf(page);
+            stage = 'submission_download';
+            await downloadMessage(desktop, fixture, message);
+          }
+          stage = `${api}_reply_accept_event_log`;
+          await replyAndAccept(desktop, fixture, message, api === 'v2');
+          stage = `${api}_sender_restore_reply_receive`;
+          await connectProfile(page, senders[api]);
+          await receiveReply(desktop, fixture, message, api === 'v3');
+          stage = `${api}_local_case`;
+          await caseWorkspace(page, message);
+        });
       }
-      stage = 'bulk_valid_fixture_send';
-      await connectProfile(page, senders.v3);
-      const valid = await sendSubmission(page, fixture);
-      stage = 'bulk_invalid_fixture_send';
-      const invalid = await sendSubmission(page, fixture, 'v3', false, true);
-      stage = 'bulk_manual_fixture_send';
-      const manual = await sendSubmission(page, fixture, 'v3', false, true);
-      await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
-      stage = 'bulk_schema_safety';
-      await bulkReceive(desktop, fixture, valid, invalid);
-      stage = 'schema_failure_manual_acceptance';
-      await acceptInvalid(desktop, fixture, manual);
-      stage = 'schema_failure_manual_rejection';
-      await rejectInvalid(page, fixture, invalid);
-      stage = 'destination_management';
-      await ownDestination(page, fixture);
-      stage = 'local_tools';
-      await localTools(page);
-      await auditScreen(page);
+      addReview('bulk_and_manual_receipts', async () => {
+        const page = desktop.page;
+        stage = 'bulk_valid_fixture_send';
+        await connectProfile(page, senders.v3);
+        const valid = await sendSubmission(page, fixture);
+        stage = 'bulk_invalid_fixture_send';
+        const invalid = await sendSubmission(page, fixture, 'v3', false, true);
+        stage = 'bulk_manual_fixture_send';
+        const manual = await sendSubmission(page, fixture, 'v3', false, true);
+        await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
+        stage = 'bulk_schema_safety';
+        await bulkReceive(desktop, fixture, valid, invalid);
+        stage = 'schema_failure_manual_acceptance';
+        await acceptInvalid(desktop, fixture, manual);
+        stage = 'schema_failure_manual_rejection';
+        await rejectInvalid(page, fixture, invalid);
+      });
+      addReview('destination_management', async () => {
+        await connectProfile(desktop.page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
+        await ownDestination(desktop.page, fixture);
+      });
+      addReview('local_tools', async () => {
+        await localTools(desktop.page);
+        await auditScreen(desktop.page);
+      });
     }
-    stage = 'review_030';
-    await review030(desktop, fixture, senders);
-    verifyAcceptanceProxy(proxy);
-    stage = 'workspaces';
-    await otherAreas(desktop.page);
-    stage = 'scanner_problem_acceptance';
-    await scannerProblemAcceptance(desktop, fixture);
-    stage = 'runtime_030';
-    await reviewRuntime(desktop, fixture);
-    stage = 'custom_schema_reply';
-    console.log('Live 0.3 acceptance: schema authoring and custom reply started');
-    await reviewAuthoring(desktop, fixture, senders);
-    stage = 'integration_040';
-    await reviewIntegrationAuthoring(desktop, fixture, senders);
-    stage = 'public_destination_backups';
-    await reviewDestinationBackups(desktop, fixture);
+    addReview('review_030', () => review030(desktop, fixture, senders));
+    addReview('workspaces', () => otherAreas(desktop.page));
+    addReview('scanner_problem_acceptance', () => scannerProblemAcceptance(desktop, fixture));
+    addReview('runtime_030', () => reviewRuntime(desktop, fixture));
+    addReview('custom_schema_reply', () => reviewAuthoring(desktop, fixture, senders));
+    addReview('integration_040', () => reviewIntegrationAuthoring(desktop, fixture, senders));
+    addReview('public_destination_backups', () => reviewDestinationBackups(desktop, fixture));
+    const result = await independentReviews(reviews, async (_, error) => {
+      await failureDiagnostics(desktop, stage, error);
+    });
+    console.log(`Real installed feature groups: ${JSON.stringify(result)}`);
+    stage = 'acceptance_summary';
+    check(result.failed.length === 0, 'live_ui_incomplete_acceptance');
     console.log(
       `Real installed desktop UI ${focused ? 'focused review' : 'full acceptance'} completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
     );
   } catch (error) {
     if (desktop) {
-      await sendDiagnostics(desktop.page).catch(() => {});
       if (stage === 'optional_local_scanner') await scannerDiagnostics(desktop.page);
-      const values = await desktop.page
-        .locator(
-          '[aria-labelledby="event-log-title"] .small-note code, .action-notice:visible code, [aria-labelledby="trace-title"] .trace-details code',
-        )
-        .allTextContents()
-        .catch(() => []);
-      const codes = [
-        ...new Set(
-          values.map((value) => diagnosticCode(value.trim())).filter((code) => code !== 'unknown_error'),
-        ),
-      ];
-      if (codes.length) console.error(`Real desktop UI diagnostic codes: ${codes.slice(0, 12).join(', ')}`);
-      console.error(
-        `Real desktop UI failure state: ${JSON.stringify({
-          submissionDetail: await desktop.page.locator('.submission-information').isVisible(),
-          submissionLoadError: await desktop.page.locator('.submission-inbox [role="alert"]').isVisible(),
-          schemaConsent: await desktop.page
-            .getByRole('dialog', { name: 'Öffentliche Schemaquellen laden?', exact: true })
-            .isVisible(),
-          receiveDocument: await desktop.page
-            .getByRole('heading', { name: 'Antrag lesen', exact: true })
-            .isVisible(),
-        })}`,
-      );
+      await failureDiagnostics(desktop, stage, error).catch(() => {});
     }
-    // Only fixed source locations, never Playwright's argument values or page contents.
-    const location =
-      /live-ui[\\/](?:exchange|desktop|index|proxy|readback|downloads|local-tools|test-workspace|scanner|review-030|review-authoring|review-runtime|review-destination-backups|review-integration-040)\.mjs:\d+:\d+/.exec(
-        error.stack || '',
-      )?.[0];
-    const diagnostic = /^live_ui_[a-z_]+$/.test(error.message || '') ? error.message : 'ui_driver_error';
-    console.error(`Real desktop UI failed at ${stage}; ${diagnostic}; ${location || 'no source location'}`);
     throw new Error(`live_ui_${stage}_failed`);
   } finally {
     try {
