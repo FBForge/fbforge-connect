@@ -33,6 +33,8 @@ import { scannerProblemAcceptance } from './scanner.mjs';
 import { reviewRuntime } from './review-runtime.mjs';
 import { review030 } from './review-030.mjs';
 import { reviewAuthoring } from './review-authoring.mjs';
+import { reviewIntegrationAuthoring } from './review-integration-040.mjs';
+import { reviewDestinationBackups } from './review-destination-backups.mjs';
 import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 
 export async function exerciseDesktopUI(fixture) {
@@ -119,6 +121,10 @@ export async function exerciseDesktopUI(fixture) {
     stage = 'custom_schema_reply';
     console.log('Live 0.3 acceptance: schema authoring and custom reply started');
     await reviewAuthoring(desktop, fixture, senders);
+    stage = 'integration_040';
+    await reviewIntegrationAuthoring(desktop, fixture, senders);
+    stage = 'public_destination_backups';
+    await reviewDestinationBackups(desktop, fixture);
     console.log(
       `Real installed desktop UI ${focused ? 'focused review' : 'full acceptance'} completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
     );
@@ -152,7 +158,7 @@ export async function exerciseDesktopUI(fixture) {
     }
     // Only fixed source locations, never Playwright's argument values or page contents.
     const location =
-      /live-ui[\\/](?:exchange|desktop|index|readback|downloads|local-tools|test-workspace|scanner|review-030|review-authoring|review-runtime)\.mjs:\d+:\d+/.exec(
+      /live-ui[\\/](?:exchange|desktop|index|readback|downloads|local-tools|test-workspace|scanner|review-030|review-authoring|review-runtime|review-destination-backups|review-integration-040)\.mjs:\d+:\d+/.exec(
         error.stack || '',
       )?.[0];
     const diagnostic = /^live_ui_[a-z_]+$/.test(error.message || '') ? error.message : 'ui_driver_error';

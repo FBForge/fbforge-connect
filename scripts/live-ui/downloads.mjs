@@ -30,7 +30,13 @@ export async function nativeFolder(
       folder,
       ...(cancel ? ['-Cancel'] : []),
       ...(fileOptions
-        ? ['-SaveFile', '-FileName', fileOptions.name, '-DialogTitle', fileOptions.title || 'Datei speichern']
+        ? [
+            fileOptions.open ? '-OpenFile' : '-SaveFile',
+            '-FileName',
+            fileOptions.name,
+            '-DialogTitle',
+            fileOptions.title || 'Datei speichern',
+          ]
         : []),
       ...(schemaReview === true || schemaReview === 'schema' ? ['-SchemaReview'] : []),
       ...(schemaReview === 'attachment' ? ['-AttachmentReview'] : []),
@@ -195,3 +201,11 @@ export const nativeSignatureUpdate = (desktop, fixture, operation) =>
 
 export const nativeScannerInstall = (desktop, fixture, operation) =>
   nativeFolder(desktop, fixture, operation, false, 'scanner-install');
+
+export async function nativeOpenFile(desktop, fixture, operation, name, cancel = false) {
+  await nativeFolder(desktop, fixture, operation, cancel, false, {
+    name,
+    title: 'Zustellpunkt-Sicherung importieren',
+    open: true,
+  });
+}

@@ -26,6 +26,7 @@ const scope = acceptanceScope({
 const root = fileURLToPath(new URL('../', import.meta.url));
 const bridge = join(root, 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe');
 const directory = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), 'fbforge-live-'));
+const additionalFixtures = new Map();
 const runName = `FBForge Connect CI ${randomUUID()}`;
 const applicationUri = 'urn:fit-connect:test-client:demo:application:1';
 const replyUri = 'urn:fit-connect:test-client:demo:reply:1';
@@ -534,7 +535,31 @@ async function cleanupManagedFixture(manager, fixtureId, fixtureName, fixtureTyp
   }
   console.log('Temporary owned TEST destination removed');
 }
+async function cleanupAdditional() {
+  for (const [fixtureName, entry] of additionalFixtures) {
+    let id = entry.id;
+    if (!id) {
+      const matches = [];
+      for (let offset = 0; offset <= 200; offset += 20) {
+        const page = await receiverV3.call('list_destinations', { offset });
+        matches.push(
+          ...page.destinations.filter((item) => item.name === fixtureName && item.type === entry.type),
+        );
+        if (offset + page.destinations.length >= page.totalCount) break;
+      }
+      requireCheck(matches.length <= 1, 'cleanup_additional_fixture_ambiguous');
+      id = matches[0]?.destinationId;
+    }
+    if (id) await cleanupManagedFixture(receiverV3, id, fixtureName, entry.type);
+  }
+}
 async function cleanup() {
+  let additionalError;
+  try {
+    await cleanupAdditional();
+  } catch (error) {
+    additionalError = error;
+  }
   if (!destination && creationBundle) {
     const matches = [];
     for (let offset = 0; offset <= 100; offset += 20) {
@@ -555,8 +580,8 @@ async function cleanup() {
     await cleanupManagedFixture(receiverV3, destination, runName, 'A');
     destination = null;
   }
+  if (additionalError) throw additionalError;
 }
-
 try {
   await prepareReplySource();
   stage = 'destination_setup';
@@ -707,6 +732,33 @@ try {
         receiverProfiles,
         readOwnedDestination: () =>
           receiverV3.call('load_managed_destination', { destinationId: destination }),
+        async readManagedFixture(id) {
+          requireCheck(
+            id === destination || [...additionalFixtures.values()].some((item) => item.id === id),
+            'fixture_read_id_denied',
+          );
+          return receiverV3.call('load_managed_destination', { destinationId: id });
+        },
+        expectCreatedDestination(fixtureName, type = 'A') {
+          requireCheck(
+            fixtureName.startsWith(runName) && !additionalFixtures.has(fixtureName),
+            'additional_fixture_name_denied',
+          );
+          additionalFixtures.set(fixtureName, { type, id: null });
+        },
+        async confirmCreatedDestination(fixtureName, id) {
+          const entry = additionalFixtures.get(fixtureName);
+          requireCheck(
+            entry && id !== destination && id !== process.env.SENDERDEST,
+            'additional_fixture_id_denied',
+          );
+          const detail = await receiverV3.call('load_managed_destination', { destinationId: id });
+          requireCheck(
+            detail.name === fixtureName && detail.type === entry.type,
+            'additional_fixture_ownership_failed',
+          );
+          entry.id = id;
+        },
         ...scannerFixture({
           openSender: (api) => openNativeSession('sender', api),
           receiver: (api) => (api === 'v3' ? receiverV3 : receiverV2),

@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview, [switch]$AttachmentReview, [switch]$ScannerReview, [switch]$ScannerUpdate, [switch]$ScannerInstall, [switch]$SaveFile, [string]$FileName, [string]$DialogTitle = 'Datei speichern')
+param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview, [switch]$AttachmentReview, [switch]$ScannerReview, [switch]$ScannerUpdate, [switch]$ScannerInstall, [switch]$SaveFile, [switch]$OpenFile, [string]$FileName, [string]$DialogTitle = 'Datei speichern')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 trap {
@@ -90,9 +90,9 @@ function Test-DownloadsDirectory([string]$Actual, [string]$Expected, [string]$Kn
     if ($Actual.TrimEnd('\').Equals($Expected.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)) { return $true }
     return (-not [string]::IsNullOrWhiteSpace($KnownFolderLabel) -and $Actual.Equals($KnownFolderLabel, [StringComparison]::OrdinalIgnoreCase))
 }
-if ($SaveFile) {
+if ($SaveFile -or $OpenFile) {
     if (-not $FileName -or [IO.Path]::GetFileName($FileName) -ne $FileName -or $FileName -match '[\\/:]') { throw 'ui_file_name_denied' }
-    if ($DialogTitle -notin @('Datei speichern', 'Geschütztes Profil sichern')) { throw 'ui_file_title_denied' }
+    if ($DialogTitle -notin @('Datei speichern', 'Geschütztes Profil sichern', 'Zustellpunkt-Sicherung exportieren', 'Zustellpunkt-Sicherung importieren')) { throw 'ui_file_title_denied' }
     $dialog = Wait-Ui { Find-Dialog $DialogTitle } 'ui_file_dialog_missing'
     $handle = [IntPtr]$dialog.Current.NativeWindowHandle
     $null = [ExportWindowFocus]::SetForegroundWindow($handle)
@@ -137,13 +137,14 @@ if ($SaveFile) {
             $downloads = $folders.Namespace('shell:Downloads')
             if ($downloads) { $expected = $downloads.Self.Path; $label = $downloads.Title }
         } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($folders) }
-        if (-not (Test-DownloadsDirectory $initial $expected $label)) {
+        if ($SaveFile -and -not (Test-DownloadsDirectory $initial $expected $label)) {
             Write-Output ('ui_file_diagnostic address_is_absolute=' + [IO.Path]::IsPathRooted($initial).ToString().ToLowerInvariant())
             Write-Output ('ui_file_diagnostic known_folder_available=' + (-not [string]::IsNullOrWhiteSpace($label)).ToString().ToLowerInvariant())
             throw 'ui_file_download_default_missing'
         }
         $edit = $nameEdit
         $destination = Join-Path $target $FileName
+        if ($OpenFile -and -not (Test-Path -LiteralPath $destination -PathType Leaf)) { throw 'ui_file_input_missing' }
         $edit.SetFocus()
         $editRuntime = $edit.GetRuntimeId() -join ','
         $null = Wait-Ui { ([System.Windows.Automation.AutomationElement]::FocusedElement.GetRuntimeId() -join ',') -eq $editRuntime } 'ui_file_name_focus_missing'
@@ -163,7 +164,7 @@ if ($SaveFile) {
         $shell.SendKeys('{TAB}')
         Start-Sleep -Milliseconds 200
         $button = Wait-Ui {
-            foreach ($name in @('Save', 'Speichern')) {
+            foreach ($name in $(if ($OpenFile) { @('Open', 'Öffnen') } else { @('Save', 'Speichern') })) {
                 $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $name)
                 $element = $dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
                 if ($element -and $element.Current.IsEnabled) { return $element }
@@ -172,7 +173,7 @@ if ($SaveFile) {
         $button.SetFocus()
         $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         $null = Wait-Ui { -not (Find-Dialog $DialogTitle) } 'ui_file_save_not_closed'
-        Write-Output 'Native file save confirmed with Downloads default and owned output path'
+        if ($OpenFile) { Write-Output 'Native file open confirmed with owned input path' } else { Write-Output 'Native file save confirmed with Downloads default and owned output path' }
         exit 0
     } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
 }

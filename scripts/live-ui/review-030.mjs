@@ -1,5 +1,6 @@
 // Real installed WebView2 acceptance of the original round trip in the current UI.
 // No mocked IPC, traces or credential artifacts.
+import { reviewProvenRun } from './review-integration-040.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
@@ -184,6 +185,7 @@ async function flowReview(desktop, fixture, senders, pack) {
   await testTools(page);
   await checkTestStep(page);
   await page.getByText('6 von 6 Schritten automatisch nachgewiesen.', { exact: true }).waitFor();
+  await reviewProvenRun(desktop, fixture, runId);
   await button(page, 'Vorbereiten').click();
   await button(page, 'Test starten').click();
   await page
@@ -196,6 +198,22 @@ async function flowReview(desktop, fixture, senders, pack) {
     'live_ui_flow_history_lost',
   );
   await page.locator(`[data-run-id="${runId}"]`).getByText('6/6 Schritte', { exact: false }).waitFor();
+  await page
+    .locator(`[data-run-id="${runId}"]`)
+    .getByRole('button', { name: 'Vergleichen', exact: true })
+    .click();
+  await page
+    .getByRole('heading', { name: 'Vergleich mit dem ausgewählten Durchlauf', exact: true })
+    .waitFor();
+  check(
+    (await page
+      .getByRole('table')
+      .filter({ has: page.getByRole('columnheader', { name: 'Prüfung', exact: true }) })
+      .locator('tbody tr')
+      .count()) === 6,
+    'live_ui_run_comparison_incomplete',
+  );
+  await testOverview(page);
   console.log(
     'Real desktop UI: encrypted run and context survived restart, all round-trip steps passed, exported proof matched and a new run retained the earlier result',
   );
