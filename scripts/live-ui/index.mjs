@@ -69,7 +69,6 @@ export async function exerciseDesktopUI(fixture) {
       'live_ui_api_switch_failed',
     );
     console.log('Real desktop UI: v2/v3 switch with actual credentials and no re-entry passed');
-    verifyAcceptanceProxy(proxy);
     const reviews = [];
     const addReview = (label, operation) =>
       reviews.push({
@@ -149,6 +148,7 @@ export async function exerciseDesktopUI(fixture) {
     addReview('custom_schema_reply', () => reviewAuthoring(desktop, fixture, senders));
     addReview('integration_040', () => reviewIntegrationAuthoring(desktop, fixture, senders));
     addReview('public_destination_backups', () => reviewDestinationBackups(desktop, fixture));
+    addReview('proxy_transport', () => verifyAcceptanceProxy(proxy));
     const result = await independentReviews(reviews, async (_, error) => {
       await failureDiagnostics(desktop, stage, error);
     });
