@@ -39,7 +39,10 @@ und `SUBSCRIBERSECRET`. Der Sender benötigt eine aktive eigene Typ-C-Destinatio
 mit Verwaltungsrechten und bereits freigegebenen Metadatenversionen 2.0.0 und 3.0.0.
 Der Subscriber benötigt Destination-Verwaltung und Empfang. Die vorhandene
 Sender-Destination wird nicht verändert. Alle Schreibtests verwenden fiktive Daten
-und eine eigens angelegte TEST-Destination. Diese wird anschließend deaktiviert.
+und eine eigens angelegte TEST-Destination. Die Sicherungsprobe legt zusätzlich
+eine unaktivierte Kopie für den Anlageassistenten und die gemeinsame Bearbeitung an.
+Die Kopie wird anschließend gelöscht. Die aktivierte Empfangs-Destination wird
+deaktiviert und bleibt bis zum serverseitig vorgegebenen Löschtermin erhalten.
 Die früheste Löschung nach `canBeDecommissionedAt` sowie Eigentümer und Zustand
 vor einer späteren Löschung erneut prüfen. Schlüssel und Sicherungen werden nicht hochgeladen.
 
@@ -51,14 +54,17 @@ Bearbeitungen betreffen ausschließlich die neue Test-Destination.
 | --- | --- |
 | Ohne `validation_run` | Nur nativer Kern, keine installierte Oberfläche |
 | `ui_probe=true` | App-Start, reguläres Fensterschließen mit Neustart und NVDA ohne TEST-Zugänge. Standardmodus: native Dateiexporte, bei lokalem Scanner auch Start und Signaturupdate-Abbruch. Online-Modus siehe unten. |
-| `ui_only=true` | Vollständige installierte Client-Abnahme mit echter TEST-Verbindung und validiertem Installer. Die separate SDK-Matrix wird ausdrücklich nicht ausgeführt. |
-| `review_only=true` | Neue 0.3-Oberflächenfunktionen und vollständiger nativer TEST-Austausch |
+| `ui_only=true` | Installierter Client mit echter TEST-Verbindung und validiertem Installer. Die separate SDK-Matrix entfällt. Ohne `review_only` läuft die vollständige Oberflächenabnahme. |
+| `review_only=true` | Vertiefte Oberflächenprüfung einschließlich Sicherungen, Testserien und gespeicherter Abläufe. Die ersten Standardrunden entfallen. Der native TEST-Austausch bleibt aktiv, sofern `ui_only` nicht gesetzt ist. |
 | Keine Umfangsbeschränkung | Separate SDK-Matrix und vollständige Oberflächenabnahme des angegebenen Installers |
 
 `ui_only` benötigt eine gültige `validation_run` und ist nicht mit `ui_probe`
 kombinierbar. Die Ausgabe benennt den begrenzten Umfang ausdrücklich. Ein Fehler in
 der normalen SDK-Matrix bleibt ein Fehler und wird nicht automatisch wiederholt.
 Getrennte Läufe helfen, Plattformstörungen von der Client-Abnahme zu unterscheiden.
+Unabhängige Funktionsgruppen werden auch nach einem Fehler weiter geprüft.
+Der Abschlussbericht nennt bestandene und fehlgeschlagene Gruppen. Bereits ein
+Fehler lässt den Gesamtlauf scheitern. Ungewisse Schreibversuche werden nicht wiederholt.
 
 Mit `online_scanner=true` beginnt die Oberfläche ohne installierte Scanner-Komponente.
 Die Abnahme prüft Online-Einrichtung, ausdrücklichen Abbruch und erneuten Versuch.

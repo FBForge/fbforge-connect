@@ -250,8 +250,10 @@ async function verifiedLog(engine, command, fields, expectedEvent = null) {
     if (expectedEvent) requireCheck(found, 'receipt_event_missing');
   }
 }
-async function exchange(api, format, withProcess = false, receiptAction = 'accept') {
+async function exchange(api, format, withProcess = false, receiptAction = 'accept', continuationCase = null) {
+  requireCheck(!continuationCase || api === 'v3', 'case_continuation_requires_v3');
   stage = `${api}_${withProcess ? 'process' : format}${receiptAction === 'reject' ? '_reject' : ''}`;
+  if (continuationCase) stage += '_continuation';
   let sender = await openNativeSession('sender', api);
   const receiver = api === 'v3' ? receiverV3 : await openNativeSession('subscriber', api);
   if (api === 'v2') await restore(receiver, 'subscriber-v3', (item) => Boolean(item.destinationKey));
@@ -280,7 +282,7 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
     region: 'DE',
     schemaUri,
     mimeType,
-    caseId: null,
+    caseId: continuationCase,
     processMessage: withProcess ? requestMessage : null,
     replyOffer: {
       schemaUri: replyUri,
@@ -303,6 +305,7 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
   await checkpoint(sender);
   if (sent.status !== 'sent') console.log(`Send failure ${api}: ${JSON.stringify(sent.diagnostics || [])}`);
   requireCheck(sent.status === 'sent', `submission_${sent.status}`);
+  requireCheck(!continuationCase || sent.caseId === continuationCase, 'case_continuation_changed_case');
   await archivedCopy(sender, sent.submissionId, 'sent', 'submission', data, attachment, 'sent');
   console.log(`${stage}: one native send confirmed; exact local send snapshot verified`);
   const localSchemas = xml ? [{ uri: xmlUri, contentId: await upload(receiver, xmlSchema) }] : [];
@@ -449,6 +452,7 @@ async function exchange(api, format, withProcess = false, receiptAction = 'accep
     receiver.native.close();
     engines.delete(receiver.native);
   }
+  return { caseId: sent.caseId, submissionId: sent.submissionId, replyId: reply.replyId };
 }
 async function prepareReplySource() {
   stage = 'source_metadata_setup';
@@ -665,7 +669,16 @@ try {
   const completedScope = await exerciseAcceptance(scope, {
     native: async () => {
       for (const api of ['v2', 'v3']) for (const format of ['json', 'xml']) await exchange(api, format);
-      await exchange('v3', 'json', true);
+      const firstProcess = await exchange('v3', 'json', true);
+      const continuation = await exchange('v3', 'json', true, 'accept', firstProcess.caseId);
+      requireCheck(
+        continuation.submissionId !== firstProcess.submissionId &&
+          continuation.replyId !== firstProcess.replyId,
+        'case_continuation_reused_message',
+      );
+      console.log(
+        'Real TEST v3: two separately confirmed process exchanges retained one case after receipts and session restart',
+      );
       await exchange('v3', 'json', false, 'reject');
       stage = 'sender_destination_restriction';
       await probeSenderRestrictions({
