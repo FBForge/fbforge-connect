@@ -42,7 +42,19 @@ test('JSON and inherited XML display types format only proven values and preserv
 test('inline reading preserves a selected file and editing text, and never prepares a send', async ({
   page,
 }) => {
-  await page.goto('http://127.0.0.1:1420/test-fixtures/sending.html');
+  // A module can still be initializing after the document's load event.
+  // Exercise that case explicitly instead of relying on a warm Vite cache.
+  await page.route('**/test-fixtures/sending.html', async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text()).replace(
+      '<script type="module">',
+      '<script type="module">await new Promise(resolve => setTimeout(resolve, 200));',
+    );
+    await route.fulfill({ response, body: html });
+  });
+  await page.goto('http://127.0.0.1:1420/test-fixtures/sending.html', { waitUntil: 'commit' });
+  // This field is rendered only after the fixture has installed its native bridge.
+  await expect(page.locator('#send-target')).toBeVisible();
   await page.evaluate(() => {
     window.__inlineCalls = [];
     const original = window.__TAURI_INTERNALS__.invoke;
