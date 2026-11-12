@@ -53,9 +53,7 @@ pub struct Profile {
 impl Drop for Profile {
     fn drop(&mut self) {
         // Best effort: allocator/serialization copies cannot all be guaranteed erased.
-        unsafe {
-            self.client_secret.as_bytes_mut().fill(0);
-        }
+        wipe_string(&mut self.client_secret);
         for item in &mut self.keys {
             wipe(item);
         }
@@ -63,12 +61,16 @@ impl Drop for Profile {
 }
 fn wipe(value: &mut serde_json::Value) {
     match value {
-        serde_json::Value::String(text) => unsafe {
-            text.as_bytes_mut().fill(0);
-        },
+        serde_json::Value::String(text) => wipe_string(text),
         serde_json::Value::Array(items) => items.iter_mut().for_each(wipe),
         serde_json::Value::Object(items) => items.values_mut().for_each(wipe),
         _ => {}
+    }
+}
+pub(crate) fn wipe_string(value: &mut String) {
+    // Best effort, like Profile::drop. Serialization and allocator copies cannot all be erased.
+    unsafe {
+        value.as_bytes_mut().fill(0);
     }
 }
 #[derive(Serialize)]

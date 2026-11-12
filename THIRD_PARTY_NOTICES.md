@@ -23,6 +23,8 @@ Für Apache-2.0 liegt der vollständige Lizenztext unter `licenses/Apache-2.0.tx
 
 Die Lizenz- und Copyright-Texte der neuen nativen Update-Komponenten einschließlich
 ring sind in `licenses/native-updates.txt` und unter „Einstellungen“ enthalten.
+ring übernimmt außerdem die AES-GCM-Verschlüsselung, Passwortableitung und
+Zufallswerte für portable Zustellpunkt-Sicherungen.
 
 ## Optionale ClamAV-Komponente (ab 0.3.0)
 

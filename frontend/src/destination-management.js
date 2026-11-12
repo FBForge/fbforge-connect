@@ -1,5 +1,6 @@
 import { parseOffers, validOffers } from './destination-offers.js';
 import { requestResource } from './resources.js';
+import { destinationExtraFields, validDestinationExtras } from './destination-extras.js';
 
 const uuid = (value) =>
   typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -131,11 +132,13 @@ export function checkedPreview(data, expectedId, expectedRows) {
             'metadataVersions',
             'publicServices',
             'processMessages',
+            ...destinationExtraFields,
           ].includes(key),
       )
     )
       fail();
     for (const [key, value] of Object.entries(after)) {
+      if (destinationExtraFields.includes(key) && !validDestinationExtras({ [key]: value })) fail();
       if (key === 'name' && (!text(value, 256) || !value.trim() || !text(before.name, 512, true))) fail();
       if (key === 'status' && (!['active', 'inactive'].includes(value) || !text(before.status, 64, true)))
         fail();
@@ -189,6 +192,7 @@ export async function prepareDestinationUpdate(invoke, session, destinationIds, 
           'metadataVersions',
           'publicServices',
           'processMessages',
+          ...destinationExtraFields,
         ].includes(key),
     )
   )
@@ -196,6 +200,7 @@ export async function prepareDestinationUpdate(invoke, session, destinationIds, 
   const ids = destinationIds.map(id);
   if (
     new Set(ids).size !== ids.length ||
+    !validDestinationExtras(changes) ||
     (Object.hasOwn(changes, 'name') && (!text(changes.name, 256) || !changes.name.trim())) ||
     (Object.hasOwn(changes, 'status') && !['active', 'inactive'].includes(changes.status)) ||
     (Object.hasOwn(changes, 'metadataVersions') &&
@@ -207,10 +212,11 @@ export async function prepareDestinationUpdate(invoke, session, destinationIds, 
     (Object.hasOwn(changes, 'contactInformation') &&
       (!object(changes.contactInformation) ||
         !Object.keys(changes.contactInformation).length ||
-        Object.entries(changes.contactInformation).some(
-          ([key, value]) =>
-            !contactFields.includes(key) ||
-            !text(value, key === 'address' ? 2048 : 256, true, key === 'address'),
+        Object.entries(changes.contactInformation).some(([key, value]) =>
+          key === 'cc'
+            ? !(value === null || list(value))
+            : !contactFields.includes(key) ||
+              !text(value, key === 'address' ? 2048 : 256, true, key === 'address'),
         )))
   )
     throw new Error('invalid_input');

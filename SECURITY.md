@@ -15,7 +15,25 @@ gespeicherter Profile werden standardmäßig dauerhaft aufbewahrt. Die Auswahl
 lässt sich pro Profil und API abwählen. Tokens werden nicht gespeichert.
 Profilsicherungen enthalten weder Vorgänge noch Profil-Arbeitsdaten.
 
-Downloads und exportierte Pakete, Abläufe, Vorlagen und Berichte sind unverschlüsselt.
+Zustellpunkt-Sicherungen liegen separat mit Profil- und Umgebungsbindung unter
+Windows-DPAPI. Sie enthalten die eigene Destination-Konfiguration, registrierte
+öffentliche Schlüssel und im verbundenen Profil beziehungsweise dessen Sitzung
+vorhandene passende private Schlüssel. OAuth-Zugangsdaten, Tokens, Antragsinhalte
+und Antwortkanal-Schlüssel werden nicht übernommen. Die API liefert keine
+privaten Schlüssel und kein bereits gesetztes Callback-Secret zurück.
+
+Die ausdrücklich exportierte `.fcdestination`-Datei ist für andere Rechner
+passwortverschlüsselt. Format v1 verwendet AES-256-GCM und PBKDF2-HMAC-SHA256 mit
+600.000 Iterationen, zufälligem 128-Bit-Salt und 96-Bit-Nonce je Export.
+Kennung, Salt und Nonce werden authentifiziert. Datei und Klartext sind begrenzt.
+Falsches Passwort und beschädigte verschlüsselte Daten werden gleichermaßen
+abgewiesen. Die Entschlüsselung und Übertragung privater Schlüssel erfolgt
+ausschließlich zwischen Rust und Java. Ein Import ersetzt keine vorhandene
+Sicherung und führt keine Serveränderung aus. Ein neues Profil benötigt eigene
+Zugangsdaten. Zertifikate und Schlüssel werden vor einer Wiederverwendung erneut
+geprüft. Dateipasswörter werden nicht gespeichert.
+
+Inhaltsdownloads und exportierte Testpakete, Abläufe, Konfigurationsvorlagen und Berichte sind unverschlüsselt.
 Ergebnisexporte nehmen verglichene Feldwerte erst nach ausdrücklicher Auswahl auf.
 Sie bleiben beim Löschen eines Profils bestehen. DPAPI schützt nicht vor Schadsoftware
 unter demselben Benutzerkonto. Die Vorgangsablage ist kein revisionssicheres Archiv.

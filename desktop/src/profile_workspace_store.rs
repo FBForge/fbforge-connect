@@ -28,8 +28,8 @@ pub fn valid_changes(value: &Value) -> bool {
     let Some(fields) = value.as_object() else {
         return false;
     };
-    !fields.is_empty() && fields.len() <= 6 && serde_json::to_vec(value).is_ok_and(|v| v.len() <= 24 * 1024)
-        && fields.keys().all(|k| ["name", "status", "contactInformation", "metadataVersions", "publicServices", "processMessages"].contains(&k.as_str()))
+    !fields.is_empty() && fields.len() <= 9 && serde_json::to_vec(value).is_ok_and(|v| v.len() <= 24 * 1024)
+        && fields.keys().all(|k| ["name", "status", "contactInformation", "metadataVersions", "publicServices", "processMessages", "callback", "senderAccessRestricted", "publicForRouting"].contains(&k.as_str()))
         // Nested keys are public configuration fields only; imported credentials/keys are never retained.
         && public_tree(value, 0)
 }
@@ -65,9 +65,18 @@ fn public_tree(value: &Value, depth: usize) -> bool {
                         "processModelId",
                         "messageId",
                         "schemas",
+                        "callback",
+                        "url",
+                        "senderAccessRestricted",
+                        "allowedSenders",
+                        "allowedSenderDestinations",
+                        "enabled",
+                        "publicForRouting",
                     ]
                     .contains(&key.as_str())
-                        && public_tree(v, depth + 1)
+                        && (matches!(key.as_str(), "enabled" | "publicForRouting")
+                            && v.is_boolean()
+                            || public_tree(v, depth + 1))
                 })
         }
         Value::Array(values) => {

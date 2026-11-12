@@ -1,6 +1,17 @@
 //! Protocol and storage tests runnable without WebView/GTK build dependencies.
 #[path = "../src/command_error.rs"]
 pub mod command_error;
+#[path = "../src/destination_backup_model.rs"]
+pub mod destination_backup_model;
+#[path = "../src/destination_backup_store.rs"]
+pub mod destination_backup_store;
+#[cfg(test)]
+#[path = "../src/destination_backup_tests.rs"]
+mod destination_backup_tests;
+#[path = "../src/destination_backup_transfer.rs"]
+pub mod destination_backup_transfer;
+#[path = "../src/portable_archive.rs"]
+pub mod portable_archive;
 #[path = "../src/protocol.rs"]
 pub mod protocol;
 #[path = "../src/vault.rs"]

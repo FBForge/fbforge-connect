@@ -1029,6 +1029,7 @@ dependencies = [
  "base64 0.22.1",
  "minisign-verify",
  "reqwest",
+ "ring",
  "rustls",
  "semver",
  "serde",

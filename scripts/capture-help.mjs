@@ -5,6 +5,7 @@ import { xmlPacket } from '../frontend/test-fixtures/xml-message-schema.js';
 import { openBatch, id as batchId } from '../frontend/test-fixtures/message-batch.js';
 import { captureScenarioHelp } from './capture-scenario-help.mjs';
 import { captureSdkHelp } from './capture-sdk-help.mjs';
+import { captureDestinationBackups } from './capture-destination-backups.mjs';
 
 const output = process.argv[2];
 if (!output || process.argv.length !== 3)
@@ -31,6 +32,7 @@ const capture = async (name, anchor) => {
   captures.add(name);
 };
 try {
+  await captureDestinationBackups({ page, open, button, capture });
   await captureSdkHelp({ page, open, button, capture });
   await open('test-fixtures/application-view.html?app=1');
   await button('Einstellungen').click();

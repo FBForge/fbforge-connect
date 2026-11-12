@@ -28,7 +28,12 @@ final class DestinationManagement {
 
     record Preview(String attemptId, String status, List<Change> changes) {}
 
-    private record Pending(String id, JsonObject snapshot, JsonObject patch, Change view) {}
+    private record Pending(String id, JsonObject snapshot, JsonObject patch, Change view) {
+        @Override
+        public String toString() {
+            return "Pending[destinationId=" + id + "]";
+        }
+    }
 
     private final ApiVersion api;
     private final ResourceExchange remote;
@@ -37,7 +42,7 @@ final class DestinationManagement {
     private Preview state = new Preview(null, "idle", List.of());
     private long expires;
     private static final Set<String> CONTACT =
-            Set.of("legalName", "address", "phone", "email", "unit");
+            Set.of("legalName", "address", "phone", "email", "unit", "cc");
 
     DestinationManagement(ApiVersion api, ResourceExchange remote) {
         this(api, remote, () -> System.nanoTime() / 1_000_000);
@@ -106,7 +111,10 @@ final class DestinationManagement {
                                 "contactInformation",
                                 "metadataVersions",
                                 "publicServices",
-                                "processMessages")
+                                "processMessages",
+                                "callback",
+                                "senderAccessRestricted",
+                                "publicForRouting")
                         .containsAll(changes.keySet())) throw error("invalid_input");
         var rows = new ArrayList<Pending>();
         var seen = new HashSet<String>();
@@ -134,7 +142,7 @@ final class DestinationManagement {
                             id,
                             optional(snapshot, "name"),
                             before.toString(),
-                            patch.toString(),
+                            DestinationExtras.readable(patch).toString(),
                             patch.isEmpty() ? "unchanged" : "prepared",
                             null);
             rows.add(new Pending(id, snapshot, patch, row));
@@ -183,12 +191,15 @@ final class DestinationManagement {
             var next = contact(current);
             for (String field : updates.keySet()) {
                 var value = updates.get(field);
-                if (!value.isJsonNull())
+                if (field.equals("cc") && !value.isJsonNull())
+                    DestinationConfiguration.strings(value, 10, 256);
+                else if (!value.isJsonNull())
                     text(value, field.equals("address") ? 2048 : 256, field.equals("address"));
                 next.add(field, value);
             }
             result.add("contactInformation", next);
         }
+        DestinationExtras.copy(changes, result, current);
         if (changes.has("publicServices") || changes.has("processMessages")) {
             for (String field : List.of("publicServices", "processMessages"))
                 if (changes.has(field)) {
@@ -337,7 +348,8 @@ final class DestinationManagement {
                         if (!normalizedReplyStandards(returned)
                                 .equals(normalizedReplyStandards(intended)))
                             throw error("invalid_resource");
-                    } else if (!Objects.equals(row.patch().get(field), result.get(field)))
+                    } else if (!Objects.equals(
+                            DestinationExtras.readable(row.patch()).get(field), result.get(field)))
                         throw error("invalid_resource");
                 }
                 rows.set(i, outcome(row.view(), "updated", null));

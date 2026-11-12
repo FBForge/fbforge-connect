@@ -28,7 +28,7 @@ import { errorMessage } from './diagnostics.js';
 import DestinationKeys from './DestinationKeys.vue';
 const ProcessWorkspace = defineAsyncComponent(() => import('./ProcessWorkspace.vue'));
 import { processWorkspaceKey, createProcessWorkspace } from './process-context.js';
-import DestinationManager from './DestinationManager.vue';
+const DestinationManager = defineAsyncComponent(() => import('./DestinationManager.vue'));
 import SubmissionSender from './SubmissionSender.vue';
 import { useFileNavigationGuard } from './app/useFileNavigationGuard.js';
 import { useFlowContext } from './app/useFlowContext.js';

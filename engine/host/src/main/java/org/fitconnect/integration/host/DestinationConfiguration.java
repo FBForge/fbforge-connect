@@ -20,7 +20,10 @@ final class DestinationConfiguration {
                     "processMessages");
 
     static JsonObject create(JsonObject choices, String encryptionKey, String signingKey) {
-        if (!choices.keySet().equals(CONFIG_FIELDS)) throw invalid();
+        var allowed = new HashSet<>(CONFIG_FIELDS);
+        allowed.addAll(DestinationExtras.FIELDS);
+        if (!choices.keySet().containsAll(CONFIG_FIELDS) || !allowed.containsAll(choices.keySet()))
+            throw invalid();
         text(choices.get("name"), 256);
         String type = text(choices.get("type"), 1);
         if (!Set.of("A", "C").contains(type)) throw invalid();
@@ -45,7 +48,8 @@ final class DestinationConfiguration {
             result.add("signingPublicKey", signing);
         }
         // A new TEST destination is not advertised via the public routing directory by default.
-        result.addProperty("publicForRouting", false);
+        if (!result.has("publicForRouting")) result.addProperty("publicForRouting", false);
+        DestinationExtras.copy(choices, result, null);
         if (result.toString().getBytes(StandardCharsets.UTF_8).length > 44000)
             throw new SessionException("content_limit");
         return result;

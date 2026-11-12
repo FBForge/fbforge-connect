@@ -2,6 +2,8 @@
 
 ## 0.4.0 (unveröffentlicht)
 
+- Zustellpunkte mit ihrer Konfiguration und verfügbaren privaten Schlüsseln geschützt im Profil sichern. Passwortverschlüsselte Dateien lassen sich auch auf anderen Rechnern importieren. Sicherungen können die Anlage einer neuen Destination oder die Bearbeitung einer bestehenden eigenen Destination vorbereiten. Fehlende Schlüssel bleiben sichtbar. Schlüsselwiederverwendung ist ausdrücklich wählbar und wird erneut geprüft. Vorschau und Bestätigung bleiben vor Serveränderungen erforderlich.
+
 - Konkrete SDK-Fehler beim Abrufen und Prüfen von Einreichungen, Antworten und Event Logs anzeigen. „Technische Fehlerangaben“ enthält Prüfphase, Fehlertyp und kopierbare SDK-Meldungen, etwa bei einem nicht angebotenen Antwortkanal. Der lokale technische Verlauf erhält dieselben Meldungen. Der standardmäßige Diagnoseexport lässt sie aus. Fehlgeschlagene Prüfungen geben weiterhin keine Inhalte oder Annahme frei.
 
 - Geführte Integrationstests für externe Onlinedienste und Fachverfahren oder beide Seiten in Connect. Vorlagen für Annahme, Ablehnung, Antworten und Nachforderung/Nachreichung.

@@ -303,6 +303,17 @@ final class Engine implements AutoCloseable {
                                             version,
                                             values.get("sessionId"),
                                             values.get("archiveDocument"));
+                            case "export_destination_item" ->
+                                    sessions.exportDestinationItem(
+                                            version,
+                                            values.get("sessionId"),
+                                            values.get("destinationId"),
+                                            offset);
+                            case "import_backup_bundle" ->
+                                    sessions.importBackupBundle(
+                                            version,
+                                            values.get("sessionId"),
+                                            values.get("keyDocument"));
                             case "export_session_item" ->
                                     sessions.exportSessionItem(
                                             version, values.get("sessionId"), offset);

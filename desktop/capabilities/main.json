@@ -120,6 +120,7 @@
     "allow-export-message",
     "allow-finish-message-export",
     "allow-profile-workspace",
+    "allow-destination-backups",
     "allow-configure-malware-scanner",
     "allow-malware-scanner-state",
     "allow-local-scanner-status",

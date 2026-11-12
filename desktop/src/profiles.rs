@@ -193,6 +193,21 @@ pub async fn forget_profile(
         }
         std::fs::remove_dir_all(workspace).map_err(|_| "vault_unavailable")?;
     }
+    let backups = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "vault_unavailable")?
+        .join("destination-backups")
+        .join(&profile_id);
+    if backups.try_exists().map_err(|_| "vault_unavailable")? {
+        if !std::fs::symlink_metadata(&backups)
+            .map_err(|_| "vault_unavailable")?
+            .is_dir()
+        {
+            return Err("vault_invalid");
+        }
+        std::fs::remove_dir_all(backups).map_err(|_| "vault_unavailable")?;
+    }
     vault(&app)?.forget(&profile_id)?;
     bindings.retain(|_, binding| binding.profile_id != profile_id);
     state

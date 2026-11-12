@@ -75,6 +75,41 @@ final class SessionContent {
         return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
     }
 
+    Data<?> exportDestinationItem(ApiVersion version, String id, String destination, int offset) {
+        var entry = this.state.find(version, id);
+        if (version != ApiVersion.V3) throw new SessionException("invalid_input");
+        var data =
+                this.state.registry.withSession(
+                        version,
+                        entry.session(),
+                        session ->
+                                this.state
+                                        .destinationArchives
+                                        .computeIfAbsent(
+                                                id, ignored -> new DestinationBackupSource())
+                                        .read(
+                                                session,
+                                                this.state.localKeys.get(id),
+                                                destination,
+                                                offset));
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
+    }
+
+    Data<?> importBackupBundle(ApiVersion version, String id, String document) {
+        var entry = this.state.find(version, id);
+        if (version != ApiVersion.V3) throw new SessionException("invalid_input");
+        var data =
+                this.state.registry.withSession(
+                        version,
+                        entry.session(),
+                        session ->
+                                this.state
+                                        .localKeys
+                                        .computeIfAbsent(id, ignored -> new LocalTestKeys())
+                                        .importBackup(session, document));
+        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
+    }
+
     Data<?> exportSessionItem(ApiVersion version, String id, int offset) {
         var entry = this.state.find(version, id);
         return new Data<>(

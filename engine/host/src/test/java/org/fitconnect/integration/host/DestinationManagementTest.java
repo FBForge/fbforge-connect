@@ -66,7 +66,9 @@ class DestinationManagementTest {
             String id = url.substring(url.lastIndexOf('/') + 1);
             calls.add("GET " + id);
             if (!documents.containsKey(id)) throw new SessionException("resource_denied", 403);
-            return documents.get(id).toString();
+            var readable = documents.get(id).deepCopy();
+            if (readable.get("callback") instanceof JsonObject callback) callback.remove("secret");
+            return readable.toString();
         }
 
         public Response request(
@@ -93,15 +95,54 @@ class DestinationManagementTest {
                                     "metadataVersions",
                                     "status",
                                     "publicServices",
-                                    "processMessages")
+                                    "processMessages",
+                                    "callback",
+                                    "senderAccessRestricted",
+                                    "publicForRouting")
                             .containsAll(patch.keySet()));
             patch.entrySet()
                     .forEach(entry -> documents.get(id).add(entry.getKey(), entry.getValue()));
             if (patches.size() == uncertainAt) throw new SessionException("resource_unavailable");
             var response = documents.get(id).deepCopy();
+            if (response.get("callback") instanceof JsonObject callback) callback.remove("secret");
             response.addProperty("futureReadOnlyField", "retained by server");
             normalizeResponse.accept(response);
             return new Response(200, response.toString());
+        }
+    }
+
+    @Test
+    void backupExtrasUseTheSdkAndKeepCallbackSecretsOutOfPreviewsAndHistory() throws Exception {
+        var remote = new Remote();
+        var manager = new DestinationManagement(ApiVersion.V3, remote);
+        String secret = "synthetic-callback-secret-of-at-least-32-characters";
+        try (var registry = registry();
+                var session = session(registry, ApiVersion.V3, remote)) {
+            String extras =
+                    "{\"publicForRouting\":true,\"callback\":{\"url\":\"https://example.invalid/new\",\"secret\":\""
+                            + secret
+                            + "\"},\"senderAccessRestricted\":{\"enabled\":true,\"allowedSenders\":[],\"allowedSenderDestinations\":[\""
+                            + B
+                            + "\"]}}";
+            var preview = manager.prepare(session, request(extras, A));
+            assertFalse(new Gson().toJson(preview).contains(secret));
+            assertEquals(0, remote.patches.size());
+            var result = manager.execute(session, preview.attemptId());
+            assertEquals("completed", result.status(), result.toString());
+            assertEquals("updated", result.changes().getFirst().status());
+            assertFalse(new Gson().toJson(result).contains(secret));
+            assertTrue(remote.patches.getFirst().contains(secret));
+            assertEquals("keep-key", remote.documents.get(A).get("encryptionKid").getAsString());
+            assertThrows(
+                    SessionException.class,
+                    () ->
+                            manager.prepare(
+                                    session,
+                                    request(
+                                            "{\"senderAccessRestricted\":{\"enabled\":true,\"allowedSenders\":[\""
+                                                    + B
+                                                    + "\"]}}",
+                                            A)));
         }
     }
 

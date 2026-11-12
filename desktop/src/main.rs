@@ -9,12 +9,19 @@ mod test_library_command;
 use documentation::open_documentation;
 mod case_store;
 mod cases;
+mod destination_backup_model;
+mod destination_backup_store;
+#[cfg(test)]
+mod destination_backup_tests;
+mod destination_backup_transfer;
+mod destination_backups;
 mod export_source;
 mod file_save_store;
 mod file_saves;
 mod message_export_store;
 mod message_export_stream;
 mod message_exports;
+mod portable_archive;
 mod profile_backup;
 use cases::case_workspace;
 mod command_error;
@@ -98,6 +105,7 @@ fn main() {
             case_workspace,
             update_profile,
             export_profile_backup,
+            destination_backups::destination_backups,
             import_profile_backup,
             import_profile_backup_file,
             commands::destinations::search_process_destinations,

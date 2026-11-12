@@ -16,7 +16,20 @@ final class DestinationProvisioning {
             String configurationJson,
             String destinationId,
             String error,
-            Integer httpStatus) {}
+            Integer httpStatus) {
+        @Override
+        public String toString() {
+            return "State[status="
+                    + status
+                    + ", destinationId="
+                    + destinationId
+                    + ", error="
+                    + error
+                    + ", httpStatus="
+                    + httpStatus
+                    + "]";
+        }
+    }
 
     private final LocalTestKeys keys;
     private final ResourceExchange remote;
@@ -196,11 +209,15 @@ final class DestinationProvisioning {
             registration.verifyBundle(keys, bundle);
         }
         if (checkConfiguration) {
-            var planned = StrictJson.object(state.configurationJson(), 44000);
+            var planned =
+                    DestinationExtras.readable(StrictJson.object(state.configurationJson(), 44000));
             var observed = new JsonObject();
             for (String field : DestinationConfiguration.CONFIG_FIELDS) {
                 if (!detail.has(field)) throw error("verification_failed");
                 observed.add(field, detail.get(field));
+            }
+            for (String field : DestinationExtras.FIELDS) {
+                if (planned.has(field)) observed.add(field, detail.get(field));
             }
             for (String field :
                     planned.has("encryptionKid")
@@ -215,9 +232,11 @@ final class DestinationProvisioning {
             if (planned.has("signingPublicKey"))
                 observed.add("signingPublicKey", planned.get("signingPublicKey"));
             if (!planned.equals(
-                    StrictJson.object(
-                            session.canonicalDestinationMutation("create", observed.toString()),
-                            44000))) throw error("verification_failed");
+                    DestinationExtras.readable(
+                            StrictJson.object(
+                                    session.canonicalDestinationMutation(
+                                            "create", observed.toString()),
+                                    44000)))) throw error("verification_failed");
         }
     }
 

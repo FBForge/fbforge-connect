@@ -37,6 +37,10 @@ export function useDestinationSetup(props, emit) {
     mime = ref('application/json');
   const replySchema = ref(''),
     compatible = ref(true);
+  const usingBackup = computed(() => Boolean(props.seed?.configuration));
+  const seedOffers = shallowRef({ publicServices: [], processMessages: [] }),
+    seedExtras = shallowRef({}),
+    backupCallback = ref('');
   const bundles = shallowRef([]),
     selectedBundle = ref(''),
     unresolvedBundle = ref(''),
@@ -150,6 +154,8 @@ export function useDestinationSetup(props, emit) {
   watch(
     () =>
       JSON.stringify([
+        seedOffers.value,
+        seedExtras.value,
         name.value,
         legalName.value,
         email.value,
@@ -214,6 +220,29 @@ export function useDestinationSetup(props, emit) {
     return run('Lokale Schlüssel laden', (active, current) => refresh(active, current).then(() => undefined));
   }
   function configuration() {
+    if (usingBackup.value) {
+      const source = props.seed.configuration;
+      return {
+        ...structuredClone(seedExtras.value),
+        name: name.value.trim(),
+        type: kind.value,
+        contactInformation: {
+          ...structuredClone(source.contactInformation),
+          legalName: legalName.value.trim(),
+          email: email.value.trim(),
+          address: address.value.trim(),
+          phone: phone.value.trim(),
+        },
+        metadataVersions:
+          compatible.value === source.metadataVersions.includes('2.0.0')
+            ? [...source.metadataVersions]
+            : compatible.value
+              ? ['2.0.0', '3.0.0']
+              : ['3.0.0'],
+        publicServices: structuredClone(seedOffers.value.publicServices),
+        processMessages: structuredClone(seedOffers.value.processMessages),
+      };
+    }
     const selectedRegions = regions.value
       .split(/[\s,;]+/)
       .filter(Boolean)
@@ -254,6 +283,44 @@ export function useDestinationSetup(props, emit) {
       processMessages,
     };
   }
+  watch(
+    () => props.seed,
+    (seed, previous) => {
+      if (!seed?.configuration) {
+        if (previous) {
+          reset();
+          wizardStep.value = 0;
+          for (const field of [name, legalName, email, address, phone]) field.value = '';
+          kind.value = 'A';
+          compatible.value = true;
+          seedExtras.value = {};
+          backupCallback.value = '';
+        }
+        return;
+      }
+      reset();
+      const source = seed.configuration;
+      name.value = source.name || '';
+      kind.value = source.type;
+      for (const [field, target] of Object.entries({ legalName, email, address, phone }))
+        target.value = source.contactInformation?.[field] || '';
+      seedOffers.value = {
+        publicServices: structuredClone(source.publicServices || []),
+        processMessages: structuredClone(source.processMessages || []),
+      };
+      seedExtras.value = Object.fromEntries(
+        ['publicForRouting', 'senderAccessRestricted']
+          .filter((field) => Object.hasOwn(source, field))
+          .map((field) => [field, structuredClone(source[field])]),
+      );
+      backupCallback.value = source.callback?.url || '';
+      compatible.value = source.metadataVersions.includes('2.0.0');
+      selectedBundle.value = seed.bundleId || '';
+      wizardStep.value = 0;
+      if (seed.bundleId) void loadBundles();
+    },
+    { immediate: true },
+  );
   async function prepare() {
     if (disabled.value || locked.value) return;
     const draft = configuration(),
@@ -372,6 +439,10 @@ export function useDestinationSetup(props, emit) {
     if (ready) emit('receive', target.destinationId);
   }
   return {
+    usingBackup,
+    seedOffers,
+    seedExtras,
+    backupCallback,
     wizardStep,
     form,
     stepNotice,

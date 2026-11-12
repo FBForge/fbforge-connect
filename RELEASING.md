@@ -90,6 +90,13 @@ V-PKI benötigt vollständige Ketten und erreichbare Sperrprüfungen. Außerdem 
   Daten. Fehlgeschlagene oder abgebrochene Downloads dürfen keine Annahme auslösen.
   Vorbereitete Empfangsaktionen gelten höchstens 60 Sekunden.
 - Geschützte Aufbewahrung, Sicherung, Neustart, Tastatur, Skalierung und Screenreader.
+- Zustellpunkt-Sicherung im Windows-Profil anlegen und nach Neustart wieder öffnen.
+  Passwortverschlüsselte `.fcdestination`-Datei exportieren und in ein anderes
+  Profil derselben Umgebung importieren. Falsches Passwort, beschädigte Datei,
+  fehlende Schlüssel und abgebrochene Dateiauswahl prüfen. Anlage mit frischen
+  und bewusst wiederverwendeten Schlüsseln sowie Übernahme in eine bestehende
+  eigene Destination erst nach Vorschau bestätigen. Callback-Secret neu
+  vergeben, Status und Schlüsselwechsel separat prüfen.
 - Geführte Tests mit externer Gegenstelle und mit beiden Connect-Profilen, Übernahme
   aus Vorgängen, Datensätze, abweichende Inhalte und Anlagen, signierte
   Empfangsbestätigungen, Antwortbezüge und v3-Nachreichungen im selben Case.

@@ -54,6 +54,11 @@ export function errorMessage(code) {
     engine_protocol_error: 'Die Antwort des lokalen Java-Kerns ist ungültig.',
     vault_profile_required:
       'Bitte zuerst mit einem gespeicherten Windows-Profil verbinden. Die automatisch erzeugten privaten Schlüssel müssen vor der Registrierung gesichert sein.',
+    backup_invalid: 'Die Zustellpunkt-Sicherung ist ungültig oder beschädigt.',
+    backup_password_invalid: 'Das Dateipasswort muss mindestens 12 Zeichen enthalten.',
+    backup_unlock_failed: 'Die Sicherung konnte nicht entschlüsselt werden. Bitte Passwort und Datei prüfen.',
+    backup_unavailable: 'Die Zustellpunkt-Sicherung konnte nicht gelesen oder gespeichert werden.',
+    backup_keys_missing: 'Das benötigte private Schlüsselpaar ist nicht vollständig gesichert.',
     vault_unavailable:
       'Der geschützte Windows-Speicher ist nicht verfügbar. Bitte das Benutzerkonto und den freien Speicherplatz prüfen.',
     vault_pending:
@@ -117,6 +122,11 @@ export function errorMessage(code) {
 
 // Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
 const reportableCodes = new Set([
+  'backup_invalid',
+  'backup_password_invalid',
+  'backup_unlock_failed',
+  'backup_unavailable',
+  'backup_keys_missing',
   ...Object.keys(receiveFailures),
   'export_failed',
   'export_expired',

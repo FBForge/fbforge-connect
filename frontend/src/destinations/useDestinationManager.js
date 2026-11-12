@@ -1,6 +1,7 @@
 import { destinationEditChanges } from './edit-changes.js';
+import { backupExtraChanges } from '../destination-extras.js';
 import { cancelledProductionAction } from '../environments.js';
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, shallowRef, computed, watch, nextTick } from 'vue';
 import { invoke } from '../native.ts';
 import { listDestinations } from '../resources.js';
 import {
@@ -31,6 +32,8 @@ export function useDestinationManager(props, emit) {
   let returnTarget;
   const offersEnabled = ref(false),
     offers = ref({ publicServices: [], processMessages: [] });
+  const backupExtras = shallowRef({});
+  const backupCallback = ref('');
   const nameEnabled = ref(false),
     name = ref('{name}'),
     statusEnabled = ref(false),
@@ -48,7 +51,7 @@ export function useDestinationManager(props, emit) {
     () => props.session?.apiVersion === 'v3' && page.value?.canManageDestinations !== false && !denied.value,
   );
   const locked = computed(() => preview.value?.status === 'uncertain');
-  const changes = computed(() =>
+  const baseChanges = computed(() =>
     destinationEditChanges({
       baseline:
         selected.value.length === 1 && detail.value?.destinationId === selected.value[0].destinationId
@@ -67,6 +70,18 @@ export function useDestinationManager(props, emit) {
       },
     }),
   );
+  const changes = computed(() => ({
+    ...baseChanges.value,
+    ...Object.fromEntries(Object.entries(backupExtras.value).filter(([key]) => key !== 'contactInformation')),
+    ...(backupExtras.value.contactInformation
+      ? {
+          contactInformation: {
+            ...baseChanges.value.contactInformation,
+            cc: backupExtras.value.contactInformation.cc,
+          },
+        }
+      : {}),
+  }));
   const labels = {
     publicServices: 'Leistungen und Antwortschemata',
     processMessages: 'Prozessnachrichten',
@@ -79,6 +94,9 @@ export function useDestinationManager(props, emit) {
     email: 'E-Mail',
     unit: 'Organisationseinheit',
     cc: 'Kopie an',
+    callback: 'Callback',
+    senderAccessRestricted: 'Absenderbeschränkung',
+    publicForRouting: 'Im TEST-Routing sichtbar',
   };
   const statuses = {
     prepared: 'Zur Bestätigung',
@@ -192,6 +210,8 @@ export function useDestinationManager(props, emit) {
     if (!checked) selected.value = selected.value.filter((item) => item.destinationId !== row.destinationId);
   }
   function resetFields() {
+    backupExtras.value = {};
+    backupCallback.value = '';
     offersEnabled.value = false;
     nameEnabled.value = false;
     name.value = '{name}';
@@ -236,6 +256,8 @@ export function useDestinationManager(props, emit) {
     if (!canEdit.value || locked.value) return;
     if (selected.value.length > 1) return editSelection();
     if (view.value === 'list') returnTarget = `[data-edit-destination="${row.destinationId}"]`;
+    backupExtras.value = {};
+    backupCallback.value = '';
     await run('Eigene Destination öffnen', async (active, current) => {
       const result = await loadManagedDestination(invoke, active, row.destinationId);
       if (!current()) return;
@@ -292,6 +314,9 @@ export function useDestinationManager(props, emit) {
     error.value = '';
     resetFields();
     prefillSingle();
+    const extra = backupExtraChanges(value);
+    backupExtras.value = extra.changes;
+    backupCallback.value = extra.callback;
     if (Object.hasOwn(value, 'name')) {
       nameEnabled.value = true;
       name.value = value.name;
@@ -377,7 +402,9 @@ export function useDestinationManager(props, emit) {
           ? 'Nicht gesetzt'
           : Array.isArray(value)
             ? value.join(', ')
-            : String(value);
+            : typeof value === 'object'
+              ? JSON.stringify(value, null, 2)
+              : String(value);
     for (const [key, value] of Object.entries(row.after)) {
       if (['publicServices', 'processMessages'].includes(key)) continue;
       if (key === 'contactInformation')
@@ -386,6 +413,12 @@ export function useDestinationManager(props, emit) {
           if (JSON.stringify(old ?? null) !== JSON.stringify(next))
             result.push({ field: labels[field], before: show(old), after: show(next) });
         }
+      else if (key === 'callback')
+        result.push({
+          field: labels[key],
+          before: row.before.callback?.url || 'Kein Callback',
+          after: value ? `${value.url} · mit neu vorgemerktem Secret` : 'Callback entfernen',
+        });
       else result.push({ field: labels[key], before: show(row.before[key]), after: show(value) });
     }
     return result;
@@ -407,6 +440,8 @@ export function useDestinationManager(props, emit) {
     listHeading,
     offersEnabled,
     offers,
+    backupExtras,
+    backupCallback,
     nameEnabled,
     name,
     statusEnabled,

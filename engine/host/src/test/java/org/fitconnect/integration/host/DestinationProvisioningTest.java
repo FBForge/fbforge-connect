@@ -84,6 +84,7 @@ class DestinationProvisioningTest {
 
     private static final class Remote implements ResourceExchange {
         int writes, reads;
+        boolean expectedRouting;
         String fault = "";
         JsonObject destination;
         JsonArray keys;
@@ -100,7 +101,7 @@ class DestinationProvisioningTest {
                     "Owned creation verification must authenticate, including key reads");
             if (destination == null) throw new SessionException("resource_missing");
             if (fault.equals("readback-denied")) throw new SessionException("resource_denied", 403);
-            if (url.equals(ROOT + "/" + DEST)) return destination.toString();
+            if (url.equals(ROOT + "/" + DEST)) return readable();
             if (url.equals(ROOT + "/" + DEST + "/keys?offset=0&limit=50")) {
                 var page = new JsonObject();
                 page.addProperty("count", keys.size());
@@ -121,7 +122,7 @@ class DestinationProvisioningTest {
             if (fault.equals("rejected")) throw new SessionException("resource_unavailable", 422);
             var input = StrictJson.object(body, 65536);
             assertEquals("created", input.get("status").getAsString());
-            assertFalse(input.get("publicForRouting").getAsBoolean());
+            assertEquals(expectedRouting, input.get("publicForRouting").getAsBoolean());
             keys = new JsonArray();
             boolean senderOnly = "C".equals(input.get("type").getAsString());
             if (senderOnly) {
@@ -150,7 +151,57 @@ class DestinationProvisioningTest {
                 destination.addProperty("encryptionKid", UUID.randomUUID().toString());
             if (fault.equals("wrong-configuration"))
                 destination.addProperty("name", "Extern geändert");
-            return new Response(201, destination.toString());
+            return new Response(201, readable());
+        }
+
+        private String readable() {
+            var value = destination.deepCopy();
+            if (value.get("callback") instanceof JsonObject callback) callback.remove("secret");
+            return value.toString();
+        }
+    }
+
+    @Test
+    void backupOptionsReachTheSdkAndCreationVerifiesTheReadableCallbackWithoutLeakingItsSecret()
+            throws Exception {
+        var remote = new Remote();
+        remote.expectedRouting = true;
+        try (var adapters = registry();
+                var session = session(adapters, remote)) {
+            var keys = new LocalTestKeys();
+            String bundle = setup(keys, adapters, session);
+            var request = JsonParser.parseString(choices(bundle)).getAsJsonObject();
+            var config = request.getAsJsonObject("configuration");
+            config.addProperty("publicForRouting", true);
+            config.add(
+                    "callback",
+                    JsonParser.parseString(
+                            "{\"url\":\"https://example.invalid/callback\",\"secret\":\"synthetic-callback-secret-of-at-least-32-characters\"}"));
+            config.add(
+                    "senderAccessRestricted",
+                    JsonParser.parseString(
+                            "{\"enabled\":true,\"allowedSenders\":[],\"allowedSenderDestinations\":[\"33333333-3333-4333-8333-333333333333\"]}"));
+            var creation = new DestinationProvisioning(keys, remote);
+            var prepared =
+                    adapters.withSession(
+                            ApiVersion.V3,
+                            session,
+                            value -> creation.prepare(value, request.toString()));
+            creation.markDispatch(prepared.attemptId());
+            var result =
+                    adapters.withSession(
+                            ApiVersion.V3,
+                            session,
+                            value -> creation.execute(value, prepared.attemptId()));
+            assertEquals("confirmed", result.status(), result.toString());
+            assertEquals(1, remote.writes);
+            assertTrue(remote.destination.get("publicForRouting").getAsBoolean());
+            assertTrue(
+                    remote.destination
+                            .getAsJsonObject("senderAccessRestricted")
+                            .get("enabled")
+                            .getAsBoolean());
+            assertFalse(remote.readable().contains("synthetic-callback-secret"));
         }
     }
 

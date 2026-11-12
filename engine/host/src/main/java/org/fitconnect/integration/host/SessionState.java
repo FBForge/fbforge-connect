@@ -50,6 +50,7 @@ final class SessionState implements AutoCloseable {
     }
 
     final Map<String, SessionArchives> archives = new HashMap<>();
+    final Map<String, DestinationBackupSource> destinationArchives = new HashMap<>();
     final Map<String, DestinationCleanup> cleanups = new HashMap<>();
     final Map<String, DestinationRotation> rotations = new HashMap<>();
     final Map<String, DestinationProvisioning> provisioning = new HashMap<>();
@@ -240,6 +241,8 @@ final class SessionState implements AutoCloseable {
             management.remove(entry.id());
             var archive = archives.remove(entry.id());
             if (archive != null) archive.clear();
+            var destinationArchive = destinationArchives.remove(entry.id());
+            if (destinationArchive != null) destinationArchive.clear();
             provisioning.remove(entry.id());
             rotations.remove(entry.id());
             cleanups.remove(entry.id());

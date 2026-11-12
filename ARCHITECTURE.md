@@ -50,7 +50,39 @@ Verspätete Prüfergebnisse werden nach einem Kontextwechsel verworfen.
 
 ## Sicherheitsgrenzen
 
-- Der Renderer hat keine allgemeinen HTTP-, Shell- oder Dateisystemrechte. Private Archivbefehle (`export_session_item`, `restore_session_item`) sind nur aus Rust erreichbar.
+### Zustellpunkt-Sicherungen
+
+`DestinationBackupSource` liest die authentifizierte eigene Ansicht der Destination
+API v3 und paginierte öffentliche Schlüssel. Die Konfiguration wird vor Abschluss
+erneut verglichen. Nur dieser Destination zugeordnete lokale Schlüssel gelangen
+in den begrenzten sequenziellen Rust-Transfer. `export_destination_item` und
+`import_backup_bundle` sind private Engine-Befehle ohne direkte Tauri-Freigabe.
+Die 64-KiB-Framegrenze bleibt bestehen. Der gemeinsame Import zweier Schlüssel
+verwendet einen begrenzten nativen Speichertransfer ohne Dateistaging. Java übernimmt das
+lokale Paar erst nach erfolgreicher Prüfung beider Schlüssel. Der gemeinsame
+Schreibschutz verlangt davor ein Profil und sichert den neuen Bestand danach.
+
+Die nativen Module `destination_backup_model`, `destination_backup_store`,
+`destination_backup_transfer` und `portable_archive` trennen Validierung,
+DPAPI-Ablage, Engine-Transfer und Dateiverschlüsselung. Pro Profil und Umgebung
+sind höchstens 20 getrennte Sicherungen mit je höchstens 4 MiB Klartext vorgesehen.
+Der Renderer erhält Zusammenfassungen und Konfigurationswerte, keine privaten
+JWKs oder Klartext-Archivdateien. Das Löschen des Profils räumt diese Ablage mit auf.
+Die gesonderte Profilsicherung exportiert die Zustellpunkt-Sicherungen nicht mit.
+
+Die vorhandenen Anlage- und Bearbeitungsabläufe verwenden die übernommenen Werte.
+Eine neue Destination erhält eine neue ID und den Status `created`. Bei einer
+bestehenden Destination bleiben Statuswechsel und Schlüsselregistrierung eigene
+Aktionen. Optionales Routing, Absenderbeschränkungen und Callback-Einstellungen
+verwenden `DestinationExtras` gemeinsam für Anlage und Änderung. Callback-Secrets
+fehlen in lesbaren Vorschauen und im Änderungsjournal. GET kann ihren Wert nicht
+bestätigen. Alte Client-Freigaben dürfen gemäß v3 nur entfernt werden.
+Die fachliche Grundlage ist die
+[Destination API 3.0.0](https://schema.fitko.de/fit-connect/destination-api/3.0.0/destination-api.yaml).
+
+### Weitere Grenzen
+
+- Der Renderer hat keine allgemeinen HTTP-, Shell- oder Dateisystemrechte. Private Archivbefehle (`export_session_item`, `restore_session_item`, `export_destination_item`, `import_backup_bundle`) sind nur aus Rust erreichbar.
 - Schreibaktionen sind an Inhalt, Sitzung, API und Ziel gebunden und benötigen eine Bestätigung. Nach einem ungewissen Übertragungsausgang erfolgt kein automatischer Neuversand.
 - Annahme und Ablehnung benötigen aktuelle native Inhaltsnachweise. Historische Kopien und Event-Logs ersetzen diese nicht. Case-Logs können mehrere Nachrichten und quittierende Destinations enthalten. Jeder Aussteller wird anhand seines registrierten Schlüssels per SDK verifiziert; jedes Ereignis bleibt an die angefragte Case-ID gebunden.
 - Profile, private Schlüssel und Vorgangskopien werden getrennt und benutzergebunden mit Windows-DPAPI gespeichert. Vorgänge sind nach Profil und API isoliert und für gespeicherte Profile unter Windows standardmäßig dauerhaft aktiviert. Eine ausdrückliche Abwahl bleibt als verschlüsselte Einstellung erhalten. Tokens und alte Prüfnachweise werden nicht wiederhergestellt. Andere Plattformen haben keinen Klartext-Fallback.

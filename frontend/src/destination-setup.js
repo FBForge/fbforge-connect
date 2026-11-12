@@ -1,6 +1,11 @@
 import { cancelledProductionAction } from './environments.js';
 import { requestResource } from './resources.js';
 import { uncertainOperationError } from './diagnostics.js';
+import {
+  destinationConfiguration,
+  destinationExtraFields,
+  validDestinationExtras,
+} from './destination-extras.js';
 
 const uuid = (value) =>
   typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
@@ -92,13 +97,17 @@ function publicConfiguration(document) {
   if (
     !exact(value, [
       ...configFields,
+      ...destinationExtraFields.filter(
+        (field) => field !== 'publicForRouting' && Object.hasOwn(value || {}, field),
+      ),
       'status',
       ...(value?.type === 'C' ? [] : ['encryptionKid', 'encryptionPublicKey']),
       ...(value?.type === 'C' ? [] : ['signingPublicKey']),
       'publicForRouting',
     ]) ||
     value.status !== 'created' ||
-    value.publicForRouting !== false ||
+    typeof value.publicForRouting !== 'boolean' ||
+    !validDestinationExtras(value) ||
     !['A', 'C'].includes(value.type) ||
     typeof value.name !== 'string' ||
     !value.name.trim() ||
@@ -211,7 +220,7 @@ export async function prepareDestinationCreation(invoke, session, selected, conf
     (configuration?.type === 'C'
       ? selected !== null
       : !uuid(selected?.bundleId) || selected.status !== 'ready') ||
-    !exact(configuration, configFields)
+    !destinationConfiguration(configuration)
   )
     throw new Error('invalid_input');
   const snapshot = structuredClone(configuration);
@@ -227,7 +236,7 @@ export async function prepareDestinationCreation(invoke, session, selected, conf
     );
     if (prepared.status !== 'prepared' || prepared.bundleId !== (selected?.bundleId || null)) fail();
     const actual = publicConfiguration(prepared.configurationJson);
-    const relevant = Object.fromEntries(configFields.map((field) => [field, actual[field]]));
+    const relevant = Object.fromEntries(Object.keys(snapshot).map((field) => [field, actual[field]]));
     if (
       JSON.stringify(normalized(relevant)) !== JSON.stringify(normalized(snapshot)) ||
       (actual.type === 'A' &&
