@@ -72,6 +72,7 @@ impl Backup {
             "senderAccessRestricted",
             "destinationSignature",
             "publicForRouting",
+            "clientCount",
         ];
         if self.format != "fbforge-connect-destination-backup"
             || self.version != 2
@@ -88,6 +89,10 @@ impl Backup {
                     .as_str()
                     .is_some_and(|name| name.encode_utf16().count() <= 512))
             || !matches!(self.configuration["type"].as_str(), Some("A" | "B" | "C"))
+            || !(self.configuration["clientCount"].is_null()
+                || self.configuration["clientCount"]
+                    .as_u64()
+                    .is_some_and(|count| count <= i32::MAX as u64))
             || !config.keys().all(|k| fields.contains(&k.as_str()))
             || !safe_public(&self.configuration, 0)
             || serde_json::to_vec(&self.configuration).map_or(true, |v| v.len() > 44000)

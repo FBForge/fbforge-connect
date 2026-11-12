@@ -40,6 +40,24 @@ fn public_json_roundtrip_needs_no_password_and_excludes_private_fields() {
     assert!(serde_json::from_value::<Backup>(value).is_err());
 }
 #[test]
+fn destination_api_client_count_is_public_read_only_snapshot_metadata() {
+    for count in [json!(null), json!(0), json!(1)] {
+        let mut backup = sample();
+        backup.configuration["clientCount"] = count.clone();
+        backup.validate().unwrap();
+        let restored: Backup =
+            serde_json::from_slice(&serde_json::to_vec(&backup).unwrap()).unwrap();
+        restored.validate().unwrap();
+        assert_eq!(restored.configuration["clientCount"], count);
+        assert!(restored.draft().get("clientCount").is_none());
+    }
+    for count in [json!(-1), json!("1"), json!(1.5), json!(2147483648_u64)] {
+        let mut backup = sample();
+        backup.configuration["clientCount"] = count;
+        assert!(backup.validate().is_err());
+    }
+}
+#[test]
 fn malformed_public_backups_reject_secrets_duplicates_identity_and_unknown_versions() {
     for field in ["privateJwk", "clientSecret", "secret", "d"] {
         let mut backup = sample();

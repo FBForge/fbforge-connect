@@ -51,6 +51,7 @@ class DestinationBackupTest {
                         return super.get(url, headers);
                     }
                 };
+        remote.documents.get(ID).addProperty("clientCount", 1);
         remote.documents
                 .get(ID)
                 .addProperty(
@@ -71,6 +72,9 @@ class DestinationBackupTest {
             }
             assertEquals(3, parts.getFirst().total());
             assertEquals("configuration", parts.getFirst().item().get("kind").getAsString());
+            assertEquals(
+                    1,
+                    parts.getFirst().item().getAsJsonObject("value").get("clientCount").getAsInt());
             assertEquals(
                     0,
                     parts.stream()
