@@ -2,13 +2,21 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { check, cleanEnvironment } from './desktop.mjs';
+import { check, cleanEnvironment, until } from './desktop.mjs';
 import { connectProfile, navigate } from './exchange.mjs';
 import { nativeFile } from './downloads.mjs';
 import { testOverview } from './test-workspace.mjs';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 async function savedJson(desktop, fixture, action, file) {
   const path = await nativeFile(desktop, fixture, action, file);
+  await until(
+    () =>
+      readFile(path).then(
+        () => true,
+        () => false,
+      ),
+    'live_ui_040_export_not_written',
+  );
   return JSON.parse((await readFile(path, 'utf8')).replace(/^\uFEFF/, ''));
 }
 export async function reviewProvenRun(desktop, fixture, runId) {
@@ -81,7 +89,9 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
     .getByLabel('Fachdaten', { exact: true })
     .fill(JSON.stringify({ referenz: 'fiktive-basis', status: 'eingegangen' }));
   await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
-  await page.getByLabel('Feld für variable Angabe', { exact: true }).selectOption('/referenz');
+  await page
+    .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
+    .selectOption('/referenz');
   await button(page, 'Variable Angabe hinzufügen').click();
   await page.getByLabel('Bezeichnung der variablen Angabe', { exact: true }).fill('Fiktive Referenz');
   await page.getByLabel('Standardwert', { exact: true }).fill('fiktiver-standard');
@@ -89,10 +99,12 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
   await page.getByLabel('Datensatzname', { exact: true }).nth(1).fill('Zweite Gegenprobe');
   await page.getByLabel('Fiktive Referenz', { exact: true }).nth(1).fill('fiktiver-zweiter-wert');
   await page.getByText('Prüferwartungen anpassen', { exact: true }).click();
-  await page.getByLabel('Inhaltsvergleich', { exact: true }).selectOption('field-exceptions');
-  await page.getByLabel('Feld für Erwartung', { exact: true }).selectOption('/status');
+  await page
+    .getByRole('combobox', { name: 'Inhaltsvergleich', exact: true })
+    .selectOption('field-exceptions');
+  await page.getByRole('combobox', { name: 'Feld für Erwartung', exact: true }).selectOption('/status');
   await button(page, 'Erwartung hinzufügen').click();
-  await page.getByLabel('Bedingung', { exact: true }).selectOption('present');
+  await page.getByRole('combobox', { name: 'Bedingung', exact: true }).selectOption('present');
   const definition = await savedJson(
     desktop,
     fixture,
@@ -113,10 +125,15 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
     .waitFor();
   await button(page, 'Als Testserie planen').click();
   let series = page.locator('section.scenario-series');
+  await series.getByRole('checkbox', { name: 'Zweite Gegenprobe', exact: true }).check();
   await series.getByRole('checkbox', { name: 'API v2', exact: true }).check();
+  await series.getByRole('checkbox', { name: 'API v3', exact: true }).check();
   await series.getByLabel('Name der Testserie', { exact: true }).fill(`${name} Serie`);
   await button(series, 'Testserie anlegen').click();
-  check((await series.locator('tbody tr').count()) === 4, 'live_ui_040_series_dimensions_invalid');
+  await until(
+    async () => (await series.locator('tbody tr').count()) === 4,
+    'live_ui_040_series_dimensions_invalid',
+  );
   const exported = await savedJson(
     desktop,
     fixture,
