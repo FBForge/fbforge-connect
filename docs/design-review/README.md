@@ -2,46 +2,31 @@
 
 ## 0.4.0 in Vorbereitung
 
-### Zustellpunkt-Sicherungen – 12. November 2026
+### Korrektur der Zustellpunkt-Sicherung und Navigation – 12. November 2026
 
-Die authentifizierte Destination API v3 liefert die Konfiguration und alle
-paginierten öffentlichen Schlüssel einer eigenen Destination. Die Sicherung
-vergleicht die Konfiguration vor Abschluss erneut und ergänzt ausschließlich
-zugeordnete lokale Schlüssel. Fehlende private Schlüssel und das nicht lesbare
-Callback-Secret bleiben sichtbar. Sicherungen sind dauerhaft an Profil und
-Umgebung gebunden und mit Windows-DPAPI geschützt. Portable Exporte verwenden
-ein eigenes Dateipasswort, AES-256-GCM und eine begrenzte native Verarbeitung.
-Private Schlüssel erreichen weder die WebView noch temporäre Klartextdateien.
+Die erste Implementierung prüfte die Sicherungen isoliert und übersah die
+Bereichsnavigation: Zwei Komponentenwurzeln verhinderten die Wirkung von
+`v-show`. Die Sicherung blieb deshalb auch in anderen Bereichen sichtbar.
+Ein gemeinsames Wurzelelement behebt den Fehler. Der Regressionstest scheitert
+vor der Korrektur beim Wechsel zu Hilfe und besteht danach für alle elf anderen
+Bereiche. Die tatsächliche vollständige App wird mit gespeicherter Verbindung,
+Hell/Dunkel und verschiedenen Fensterbreiten geprüft. Screenshots zeigen diese
+App einschließlich Navigation und oberer Leiste.
 
-Anlage aus Sicherung und Übernahme in eine bestehende eigene Destination nutzen
-die vorhandenen Assistenten. Angebote und Prozessnachrichten bleiben vollständig
-erhalten. Neue Schlüssel sind voreingestellt. Schlüsselwiederverwendung ist
-ausdrücklich wählbar und wird erneut mit dem echten SDK geprüft. Statuswechsel
-und Schlüsselregistrierung bestehender Destinations bleiben getrennte Aktionen.
-Callback-Secrets fehlen in Vorschauen, Änderungsjournal und Zustands-Logtexten.
-Alte Client-ID-Freigaben können über v3 nur entfernt werden.
+Die präzisierte Zustellpunkt-Sicherung enthält ausschließlich Konfiguration und
+öffentliche Schlüssel aus der Destination API v3. JSON-Import und -Export brauchen
+kein Passwort. Private Schlüssel und Zertifikatsimporte bleiben im Profil und
+im bestehenden Anlageassistenten. Der private Importweg der ersten Umsetzung
+ist entfernt. Lokale v1-Sicherungen werden beim Lesen ohne private Schlüsselkopien
+neu geschützt gespeichert. Das betrifft keine Schlüssel im eigentlichen Profil.
 
-Lokal bestehen 410 Node-Tests bei sechs Plattformausnahmen, 139 native Verträge
-unter Linux und 14 unterschiedliche betroffene Browserfälle. Die Browserprüfung
-umfasst Anlage und Bearbeitung, vollständige Angebote, Schlüsselwahl, Import mit
-falschem Passwort, erneutes Öffnen der Bibliothek, Export, Löschbestätigung,
-Schlüsselübernahme und die angrenzenden Rotations- und Aufräumabläufe. Sie prüft
-auch schmale Fenster, Hell/Dunkel und axe ohne Verstöße. Die Aufnahmen verwenden
-ausschließlich fiktive Daten. Zwei neue Bilder ergänzen die Anleitung auf
-58 Abbildungen in 15 Kapiteln.
-
-Der vollständige Java-Lauf besteht mit 300 Tests. Die zusätzliche SDK-Regression
-für übernommene Callback- und Absendereinstellungen besteht anschließend mit den
-14 Bearbeitungstests. Beide privaten Schlüssel werden vor ihrer Übernahme mit
-dem echten SDK geprüft, einschließlich frischer Kennungen für die neue Anlage.
-
-Lint, Typprüfung, Formatierung, Quellgrößenbudget, Produktionsbuild und dessen
-Browserausführung bestehen. Der Windows-GNU-Quellstand einschließlich Testcode
-lässt sich prüfen. Das ersetzt keine ausgeführte Windows-Installation und keine
-echte Serverabnahme dieses neuen Ablaufs. Diese bleibt vor Veröffentlichung
-zusammen mit Export/Import zwischen Windows-Profilen erforderlich. Die ergänzte
-Abnahmeliste steht in `RELEASING.md`. Main, Signierung und Veröffentlichung
-bleiben unverändert.
+Die obere Leiste zeigt Verbindung und Profil einzeilig. Auswahllisten, Verbindung
+und Darstellungswahl besitzen dieselbe Höhe. Die gezielten Browserprüfungen
+umfassen alle Bereiche, bestehenden Profilwechsel, öffentliche Sicherung,
+Import/Export, Anlage, Bearbeitung und Löschbestätigung. Echte Windows-Installation,
+Dateidialoge und die Migration werden durch die Windows-Prüfungen ergänzt und
+bleiben von einer reinen Browserprüfung unterscheidbar. Die Windows-Abnahme
+und Veröffentlichung sind weiterhin eigene Schritte.
 
 ### Konkrete SDK-Fehler beim Empfang – 11. November 2026
 

@@ -47,10 +47,15 @@ const emit = defineEmits(['api', 'connection', 'theme', 'navigate', 'environment
           <option value="v2">v2</option>
         </select>
       </label>
-      <button class="connection-button" type="button" @click="emit('connection')">
+      <button
+        class="connection-button"
+        :class="{ 'has-profile': activeSession && profileName }"
+        type="button"
+        @click="emit('connection')"
+      >
         <span class="connection-dot" :class="{ connected: activeSession }" aria-hidden="true"></span>
-        <span>
-          {{ activeSession ? 'Verbunden' : 'Verbinden' }}
+        <span class="connection-copy">
+          <span class="connection-state">{{ activeSession ? 'Verbunden' : 'Verbinden' }}</span>
           <span
             v-if="activeSession && profileName"
             id="active-profile-name"
@@ -99,11 +104,11 @@ const emit = defineEmits(['api', 'connection', 'theme', 'navigate', 'environment
 <style scoped>
 .connection-profile {
   display: block;
-  max-width: 180px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.75rem;
-  font-weight: 400;
+  font-size: inherit;
+  font-weight: 600;
 }
 </style>

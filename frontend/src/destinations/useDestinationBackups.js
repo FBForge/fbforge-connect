@@ -13,10 +13,7 @@ export function useDestinationBackups(props, emit) {
     pending = ref(false),
     task = ref('');
   const name = ref(''),
-    password = ref(''),
-    repeated = ref(''),
-    target = ref(''),
-    useKeys = ref(false);
+    target = ref('');
   const error = ref(''),
     notice = ref(''),
     profileMissing = ref(false);
@@ -42,12 +39,6 @@ export function useDestinationBackups(props, emit) {
       {
         backup_invalid:
           'Die Sicherung ist ungültig oder enthält Einstellungen, die diese Version nicht bearbeiten kann.',
-        backup_password_invalid:
-          'Bitte ein Passwort mit mindestens 12 Zeichen und höchstens 1024 UTF-8-Bytes verwenden.',
-        backup_unlock_failed:
-          'Die Datei konnte nicht entschlüsselt werden. Prüfen Sie das Passwort. Die Datei könnte auch beschädigt sein.',
-        backup_keys_missing:
-          'Das erforderliche Verschlüsselungs- und Signaturschlüsselpaar fehlt in dieser Sicherung.',
         backup_unavailable:
           'Die Sicherung konnte nicht gelesen oder gespeichert werden. Prüfen Sie Speicherplatz und Dateirechte.',
         environment_mismatch:
@@ -106,8 +97,6 @@ export function useDestinationBackups(props, emit) {
       profileMissing.value = false;
       error.value = '';
       notice.value = '';
-      password.value = '';
-      repeated.value = '';
       name.value = props.captureDestination
         ? `${props.captureDestination.name || 'Zustellpunkt'} · ${new Date().toLocaleDateString('de-DE')}`.slice(
             0,
@@ -121,13 +110,10 @@ export function useDestinationBackups(props, emit) {
   onBeforeUnmount(() => {
     alive = false;
     generation++;
-    password.value = '';
-    repeated.value = '';
   });
   async function select() {
     detail.value = null;
     task.value = '';
-    useKeys.value = false;
     const id = selected.value;
     if (!id) return;
     await run('Zustellpunkt-Sicherung öffnen', async (active, current) => {
@@ -162,11 +148,7 @@ export function useDestinationBackups(props, emit) {
     const stamp = generation;
     let next = null;
     await run('Neue Destination aus Sicherung vorbereiten', async (active, current) => {
-      let bundleId = null;
-      if (source.configuration.type !== 'C' && useKeys.value)
-        bundleId = (await destinationBackups(invoke, active, { action: 'use_keys', id: source.summary.id }))
-          .bundleId;
-      if (current()) next = { configuration: structuredClone(source.configuration), bundleId };
+      if (current()) next = { configuration: structuredClone(source.configuration), bundleId: null };
     });
     if (next && alive && stamp === generation) emit('create', next);
   }
@@ -185,11 +167,6 @@ export function useDestinationBackups(props, emit) {
   async function transfer() {
     const action = task.value;
     if (!['export', 'import'].includes(action)) return;
-    if (action === 'export' && password.value !== repeated.value) {
-      error.value = 'Die beiden Passwörter stimmen nicht überein.';
-      return;
-    }
-    const secret = password.value;
     let imported = false;
     await run(
       action === 'export' ? 'Zustellpunkt-Sicherung exportieren' : 'Zustellpunkt-Sicherung importieren',
@@ -197,7 +174,6 @@ export function useDestinationBackups(props, emit) {
         const result = await destinationBackups(invoke, active, {
           action,
           ...(action === 'export' ? { id: detail.value.summary.id } : {}),
-          password: secret,
         });
         if (!current()) return;
         if (action === 'import' && result) {
@@ -212,14 +188,10 @@ export function useDestinationBackups(props, emit) {
           notice.value = 'Import abgebrochen.';
         } else if (action === 'export') {
           task.value = '';
-          notice.value = result.saved
-            ? 'Passwortverschlüsselte Sicherung exportiert.'
-            : 'Export abgebrochen.';
+          notice.value = result.saved ? 'JSON-Konfiguration exportiert.' : 'Export abgebrochen.';
         }
       },
     );
-    password.value = '';
-    repeated.value = '';
     if (imported && selected.value && !error.value) {
       await select();
       if (detail.value) notice.value = 'Sicherung importiert und geschützt im Profil gespeichert.';
@@ -239,21 +211,8 @@ export function useDestinationBackups(props, emit) {
       }
     });
   }
-  async function restore() {
-    const id = detail.value?.summary.id;
-    if (!id) return;
-    await run('Gesicherte Zustellpunkt-Schlüssel laden', async (active, current) => {
-      const result = await destinationBackups(invoke, active, { action: 'restore_keys', id });
-      if (current()) {
-        notice.value = `${result.restored} private Schlüssel geprüft und im Profil gesichert. Die Server-Konfiguration wurde nicht geändert.`;
-        emit('changed');
-      }
-    });
-  }
   function chooseTask(value) {
     task.value = value;
-    password.value = '';
-    repeated.value = '';
     error.value = '';
   }
   return {
@@ -263,10 +222,7 @@ export function useDestinationBackups(props, emit) {
     pending,
     task,
     name,
-    password,
-    repeated,
     target,
-    useKeys,
     error,
     notice,
     profileMissing,
@@ -278,7 +234,6 @@ export function useDestinationBackups(props, emit) {
     edit,
     transfer,
     remove,
-    restore,
     chooseTask,
   };
 }

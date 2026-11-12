@@ -37,12 +37,30 @@ impl Store {
     pub fn read(&self, id: &str) -> Result<Backup, &'static str> {
         let file = vault::read_bounded(&self.path(id)?, portable_archive::MAX_PLAIN + 4096)?;
         let mut plain = vault::protection::transform_with_purpose(&file, false, &self.purpose(id))?;
-        let result = serde_json::from_slice::<Backup>(&plain).map_err(|_| "backup_invalid");
+        let parsed =
+            serde_json::from_slice::<serde_json::Value>(&plain).map_err(|_| "backup_invalid");
         plain.fill(0);
-        let backup = result?;
+        let mut document = parsed?;
+        // Migrate the unpublished v1 snapshots. Private copies remain solely in the profile.
+        let legacy = document["version"] == 1;
+        if legacy {
+            document
+                .as_object_mut()
+                .ok_or("backup_invalid")?
+                .remove("keys");
+            document["version"] = 2.into();
+        }
+        let backup: Backup = serde_json::from_value(document).map_err(|_| "backup_invalid")?;
         backup.validate()?;
         if backup.id != id || backup.environment != self.environment {
             return Err("backup_invalid");
+        }
+        if legacy {
+            let mut clean = serde_json::to_vec(&backup).map_err(|_| "backup_invalid")?;
+            let protected =
+                vault::protection::transform_with_purpose(&clean, true, &self.purpose(id));
+            clean.fill(0);
+            vault::write_protected(&self.path(id)?, &protected?)?;
         }
         Ok(backup)
     }

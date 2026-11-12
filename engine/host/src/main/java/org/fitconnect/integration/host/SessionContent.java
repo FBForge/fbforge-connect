@@ -87,26 +87,7 @@ final class SessionContent {
                                         .destinationArchives
                                         .computeIfAbsent(
                                                 id, ignored -> new DestinationBackupSource())
-                                        .read(
-                                                session,
-                                                this.state.localKeys.get(id),
-                                                destination,
-                                                offset));
-        return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
-    }
-
-    Data<?> importBackupBundle(ApiVersion version, String id, String document) {
-        var entry = this.state.find(version, id);
-        if (version != ApiVersion.V3) throw new SessionException("invalid_input");
-        var data =
-                this.state.registry.withSession(
-                        version,
-                        entry.session(),
-                        session ->
-                                this.state
-                                        .localKeys
-                                        .computeIfAbsent(id, ignored -> new LocalTestKeys())
-                                        .importBackup(session, document));
+                                        .read(session, destination, offset));
         return new Data<>(version.wireValue(), id, IntegrationEnvironment.current().name(), data);
     }
 

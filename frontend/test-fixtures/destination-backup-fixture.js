@@ -1,5 +1,5 @@
 // Explicitly synthetic native bridge. The actual destination components and policy clients stay unchanged.
-export function installBackupBridge({ incomplete = false, empty = false } = {}) {
+export function installBackupBridge({ empty = false } = {}) {
   const previous = window.__TAURI_INTERNALS__.invoke;
   const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
   const source = '11111111-1111-4111-8111-111111111111';
@@ -41,11 +41,7 @@ export function installBackupBridge({ incomplete = false, empty = false } = {}) 
     capturedAt: Date.parse('2026-11-12T11:00:00Z'),
     destinationName: config.name,
     type: 'A',
-    privateKeyCount: incomplete ? 1 : 2,
     registeredKeyCount: 2,
-    missingKeys: incomplete ? ['synthetic-signing'] : [],
-    complete: !incomplete,
-    canReuseKeys: !incomplete,
     callbackSecretMissing: true,
   };
   const state = (window.__backupFixture = {
@@ -126,17 +122,10 @@ export function installBackupBridge({ incomplete = false, empty = false } = {}) 
           state.exported++;
           return { saved: true };
         case 'import': {
-          if (a.password === 'falsches-testpasswort') throw 'backup_unlock_failed';
           const row = { ...summary, id: crypto.randomUUID(), name: 'Importierte Sicherung' };
           state.items.push(row);
           return structuredClone(row);
         }
-        case 'use_keys':
-          state.bundles = [bundle()];
-          return { bundleId: id(2) };
-        case 'restore_keys':
-          state.restored = summary.privateKeyCount;
-          return { restored: state.restored, destinationId: source };
         default:
           throw 'invalid_input';
       }

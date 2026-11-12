@@ -59,36 +59,6 @@ final class LocalTestKeys {
         return summary(bundle);
     }
 
-    Summary importBackup(AuthenticatedSession session, String document) {
-        if (bundles.size() >= 64) throw error("content_limit");
-        var source = StrictJson.object(document, 56000);
-        if (!source.keySet().equals(Set.of("encryption", "signing"))) throw error("invalid_input");
-        var bundle = new Bundle(UUID.randomUUID());
-        for (String purpose : List.of("decrypt", "sign")) {
-            var privateKey =
-                    source.getAsJsonObject(purpose.equals("decrypt") ? "encryption" : "signing")
-                            .deepCopy();
-            var publicKey = new com.google.gson.JsonObject();
-            for (String field : List.of("kty", "kid", "n", "e", "x5c"))
-                publicKey.add(field, privateKey.get(field));
-            publicKey.addProperty("alg", purpose.equals("decrypt") ? "RSA-OAEP-256" : "PS512");
-            var operations = new com.google.gson.JsonArray();
-            operations.add(purpose.equals("decrypt") ? "wrapKey" : "verify");
-            publicKey.add("key_ops", operations);
-            var material = new GeneratedTestKey(publicKey.toString(), privateKey.toString());
-            validate(session, purpose, material);
-            if (purpose.equals("decrypt")) bundle.encryption = material;
-            else bundle.signing = material;
-        }
-        if (StrictJson.object(bundle.encryption.publicJwk(), 32768)
-                .get("n")
-                .equals(StrictJson.object(bundle.signing.publicJwk(), 32768).get("n")))
-            throw error("key_rejected");
-        var result = summary(bundle);
-        bundles.put(bundle.id, bundle);
-        return result;
-    }
-
     private static TestCertificatePolicy.ValidatedKey validate(
             AuthenticatedSession session, String purpose, GeneratedTestKey key) {
         try {

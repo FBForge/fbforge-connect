@@ -19,7 +19,7 @@ Einzelheiten stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 - JSON/XML und Anlagen ansehen, Nachrichten gesammelt herunterladen und annehmen.
 - Profile und Schlüssel geschützt speichern. Vorgänge gespeicherter Profile bleiben standardmäßig dauerhaft erhalten.
 - Event Logs prüfen, v3-Destinations verwalten und BPMN-Nachrichten auswählen.
-- Zustellpunkte mit verfügbaren privaten Schlüsseln geschützt sichern, passwortverschlüsselt exportieren und für neue oder bestehende Destinations wiederverwenden.
+- Öffentliche Zustellpunkt-Konfiguration im Profil sichern, als JSON ohne Passwort exportieren und für neue oder bestehende Destinations wiederverwenden. Private Schlüssel bleiben im Profil.
 - Tests an einer Stelle vorbereiten, durchführen und auswerten, mit Profilzuordnung und gespeichertem Fortschritt.
 - Eigene JSON-Antwortschemas erstellen, Schemata und erwartete Inhalte vergleichen.
 - Optional lokal mit ClamAV oder einer eigenen ClamAV-/ICAP-Gegenstelle scannen.

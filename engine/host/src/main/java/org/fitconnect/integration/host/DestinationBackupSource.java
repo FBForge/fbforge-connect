@@ -19,7 +19,7 @@ final class DestinationBackupSource {
     private int next;
     private long expires;
 
-    Part read(AuthenticatedSession session, LocalTestKeys generated, String id, int offset) {
+    Part read(AuthenticatedSession session, String id, int offset) {
         id = DestinationAccess.id(id);
         if (offset == 0) {
             clear();
@@ -57,19 +57,6 @@ final class DestinationBackupSource {
             }
             if (!detail.equals(StrictJson.object(session.ownDestination(id), 44000)))
                 throw new SessionException("destination_conflict");
-            var archive = new ArrayList<>(session.archiveKeys());
-            if (generated != null) archive.addAll(generated.archive());
-            if (archive.size() > 176) throw new SessionException("content_limit");
-            for (var key : archive) {
-                boolean matching =
-                        key.destinationKey() != null
-                                ? id.equals(key.destinationKey().destinationId())
-                                : key.generatedKey() != null
-                                        && key.generatedKey().destinationId() != null
-                                        && id.equals(key.generatedKey().destinationId().toString());
-                if (matching)
-                    parts.add(part("private_key", new Gson().toJsonTree(key).getAsJsonObject()));
-            }
             snapshot = List.copyOf(parts);
             destination = id;
             expires = System.nanoTime() + 120_000_000_000L;

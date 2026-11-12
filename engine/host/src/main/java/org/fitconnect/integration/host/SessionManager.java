@@ -310,10 +310,6 @@ final class SessionManager implements AutoCloseable {
         return state.contentFlow.exportDestinationItem(version, id, destination, offset);
     }
 
-    Data<?> importBackupBundle(ApiVersion version, String id, String document) {
-        return state.contentFlow.importBackupBundle(version, id, document);
-    }
-
     Data<?> exportSessionItem(ApiVersion version, String id, int offset) {
         return state.contentFlow.exportSessionItem(version, id, offset);
     }

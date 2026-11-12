@@ -23,56 +23,6 @@ class DestinationBackupTest {
         }
     }
 
-    private static JsonObject bundle() {
-        var value = new JsonObject();
-        for (String field : List.of("encryption", "signing")) {
-            var key = field.equals("encryption") ? encryption : signing;
-            var item = JsonParser.parseString(key.privateJwk()).getAsJsonObject();
-            item.add("x5c", JsonParser.parseString(key.publicJwk()).getAsJsonObject().get("x5c"));
-            value.add(field, item);
-        }
-        return value;
-    }
-
-    @Test
-    void importingBothKeysIsAtomicAndRevalidatesPrivateMaterial() throws Exception {
-        try (var registry = DestinationManagementTest.registry();
-                var session =
-                        DestinationManagementTest.session(
-                                registry, ApiVersion.V3, new DestinationManagementTest.Remote())) {
-            var keys = new LocalTestKeys();
-            var source = bundle();
-            source.getAsJsonObject("signing").addProperty("n", "foreign-modulus");
-            assertThrows(
-                    SessionException.class,
-                    () ->
-                            registry.withSession(
-                                    ApiVersion.V3,
-                                    session,
-                                    s -> keys.importBackup(s, source.toString())));
-            assertTrue(
-                    keys.list().isEmpty(),
-                    "A valid first key must not survive a rejected second key");
-            var restored = bundle();
-            String freshId = UUID.randomUUID().toString();
-            restored.getAsJsonObject("encryption").addProperty("kid", freshId);
-            restored.getAsJsonObject("signing").addProperty("kid", UUID.randomUUID().toString());
-            var summary =
-                    registry.withSession(
-                            ApiVersion.V3, session, s -> keys.importBackup(s, restored.toString()));
-            assertEquals("ready", summary.status());
-            assertEquals(2, keys.archive().size());
-            assertFalse(new Gson().toJson(summary).contains("privateJwk"));
-            var imported =
-                    JsonParser.parseString(keys.key(summary.bundleId(), "decrypt").privateJwk())
-                            .getAsJsonObject();
-            assertEquals(freshId, imported.get("kid").getAsString());
-            assertEquals(
-                    JsonParser.parseString(encryption.privateJwk()).getAsJsonObject().get("d"),
-                    imported.get("d"));
-        }
-    }
-
     @Test
     void sourceReadsOwnedConfigurationAndTransfersOnlyDestinationKeysSequentially()
             throws Exception {
@@ -111,25 +61,18 @@ class DestinationBackupTest {
                                 .getAsString());
         try (var registry = DestinationManagementTest.registry();
                 var session = DestinationManagementTest.session(registry, ApiVersion.V3, remote)) {
-            var keys = new LocalTestKeys();
-            var generated =
-                    registry.withSession(
-                            ApiVersion.V3, session, s -> keys.importBackup(s, bundle().toString()));
-            keys.bind(generated.bundleId(), ID);
-            registry.withSession(
-                    ApiVersion.V3, session, s -> keys.importBackup(s, bundle().toString()));
             var source = new DestinationBackupSource();
             var parts = new ArrayList<DestinationBackupSource.Part>();
-            for (int offset = 0; offset <= 5; offset++) {
+            for (int offset = 0; offset <= 3; offset++) {
                 final int position = offset;
                 parts.add(
                         registry.withSession(
-                                ApiVersion.V3, session, s -> source.read(s, keys, ID, position)));
+                                ApiVersion.V3, session, s -> source.read(s, ID, position)));
             }
-            assertEquals(5, parts.getFirst().total());
+            assertEquals(3, parts.getFirst().total());
             assertEquals("configuration", parts.getFirst().item().get("kind").getAsString());
             assertEquals(
-                    2,
+                    0,
                     parts.stream()
                             .filter(
                                     p ->
@@ -143,15 +86,13 @@ class DestinationBackupTest {
             assertFalse(parts.toString().contains("privateJwk"));
             assertThrows(
                     SessionException.class,
-                    () ->
-                            registry.withSession(
-                                    ApiVersion.V3, session, s -> source.read(s, keys, ID, 1)));
-            registry.withSession(ApiVersion.V3, session, s -> source.read(s, keys, ID, 0));
+                    () -> registry.withSession(ApiVersion.V3, session, s -> source.read(s, ID, 1)));
+            registry.withSession(ApiVersion.V3, session, s -> source.read(s, ID, 0));
             assertThrows(
                     SessionException.class,
                     () ->
                             registry.withSession(
-                                    ApiVersion.V3, session, s -> source.read(s, keys, ID, 0 + 2)));
+                                    ApiVersion.V3, session, s -> source.read(s, ID, 0 + 2)));
         }
     }
 
@@ -169,14 +110,10 @@ class DestinationBackupTest {
             var source = new DestinationBackupSource();
             assertThrows(
                     SessionException.class,
-                    () ->
-                            registry.withSession(
-                                    ApiVersion.V3, session, s -> source.read(s, null, ID, 0)));
+                    () -> registry.withSession(ApiVersion.V3, session, s -> source.read(s, ID, 0)));
             assertThrows(
                     SessionException.class,
-                    () ->
-                            registry.withSession(
-                                    ApiVersion.V3, session, s -> source.read(s, null, ID, 1)));
+                    () -> registry.withSession(ApiVersion.V3, session, s -> source.read(s, ID, 1)));
         }
     }
 

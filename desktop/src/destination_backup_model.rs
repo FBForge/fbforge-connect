@@ -5,18 +5,6 @@ use serde_json::{json, Value};
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct PrivateKey {
-    pub kid: String,
-    pub purpose: String,
-    pub private_jwk: String,
-}
-impl Drop for PrivateKey {
-    fn drop(&mut self) {
-        crate::vault::wipe_string(&mut self.private_jwk);
-    }
-}
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Backup {
     pub format: String,
     pub version: u8,
@@ -27,7 +15,6 @@ pub struct Backup {
     pub captured_at: u64,
     pub configuration: Value,
     pub public_keys: Vec<Value>,
-    pub keys: Vec<PrivateKey>,
 }
 fn safe_public(value: &Value, depth: usize) -> bool {
     if depth > 16 {
@@ -63,28 +50,6 @@ fn safe_public(value: &Value, depth: usize) -> bool {
         _ => true,
     }
 }
-fn private_matches(key: &PrivateKey, public: &Value) -> bool {
-    if public["kid"] != key.kid {
-        return false;
-    }
-    let Ok(value) = serde_json::from_str::<Value>(&key.private_jwk) else {
-        return false;
-    };
-    value["kid"] == key.kid
-        && value["kty"] == "RSA"
-        && public["kty"] == "RSA"
-        && value["n"].as_str().is_some_and(|s| !s.is_empty())
-        && value["e"].as_str().is_some_and(|s| !s.is_empty())
-        && public["n"] == value["n"]
-        && public["e"] == value["e"]
-        && value["d"].as_str().is_some_and(|s| !s.is_empty())
-        && public["alg"]
-            == if key.purpose == "decrypt" {
-                "RSA-OAEP-256"
-            } else {
-                "PS512"
-            }
-}
 impl Backup {
     pub fn validate(&self) -> Result<(), &'static str> {
         let Some(config) = self.configuration.as_object() else {
@@ -109,7 +74,7 @@ impl Backup {
             "publicForRouting",
         ];
         if self.format != "fbforge-connect-destination-backup"
-            || self.version != 1
+            || self.version != 2
             || !valid_session_id(&self.id)
             || !valid_session_id(&self.source_destination_id)
             || self.name.trim().is_empty()
@@ -127,7 +92,6 @@ impl Backup {
             || !safe_public(&self.configuration, 0)
             || serde_json::to_vec(&self.configuration).map_or(true, |v| v.len() > 44000)
             || self.public_keys.len() > 128
-            || self.keys.len() > 128
             || self.public_keys.iter().enumerate().any(|(i, key)| {
                 !key.is_object()
                     || !safe_public(key, 0)
@@ -136,12 +100,6 @@ impl Backup {
                         .is_none_or(|s| s.is_empty() || s.len() > 512)
                     || self.public_keys[..i].iter().any(|p| p["kid"] == key["kid"])
             })
-            || self.keys.iter().enumerate().any(|(i, key)| {
-                key.private_jwk.len() > 24000
-                    || !matches!(key.purpose.as_str(), "decrypt" | "sign")
-                    || !self.public_keys.iter().any(|p| private_matches(key, p))
-                    || self.keys[..i].iter().any(|p| p.kid == key.kid)
-            })
             || serde_json::to_vec(self).map_or(true, |v| v.len() > portable_archive::MAX_PLAIN)
         {
             return Err("backup_invalid");
@@ -149,39 +107,7 @@ impl Backup {
         Ok(())
     }
     pub fn summary(&self) -> Value {
-        let needed: Vec<_> = self.public_keys.iter().collect();
-        let missing: Vec<_> = needed
-            .iter()
-            .filter(|key| !self.keys.iter().any(|p| private_matches(p, key)))
-            .map(|k| k["kid"].clone())
-            .collect();
-        json!({"id":self.id,"name":self.name,"environment":self.environment,"sourceDestinationId":self.source_destination_id,"capturedAt":self.captured_at,"destinationName":self.configuration["name"],"type":self.configuration["type"],"privateKeyCount":self.keys.len(),"registeredKeyCount":needed.len(),"missingKeys":missing,"complete":missing.is_empty(),"canReuseKeys":self.pair().is_ok(),"callbackSecretMissing":self.configuration["callback"]["url"].is_string()})
-    }
-    pub fn pair(&self) -> Result<[(&PrivateKey, &Value); 2], &'static str> {
-        let encryption = self
-            .keys
-            .iter()
-            .filter(|k| k.purpose == "decrypt" && self.configuration["encryptionKid"] == k.kid)
-            .find_map(|k| {
-                self.public_keys
-                    .iter()
-                    .find(|p| private_matches(k, p))
-                    .map(|p| (k, p))
-            });
-        let signing = self
-            .keys
-            .iter()
-            .filter(|k| k.purpose == "sign")
-            .find_map(|k| {
-                self.public_keys
-                    .iter()
-                    .find(|p| private_matches(k, p))
-                    .map(|p| (k, p))
-            });
-        match (encryption, signing) {
-            (Some(a), Some(b)) => Ok([a, b]),
-            _ => Err("backup_keys_missing"),
-        }
+        json!({"id":self.id,"name":self.name,"environment":self.environment,"sourceDestinationId":self.source_destination_id,"capturedAt":self.captured_at,"destinationName":self.configuration["name"],"type":self.configuration["type"],"registeredKeyCount":self.public_keys.len(),"callbackSecretMissing":self.configuration["callback"]["url"].is_string()})
     }
     pub fn draft(&self) -> Value {
         let mut value = serde_json::Map::new();

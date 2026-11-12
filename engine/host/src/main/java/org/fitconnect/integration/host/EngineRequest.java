@@ -185,7 +185,6 @@ record EngineRequest(
             case "export_session_item" -> expected.addAll(Set.of("sessionId", "offset"));
             case "export_destination_item" ->
                     expected.addAll(Set.of("sessionId", "destinationId", "offset"));
-            case "import_backup_bundle" -> expected.addAll(Set.of("sessionId", "keyDocument"));
             case "case_bind", "case_workspace", "restore_session_item" ->
                     expected.addAll(Set.of("sessionId", "archiveDocument"));
             case "load_case_event_log" -> expected.addAll(Set.of("sessionId", "caseId"));

@@ -394,12 +394,12 @@ export const helpTopics = [
       {
         image: 'destination-backups',
         caption:
-          'Eine Zustellpunkt-Sicherung zeigt Herkunft, Schlüsselvollständigkeit und die verfügbaren nächsten Schritte. Fiktive Beispieldaten.',
+          'Eine öffentliche Zustellpunkt-Sicherung zeigt Herkunft und die verfügbaren nächsten Schritte. Fiktive Beispieldaten.',
       },
       {
         image: 'destination-backup-create',
         caption:
-          'Eine neue Destination aus der Sicherung vorbereiten. Schlüsselwiederverwendung ist eine bewusste Auswahl, die Anlage wird separat bestätigt.',
+          'Eine neue Destination aus der Sicherung vorbereiten. Schlüssel werden im Anlageassistenten separat gewählt und die Anlage wird bestätigt.',
       },
     ],
     intro:
@@ -408,10 +408,10 @@ export const helpTopics = [
       'Verbinden Sie ein gespeichertes Fachverfahren-Profil mit API v3 und öffnen Sie „Destinations“.',
       '„Bestehende Destinations“ öffnet die eigene Übersicht und lädt sie beim ersten Aufruf. Auch aus der Detailansicht führt die Schaltfläche zurück zur Liste. Dabei werden keine Destinations geändert. Für einen neuen Zustellpunkt wählen Sie „Neue Destination anlegen“ und folgen der getrennten Einrichtung mit Vorschau und Bestätigung.',
       '„Ansehen“ öffnet die Destination-Details. „Bearbeiten“ führt direkt in die Bearbeitung. Zurück gelangen Sie über „Zur Destination-Übersicht“.',
-      'Wählen Sie in den Details „Zustellpunkt sichern“ und vergeben Sie einen Namen. Die Konfiguration und öffentlichen Schlüssel werden frisch über die Destination API v3 gelesen. Verfügbare private Schlüssel aus dem verbundenen Profil und seiner Sitzung werden ergänzt. Die Sicherung bleibt dauerhaft und mit Windows-DPAPI geschützt im Profil.',
-      'Unter „Zustellpunkt-Sicherungen“ können Sie Sicherungen öffnen, löschen oder als passwortverschlüsselte Datei (.fcdestination) exportieren und importieren. Verwenden Sie ein eigenes Dateipasswort mit mindestens zwölf Zeichen. Der Import legt eine separate Kopie im aktuell verbundenen Profil derselben Umgebung an.',
-      '„Neue Destination daraus anlegen“ übernimmt alle unterstützten Leistungen, Prozessnachrichten und Schemata in den Anlageassistenten. Frische Schlüssel sind voreingestellt. Ein vollständiges gesichertes Schlüsselpaar können Sie ausdrücklich wiederverwenden. Prüfen Sie die Konfiguration und bestätigen Sie die Anlage. Die neue Destination erhält eine neue ID und wird separat aktiviert.',
-      '„Auf bestehende Destination anwenden“ öffnet nach einem aktuellen Lesezugriff die Bearbeitung einer eigenen Destination gleichen Typs. Prüfen Sie die Felder und die Servervorschau vor der Bestätigung. „Schlüssel für Ursprungsdestination laden“ prüft und speichert die gesicherten privaten Schlüssel für die ursprüngliche Destination, ohne deren Schlüsselregistrierung zu verändern.',
+      'Wählen Sie in den Details „Zustellpunkt sichern“ und vergeben Sie einen Namen. Die öffentliche Konfiguration und öffentlichen Schlüssel werden frisch aus der Destination API v3 gelesen und dauerhaft geschützt im Profil gespeichert. Private Schlüssel und Zugangsdaten bleiben im Profil und werden nicht in die Zustellpunkt-Sicherung kopiert.',
+      'Unter „Zustellpunkt-Sicherungen“ können Sie gespeicherte Konfigurationen öffnen, löschen oder als JSON-Datei ohne Passwort exportieren und importieren. Der Import legt eine separate Kopie im aktuellen Profil derselben Umgebung an und verändert keine Server-Konfiguration.',
+      '„Neue Destination daraus anlegen“ übernimmt die unterstützten Leistungen, Prozessnachrichten und Schemata in den Anlageassistenten. Das Schlüsselpaar wird dort separat gewählt oder in TEST neu erzeugt. Die neue Destination erhält eine neue ID und wird nach Ihrer Bestätigung angelegt und separat aktiviert.',
+      '„Auf bestehende Destination anwenden“ lädt eine eigene Destination gleichen Typs und öffnet die Bearbeitung. Prüfen Sie die übernommenen Felder und die Servervorschau. Statuswechsel und Schlüsselregistrierung bleiben separate Aktionen.',
       'Eine einzelne Destination bearbeiten Sie direkt unter „Stammdaten“. Nur tatsächlich geänderte Werte gelangen in die Vorschau. Leistungen und Prozessnachrichten stehen getrennt unter „Angebote“, die Schlüsselverwaltung unter „Schlüssel wechseln“. Für gemeinsame Änderungen wählen Sie bis zu zehn Destinations und anschließend „Destinations gemeinsam bearbeiten“. Die Auswahl bleibt beim Ansehen einzelner Details erhalten.',
       'In TEST können Sie für verschlüsselte Nachrichten lokale Testschlüssel erzeugen. In STAGE und PROD importieren Sie unter „V-PKI-Schlüsselpaar importieren“ einen Verschlüsselungs- und einen davon verschiedenen Signaturschlüssel. Verwenden Sie je eine PKCS#12-Datei (.p12 oder .pfx) mit privatem Schlüssel und vollständiger Zertifikatskette oder einen privaten JWK mit vollständigem x5c. Dateipasswörter werden nur beim Import verwendet und nicht gespeichert. Die Schlüssel müssen vor einer Registrierung sicher im Profil gespeichert sein.',
       'Prüfen Sie Typ, Bezeichnung, Leistungen und Schemainformationen. Bereiten Sie die Änderung vor und lesen Sie die Zusammenfassung, bevor Sie sie bestätigen.',
@@ -422,9 +422,9 @@ export const helpTopics = [
     ],
     notes: [
       'Bei erkannten Leserechten bleiben Sichern und Exportieren verfügbar. Änderungen erfordern die Berechtigung manage-destinations. Unbekannte Rechte werden erst beim Aufruf geprüft. Der Server entscheidet über jede Änderung.',
-      'FIT-Connect liefert keine privaten Schlüssel zurück. Fehlende Schlüssel werden in jeder Sicherung ausgewiesen. Das Callback-Secret ist ebenfalls nicht über die API lesbar und muss beim Übernehmen neu vergeben werden. Zugangsdaten, OAuth-Token und Antragsinhalte sind nicht enthalten. Die exportierte Datei enthält private Schlüssel und gehört entsprechend geschützt aufbewahrt.',
+      'Die Zustellpunkt-Sicherung enthält ausschließlich öffentliche Konfiguration und öffentliche Schlüssel. Private Schlüssel verwalten Sie im Profil. Das Callback-Secret ist nicht über die API lesbar und muss bei einer Übernahme neu vergeben werden. Zugangsdaten, OAuth-Token und Antragsinhalte sind nicht enthalten.',
       'Pro Profil und Umgebung sind bis zu 20 Sicherungen mit jeweils höchstens 4 MiB unverschlüsseltem Inhalt möglich. Typ B und ältere Angebotsformate lassen sich sichern und exportieren, aber nicht mit dem aktuellen Assistenten bearbeiten. Bestehende Client-ID-Freigaben dürfen über API v3 nicht neu hinzugefügt werden. Stellen Sie diese vor einer neuen Anlage auf freigegebene Sender-Destinations um.',
-      'Eine Sicherung ist eine Momentaufnahme. Status und Schlüsselregistrierung werden beim Bearbeiten nicht automatisch übernommen. Wiederverwendete Zertifikate behalten ihre ursprüngliche Laufzeit. Der geschützte Profileintrag ist an den Windows-Benutzer gebunden, die passwortverschlüsselte Exportdatei ist auf andere Rechner übertragbar.',
+      'Eine Sicherung ist eine Momentaufnahme. Status und Schlüsselregistrierung werden beim Bearbeiten nicht automatisch übernommen. Der lokale Profileintrag ist an den Windows-Benutzer gebunden. Die öffentliche JSON-Datei lässt sich auf andere Rechner übertragen.',
       'Eine Destination kann existieren, obwohl der Bestätigungsschritt unterbrochen wurde. Bei ungewissem Ausgang zuerst abgleichen, statt eine weitere Destination anzulegen.',
       'Vorbereitungen und Bestätigungen gelten nur kurz und für genau die gezeigte Konfiguration.',
       'Vertrauenskette, Gültigkeit, Schlüsselverwendung und Sperrstatus werden über das SDK geprüft. Fehlen Zwischenzertifikate oder schlägt die Prüfung fehl, wird der Schlüssel nicht freigegeben. Es gibt keinen Schalter zum Umgehen von OCSP- oder Vertrauensprüfungen.',

@@ -13,15 +13,11 @@ const summary = () => ({
   capturedAt: 1,
   destinationName: 'Synthetic',
   type: 'A',
-  privateKeyCount: 1,
   registeredKeyCount: 2,
-  missingKeys: ['missing-signing'],
-  complete: false,
-  canReuseKeys: false,
   callbackSecretMissing: false,
 });
-test('backup responses show missing keys and never accept private material or unknown fields', async () => {
-  assert.equal(backupSummary(summary()).complete, false);
+test('public backup responses never accept private material or unknown fields', async () => {
+  assert.equal(backupSummary(summary()).registeredKeyCount, 2);
   for (const change of [
     { privateJwk: 'not-public' },
     { complete: true },
@@ -38,7 +34,7 @@ test('backup responses show missing keys and never accept private material or un
     /engine_protocol_error/,
   );
   const value = await destinationBackups(async () => ({ items: [summary()] }), session, { action: 'list' });
-  assert.equal(value[0].missingKeys[0], 'missing-signing');
+  assert.equal(value[0].registeredKeyCount, 2);
   await assert.rejects(
     destinationBackups(
       async () => assert.fail('v2 must not invoke'),
@@ -93,13 +89,13 @@ test('optional fields validate HTTPS and restrictions and redact write-only call
 test('diagnostics record backup failures without passwords or key material', async () => {
   const log = createDiagnosticLog();
   const invoke = observeInvoke(async () => {
-    throw 'backup_unlock_failed';
+    throw 'backup_invalid';
   }, log.record);
   await assert.rejects(
     destinationBackups(invoke, session, { action: 'import', password: 'synthetic-private-password' }),
-    (error) => error === 'backup_unlock_failed',
+    (error) => error === 'backup_invalid',
   );
   const report = buildSupportReport({ version: '0.4.0', selectedApi: 'v3', entries: log.snapshot() });
-  assert.equal(report.operations[0].code, 'backup_unlock_failed');
+  assert.equal(report.operations[0].code, 'backup_invalid');
   assert.equal(JSON.stringify(report).includes('synthetic-private-password'), false);
 });

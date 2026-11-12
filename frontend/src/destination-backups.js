@@ -33,11 +33,7 @@ export function backupSummary(value) {
     'capturedAt',
     'destinationName',
     'type',
-    'privateKeyCount',
     'registeredKeyCount',
-    'missingKeys',
-    'complete',
-    'canReuseKeys',
     'callbackSecretMissing',
   ];
   if (
@@ -56,15 +52,10 @@ export function backupSummary(value) {
     !['A', 'B', 'C'].includes(value.type) ||
     !Number.isSafeInteger(value.capturedAt) ||
     value.capturedAt <= 0 ||
-    ['privateKeyCount', 'registeredKeyCount'].some(
-      (k) => !Number.isInteger(value[k]) || value[k] < 0 || value[k] > 128,
-    ) ||
-    ['complete', 'canReuseKeys', 'callbackSecretMissing'].some((k) => typeof value[k] !== 'boolean') ||
-    !Array.isArray(value.missingKeys) ||
-    value.missingKeys.length > 128 ||
-    value.missingKeys.some((k) => typeof k !== 'string' || k.length > 512) ||
-    value.complete !== (value.missingKeys.length === 0) ||
-    value.privateKeyCount + value.missingKeys.length !== value.registeredKeyCount
+    !Number.isInteger(value.registeredKeyCount) ||
+    value.registeredKeyCount < 0 ||
+    value.registeredKeyCount > 128 ||
+    typeof value.callbackSecretMissing !== 'boolean'
   )
     throw new Error('engine_protocol_error');
   return structuredClone(value);
@@ -104,20 +95,6 @@ export async function destinationBackups(invoke, session, action) {
         configuration: structuredClone(result.configuration),
         snapshot: structuredClone(result.snapshot),
       };
-    case 'use_keys':
-      if (!object(result) || Object.keys(result).join() !== 'bundleId' || !uuid(result.bundleId))
-        throw new Error('engine_protocol_error');
-      break;
-    case 'restore_keys':
-      if (
-        !object(result) ||
-        !uuid(result.destinationId) ||
-        !Number.isInteger(result.restored) ||
-        result.restored < 1 ||
-        result.restored > 128
-      )
-        throw new Error('engine_protocol_error');
-      break;
     case 'export':
       if (!object(result) || typeof result.saved !== 'boolean') throw new Error('engine_protocol_error');
       break;

@@ -16,10 +16,7 @@ const {
   pending,
   task,
   name,
-  password,
-  repeated,
   target,
-  useKeys,
   error,
   notice,
   profileMissing,
@@ -31,7 +28,6 @@ const {
   edit,
   transfer,
   remove,
-  restore,
   chooseTask,
 } = c;
 const detailHeading = ref(null),
@@ -53,14 +49,15 @@ watch(task, async (value) => {
 </script>
 <template>
   <section class="tool-section" aria-labelledby="destination-backups-title" :aria-busy="pending">
-    <button type="button" class="button secondary" :disabled="busy || pending" @click="emit('back')">
-      Zur Destination-Übersicht
-    </button>
-    <h2 id="destination-backups-title">Zustellpunkt-Sicherungen</h2>
-    <p>
-      Konfiguration und verfügbare Schlüssel sichern, auf einen anderen Rechner übertragen und erneut
-      verwenden.
-    </p>
+    <div class="tool-section-heading">
+      <div>
+        <h2 id="destination-backups-title">Zustellpunkt-Sicherungen</h2>
+        <p>Öffentliche Konfiguration speichern und für weitere Destinations verwenden.</p>
+      </div>
+      <button type="button" class="button secondary" :disabled="busy || pending" @click="emit('back')">
+        Zur Destination-Übersicht
+      </button>
+    </div>
     <p v-if="session?.apiVersion !== 'v3'" role="status">
       Für Zustellpunkt-Sicherungen bitte eine API-v3-Verbindung öffnen.
     </p>
@@ -82,8 +79,7 @@ watch(task, async (value) => {
           </label>
           <p class="small-note">
             Die Konfiguration und öffentlichen Schlüssel werden frisch aus der eigenen Destination API
-            gelesen. Private Schlüssel werden ergänzt, soweit sie im verbundenen Profil oder seiner Sitzung
-            vorhanden sind. Zugangsdaten und Antragsinhalte gehören nicht zur Sicherung.
+            gelesen. Private Schlüssel, Zugangsdaten und Antragsinhalte gehören nicht zur Sicherung.
           </p>
           <button class="button" type="submit">Sicherung im Profil speichern</button>
         </fieldset>
@@ -121,17 +117,12 @@ watch(task, async (value) => {
             {{ new Date(detail.summary.capturedAt).toLocaleString('de-DE') }} ·
             {{ detail.summary.environment }}
           </dd>
-          <dt>Private Schlüssel</dt>
-          <dd>
-            <span :class="['status-badge', detail.summary.complete ? 'ok' : 'warn']">
-              {{ detail.summary.privateKeyCount }} von {{ detail.summary.registeredKeyCount }} gesichert
-            </span>
-          </dd>
+          <dt>Öffentliche Schlüssel</dt>
+          <dd>{{ detail.summary.registeredKeyCount }}</dd>
         </dl>
-        <p v-if="detail.summary.missingKeys.length" class="small-note">
-          Private Schlüssel fehlen für:
-          <code v-for="key in detail.summary.missingKeys" :key="key">{{ key }}</code>
-          . Diese kann FIT-Connect nicht nachliefern.
+        <p class="small-note">
+          Die Sicherung enthält ausschließlich öffentliche Konfiguration und öffentliche Schlüssel. Private
+          Schlüssel bleiben im Profil.
         </p>
         <p v-if="detail.summary.callbackSecretMissing" class="small-note">
           Die Callback-Adresse ist enthalten. Das zugehörige Secret ist über die API nicht lesbar und muss
@@ -169,16 +160,10 @@ watch(task, async (value) => {
               Die neue Destination erhält eine neue ID und bleibt zunächst in Vorbereitung. Alle Leistungen
               und Schemata werden zur Bearbeitung übernommen. Die Aktivierung erfolgt separat.
             </p>
-            <template v-if="detail.configuration.type !== 'C'">
-              <label class="checkbox-label">
-                <input v-model="useKeys" type="checkbox" :disabled="!detail.summary.canReuseKeys" />
-                Gesichertes Schlüsselpaar für die neue Destination verwenden
-              </label>
-              <p class="small-note">
-                Ohne Auswahl werden neue TEST-Schlüssel erzeugt oder eigene V-PKI-Schlüssel gewählt. Bei
-                Wiederverwendung bleiben die Zertifikatslaufzeiten bestehen.
-              </p>
-            </template>
+            <p class="small-note">
+              Das Schlüsselpaar wählen Sie im Anlageassistenten. Private Schlüssel werden nicht aus dieser
+              Sicherung übernommen.
+            </p>
             <button type="submit" class="button">Anlageassistent öffnen</button>
           </fieldset>
         </form>
@@ -201,23 +186,14 @@ watch(task, async (value) => {
           <pre>{{ JSON.stringify(detail.snapshot, null, 2) }}</pre>
         </details>
         <div class="client-actions">
-          <button
-            v-if="detail.summary.privateKeyCount"
-            type="button"
-            class="button secondary"
-            :disabled="disabled"
-            @click="restore"
-          >
-            Schlüssel für Ursprungsdestination laden
-          </button>
           <button type="button" class="button secondary" :disabled="disabled" @click="chooseTask('delete')">
             Lokale Sicherung löschen
           </button>
         </div>
         <div v-if="task === 'delete'" ref="taskForm" class="notice warning">
           <p>
-            Diese lokale Sicherung einschließlich ihrer Schlüsselkopien löschen? Die Destination und die
-            aktuell verwendeten Profilschlüssel bleiben erhalten.
+            Diese lokale Konfigurationssicherung löschen? Die Destination und die aktuell verwendeten
+            Profilschlüssel bleiben erhalten.
           </p>
           <div class="client-actions">
             <button type="button" class="button secondary" :disabled="disabled" @click="chooseTask('')">
@@ -232,41 +208,12 @@ watch(task, async (value) => {
       <form v-if="['export', 'import'].includes(task)" ref="taskForm" @submit.prevent="transfer">
         <fieldset :disabled="disabled">
           <legend>
-            {{
-              task === 'export' ? 'Passwortverschlüsselt exportieren' : 'Verschlüsselte Sicherung importieren'
-            }}
+            {{ task === 'export' ? 'Konfiguration als JSON exportieren' : 'JSON-Konfiguration importieren' }}
           </legend>
           <p class="small-note">
-            Die Datei ist auch auf anderen Rechnern verwendbar und enthält die gesicherten privaten Schlüssel.
-            Das Passwort wird nicht gespeichert. Der Import legt eine eigene Kopie an.
+            Die Datei enthält keine privaten Schlüssel und benötigt kein Passwort. Der Import legt eine
+            separate Kopie an. Prüfen Sie importierte Einstellungen vor der Verwendung.
           </p>
-          <div class="client-fields">
-            <div>
-              <label for="destination-backup-password">Dateipasswort</label>
-              <input
-                id="destination-backup-password"
-                aria-describedby="destination-backup-password-hint"
-                v-model="password"
-                type="password"
-                required
-                minlength="12"
-                maxlength="1024"
-                :autocomplete="task === 'export' ? 'new-password' : 'off'"
-              />
-              <small id="destination-backup-password-hint">Mindestens 12 Zeichen.</small>
-            </div>
-            <label v-if="task === 'export'">
-              Passwort wiederholen
-              <input
-                v-model="repeated"
-                type="password"
-                required
-                minlength="12"
-                maxlength="1024"
-                autocomplete="new-password"
-              />
-            </label>
-          </div>
           <div class="client-actions">
             <button type="button" class="button secondary" @click="chooseTask('')">Abbrechen</button>
             <button type="submit" class="button">

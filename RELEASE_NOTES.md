@@ -2,7 +2,8 @@
 
 ## 0.4.0 (unveröffentlicht)
 
-- Zustellpunkte mit ihrer Konfiguration und verfügbaren privaten Schlüsseln geschützt im Profil sichern. Passwortverschlüsselte Dateien lassen sich auch auf anderen Rechnern importieren. Sicherungen können die Anlage einer neuen Destination oder die Bearbeitung einer bestehenden eigenen Destination vorbereiten. Fehlende Schlüssel bleiben sichtbar. Schlüsselwiederverwendung ist ausdrücklich wählbar und wird erneut geprüft. Vorschau und Bestätigung bleiben vor Serveränderungen erforderlich.
+- Öffentliche Zustellpunkt-Konfiguration und öffentliche Schlüssel im Profil sichern und als JSON ohne Passwort exportieren oder importieren. Neue Destinations daraus vorbereiten oder bestehende eigene Destinations nach Vorschau bearbeiten. Private Schlüssel bleiben ausschließlich im Profil.
+- Zustellpunkt-Sicherungen beim Bereichswechsel zuverlässig ausblenden. Kompakte, gleich hohe Verbindungs- und Auswahlfelder in der oberen Leiste.
 
 - Konkrete SDK-Fehler beim Abrufen und Prüfen von Einreichungen, Antworten und Event Logs anzeigen. „Technische Fehlerangaben“ enthält Prüfphase, Fehlertyp und kopierbare SDK-Meldungen, etwa bei einem nicht angebotenen Antwortkanal. Der lokale technische Verlauf erhält dieselben Meldungen. Der standardmäßige Diagnoseexport lässt sie aus. Fehlgeschlagene Prüfungen geben weiterhin keine Inhalte oder Annahme frei.
 

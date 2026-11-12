@@ -1,25 +1,12 @@
 //! Renderer actions expose summaries and public drafts only, never private JWKs or archive paths.
 use crate::{
-    destination_backup_model::Backup,
-    destination_backup_store::Store,
-    engine::request,
-    portable_archive, profiles,
-    protocol::{ApiVersion, SessionResource},
-    EngineState,
+    destination_backup_model::Backup, destination_backup_store::Store, engine::request,
+    portable_archive, profiles, protocol::ApiVersion, EngineState,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
 use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
-#[derive(Deserialize)]
-#[serde(transparent)]
-pub struct Password(String);
-impl Drop for Password {
-    fn drop(&mut self) {
-        crate::vault::wipe_string(&mut self.0);
-    }
-}
-
 #[derive(Deserialize)]
 #[serde(
     tag = "action",
@@ -41,17 +28,8 @@ pub enum BackupAction {
     },
     Export {
         id: String,
-        password: Password,
     },
-    Import {
-        password: Password,
-    },
-    UseKeys {
-        id: String,
-    },
-    RestoreKeys {
-        id: String,
-    },
+    Import {},
 }
 async fn store(
     app: &tauri::AppHandle,
@@ -101,7 +79,6 @@ pub async fn destination_backups(
             {
                 return Err("invalid_input");
             }
-            profiles::checkpoint(&app, &state, api_version, &session_id).await?;
             let backup = crate::destination_backup_transfer::capture(
                 &session_id,
                 state.environment(),
@@ -125,20 +102,16 @@ pub async fn destination_backups(
             storage.delete(&id)?;
             Ok(json!({"deleted":true}))
         }
-        BackupAction::Export { id, password } => {
+        BackupAction::Export { id } => {
             let value = storage.read(&id)?;
-            let mut plain = serde_json::to_vec(&value).map_err(|_| "backup_invalid")?;
-            let encrypted = portable_archive::encrypt(&plain, &password.0);
-            plain.fill(0);
-            drop(password);
-            let encrypted = encrypted?;
+            let document = serde_json::to_vec(&value).map_err(|_| "backup_invalid")?;
             let saved = tauri::async_runtime::spawn_blocking(move || {
                 let mut dialog = app
                     .dialog()
                     .file()
                     .set_title("Zustellpunkt-Sicherung exportieren")
-                    .add_filter("Zustellpunkt-Sicherung", &["fcdestination"])
-                    .set_file_name("zustellpunkt.fcdestination");
+                    .add_filter("Zustellpunkt-Sicherung", &["json"])
+                    .set_file_name("zustellpunkt.json");
                 if let Ok(directory) = app.path().download_dir() {
                     dialog = dialog.set_directory(directory);
                 }
@@ -147,7 +120,7 @@ pub async fn destination_backups(
                 };
                 crate::vault::write_protected(
                     &file.into_path().map_err(|_| "backup_unavailable")?,
-                    &encrypted,
+                    &document,
                 )?;
                 Ok::<_, &'static str>(true)
             })
@@ -155,14 +128,14 @@ pub async fn destination_backups(
             .map_err(|_| "backup_unavailable")??;
             Ok(json!({"saved":saved}))
         }
-        BackupAction::Import { password } => {
+        BackupAction::Import {} => {
             let dialog_app = app.clone();
             let file = tauri::async_runtime::spawn_blocking(move || {
                 let Some(file) = dialog_app
                     .dialog()
                     .file()
                     .set_title("Zustellpunkt-Sicherung importieren")
-                    .add_filter("Zustellpunkt-Sicherung", &["fcdestination"])
+                    .add_filter("Zustellpunkt-Sicherung", &["json"])
                     .blocking_pick_file()
                 else {
                     return Ok(None);
@@ -178,11 +151,7 @@ pub async fn destination_backups(
             let Some(file) = file else {
                 return Ok(Value::Null);
             };
-            let decrypted = portable_archive::decrypt(&file, &password.0);
-            drop(password);
-            let mut plain = decrypted?;
-            let parsed = serde_json::from_slice::<Backup>(&plain).map_err(|_| "backup_invalid");
-            plain.fill(0);
+            let parsed = serde_json::from_slice::<Backup>(&file).map_err(|_| "backup_invalid");
             let mut backup = parsed?;
             backup.validate()?;
             if backup.environment != state.environment() {
@@ -194,54 +163,5 @@ pub async fn destination_backups(
                 .save_new(&backup)?;
             Ok(backup.summary())
         }
-        BackupAction::UseKeys { id } => {
-            let backup = storage.read(&id)?;
-            let mut document = crate::destination_backup_transfer::bundle_document(&backup)?;
-            let result = import_bundle(&app, &state, api_version, &session_id, &document).await;
-            document.fill(0);
-            result
-        }
-        BackupAction::RestoreKeys { id } => {
-            let backup = storage.read(&id)?;
-            if backup.keys.is_empty() {
-                return Err("backup_keys_missing");
-            }
-            // Fresh owned read precedes every import. Existing registration policy validates each key.
-            let own:SessionResource=request(&app,&state,json!({"command":"load_managed_destination","apiVersion":api_version,"sessionId":session_id,"destinationId":backup.source_destination_id})).await?;
-            if !own.validate(api_version, &session_id)
-                || own.environment != state.environment().name()
-                || own.data["destinationId"] != backup.source_destination_id
-            {
-                return Err("engine_protocol_error");
-            }
-            let _ = crate::resource_action(
-                &app,
-                &state,
-                api_version,
-                &session_id,
-                json!({"command":"load_destination","destinationId":backup.source_destination_id}),
-            )
-            .await?;
-            for key in &backup.keys {
-                crate::resource_action(&app,&state,api_version,&session_id,json!({"command":"import_key","destinationId":backup.source_destination_id,"purpose":key.purpose,"keyDocument":key.private_jwk})).await?;
-            }
-            Ok(json!({"restored":backup.keys.len(),"destinationId":backup.source_destination_id}))
-        }
     }
-}
-
-async fn import_bundle(
-    app: &tauri::AppHandle,
-    state: &EngineState,
-    api: ApiVersion,
-    session: &str,
-    document: &[u8],
-) -> Result<Value, &'static str> {
-    crate::destination_backup_transfer::import_bundle(
-        session,
-        state.environment(),
-        document,
-        |command| crate::resource_action(app, state, api, session, command),
-    )
-    .await
 }

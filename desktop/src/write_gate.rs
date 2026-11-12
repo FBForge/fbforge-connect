@@ -60,7 +60,6 @@ pub(crate) async fn run<C: Context>(
     if matches!(
         operation.as_str(),
         "import_certified_keys"
-            | "import_backup_bundle"
             | "generate_test_keys"
             | "prepare_destination_rotation"
             | "execute_destination_rotation"
@@ -205,7 +204,6 @@ pub(crate) async fn run<C: Context>(
             | "execute_send"
             | "cancel_send"
             | "import_key"
-            | "import_backup_bundle"
             | "discard_keys"
             | "remove_key_inventory_item"
             | "execute_destination_cleanup"
@@ -223,10 +221,7 @@ pub(crate) async fn run<C: Context>(
         if let Err(code) = context.effect(Effect::CheckpointProfile).await {
             if matches!(
                 operation.as_str(),
-                "import_certified_keys"
-                    | "import_backup_bundle"
-                    | "generate_test_keys"
-                    | "remove_key_inventory_item"
+                "import_certified_keys" | "generate_test_keys" | "remove_key_inventory_item"
             ) {
                 return Err(code.into());
             }
