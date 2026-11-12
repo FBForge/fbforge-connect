@@ -43,6 +43,7 @@ test('live send failure diagnostics retain known errors and HTTP status while ex
     uncertain: true,
     failed: false,
     confirmationOpen: false,
+    transferring: false,
     rows: [{ step: 'unknown', http: 503, code: 'resource_unavailable' }],
   });
 });

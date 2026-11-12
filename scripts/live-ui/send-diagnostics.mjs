@@ -50,6 +50,9 @@ export async function sendDiagnostics(page) {
       confirmationOpen: await root
         .getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true })
         .isVisible(),
+      transferring: await root
+        .getByRole('button', { name: 'Wird an FIT-Connect übertragen …', exact: true })
+        .isVisible(),
       rows,
     })}`,
   );

@@ -160,11 +160,29 @@ export async function sendSubmission(
   );
   await page.locator('input#send-attachments').setInputFiles([attachment, pdf]);
   await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
+  const sendStarted = performance.now();
   await page
     .getByRole('dialog', { name: 'Einreichung an FIT-Connect senden?', exact: true })
     .getByRole('button', { name: 'Jetzt an FIT-Connect senden', exact: true })
     .click();
-  await page.getByText('An FIT-Connect übergeben', { exact: true }).filter({ visible: true }).waitFor();
+  const result = page.locator('[aria-labelledby="send-title"] > div[role="status"] .status-badge');
+  // Observe this one confirmed operation. A delayed response never becomes a second send.
+  await until(
+    async () => {
+      const status = (await result.allTextContents())[0]?.trim();
+      if (status === 'Versand fehlgeschlagen' || status === 'Versandausgang ungewiss')
+        throw new Error('live_ui_send_reported_failure');
+      if (await page.locator('[aria-labelledby="send-title"] > .action-notice:visible').count())
+        throw new Error('live_ui_send_error_reported');
+      return status === 'An FIT-Connect übergeben';
+    },
+    'live_ui_send_not_completed',
+    150000,
+  );
+  if (performance.now() - sendStarted > 45000)
+    console.log(
+      `Real desktop UI: one confirmed send completed after ${Math.round((performance.now() - sendStarted) / 1000)} seconds without a retry`,
+    );
   const submissionId = await copyValue(page, 'Submission ID');
   const caseId = await copyValue(page, 'Case ID');
   console.log(

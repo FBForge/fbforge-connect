@@ -222,7 +222,7 @@ export async function reviewDestinationBackups(desktop, fixture) {
   );
 }
 
-async function reviewBulkEdit(page, fixture, cloneId, cloneName) {
+export async function reviewBulkEdit(page, fixture, cloneId, cloneName) {
   await button(page, 'Bestehende Destinations').click();
   await button(page, 'Eigene Destinations laden').click();
   await ownListReady(page);
@@ -242,11 +242,7 @@ async function reviewBulkEdit(page, fixture, cloneId, cloneName) {
     const next = button(page, 'Nächste Seite');
     check(!(await next.isDisabled()), 'live_ui_bulk_fixture_missing');
     await next.click();
-    await until(
-      async () =>
-        !(await next.isDisabled()) || (await button(page, '2 Destinations gemeinsam bearbeiten').isVisible()),
-      'live_ui_bulk_page_pending',
-    );
+    await ownListReady(page);
   }
   check(wanted.size === 0, 'live_ui_bulk_selection_incomplete');
   await button(page, '2 Destinations gemeinsam bearbeiten').click();

@@ -35,6 +35,7 @@ import { review030 } from './review-030.mjs';
 import { reviewAuthoring, reviewProfile } from './review-authoring.mjs';
 import { reviewIntegrationAuthoring } from './review-integration-040.mjs';
 import { reviewDestinationBackups } from './review-destination-backups.mjs';
+import { reviewDestinationCreation } from './review-destination-creation.mjs';
 import { failureDiagnostics } from './failure-diagnostics.mjs';
 import { independentReviews } from './reviews.mjs';
 
@@ -148,6 +149,7 @@ export async function exerciseDesktopUI(fixture) {
     addReview('custom_schema_reply', () => reviewAuthoring(desktop, fixture, senders));
     addReview('integration_040', () => reviewIntegrationAuthoring(desktop, fixture, senders));
     addReview('public_destination_backups', () => reviewDestinationBackups(desktop, fixture));
+    addReview('manual_destination_creation', () => reviewDestinationCreation(desktop, fixture));
     addReview('proxy_transport', () => verifyAcceptanceProxy(proxy));
     const result = await independentReviews(reviews, async (_, error) => {
       await failureDiagnostics(desktop, stage, error);
