@@ -36,6 +36,7 @@ import { reviewAuthoring } from './review-authoring.mjs';
 import { reviewIntegrationAuthoring } from './review-integration-040.mjs';
 import { reviewDestinationBackups } from './review-destination-backups.mjs';
 import { diagnosticCode } from '../../frontend/src/diagnostics.js';
+import { sendDiagnostics } from './send-diagnostics.mjs';
 
 export async function exerciseDesktopUI(fixture) {
   let desktop,
@@ -43,7 +44,7 @@ export async function exerciseDesktopUI(fixture) {
     stage = 'installation';
   try {
     desktop = await createDesktop(fixture.directory, fixture.receiverProfiles);
-    const { page } = desktop;
+    let page = desktop.page;
     // Network changes deliberately reject active scanner setup. Finish the optional
     // offline first-start adoption before asking the installed client to reconnect.
     if (process.env.FBFORGE_UI_SCANNER_ONLINE !== 'true') {
@@ -68,6 +69,11 @@ export async function exerciseDesktopUI(fixture) {
       'live_ui_api_switch_failed',
     );
     console.log('Real desktop UI: v2/v3 switch with actual credentials and no re-entry passed');
+    stage = 'public_destination_backups';
+    await reviewDestinationBackups(desktop, fixture);
+    page = desktop.page;
+    stage = 'optional_local_scanner';
+    await localScannerReady(page);
     const focused = process.env.FBFORGE_UI_REVIEW_ONLY === 'true';
     if (!focused) {
       for (const api of ['v3', 'v2']) {
@@ -97,10 +103,12 @@ export async function exerciseDesktopUI(fixture) {
         stage = `${api}_local_case`;
         await caseWorkspace(page, message);
       }
-      stage = 'bulk_fixture_send';
+      stage = 'bulk_valid_fixture_send';
       await connectProfile(page, senders.v3);
       const valid = await sendSubmission(page, fixture);
+      stage = 'bulk_invalid_fixture_send';
       const invalid = await sendSubmission(page, fixture, 'v3', false, true);
+      stage = 'bulk_manual_fixture_send';
       const manual = await sendSubmission(page, fixture, 'v3', false, true);
       await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
       stage = 'bulk_schema_safety';
@@ -129,13 +137,12 @@ export async function exerciseDesktopUI(fixture) {
     await reviewAuthoring(desktop, fixture, senders);
     stage = 'integration_040';
     await reviewIntegrationAuthoring(desktop, fixture, senders);
-    stage = 'public_destination_backups';
-    await reviewDestinationBackups(desktop, fixture);
     console.log(
       `Real installed desktop UI ${focused ? 'focused review' : 'full acceptance'} completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
     );
   } catch (error) {
     if (desktop) {
+      await sendDiagnostics(desktop.page).catch(() => {});
       if (stage === 'optional_local_scanner') await scannerDiagnostics(desktop.page);
       const values = await desktop.page
         .locator(
