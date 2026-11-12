@@ -155,7 +155,7 @@ async function flowReview(desktop, fixture, senders, pack) {
   );
   await button(page, 'Durchführen').click();
   await progress.waitFor();
-  await button(page, 'Zur passenden Arbeitsansicht').click();
+  await button(page, 'Einreichung im Empfang öffnen').click();
   await page.getByRole('heading', { name: 'Empfangen', exact: true }).waitFor();
   check(
     (await page.locator('#destination-id').inputValue()) === fixture.destination,
