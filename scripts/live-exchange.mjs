@@ -23,6 +23,8 @@ for (const secretName of secretNames)
 const scope = acceptanceScope({
   uiOnly: process.env.FBFORGE_UI_ONLY === 'true',
   installer: process.env.FBFORGE_UI_INSTALLER,
+  baseOnly: process.env.FBFORGE_UI_BASE_ONLY === 'true',
+  reviewOnly: process.env.FBFORGE_UI_REVIEW_ONLY === 'true',
 });
 const root = fileURLToPath(new URL('../', import.meta.url));
 const bridge = join(root, 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe');

@@ -21,11 +21,15 @@ on:
         type: boolean
         default: false
       review_only:
-        description: Focus installed UI on new 0.3 functions, full native TEST exchange still runs
+        description: Focus installed UI on current feature reviews, native TEST matrix remains enabled unless ui_only
         type: boolean
         default: false
       ui_only:
-        description: Only the full installed client UI, explicitly excludes the separate SDK matrix
+        description: Only the installed client UI, explicitly excludes the separate SDK matrix
+        type: boolean
+        default: false
+      base_only:
+        description: Recheck only baseline exchange groups, requires ui_only and excludes review_only and ui_probe
         type: boolean
         default: false
       ui_probe:
@@ -67,10 +71,13 @@ jobs:
         env:
           UI_ONLY: ${{ inputs.ui_only }}
           UI_PROBE: ${{ inputs.ui_probe }}
+          BASE_ONLY: ${{ inputs.base_only }}
+          REVIEW_ONLY: ${{ inputs.review_only }}
           VALIDATION_RUN: ${{ inputs.validation_run }}
         shell: powershell
         run: |
           if ($env:UI_ONLY -eq 'true' -and ($env:UI_PROBE -eq 'true' -or -not $env:VALIDATION_RUN)) { throw 'ui_only_requires_validated_installer_and_no_probe' }
+          if ($env:BASE_ONLY -eq 'true' -and ($env:UI_ONLY -ne 'true' -or $env:UI_PROBE -eq 'true' -or $env:REVIEW_ONLY -eq 'true' -or -not $env:VALIDATION_RUN)) { throw 'base_only_requires_validated_ui_only_without_review_or_probe' }
       - name: Resolve locked dependencies
         run: npm ci --ignore-scripts
       - name: Build isolated SDK adapters and native protocol host
@@ -110,6 +117,7 @@ jobs:
         if: inputs.ui_probe != true
         env:
           FBFORGE_UI_REVIEW_ONLY: ${{ inputs.review_only }}
+          FBFORGE_UI_BASE_ONLY: ${{ inputs.base_only }}
           FBFORGE_UI_ONLY: ${{ inputs.ui_only }}
           SENDERID: ${{ secrets.SENDERID }}
           SENDERSECRET: ${{ secrets.SENDERSECRET }}

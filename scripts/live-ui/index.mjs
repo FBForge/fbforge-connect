@@ -80,6 +80,7 @@ export async function exerciseDesktopUI(fixture) {
         },
       });
     const focused = process.env.FBFORGE_UI_REVIEW_ONLY === 'true';
+    const baseOnly = process.env.FBFORGE_UI_BASE_ONLY === 'true';
     if (!focused) {
       for (const api of ['v3', 'v2']) {
         addReview(`${api}_roundtrip`, async () => {
@@ -137,19 +138,21 @@ export async function exerciseDesktopUI(fixture) {
         await auditScreen(desktop.page);
       });
     }
-    addReview('profile_management', async () => {
-      await connectProfile(desktop.page, senders.v3);
-      await reviewProfile(desktop, fixture);
-    });
-    addReview('process_and_inbox', () => reviewProcessAndInbox(desktop, fixture, senders));
-    addReview('stored_test_roundtrip', () => review030(desktop, fixture, senders));
-    addReview('workspaces', () => otherAreas(desktop.page));
-    addReview('scanner_problem_acceptance', () => scannerProblemAcceptance(desktop, fixture));
-    addReview('runtime_030', () => reviewRuntime(desktop, fixture));
-    addReview('custom_schema_reply', () => reviewAuthoring(desktop, fixture, senders));
-    addReview('integration_040', () => reviewIntegrationAuthoring(desktop, fixture, senders));
-    addReview('public_destination_backups', () => reviewDestinationBackups(desktop, fixture));
-    addReview('manual_destination_creation', () => reviewDestinationCreation(desktop, fixture));
+    if (!baseOnly) {
+      addReview('profile_management', async () => {
+        await connectProfile(desktop.page, senders.v3);
+        await reviewProfile(desktop, fixture);
+      });
+      addReview('process_and_inbox', () => reviewProcessAndInbox(desktop, fixture, senders));
+      addReview('stored_test_roundtrip', () => review030(desktop, fixture, senders));
+      addReview('workspaces', () => otherAreas(desktop.page));
+      addReview('scanner_problem_acceptance', () => scannerProblemAcceptance(desktop, fixture));
+      addReview('runtime_030', () => reviewRuntime(desktop, fixture));
+      addReview('custom_schema_reply', () => reviewAuthoring(desktop, fixture, senders));
+      addReview('integration_040', () => reviewIntegrationAuthoring(desktop, fixture, senders));
+      addReview('public_destination_backups', () => reviewDestinationBackups(desktop, fixture));
+      addReview('manual_destination_creation', () => reviewDestinationCreation(desktop, fixture));
+    }
     addReview('proxy_transport', () => verifyAcceptanceProxy(proxy));
     const result = await independentReviews(reviews, async (_, error) => {
       await failureDiagnostics(desktop, stage, error);
@@ -158,7 +161,7 @@ export async function exerciseDesktopUI(fixture) {
     stage = 'acceptance_summary';
     check(result.failed.length === 0, 'live_ui_incomplete_acceptance');
     console.log(
-      `Real installed desktop UI ${focused ? 'focused review' : 'full acceptance'} completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
+      `Real installed desktop UI ${baseOnly ? 'base exchange review' : focused ? 'focused review' : 'full acceptance'} completed; candidate source ${process.env.FBFORGE_UI_SOURCE_SHA}`,
     );
   } catch (error) {
     if (desktop) {

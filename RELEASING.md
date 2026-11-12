@@ -56,6 +56,7 @@ Bearbeitungen betreffen ausschließlich die neue Test-Destination.
 | `ui_probe=true` | App-Start, reguläres Fensterschließen mit Neustart und NVDA ohne TEST-Zugänge. Standardmodus: native Dateiexporte, bei lokalem Scanner auch Start und Signaturupdate-Abbruch. Online-Modus siehe unten. |
 | `ui_only=true` | Installierter Client mit echter TEST-Verbindung und validiertem Installer. Die separate SDK-Matrix entfällt. Ohne `review_only` läuft die vollständige Oberflächenabnahme. |
 | `review_only=true` | Vertiefte Oberflächenprüfung einschließlich Sicherungen, Testserien und gespeicherter Abläufe. Die ersten Standardrunden entfallen. Der native TEST-Austausch bleibt aktiv, sofern `ui_only` nicht gesetzt ist. |
+| `base_only=true` | Gezielt die ersten v2/v3-Austauschgruppen, Sammel- und manuelle Empfangsentscheidungen, einzelne Destination-Bearbeitung, lokale Werkzeuge und Proxy-Nutzung nachprüfen. Erfordert `ui_only` und einen validierten Installer. Nicht mit `review_only` oder `ui_probe` kombinierbar. |
 | Keine Umfangsbeschränkung | Separate SDK-Matrix und vollständige Oberflächenabnahme des angegebenen Installers |
 
 `ui_only` benötigt eine gültige `validation_run` und ist nicht mit `ui_probe`

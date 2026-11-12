@@ -33,6 +33,20 @@ test('explicit UI-only acceptance requires a validated installer and reports its
   assert.deepEqual(calls, ['desktop']);
   assert.equal(result, 'installed_ui_only');
 });
+test('baseline rechecks require explicit validated UI-only scope and never claim full acceptance', async () => {
+  assert.throws(() => acceptanceScope({ baseOnly: true }), /base_only_requires/);
+  assert.throws(() => acceptanceScope({ baseOnly: true, installer: 'candidate.exe' }), /base_only_requires/);
+  assert.throws(
+    () => acceptanceScope({ baseOnly: true, uiOnly: true, installer: 'candidate.exe', reviewOnly: true }),
+    /base_only_requires/,
+  );
+  const scope = acceptanceScope({ baseOnly: true, uiOnly: true, installer: 'candidate.exe' });
+  const result = await exerciseAcceptance(scope, {
+    native: async () => assert.fail('baseline recheck cannot run the separate SDK matrix'),
+    desktop: async () => {},
+  });
+  assert.equal(result, 'installed_ui_base_only');
+});
 
 test('failures propagate without retries or declaring an unexecuted UI test successful', async () => {
   let calls = 0;
