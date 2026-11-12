@@ -30,9 +30,9 @@ import {
 } from './local-tools.mjs';
 import { downloadMessage } from './downloads.mjs';
 import { scannerProblemAcceptance } from './scanner.mjs';
-import { reviewRuntime } from './review-runtime.mjs';
+import { reviewRuntime, reviewProcessAndInbox } from './review-runtime.mjs';
 import { review030 } from './review-030.mjs';
-import { reviewAuthoring } from './review-authoring.mjs';
+import { reviewAuthoring, reviewProfile } from './review-authoring.mjs';
 import { reviewIntegrationAuthoring } from './review-integration-040.mjs';
 import { reviewDestinationBackups } from './review-destination-backups.mjs';
 import { failureDiagnostics } from './failure-diagnostics.mjs';
@@ -137,7 +137,12 @@ export async function exerciseDesktopUI(fixture) {
         await auditScreen(desktop.page);
       });
     }
-    addReview('review_030', () => review030(desktop, fixture, senders));
+    addReview('profile_management', async () => {
+      await connectProfile(desktop.page, senders.v3);
+      await reviewProfile(desktop, fixture);
+    });
+    addReview('process_and_inbox', () => reviewProcessAndInbox(desktop, fixture, senders));
+    addReview('stored_test_roundtrip', () => review030(desktop, fixture, senders));
     addReview('workspaces', () => otherAreas(desktop.page));
     addReview('scanner_problem_acceptance', () => scannerProblemAcceptance(desktop, fixture));
     addReview('runtime_030', () => reviewRuntime(desktop, fixture));

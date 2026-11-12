@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { isDeepStrictEqual } from 'node:util';
 import { check, cleanEnvironment, until } from './desktop.mjs';
 import { connectProfile, navigate } from './exchange.mjs';
 import { nativeFile } from './downloads.mjs';
@@ -71,6 +72,28 @@ export async function reviewProvenRun(desktop, fixture, runId) {
   await button(page, 'Als Referenz festlegen').waitFor();
   console.log(
     'Real installed desktop: successful real round trip pinned as a protected reference, deletion refused, ticket text present in actual Windows clipboard and versioned result export verified',
+  );
+  await button(page, 'Vorbereiten').click();
+  await button(page, 'Als Testserie planen').click();
+  const series = page.locator('section.scenario-series');
+  await button(series, 'Testserie anlegen').click();
+  await button(series, 'Aktuellen Durchlauf zuordnen').click();
+  await series.getByText('Erfolgreich', { exact: true }).waitFor();
+  const aggregate = await savedJson(
+    desktop,
+    fixture,
+    () => button(series, 'Serienergebnis exportieren').click(),
+    'ui-040-proven-series.json',
+  );
+  check(
+    aggregate.rows.length === 1 && aggregate.rows[0].status === 'passed' && aggregate.rows[0].runId === runId,
+    'live_ui_series_lost_real_proof',
+  );
+  await button(series, 'Serie entfernen').click();
+  await series.getByRole('heading', { name: 'Testserie planen', exact: true }).waitFor();
+  await button(page, 'Zum geöffneten Test').click();
+  console.log(
+    'Real installed desktop: series linked to the actual six-step round trip and exported its passed result',
   );
 }
 export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
@@ -161,7 +184,7 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
     () => button(page, 'Testdatei exportieren').click(),
     'ui-040-definition-after-restart.json',
   );
-  check(JSON.stringify(restored) === JSON.stringify(definition), 'live_ui_040_definition_restart_changed');
+  check(isDeepStrictEqual(restored, definition), 'live_ui_040_definition_restart_changed');
   await navigate(page, 'Testwerkzeuge');
   console.log(
     'Real installed desktop: variables, two datasets, full comparison with field condition, definition export and restart durability, four-row v2/v3 series and honest not-started result export passed',

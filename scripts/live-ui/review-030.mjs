@@ -15,8 +15,7 @@ import {
 } from './exchange.mjs';
 import { receiveReply } from './readback.mjs';
 import { nativeFile } from './downloads.mjs';
-import { reviewProcessAndInbox, reviewShortcuts } from './review-runtime.mjs';
-import { reviewProfile } from './review-authoring.mjs';
+import { reviewShortcuts } from './review-runtime.mjs';
 import { localScannerReady } from './local-tools.mjs';
 import { testTools, testOverview, openStoredTest, checkTestStep } from './test-workspace.mjs';
 
@@ -352,13 +351,8 @@ async function durability(desktop, fixture, senders, pack, message) {
 }
 export async function review030(desktop, fixture, senders) {
   await connectProfile(desktop.page, senders.v3);
-  console.log('Live acceptance: real profile maintenance started');
-  await reviewProfile(desktop, fixture);
-  await connectProfile(desktop.page, senders.v3);
   console.log('Live acceptance: protected collections and real flow started');
   await reviewShortcuts(desktop.page, fixture);
-  await reviewProcessAndInbox(desktop, fixture, senders);
-  await connectProfile(desktop.page, senders.v3);
   const pack = await fixturePack(fixture);
   await savePack(desktop, fixture, pack);
   const message = await flowReview(
