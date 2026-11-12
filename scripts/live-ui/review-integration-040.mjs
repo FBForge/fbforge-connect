@@ -1,5 +1,6 @@
 // Exercise 0.4 authoring and durable results in the installed app, with actual native storage.
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { check, cleanEnvironment } from './desktop.mjs';
 import { connectProfile, navigate } from './exchange.mjs';
@@ -19,7 +20,7 @@ export async function reviewProvenRun(desktop, fixture, runId) {
   await copy.click();
   await copy.locator('..').getByText('Testergebnis fürs Ticket kopiert.', { exact: true }).waitFor();
   const clip = spawnSync(
-    'powershell.exe',
+    join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'),
     [
       '-NoProfile',
       '-NonInteractive',
