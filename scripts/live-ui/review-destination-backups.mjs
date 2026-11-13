@@ -5,6 +5,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { check, until } from './desktop.mjs';
 import { connectProfile, navigate } from './exchange.mjs';
 import { nativeFile, nativeOpenFile } from './downloads.mjs';
+import { reviewDestinationExtras } from './review-destination-extras.mjs';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 const ownListReady = (page) =>
   until(
@@ -217,6 +218,10 @@ export async function reviewDestinationBackups(desktop, fixture) {
   check(id, 'live_ui_backup_clone_identifier_missing');
   await fixture.confirmCreatedDestination(cloneName, id.trim());
   await reviewBulkEdit(page, fixture, id.trim(), cloneName);
+  await reviewDestinationExtras(page, fixture, id.trim(), cloneName, process.env.SENDERDEST);
+  console.log(
+    'Real installed desktop: routing, sender destinations, contact CC and callback configuration saved, authenticated readback verified, callback secret withheld and temporary settings removed on the owned unused clone',
+  );
   console.log(
     'Real installed desktop: authenticated public snapshot, native JSON export/import/cancellation, forbidden private fields, restart durability, all workspace switches, edit preview and separately confirmed clone creation passed',
   );

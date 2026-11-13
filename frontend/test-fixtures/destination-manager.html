@@ -126,7 +126,7 @@
                   before = {},
                   after = {};
                 for (const [key, value] of Object.entries(request.changes)) {
-                  before[key] = current[key];
+                  before[key] = current[key] ?? null;
                   after[key] =
                     key === 'name'
                       ? value.replaceAll('{name}', current.name)
@@ -137,8 +137,8 @@
                 return {
                   destinationId: id,
                   name: current.name,
-                  beforeJson: JSON.stringify(before),
-                  afterJson: JSON.stringify(after),
+                  beforeJson: JSON.stringify(before, (key, value) => (key === 'secret' ? undefined : value)),
+                  afterJson: JSON.stringify(after, (key, value) => (key === 'secret' ? undefined : value)),
                   status: 'prepared',
                   error: null,
                 };

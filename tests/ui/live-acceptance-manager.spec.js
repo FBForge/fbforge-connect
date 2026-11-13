@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures.js';
 import { ownDestination } from '../../scripts/live-ui/local-tools.mjs';
 import { reviewBulkEdit } from '../../scripts/live-ui/review-destination-backups.mjs';
+import { reviewDestinationExtras } from '../../scripts/live-ui/review-destination-extras.mjs';
 test('the real acceptance driver uses direct single fields and verifies unchanged server fields', async ({
   page,
 }) => {
@@ -40,6 +41,39 @@ test('the real acceptance driver uses direct single fields and verifies unchange
   };
   await ownDestination(page, fixture);
   expect(await page.evaluate(() => window.__destinationFixture.writes)).toBe(1);
+});
+
+test('the extras driver uses confirmed patches, redacted readback and removes its callback configuration', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/destination-manager.html');
+  const id = '22222222-2222-4222-8222-222222222222';
+  const readManagedFixture = (id) =>
+    page.evaluate((id) => {
+      const row = window.__destinationFixture.records.get(id);
+      return {
+        ...row,
+        extrasJson: JSON.stringify({
+          publicForRouting: row.publicForRouting ?? false,
+          senderAccessRestricted: row.senderAccessRestricted,
+          callback: row.callback ? { url: row.callback.url } : null,
+        }),
+        contactJson: JSON.stringify(row.contactInformation),
+        offersJson: JSON.stringify({
+          publicServices: row.publicServices,
+          processMessages: row.processMessages,
+        }),
+      };
+    }, id);
+  const original = await readManagedFixture(id);
+  await reviewDestinationExtras(
+    page,
+    { readManagedFixture },
+    id,
+    original.name,
+    '11111111-1111-4111-8111-111111111111',
+  );
+  expect(await page.evaluate(() => window.__destinationFixture.writes)).toBe(2);
 });
 test('bulk acceptance keeps selection when its second owned destination is on the last page', async ({
   page,
