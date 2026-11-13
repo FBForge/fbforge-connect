@@ -1,6 +1,7 @@
 /* Read-only application data; values are text, never executable markup. */
 .structured-data {
   min-width: 0;
+  container-type: inline-size;
 }
 .application-toolbar {
   display: flex;
@@ -46,7 +47,7 @@
   border-radius: 7px;
   color: var(--ink) !important;
   background: var(--surface-soft);
-  font-size: 13px !important;
+  font-size: 14px !important;
   cursor: pointer;
 }
 .application-group > summary::before {
@@ -71,7 +72,7 @@
   border: 0;
   border-inline-start: 2px solid var(--line);
   border-radius: 0;
-  padding-inline-start: 12px;
+  padding-inline-start: 6px;
 }
 .application-group .application-group > summary {
   background: transparent;
@@ -89,8 +90,8 @@
 }
 .application-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 24px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
   align-items: start;
 }
 .application-fields > .application-group {
@@ -99,24 +100,48 @@
 }
 .application-field {
   min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px 24px;
+  padding-block: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.application-field-long {
+  grid-template-columns: minmax(0, 1fr);
+}
+.application-field > :is(details, .application-field-error, .application-duplicate) {
+  grid-column: 1 / -1;
+}
+.application-field > .application-field-label {
+  grid-column: 1;
+}
+.application-field > .application-field-value {
+  grid-column: -2;
+  grid-row: 1;
+}
+.application-field-long > .application-field-value {
+  grid-row: auto;
+}
+.application-group .application-group .application-group {
+  border: 0;
+  padding-inline-start: 0;
 }
 .application-field-label {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   overflow-wrap: anywhere;
 }
 .application-field-value {
-  padding: 4px 0 12px;
-  border-bottom: 1px solid var(--line);
+  padding: 0;
   color: var(--ink);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .application-empty {
@@ -271,4 +296,16 @@
 }
 .application-group {
   padding: 0;
+}
+.application-group + .application-group {
+  margin-top: 12px;
+}
+
+@container (max-width: 560px) {
+  .application-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .application-field > .application-field-value {
+    grid-row: auto;
+  }
 }

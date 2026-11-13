@@ -30,7 +30,7 @@ test('the real application routes a mapped profile while its automatic key read 
     buffer: Buffer.from(JSON.stringify(pack)),
   });
   await page.locator('.flow-context summary').click();
-  await button(page, 'Passende Profile laden').click();
+  await button(page, 'Profile aktualisieren').click();
   await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).selectOption(target);
   await button(page, 'Test starten').click();
   const shortcut = button(page, 'Versandentwurf öffnen');

@@ -145,3 +145,22 @@ fn protected_profile_storage_and_legacy_private_copy_removal() {
     }
     let _ = std::fs::remove_dir_all(root);
 }
+#[test]
+fn export_names_cannot_escape_the_chosen_directory_or_use_windows_device_names() {
+    use crate::destination_backup_model::valid_export_filename;
+    assert!(valid_export_filename(
+        "Bauamt_11111111-1111-4111-8111-111111111111_2026-11-13_15-30-20_Berlin.json"
+    ));
+    for name in [
+        "../outside.json",
+        "C:\\outside.json",
+        "CON.json",
+        "nul.json",
+        "foo/bar.json",
+        ".hidden.json",
+        "foo.json:stream",
+        "foo.json\n",
+    ] {
+        assert!(!valid_export_filename(name), "{name}");
+    }
+}

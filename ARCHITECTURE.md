@@ -244,3 +244,17 @@ gebunden. Native Übergabe und Java-Konfiguration geben sie im System- und
 Direktmodus nicht weiter. Eine vom Betriebssystem gewählte Route erhält keine
 Zugangsdaten einer früheren manuellen Route. Die getrennte Authentifizierungsprüfung
 gilt auch für vorhandene Authenticator-Instanzen und die SDK-/Schema-Verbindungen.
+
+### Antwortschemas im Profil
+
+`answer_schema_model.rs` begrenzt die Bibliothek auf 32 Definitionen und 1 MiB pro
+Profil. `profile_answer_schemas` bindet Lese- und Schreibzugriffe an die aktive
+Profilverbindung und Umgebung. Revisionen verhindern das unbemerkte Überschreiben
+inzwischen geänderter Einträge. Schema und bearbeitbarer Entwurf bleiben gemeinsam
+im bestehenden geschützten Profil und werden mit dessen Sicherung übertragen.
+
+Die Oberfläche prüft die Definition erneut und löst passende URIs lokal auf.
+Ausdrücklich ausgewählte Dateien haben Vorrang. Temporär an den SDK-Kern übergebene
+Schemata werden nach der Prüfung freigegeben. Ein Bibliotheksfehler löst keinen
+stillen Abruf externer Quellen aus. Erfasste Schemafehler bleiben Prüfprobleme und
+werden durch diese Komfortfunktion nicht umgangen.

@@ -1,4 +1,17 @@
 // Presentation only. Never use these values for validation, storage or transport.
+export function fieldAttachment(node, attachments = []) {
+  if (typeof node.value !== 'string') return null;
+  const match = /^([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})(?:\|([^\r\n]+))?$/i.exec(node.value);
+  if (!match) return null;
+  return (
+    attachments.find(
+      (part) =>
+        part.attachmentId?.toLowerCase() === match[1].toLowerCase() &&
+        part.fileName &&
+        (!match[2] || match[2] === part.fileName),
+    ) || null
+  );
+}
 export function fieldDisplay(node) {
   const raw = node.value;
   const hint = node.schema?.ambiguous ? null : node.schema;

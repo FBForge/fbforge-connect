@@ -19,6 +19,7 @@
       const fixture = (window.__processFixture = { searches: 0, calls: [], draft: null, context: null });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           fixture.calls.push(command);
           if (command !== 'search_process_destinations') throw 'endpoint_blocked';
           fixture.searches++;

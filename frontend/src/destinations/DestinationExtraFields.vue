@@ -1,11 +1,15 @@
 <script setup>
-import { ref, watch, useId } from 'vue';
+import { computed, ref, watch, useId } from 'vue';
+import { useEnvironment } from '../environments.js';
 const fieldId = useId();
 const props = defineProps({
   modelValue: { type: Object, required: true },
   callbackUrl: String,
   disabled: Boolean,
+  baseline: { type: Object, default: () => ({}) },
 });
+const environment = useEnvironment();
+const value = computed(() => ({ ...props.baseline, ...props.modelValue }));
 const emit = defineEmits(['update:modelValue']);
 const url = ref(''),
   secret = ref(''),
@@ -20,10 +24,17 @@ watch(
   { immediate: true },
 );
 function update(field, value) {
-  emit('update:modelValue', { ...props.modelValue, [field]: value });
+  const next = { ...props.modelValue, [field]: value };
+  if (JSON.stringify(value) === JSON.stringify(props.baseline[field])) delete next[field];
+  emit('update:modelValue', next);
 }
 function access(field, value) {
-  update('senderAccessRestricted', { ...props.modelValue.senderAccessRestricted, [field]: value });
+  update('senderAccessRestricted', {
+    enabled: false,
+    ...props.baseline.senderAccessRestricted,
+    ...props.modelValue.senderAccessRestricted,
+    [field]: value,
+  });
 }
 function callback() {
   if (!url.value.startsWith('https://') || secret.value.length < 32 || secret.value.length > 512) {
@@ -38,20 +49,21 @@ function callback() {
 </script>
 <template>
   <fieldset :disabled="disabled">
-    <legend>Weitere Einstellungen aus der Sicherung</legend>
-    <label v-if="Object.hasOwn(modelValue, 'publicForRouting')" class="checkbox-label">
+    <legend>Routing, Absender und Benachrichtigungen</legend>
+    <label v-if="environment === 'TEST'" class="checkbox-label">
       <input
         type="checkbox"
-        :checked="modelValue.publicForRouting"
+        :checked="value.publicForRouting || false"
         @change="update('publicForRouting', $event.target.checked)"
       />
       Im vereinfachten TEST-Routing sichtbar
     </label>
-    <template v-if="modelValue.senderAccessRestricted">
+    <details>
+      <summary>Absender beschränken</summary>
       <label class="checkbox-label">
         <input
           type="checkbox"
-          :checked="modelValue.senderAccessRestricted.enabled"
+          :checked="value.senderAccessRestricted?.enabled || false"
           @change="access('enabled', $event.target.checked)"
         />
         Absender beschränken
@@ -59,8 +71,9 @@ function callback() {
       <label>
         Erlaubte Absender-Destination-IDs
         <textarea
+          aria-label="Erlaubte Absender-Destination-IDs"
           rows="3"
-          :value="(modelValue.senderAccessRestricted.allowedSenderDestinations || []).join('\n')"
+          :value="(value.senderAccessRestricted?.allowedSenderDestinations || []).join('\n')"
           @input="
             access(
               'allowedSenderDestinations',
@@ -73,7 +86,7 @@ function callback() {
         ></textarea>
         <small>Eine ID pro Zeile. Die Gegenstellen müssen in derselben FIT-Connect-Umgebung bestehen.</small>
       </label>
-      <div v-if="modelValue.senderAccessRestricted.allowedSenders?.length" class="notice warning">
+      <div v-if="value.senderAccessRestricted?.allowedSenders?.length" class="notice warning">
         <p>
           Die Sicherung enthält alte Client-Freigaben. Über API v3 dürfen diese nur entfernt werden. Verwenden
           Sie für neue Freigaben Absender-Destination-IDs.
@@ -82,12 +95,22 @@ function callback() {
           Alte Client-Freigaben entfernen
         </button>
       </div>
-    </template>
-    <template v-if="callbackUrl">
+    </details>
+    <label>
+      Kopie der Kontaktbenachrichtigung an (E-Mail)
+      <textarea
+        aria-label="Kopie der Kontaktbenachrichtigung an (E-Mail)"
+        rows="2"
+        :value="(value.contactInformation?.cc || []).join('\n')"
+        @input="update('contactInformation', { cc: $event.target.value.split(/[\s,;]+/).filter(Boolean) })"
+      ></textarea>
+      <small>Eine E-Mail-Adresse pro Zeile.</small>
+    </label>
+    <details>
+      <summary>Callback einrichten oder ändern</summary>
       <p class="small-note">
-        Die Callback-Adresse ist gesichert. Das Secret liefert FIT-Connect nicht zurück. Der Callback wird nur
-        übernommen, wenn Sie hier ein neues Secret vormerken. Andernfalls bleibt ein bestehender Callback
-        unverändert und eine neue Destination erhält keinen Callback.
+        FIT-Connect gibt ein bestehendes Callback-Secret nicht zurück. Zum Einrichten oder Ändern benötigen
+        Sie ein neues Secret. Erst Ihre Bestätigung der Vorschau speichert die Änderung.
       </p>
       <div class="client-fields">
         <label>
@@ -110,7 +133,18 @@ function callback() {
         </div>
       </div>
       <button type="button" class="button secondary" @click="callback">Callback vormerken</button>
+      <button
+        v-if="callbackUrl || value.callback"
+        type="button"
+        class="button secondary"
+        @click="
+          update('callback', null);
+          callbackNotice = 'Entfernen vorgemerkt. Bitte in der Änderungsvorschau bestätigen.';
+        "
+      >
+        Callback entfernen
+      </button>
       <p v-if="callbackNotice" role="status">{{ callbackNotice }}</p>
-    </template>
+    </details>
   </fieldset>
 </template>

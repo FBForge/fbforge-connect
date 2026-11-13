@@ -36,6 +36,7 @@
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           fixture.calls.push({ command, environment: fixture.environment });
           if (command === 'select_environment') {
             fixture.environment = args.environment;

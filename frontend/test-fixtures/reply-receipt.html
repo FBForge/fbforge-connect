@@ -56,6 +56,7 @@
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           if (command === 'reply_receipt_state') return envelope(fixture.state);
           if (command === 'prepare_reply_receipt') {
             const draft = JSON.parse(args.receiptDocument);

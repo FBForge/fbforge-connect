@@ -57,6 +57,11 @@ export function errorMessage(code) {
       'Bitte zuerst mit einem gespeicherten Windows-Profil verbinden. Die automatisch erzeugten privaten Schlüssel müssen vor der Registrierung gesichert sein.',
     backup_invalid: 'Die Zustellpunkt-Sicherung ist ungültig oder beschädigt.',
     backup_unavailable: 'Die Zustellpunkt-Sicherung konnte nicht gelesen oder gespeichert werden.',
+    schema_library_invalid:
+      'Ein gespeichertes Antwortschema ist ungültig. Bitte die Definition in den Testwerkzeugen prüfen.',
+    schema_library_conflict: 'Das Antwortschema wurde inzwischen geändert. Bitte die Bibliothek neu laden.',
+    schema_library_limit:
+      'Die Antwortschema-Bibliothek ist voll. Pro Profil können bis zu 32 Definitionen gespeichert werden.',
     vault_unavailable:
       'Der geschützte Windows-Speicher ist nicht verfügbar. Bitte das Benutzerkonto und den freien Speicherplatz prüfen.',
     vault_pending:
@@ -120,6 +125,9 @@ export function errorMessage(code) {
 
 // Only stable application codes may be copied into a bug report. Never return raw native/SDK text.
 const reportableCodes = new Set([
+  'schema_library_invalid',
+  'schema_library_conflict',
+  'schema_library_limit',
   'backup_invalid',
   'backup_unavailable',
   ...Object.keys(receiveFailures),

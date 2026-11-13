@@ -28,6 +28,8 @@ pub enum BackupAction {
     },
     Export {
         id: String,
+        #[serde(default)]
+        file_name: Option<String>,
     },
     Import {},
 }
@@ -102,8 +104,17 @@ pub async fn destination_backups(
             storage.delete(&id)?;
             Ok(json!({"deleted":true}))
         }
-        BackupAction::Export { id } => {
+        BackupAction::Export { id, file_name } => {
             let value = storage.read(&id)?;
+            let file_name = file_name.unwrap_or_else(|| {
+                format!(
+                    "Zustellpunkt_{}_{}.json",
+                    value.source_destination_id, value.captured_at
+                )
+            });
+            if !crate::destination_backup_model::valid_export_filename(&file_name) {
+                return Err("invalid_input");
+            }
             let document = serde_json::to_vec(&value).map_err(|_| "backup_invalid")?;
             let saved = tauri::async_runtime::spawn_blocking(move || {
                 let mut dialog = app
@@ -111,7 +122,7 @@ pub async fn destination_backups(
                     .file()
                     .set_title("Zustellpunkt-Sicherung exportieren")
                     .add_filter("Zustellpunkt-Sicherung", &["json"])
-                    .set_file_name("zustellpunkt.json");
+                    .set_file_name(&file_name);
                 if let Ok(directory) = app.path().download_dir() {
                     dialog = dialog.set_directory(directory);
                 }

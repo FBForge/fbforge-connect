@@ -59,6 +59,13 @@ fn public_tree(value: &Value, depth: usize) -> bool {
                         "submissionSchemas",
                         "replyChannels",
                         "fitConnect",
+                        "eMail",
+                        "usePgp",
+                        "deMail",
+                        "elster",
+                        "fink",
+                        "idBundDeMailbox",
+                        "useStatusMonitor",
                         "processStandards",
                         "schemaUri",
                         "mimeType",
@@ -74,8 +81,10 @@ fn public_tree(value: &Value, depth: usize) -> bool {
                         "publicForRouting",
                     ]
                     .contains(&key.as_str())
-                        && (matches!(key.as_str(), "enabled" | "publicForRouting")
-                            && v.is_boolean()
+                        && (matches!(
+                            key.as_str(),
+                            "enabled" | "publicForRouting" | "usePgp" | "useStatusMonitor"
+                        ) && v.is_boolean()
                             || public_tree(v, depth + 1))
                 })
         }
@@ -321,6 +330,18 @@ mod tests {
         ] {
             assert!(!valid_changes(&value));
         }
+    }
+    #[test]
+    fn public_reply_channel_options_survive_templates_without_credentials() {
+        let mut value = serde_json::json!({"publicServices":[{"replyChannels":{
+            "fitConnect":{"processStandards":["urn:reply:1"]},
+            "eMail":{"usePgp":true}, "deMail":{}, "elster":{}, "fink":{},
+            "idBundDeMailbox":{"useStatusMonitor":false}
+        }}]});
+        assert!(valid_changes(&value));
+        value["publicServices"][0]["replyChannels"]["eMail"]["privateKey"] =
+            Value::String("must not be retained".into());
+        assert!(!valid_changes(&value));
     }
     #[test]
     fn recent_deduplicates_and_favorite_does_not_add_history() {

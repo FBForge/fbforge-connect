@@ -49,6 +49,7 @@
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           if (command === 'remove_key_inventory_item') {
             if (state.failSave) throw 'vault_unavailable';
             state.removals.push(args.itemId);

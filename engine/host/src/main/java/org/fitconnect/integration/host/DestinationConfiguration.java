@@ -124,20 +124,32 @@ final class DestinationConfiguration {
             if (!process
                     && offer.has("replyChannels")
                     && !offer.get("replyChannels").isJsonNull()) {
-                var channels = offer.get("replyChannels");
-                if (!channels.isJsonObject()
-                        || !channels.getAsJsonObject().keySet().equals(Set.of("fitConnect")))
-                    throw invalid();
-                var fitConnect = channels.getAsJsonObject().get("fitConnect");
-                if (!fitConnect.isJsonObject()
-                        || !fitConnect
-                                .getAsJsonObject()
-                                .keySet()
-                                .equals(Set.of("processStandards"))) throw invalid();
-                for (String schema :
-                        strings(fitConnect.getAsJsonObject().get("processStandards"), 16, 4096))
-                    uri(new JsonPrimitive(schema));
+                replyChannels(offer.get("replyChannels"));
             }
+        }
+    }
+
+    static void replyChannels(JsonElement value) {
+        if (!value.isJsonObject() || value.getAsJsonObject().isEmpty()) throw invalid();
+        var channels = value.getAsJsonObject();
+        if (!Set.of("fitConnect", "eMail", "deMail", "fink", "elster", "idBundDeMailbox")
+                .containsAll(channels.keySet())) throw invalid();
+        for (String key : channels.keySet()) {
+            if (!channels.get(key).isJsonObject()) throw invalid();
+            var channel = channels.getAsJsonObject(key);
+            if (key.equals("fitConnect")) {
+                if (!channel.keySet().equals(Set.of("processStandards"))) throw invalid();
+                var standards = strings(channel.get("processStandards"), 16, 4096);
+                if (standards.isEmpty()) throw invalid();
+                for (String schema : standards) uri(new JsonPrimitive(schema));
+            } else if (key.equals("eMail") || key.equals("idBundDeMailbox")) {
+                String field = key.equals("eMail") ? "usePgp" : "useStatusMonitor";
+                if (!Set.of(field).containsAll(channel.keySet())
+                        || (key.equals("idBundDeMailbox") && !channel.has(field))) throw invalid();
+                if (channel.has(field)
+                        && (!channel.get(field).isJsonPrimitive()
+                                || !channel.getAsJsonPrimitive(field).isBoolean())) throw invalid();
+            } else if (!channel.isEmpty()) throw invalid();
         }
     }
 

@@ -84,3 +84,18 @@ test('deleting only the public snapshot requires confirmation', async ({ page })
   await page.getByRole('button', { name: 'Sicherung jetzt löschen', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Die Destination bei FIT-Connect besteht weiter');
 });
+
+test('selected destinations are saved independently and the refreshed library shows every snapshot', async ({
+  page,
+}) => {
+  await open(page, { empty: true });
+  await page.getByRole('button', { name: 'Eigene Destinations laden', exact: true }).click();
+  await page.getByRole('button', { name: 'Alle auswählen (diese Seite)', exact: true }).click();
+  await page.getByRole('button', { name: 'Auswahl sichern', exact: true }).click();
+  await page.getByRole('button', { name: 'Auswahl im Profil speichern', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: '2 von 2 gesichert' })).toBeVisible();
+  const rows = await page.evaluate(() => window.__backupFixture.items);
+  expect(new Set(rows.map((r) => r.sourceDestinationId)).size).toBe(2);
+  await expect(page.getByLabel('Gespeicherte Sicherung', { exact: true }).locator('option')).toHaveCount(3);
+  expect(await page.evaluate(() => window.__destinationFixture.writes)).toBe(0);
+});

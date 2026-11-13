@@ -99,6 +99,14 @@ function changeTest(action: () => void | Promise<void>) {
   if (definition.value && dirty.value) ask('replace', action);
   else void action();
 }
+function closeTest() {
+  if (disabled.value || !definition.value) return;
+  ask('close', async () => {
+    await controller.close(recovery.clear);
+    if (!error.value) showOverview();
+  });
+}
+defineExpose({ closeTest });
 async function closeDialog(confirm = false) {
   dialog.value?.close();
   const action = pendingAction;
@@ -254,6 +262,7 @@ watch(
         @copy="copy"
         @import="importFiles"
         @resume="reveal"
+        @close="closeTest"
         @restore="restore"
         @compare="compare"
         @remove="ask('test', () => collection.remove($event))"
@@ -265,6 +274,7 @@ watch(
       <div class="tool-section-heading scenario-section-heading">
         <h2 ref="heading" tabindex="-1">{{ definition.name }}</h2>
         <div class="client-actions">
+          <button class="button secondary" :disabled="disabled" @click="closeTest">Test schließen</button>
           <button v-if="activeSeries" class="button secondary" @click="seriesView = true">
             Zur Testserie
           </button>
@@ -416,35 +426,41 @@ watch(
       >
         <h2 id="scenario-dialog-title">
           {{
-            dialogKind === 'recovery'
-              ? 'Gesicherte Vorbereitung verwerfen?'
-              : dialogKind === 'replace'
-                ? 'Anderen Test öffnen?'
-                : dialogKind === 'test'
-                  ? 'Gespeicherten Test löschen?'
-                  : 'Gespeicherten Durchlauf löschen?'
+            dialogKind === 'close'
+              ? 'Test schließen?'
+              : dialogKind === 'recovery'
+                ? 'Gesicherte Vorbereitung verwerfen?'
+                : dialogKind === 'replace'
+                  ? 'Anderen Test öffnen?'
+                  : dialogKind === 'test'
+                    ? 'Gespeicherten Test löschen?'
+                    : 'Gespeicherten Durchlauf löschen?'
           }}
         </h2>
         <p id="scenario-dialog-description">
           {{
-            dialogKind === 'recovery'
-              ? 'Die automatisch gesicherte Vorbereitung wird dauerhaft entfernt. Gespeicherte Tests und Durchläufe bleiben erhalten.'
-              : dialogKind === 'replace'
-                ? 'Ungespeicherte Änderungen an der Vorbereitung werden ersetzt. Gespeicherte Tests und bisherige Durchläufe bleiben erhalten.'
-                : dialogKind === 'test'
-                  ? 'Der Test und seine ursprüngliche Vorlage werden aus der lokalen Sammlung entfernt. Bisherige Durchläufe und exportierte Dateien bleiben erhalten.'
-                  : 'Der ausgewählte Durchlauf wird aus der lokalen Sammlung entfernt. Geschützte Referenzen bleiben erhalten.'
+            dialogKind === 'close'
+              ? 'Das Warten wird beendet. Vorbereitung und bisherige Nachweise werden gespeichert. Sie können den Durchlauf später über die Übersicht fortsetzen. Bereits gesendete Nachrichten bleiben bestehen.'
+              : dialogKind === 'recovery'
+                ? 'Die automatisch gesicherte Vorbereitung wird dauerhaft entfernt. Gespeicherte Tests und Durchläufe bleiben erhalten.'
+                : dialogKind === 'replace'
+                  ? 'Ungespeicherte Änderungen an der Vorbereitung werden ersetzt. Gespeicherte Tests und bisherige Durchläufe bleiben erhalten.'
+                  : dialogKind === 'test'
+                    ? 'Der Test und seine ursprüngliche Vorlage werden aus der lokalen Sammlung entfernt. Bisherige Durchläufe und exportierte Dateien bleiben erhalten.'
+                    : 'Der ausgewählte Durchlauf wird aus der lokalen Sammlung entfernt. Geschützte Referenzen bleiben erhalten.'
           }}
         </p>
         <div class="client-actions">
           <button class="button secondary" autofocus @click="closeDialog()">Abbrechen</button>
           <button class="button" @click="closeDialog(true)">
             {{
-              dialogKind === 'replace'
-                ? 'Test wechseln'
-                : dialogKind === 'recovery'
-                  ? 'Vorbereitung verwerfen'
-                  : 'Eintrag löschen'
+              dialogKind === 'close'
+                ? 'Speichern und schließen'
+                : dialogKind === 'replace'
+                  ? 'Test wechseln'
+                  : dialogKind === 'recovery'
+                    ? 'Vorbereitung verwerfen'
+                    : 'Eintrag löschen'
             }}
           </button>
         </div>

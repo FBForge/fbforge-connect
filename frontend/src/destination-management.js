@@ -51,6 +51,7 @@ export async function loadManagedDestination(invoke, session, destinationId) {
       'possibleNextStatus',
       'type',
       'offersJson',
+      ...(Object.hasOwn(data, 'extrasJson') ? ['extrasJson'] : []),
     ]) ||
     data.destinationId !== destinationId ||
     !text(data.name, 512, true) ||
@@ -61,7 +62,7 @@ export async function loadManagedDestination(invoke, session, destinationId) {
     !list(data.possibleNextStatus)
   )
     fail();
-  if (!['A', 'C'].includes(data.type) && data.type !== null) fail();
+  if (!['A', 'B', 'C'].includes(data.type) && data.type !== null) fail();
   if (typeof data.offersJson !== 'string' || data.offersJson.length > 44000) fail();
   let offers = null;
   try {
@@ -69,7 +70,22 @@ export async function loadManagedDestination(invoke, session, destinationId) {
   } catch {
     /* Preserve read/general editing for unsupported legacy offer shapes. */
   }
-  return { ...data, contact: contact(data.contactJson), offers };
+  let extras = {};
+  try {
+    if (data.extrasJson !== undefined) {
+      if (typeof data.extrasJson !== 'string' || data.extrasJson.length > 24000) fail();
+      extras = JSON.parse(data.extrasJson);
+      if (
+        !validDestinationExtras(extras) ||
+        Object.keys(extras).some((key) => !destinationExtraFields.includes(key)) ||
+        extras.callback?.secret !== undefined
+      )
+        fail();
+    }
+  } catch {
+    fail();
+  }
+  return { ...data, contact: contact(data.contactJson), offers, extras };
 }
 export function checkedPreview(data, expectedId, expectedRows) {
   const statuses = [

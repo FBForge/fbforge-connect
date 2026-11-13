@@ -6,6 +6,7 @@ import { captureReceiptHelp } from './capture-receipt-help.mjs';
 import { captureScenarioHelp } from './capture-scenario-help.mjs';
 import { captureSdkHelp } from './capture-sdk-help.mjs';
 import { captureDestinationBackups } from './capture-destination-backups.mjs';
+import { captureFollowups } from './capture-followups.mjs';
 
 const output = process.argv[2];
 if (!output || process.argv.length !== 3)
@@ -465,6 +466,7 @@ try {
     page.getByRole('heading', { name: 'Ergebnisse dieses Durchlaufs', exact: true }),
   );
   await captureScenarioHelp(page, capture);
+  await captureFollowups({ page, open, button, capture });
   console.log(`${captures.size} Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {
   await browser.close();

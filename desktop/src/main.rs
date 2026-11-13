@@ -24,6 +24,8 @@ mod message_exports;
 mod portable_archive;
 mod profile_backup;
 use cases::case_workspace;
+mod answer_schema_model;
+mod answer_schemas;
 mod command_error;
 mod local_scanner;
 mod malware_scanner;
@@ -129,6 +131,7 @@ fn main() {
             commands::destination_creation::reconcile_destination_creation,
             commands::keys::use_generated_keys,
             profile_workspace::profile_workspace,
+            answer_schemas::profile_answer_schemas,
             local_scanner::local_scanner_status,
             local_scanner::install_local_scanner,
             local_scanner::update_local_scanner_database,

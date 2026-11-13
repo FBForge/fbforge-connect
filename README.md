@@ -21,7 +21,7 @@ Einzelheiten stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 - Event Logs prüfen, v3-Destinations verwalten und BPMN-Nachrichten auswählen.
 - Öffentliche Zustellpunkt-Konfiguration im Profil sichern, als JSON ohne Passwort exportieren und für neue oder bestehende Destinations wiederverwenden. Private Schlüssel bleiben im Profil.
 - Tests an einer Stelle vorbereiten, durchführen und auswerten, mit Profilzuordnung und gespeichertem Fortschritt.
-- Eigene JSON-Antwortschemas erstellen, Schemata und erwartete Inhalte vergleichen.
+- Eigene JSON-Antwortschemas erstellen, im Profil speichern und anhand der URI automatisch verwenden. Schemata und erwartete Inhalte vergleichen.
 - Optional lokal mit ClamAV oder einer eigenen ClamAV-/ICAP-Gegenstelle scannen.
 - Bei Bedarf einen HTTP-Proxy und ausdrücklich freigegebene zusätzliche CA-Zertifikate unter „Einstellungen → Netzwerk und Proxy“ einrichten.
 - Neue stabile Versionen finden und signierte Updates nach Bestätigung installieren.

@@ -80,6 +80,7 @@ fn installation_fixture(id: &str) -> Profile {
         client_id: "ci-checkpoint-only".into(),
         client_secret: "not-an-oauth-credential".into(),
         keys: vec![],
+        answer_schemas: vec![],
         defaults: ProfileDefaults {
             source_destination: None,
             receiver_destination: Some("33333333-3333-4333-8333-333333333333".into()),

@@ -95,7 +95,7 @@ async function flowReview(desktop, fixture, senders, pack) {
   await testTools(page);
   await page.getByLabel('Empfangs-Destination', { exact: true }).fill(fixture.destination);
   await page.locator('.flow-context summary').click();
-  await button(page, 'Passende Profile laden').click();
+  await button(page, 'Profile aktualisieren').click();
   await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).selectOption(senders.v3);
   await page
     .getByRole('combobox', { name: 'Empfänger-Profil', exact: true })

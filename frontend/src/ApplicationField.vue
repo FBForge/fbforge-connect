@@ -1,10 +1,12 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { fieldDisplay } from './field-display.js';
+import { ref, computed, watch } from 'vue';
+import { fieldDisplay, fieldAttachment } from './field-display.js';
 const props = defineProps({
   node: Object,
   query: String,
   showTechnical: Boolean,
+  expansion: Object,
+  attachments: { type: Array, default: () => [] },
   validationErrors: { type: Array, default: () => [] },
 });
 const fieldErrors = computed(() => props.validationErrors.filter((error) => error.path === props.node.path));
@@ -14,7 +16,15 @@ const hasErrors = computed(() =>
   ),
 );
 const expanded = ref(props.node.depth < 2);
+watch(
+  () => props.expansion,
+  (value) => {
+    expanded.value = value ? value.open : props.node.depth < 2;
+  },
+  { immediate: true },
+);
 const displayValue = computed(() => fieldDisplay(props.node));
+const attachment = computed(() => fieldAttachment(props.node, props.attachments));
 const fields = computed(() => props.node.children.filter((child) => child.type !== 'whitespace'));
 const whitespace = computed(() => props.node.children.filter((child) => child.type === 'whitespace'));
 const emptyLabel = (type) =>
@@ -26,6 +36,15 @@ const emptyLabel = (type) =>
     text: 'Leerer Text',
     attribute: 'Leeres Attribut',
   })[type] || 'Leer';
+const renderedValue = computed(() =>
+  props.node.type === 'whitespace'
+    ? JSON.stringify(props.node.value)
+    : props.node.value === ''
+      ? emptyLabel(props.node.type)
+      : attachment.value
+        ? `${attachment.value.fileName} · Anlage`
+        : displayValue.value,
+);
 </script>
 <template>
   <details
@@ -72,6 +91,8 @@ const emptyLabel = (type) =>
           :node="child"
           :validation-errors="validationErrors"
           :show-technical="showTechnical"
+          :expansion="expansion"
+          :attachments="attachments"
           :query="query"
         />
       </div>
@@ -84,6 +105,8 @@ const emptyLabel = (type) =>
             :node="child"
             :validation-errors="validationErrors"
             :show-technical="showTechnical"
+            :expansion="expansion"
+            :attachments="attachments"
             :query="query"
           />
         </div>
@@ -93,13 +116,19 @@ const emptyLabel = (type) =>
   <div
     v-else
     class="application-field"
-    :class="{ 'application-match': query && node.matched, 'application-invalid': fieldErrors.length }"
+    :class="{
+      'application-match': query && node.matched,
+      'application-invalid': fieldErrors.length,
+      'application-field-long': node.label.length > 160,
+    }"
     :data-field-path="node.path"
     tabindex="-1"
   >
     <div class="application-field-label">
       {{ node.label }}
-      <span v-if="node.schema?.required === true" class="schema-required">Pflichtfeld laut Schema</span>
+      <span v-if="showTechnical && node.schema?.required === true" class="schema-required">
+        Pflichtfeld laut Schema
+      </span>
       <span v-if="node.duplicate" class="application-duplicate">Mehrfaches JSON-Feld</span>
     </div>
     <details v-if="node.schema?.description" class="application-field-help">
@@ -109,15 +138,8 @@ const emptyLabel = (type) =>
     <div
       class="application-field-value"
       :class="{ 'application-empty': node.value === '' || node.type === 'null' }"
-    >
-      {{
-        node.type === 'whitespace'
-          ? JSON.stringify(node.value)
-          : node.value === ''
-            ? emptyLabel(node.type)
-            : displayValue
-      }}
-    </div>
+      v-text="renderedValue"
+    />
     <p v-for="(error, index) in fieldErrors" :key="index" class="application-field-error">
       {{ error.message }}
     </p>

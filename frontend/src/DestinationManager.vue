@@ -3,22 +3,29 @@ import { nextTick, ref, shallowRef, watch } from 'vue';
 import ManagedDestinations from './ManagedDestinations.vue';
 import DestinationBackups from './destinations/DestinationBackups.vue';
 const props = defineProps({ session: Object, busy: Boolean });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'changed', 'receive']);
+const emit = defineEmits(['busy', 'activity', 'fatal', 'changed', 'receive', 'manage-api']);
 const managed = ref(null),
   backupsOpen = ref(false),
   capture = ref(null),
+  captures = ref([]),
   seed = shallowRef(null);
 watch(
   () => props.session?.sessionId,
   () => {
     backupsOpen.value = false;
     capture.value = null;
+    captures.value = [];
     seed.value = null;
   },
 );
 function openBackups(destination = null) {
   capture.value = destination;
+  captures.value = [];
   backupsOpen.value = true;
+}
+function backupSelection(rows) {
+  openBackups(rows.length === 1 ? rows[0] : null);
+  captures.value = rows.length > 1 ? rows : [];
 }
 async function create(value) {
   seed.value = { ...value, token: crypto.randomUUID() };
@@ -50,6 +57,8 @@ async function edit(value) {
       :busy="busy"
       :creation-seed="seed"
       @manual="seed = null"
+      @backup="backupSelection"
+      @manage-api="emit('manage-api')"
       @busy="emit('busy', $event)"
       @activity="emit('activity', $event)"
       @fatal="emit('fatal', $event)"
@@ -78,6 +87,7 @@ async function edit(value) {
       :session="session"
       :busy="busy"
       :capture-destination="capture"
+      :capture-destinations="captures"
       :can-manage="managed?.controller.canEdit !== false"
       @back="backupsOpen = false"
       @create="create"

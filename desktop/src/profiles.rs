@@ -43,6 +43,7 @@ pub async fn save_opened(
     let profile = Profile {
         environment: state.environment(),
         defaults: ProfileDefaults::default(),
+        answer_schemas: vec![],
         version: 1,
         profile_id: id.clone(),
         name,

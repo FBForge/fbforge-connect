@@ -4,6 +4,7 @@ import { productName } from './product.js';
 
 // Arguments and response bodies stay private. Structured SDK details are local-only and excluded from exports.
 export const operationLabels = Object.freeze({
+  profile_answer_schemas: 'Antwortschemas im Profil verwalten',
   destination_backups: 'Zustellpunkt-Sicherungen verwalten',
   install_local_scanner: 'Lokalen Scanner installieren',
   update_local_scanner_database: 'Virensignaturen aktualisieren',

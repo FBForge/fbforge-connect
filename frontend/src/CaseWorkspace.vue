@@ -304,6 +304,7 @@ const {
             </div>
           </div>
           <StructuredData
+            :attachments="attachments"
             v-if="application"
             :text="application.text"
             :format="application.format"

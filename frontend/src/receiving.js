@@ -1,5 +1,6 @@
 import { requestResource } from './resources.js';
 import { CONTENT_CHUNK_BYTES, CONTENT_FILE_BYTES } from './content.js';
+import { withSavedSchemaCatalog } from './saved-schema-catalog.js';
 
 const uuid = (value) =>
   typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
@@ -98,8 +99,14 @@ export async function verifyReply(
 ) {
   id(caseId);
   id(replyId);
-  const schemaDocument = schemaCatalog(schemas, allowExternalSchemas);
-  const data = await requestResource(invoke, session, 'verify_reply', { caseId, replyId, schemaDocument });
+  schemaCatalog(schemas, allowExternalSchemas);
+  const data = await withSavedSchemaCatalog(invoke, session, schemas, (catalog) =>
+    requestResource(invoke, session, 'verify_reply', {
+      caseId,
+      replyId,
+      schemaDocument: schemaCatalog(catalog, allowExternalSchemas),
+    }),
+  );
   if (
     !exact(data, [
       'proofId',
@@ -133,12 +140,14 @@ export async function verifySubmission(
 ) {
   id(destinationId);
   id(submissionId);
-  const schemaDocument = schemaCatalog(schemas, allowExternalSchemas);
-  const data = await requestResource(invoke, session, 'verify_submission', {
-    destinationId,
-    submissionId,
-    schemaDocument,
-  });
+  schemaCatalog(schemas, allowExternalSchemas);
+  const data = await withSavedSchemaCatalog(invoke, session, schemas, (catalog) =>
+    requestResource(invoke, session, 'verify_submission', {
+      destinationId,
+      submissionId,
+      schemaDocument: schemaCatalog(catalog, allowExternalSchemas),
+    }),
+  );
   if (
     !exact(data, [
       'proofId',

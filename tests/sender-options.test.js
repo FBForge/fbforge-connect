@@ -1,9 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { destinationOptions, loadSendDestination, loadSendSchema } from '../frontend/src/sender-options.ts';
+import {
+  destinationOptions,
+  loadSendDestination,
+  loadSendSchema as nativeLoadSendSchema,
+} from '../frontend/src/sender-options.ts';
 import { jsonExample } from '../frontend/src/schema-examples.js';
 import { generateExample } from '../frontend/src/generate-example.js';
 
+import { emptySchemaLibrary } from './helpers/schema-library.js';
+const loadSendSchema = (invoke, ...args) => nativeLoadSendSchema(emptySchemaLibrary(invoke), ...args);
 const id = '00000000-0000-4000-8000-000000000001';
 const destination = '00000000-0000-4000-8000-000000000002';
 const schemaId = '00000000-0000-4000-8000-000000000003';

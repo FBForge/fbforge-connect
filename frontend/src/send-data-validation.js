@@ -1,5 +1,6 @@
 import { requestResource } from './resources.js';
 import { uploadContent, discardContent, CONTENT_FILE_BYTES } from './content.js';
+import { savedAnswerSchemaFile } from './answer-schema-library.js';
 
 export async function validateSendData(invoke, session, destinationId, selection, file, schemas = []) {
   if (
@@ -14,6 +15,13 @@ export async function validateSendData(invoke, session, destinationId, selection
     schemas.reduce((size, item) => size + item.file.size, 0) > 16 * 1024 * 1024
   )
     throw new Error('invalid_input');
+  if (!schemas.some((item) => item.uri === selection.schemaUri)) {
+    const saved = await savedAnswerSchemaFile(invoke, session, selection.schemaUri);
+    if (saved) {
+      if (schemas.length >= 32) throw Error('schema_library_limit');
+      schemas = [...schemas, { uri: selection.schemaUri, file: saved }];
+    }
+  }
   const active = { ...session },
     handles = [];
   let result,

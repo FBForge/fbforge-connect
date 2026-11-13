@@ -26,6 +26,7 @@ fn main() {
             "finish_message_export",
             "test_library",
             "profile_workspace",
+            "profile_answer_schemas",
             "destination_backups",
             "local_scanner_status",
             "install_local_scanner",

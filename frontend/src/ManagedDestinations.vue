@@ -3,6 +3,7 @@ import { reactive } from 'vue';
 import { useEnvironment } from './environments.js';
 const environment = useEnvironment();
 import DestinationSetup from './DestinationSetup.vue';
+import DestinationList from './destinations/DestinationList.vue';
 import DestinationFacts from './destinations/DestinationFacts.vue';
 import DestinationTemplates from './integration/DestinationTemplates.vue';
 import DestinationHistory from './integration/DestinationHistory.vue';
@@ -13,7 +14,16 @@ import DestinationKeyRotation from './DestinationKeyRotation.vue';
 import DestinationExtraFields from './destinations/DestinationExtraFields.vue';
 import { useDestinationManager } from './destinations/useDestinationManager.js';
 const props = defineProps({ session: Object, busy: Boolean, creationSeed: Object });
-const emit = defineEmits(['busy', 'activity', 'fatal', 'changed', 'receive', 'manual']);
+const emit = defineEmits([
+  'busy',
+  'activity',
+  'fatal',
+  'changed',
+  'receive',
+  'manual',
+  'backup',
+  'manage-api',
+]);
 const controller = useDestinationManager(props, emit);
 const {
   setupOpen,
@@ -43,6 +53,7 @@ const {
   contacts,
   disabled,
   canEdit,
+  managementReason,
   locked,
   changes,
   labels,
@@ -82,17 +93,31 @@ defineExpose({ controller: reactive(controller) });
         type="button"
         class="button secondary"
         :aria-pressed="setupOpen"
-        v-if="canEdit"
-        :disabled="disabled"
+        :aria-disabled="disabled || !canEdit"
+        :title="managementReason || undefined"
+        :aria-describedby="managementReason ? 'destination-management-reason' : undefined"
         @click="
-          emit('manual');
-          setupOpen = true;
+          if (!disabled && canEdit) {
+            emit('manual');
+            setupOpen = true;
+          }
         "
       >
         Neue Destination anlegen
       </button>
       <slot name="navigation" />
     </div>
+    <p v-if="managementReason" id="destination-management-reason" class="small-note">
+      {{ managementReason }}
+    </p>
+    <button
+      v-if="session?.apiVersion === 'v2'"
+      class="button secondary"
+      :disabled="disabled"
+      @click="emit('manage-api')"
+    >
+      Mit diesen Zugangsdaten über API v3 verwalten
+    </button>
     <DestinationSetup
       :seed="creationSeed"
       v-show="setupOpen"
@@ -114,10 +139,6 @@ defineExpose({ controller: reactive(controller) });
         Destinations pro Änderung.
       </p>
       <p v-if="!session">Bitte zuerst eine Sitzung öffnen.</p>
-      <p v-else-if="session.apiVersion === 'v2'">
-        Die Bearbeitung steht zunächst über API v3 bereit. Sie können eigene Destinations mit v2 ansehen oder
-        oben eine v3-Sitzung öffnen.
-      </p>
       <p v-if="session?.apiVersion === 'v3' && !canEdit" role="status">
         Diese Verbindung erlaubt nur das Ansehen der Destinations. Für Änderungen wird die Berechtigung
         manage-destinations benötigt.
@@ -135,100 +156,22 @@ defineExpose({ controller: reactive(controller) });
       </div>
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="pending" role="status">Aktion wird ausgeführt …</p>
-      <template v-if="page && view === 'list'">
-        <p role="status">
-          {{ page.totalCount }} eigene Destinations
-          <span v-if="canEdit">· {{ selected.length }} von höchstens 10 ausgewählt</span>
-        </p>
-        <div
-          v-if="canEdit && selected.length"
-          class="client-actions destination-selection-actions"
-          aria-label="Ausgewählte Destinations"
-        >
-          <button class="button" :disabled="disabled || locked" @click="editSelection">
-            {{ selected.length }}
-            {{ selected.length === 1 ? 'Destination bearbeiten' : 'Destinations gemeinsam bearbeiten' }}
-          </button>
-          <button class="button secondary" :disabled="disabled || locked" @click="selected = []">
-            Auswahl aufheben
-          </button>
-        </div>
-        <div class="client-table support-table">
-          <table class="submission-result-table destination-manager-table">
-            <thead>
-              <tr>
-                <th v-if="canEdit" scope="col">Auswahl</th>
-                <th scope="col">Name / Destination</th>
-                <th scope="col">Status</th>
-                <th scope="col">Aktion</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in page.destinations" :key="row.destinationId">
-                <td v-if="canEdit" data-label="Auswahl">
-                  <input
-                    type="checkbox"
-                    :aria-label="`${row.name || row.destinationId} auswählen`"
-                    :checked="selected.some((item) => item.destinationId === row.destinationId)"
-                    :disabled="
-                      disabled ||
-                      locked ||
-                      (!selected.some((item) => item.destinationId === row.destinationId) &&
-                        selected.length >= 10)
-                    "
-                    @change="toggle(row, $event.target.checked)"
-                  />
-                </td>
-                <td data-label="Name / Destination">
-                  {{ row.name || 'Ohne Namen' }}
-                  <br />
-                  <code>{{ row.destinationId }}</code>
-                </td>
-                <td data-label="Status">{{ row.status || 'Unbekannt' }}</td>
-                <td data-label="Aktion">
-                  <div class="client-actions">
-                    <button
-                      class="button secondary"
-                      :data-open-destination="row.destinationId"
-                      :disabled="disabled"
-                      @click="inspect(row)"
-                    >
-                      Ansehen
-                    </button>
-                    <button
-                      v-if="canEdit && !locked && selected.length < 2"
-                      class="button secondary"
-                      :data-edit-destination="row.destinationId"
-                      :disabled="disabled"
-                      @click="edit(row)"
-                    >
-                      Bearbeiten
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="client-actions">
-          <button
-            class="button secondary"
-            :disabled="disabled || page.offset === 0"
-            @click="search(page.offset - 20)"
-          >
-            Vorherige Seite
-          </button>
-          <button
-            class="button secondary"
-            :disabled="
-              disabled || page.offset + page.destinations.length >= page.totalCount || page.offset >= 10000
-            "
-            @click="search(page.offset + 20)"
-          >
-            Nächste Seite
-          </button>
-        </div>
-      </template>
+      <DestinationList
+        v-if="page && view === 'list'"
+        :page="page"
+        :selected="selected"
+        :disabled="disabled"
+        :locked="locked"
+        :can-edit="canEdit"
+        :can-select="session?.apiVersion === 'v3'"
+        @selection="selected = $event"
+        @toggle="toggle"
+        @inspect="inspect"
+        @edit="edit"
+        @edit-selection="editSelection"
+        @search="search"
+        @backup="emit('backup', $event)"
+      />
       <div v-if="view !== 'list'" class="client-actions">
         <button class="button secondary" type="button" :disabled="disabled" @click="back">
           Zur Destination-Übersicht
@@ -280,9 +223,14 @@ defineExpose({ controller: reactive(controller) });
           @apply="applyTemplate"
         />
         <DestinationExtraFields
-          v-if="Object.keys(backupExtras).length || backupCallback"
+          v-if="selected.length === 1 || Object.keys(backupExtras).length || backupCallback"
           v-model="backupExtras"
-          :callback-url="backupCallback"
+          :baseline="
+            selected.length === 1
+              ? { ...detail?.extras, contactInformation: { cc: detail?.contact.cc || [] } }
+              : {}
+          "
+          :callback-url="backupCallback || detail?.extras?.callback?.url"
           :disabled="disabled || locked"
         />
         <fieldset :disabled="disabled || locked">
@@ -394,6 +342,7 @@ defineExpose({ controller: reactive(controller) });
               Leistungen, Schemata und Prozessnachrichten bearbeiten
             </label>
             <DestinationOffers
+              :session="session"
               v-if="offersEnabled"
               v-model="offers"
               :disabled="disabled || locked"
@@ -463,6 +412,7 @@ defineExpose({ controller: reactive(controller) });
           <template v-if="row.after.publicServices || row.after.processMessages">
             <h5>Angebote nach der Änderung</h5>
             <DestinationOffers
+              :session="session"
               :model-value="{
                 publicServices: row.after.publicServices || [],
                 processMessages: row.after.processMessages || [],

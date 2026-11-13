@@ -120,15 +120,17 @@ export async function sendSubmission(
     await page.locator('input#send-validation-schemas').setInputFiles(path);
     await page.locator('[id^="send-local-schema-"]').fill(fixture.xmlUri);
   }
-  const text = invalid
-    ? '{}'
-    : xml
-      ? '<antrag><vorname>Erika</vorname><anliegen>Fiktiver UI-Test</anliegen></antrag>'
-      : JSON.stringify({
-          antragstellendePerson: { vorname: 'Erika', nachname: 'Musterfrau' },
-          anliegen: 'Fiktiver UI-Test ohne echte Personendaten',
-          referenz: fixture.runName,
-        });
+  const text =
+    fixture.request?.data ||
+    (invalid
+      ? '{}'
+      : xml
+        ? '<antrag><vorname>Erika</vorname><anliegen>Fiktiver UI-Test</anliegen></antrag>'
+        : JSON.stringify({
+            antragstellendePerson: { vorname: 'Erika', nachname: 'Musterfrau' },
+            anliegen: 'Fiktiver UI-Test ohne echte Personendaten',
+            referenz: fixture.runName,
+          }));
   await page.locator('#send-data').fill(text);
   if (!xml && !invalid) {
     const labels = page.getByRole('button', { name: 'Formularbeschriftungen laden', exact: true });
@@ -149,8 +151,11 @@ export async function sendSubmission(
   await page.getByRole('button', { name: 'Weiter: Anlagen & Antwortkanal', exact: true }).click();
   const removeAttachment = page.getByRole('button', { name: 'Anlage entfernen', exact: true });
   while (await removeAttachment.count()) await removeAttachment.first().click();
-  await page.getByRole('checkbox', { name: 'Antworten über FIT-Connect anbieten', exact: true }).check();
-  await page.locator('#send-reply-schema').selectOption(fixture.replyUri);
+  const offerReply = !fixture.request || Boolean(fixture.request.replyOffer);
+  await page
+    .getByRole('checkbox', { name: 'Antworten über FIT-Connect anbieten', exact: true })
+    .setChecked(offerReply);
+  if (offerReply) await page.locator('#send-reply-schema').selectOption(fixture.replyUri);
   const attachment = join(fixture.directory, 'ui-test-attachment.txt');
   await writeFile(attachment, 'Fiktive TEST-Anlage aus der installierten Oberfläche.');
   const pdf = join(fixture.directory, 'ui-fictional-attachment.pdf');
@@ -158,7 +163,15 @@ export async function sendSubmission(
     pdf,
     await readFile(new URL('../../frontend/test-fixtures/assets/fictional-attachment.pdf', import.meta.url)),
   );
-  await page.locator('input#send-attachments').setInputFiles([attachment, pdf]);
+  if (fixture.request) {
+    await page.locator('input#send-attachments').setInputFiles(
+      fixture.request.attachments.map((part) => ({
+        name: part.fileName,
+        mimeType: part.mimeType,
+        buffer: Buffer.from(part.base64, 'base64'),
+      })),
+    );
+  } else await page.locator('input#send-attachments').setInputFiles([attachment, pdf]);
   await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
   const sendStarted = performance.now();
   await page

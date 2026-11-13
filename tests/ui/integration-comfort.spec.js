@@ -209,7 +209,7 @@ test('assigned profiles and destinations persist with the run and context action
     buffer: Buffer.from(JSON.stringify(pack)),
   });
   await page.getByText('Sender und Empfänger zuordnen', { exact: true }).click();
-  await button(page, 'Passende Profile laden').click();
+  await button(page, 'Profile aktualisieren').click();
   await page.getByLabel('Sender-Profil', { exact: true }).selectOption(id(71));
   await page.getByLabel('Empfänger-Profil', { exact: true }).selectOption(id(72));
   await page.getByLabel('Absender-Destination (API v3)', { exact: true }).fill(id(4));

@@ -3,6 +3,46 @@ use crate::{environments::Environment, portable_archive, protocol::valid_session
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+pub fn valid_export_filename(name: &str) -> bool {
+    name.len() <= 200
+        && name.len() > 5
+        && name.ends_with(".json")
+        && !name.starts_with('.')
+        && !name.contains("..")
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+        && !matches!(
+            name.split('.')
+                .next()
+                .unwrap_or("")
+                .to_ascii_uppercase()
+                .as_str(),
+            "CON"
+                | "PRN"
+                | "AUX"
+                | "NUL"
+                | "COM1"
+                | "COM2"
+                | "COM3"
+                | "COM4"
+                | "COM5"
+                | "COM6"
+                | "COM7"
+                | "COM8"
+                | "COM9"
+                | "LPT1"
+                | "LPT2"
+                | "LPT3"
+                | "LPT4"
+                | "LPT5"
+                | "LPT6"
+                | "LPT7"
+                | "LPT8"
+                | "LPT9"
+        )
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Backup {

@@ -2,9 +2,11 @@
 import { ref, watch, onBeforeUnmount } from 'vue';
 import FileDropInput from './FileDropInput.vue';
 import { readChannelFile } from './channel-schemas.js';
+import AnswerSchemaPicker from './integration/AnswerSchemaPicker.vue';
 const props = defineProps({
   id: { type: String, required: true },
   disabled: Boolean,
+  session: Object,
   contextKey: String,
   label: { type: String, default: 'JSON-Schema-Kennung aus Datei übernehmen' },
 });
@@ -32,6 +34,7 @@ async function select(files) {
 </script>
 <template>
   <div>
+    <AnswerSchemaPicker :session="session" :disabled="disabled || reading" @select="emit('select', $event)" />
     <FileDropInput
       :id="id"
       :label="label"

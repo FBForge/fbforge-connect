@@ -13,6 +13,8 @@ const props = defineProps({
 const emit = defineEmits(['send', 'busy', 'scanner-changed', 'context', 'activity']);
 const mode = ref('tests');
 const legacyRun = ref('');
+const scenario = ref(null);
+defineExpose({ closeTest: () => scenario.value?.closeTest() });
 const tools = [
   { id: 'tests', title: 'Tests' },
   { id: 'schemas', title: 'Antwortschemas' },
@@ -63,6 +65,7 @@ watch(
     </div>
     <div id="test-panel-tests" role="tabpanel" aria-labelledby="test-tool-tests" v-show="mode === 'tests'">
       <ScenarioWorkspace
+        ref="scenario"
         v-show="!legacyRun"
         :session="session"
         :busy="busy"
@@ -101,7 +104,7 @@ watch(
       aria-labelledby="test-tool-schemas"
       v-show="mode === 'schemas'"
     >
-      <ChannelSchemaDesigner v-if="schemasOpened" :disabled="busy" />
+      <ChannelSchemaDesigner v-if="schemasOpened" :disabled="busy" :session="session" />
     </div>
   </div>
 </template>

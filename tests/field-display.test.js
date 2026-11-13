@@ -108,3 +108,13 @@ test('proven enum labels replace codes only for display and remain searchable al
     ['false', 'eh', 'false'],
   );
 });
+
+test('attachment references display names only for exactly matching received attachments', async () => {
+  const { fieldAttachment } = await import('../frontend/src/field-display.js');
+  const id = '11111111-1111-4111-8111-111111111111';
+  const part = { attachmentId: id, fileName: 'Nachweis.pdf' };
+  for (const value of [id, `${id}|Nachweis.pdf`]) assert.equal(fieldAttachment({ value }, [part]), part);
+  for (const value of [`${id}|Anderer.pdf`, 'Nachweis.pdf', `Text ${id}`, true])
+    assert.equal(fieldAttachment({ value }, [part]), null);
+  assert.equal(fieldAttachment({ value: id }, []), null);
+});

@@ -100,7 +100,12 @@ export function installBackupBridge({ empty = false } = {}) {
         case 'list':
           return { items: structuredClone(state.items) };
         case 'capture': {
-          const row = { ...summary, id: crypto.randomUUID(), name: a.name };
+          const row = {
+            ...summary,
+            id: crypto.randomUUID(),
+            name: a.name,
+            sourceDestinationId: a.destinationId,
+          };
           state.items.unshift(row);
           return structuredClone(row);
         }

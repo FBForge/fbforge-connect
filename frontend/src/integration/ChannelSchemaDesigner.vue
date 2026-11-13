@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import FileDropInput from '../FileDropInput.vue';
 import CopyValue from '../CopyValue.vue';
+import SavedAnswerSchemas from './SavedAnswerSchemas.vue';
 import { downloadLocal } from '../local-download.js';
 import {
   channelTemplate,
@@ -9,10 +10,11 @@ import {
   readChannelFile,
   CHANNEL_FIELD_TYPES,
 } from '../channel-schemas.js';
-defineProps({ disabled: Boolean });
+defineProps({ disabled: Boolean, session: Object });
 const definition = ref(channelTemplate()),
   statuses = ref(definition.value.statuses.join('\n'));
 const error = ref(''),
+  libraryPending = ref(false),
   notice = ref(''),
   reading = ref(false);
 const result = computed(() => {
@@ -50,7 +52,7 @@ function add() {
   definition.value.fields.push({ name: `feld${n}`, title: 'Eigene Angabe', type: 'string', required: false });
 }
 async function load(files) {
-  if (reading.value) return;
+  if (reading.value || libraryPending.value) return;
   reading.value = true;
   error.value = '';
   try {
@@ -88,14 +90,34 @@ async function save(kind) {
       Fachliche Statusmitteilungen und Nachforderungen definieren. Der Assistent arbeitet lokal. Eine
       Statusmeldung ersetzt keine technische FIT-Connect-Annahme oder -Ablehnung.
     </p>
+    <SavedAnswerSchemas
+      :session="session"
+      :result="result"
+      :disabled="disabled || reading"
+      @busy="libraryPending = $event"
+      @load="
+        (value) => {
+          definition = value;
+          statuses = value.statuses.join('\n');
+        }
+      "
+    />
     <details>
       <summary>Vorlage oder gespeicherten Entwurf öffnen</summary>
       <p>Eine Vorlage ersetzt die aktuellen Eingaben. Exportieren Sie einen vorhandenen Entwurf vorher.</p>
       <div class="client-actions">
-        <button class="button secondary" :disabled="disabled || reading" @click="template('status')">
+        <button
+          class="button secondary"
+          :disabled="disabled || reading || libraryPending"
+          @click="template('status')"
+        >
           Vorlage Statusmitteilung
         </button>
-        <button class="button secondary" :disabled="disabled || reading" @click="template('request')">
+        <button
+          class="button secondary"
+          :disabled="disabled || reading || libraryPending"
+          @click="template('request')"
+        >
           Vorlage Nachforderung
         </button>
       </div>
@@ -103,14 +125,14 @@ async function save(kind) {
         id="channel-draft"
         label="Schemaentwurf öffnen"
         accept=".json,application/json"
-        :disabled="disabled || reading"
+        :disabled="disabled || reading || libraryPending"
         @files="load"
       >
         FBForge-Connect-Entwurf, höchstens 2 MiB. Beliebige bestehende JSON-Schemas werden hier nicht
         umgeschrieben.
       </FileDropInput>
     </details>
-    <fieldset :disabled="disabled || reading">
+    <fieldset :disabled="disabled || reading || libraryPending">
       <legend>Schema definieren</legend>
       <div class="client-fields">
         <label for="channel-uri">
@@ -227,9 +249,8 @@ async function save(kind) {
           </li>
         </ol>
         <p>
-          Beim Antworten das passende lokale Antwortschema importieren und den Inhalt prüfen. Empfangene
-          Antworten mit derselben Definition prüfen. Es werden keine Destinations automatisch geändert und
-          keine Nachrichten versendet.
+          Im Profil gespeicherte Antwortschemas werden anhand ihrer URI wiederverwendet. Alternativ können Sie
+          eine lokale Datei auswählen. Stimmen Sie die Definition mit der Gegenstelle ab.
         </p>
       </details>
       <details>

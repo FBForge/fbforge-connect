@@ -1,4 +1,4 @@
-import { test } from './fixtures.js';
+import { test, expect } from './fixtures.js';
 import assert from 'node:assert/strict';
 
 test('destination-offers with synthetic native fixtures', async ({ createPage }) => {
@@ -15,6 +15,13 @@ test('destination-offers with synthetic native fixtures', async ({ createPage })
     .fill('urn:de:fim:leika:leistung:99008001014002');
   await page.locator('#manager-offer-publicServices-0-schema-0').fill('urn:test:application');
   await page.locator('#manager-offer-0-replies').fill('urn:test:reply');
+  await page.getByText('Weitere Antwortkanäle', { exact: true }).click();
+  await page.getByRole('checkbox', { name: 'E-Mail', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'PGP-Verschlüsselung unterstützen', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'DeutschlandID-Bürgerpostfach', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Statusmonitor der DeutschlandID nutzen', exact: true }).check();
+  await page.locator('#manager-offer-0-replies').fill('urn:test:reply:2');
+  await expect(page.getByRole('checkbox', { name: 'E-Mail', exact: true })).toBeChecked();
   await page.getByRole('button', { name: 'Prozessnachricht hinzufügen', exact: true }).click();
   await page.getByLabel('FIT-Connect-Modellkennung', { exact: true }).fill('model-1');
   await page.getByLabel('FIT-Connect-Nachrichtenkennung', { exact: true }).fill('message-1');
@@ -30,6 +37,14 @@ test('destination-offers with synthetic native fixtures', async ({ createPage })
     .click();
   await page.getByRole('heading', { name: 'Abgeschlossen', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.__destinationFixture.writes), 1);
+  const channels = await page.evaluate(
+    () => [...window.__destinationFixture.records.values()][0].publicServices[0].replyChannels,
+  );
+  expect(channels).toEqual({
+    fitConnect: { processStandards: ['urn:test:reply:2'] },
+    eMail: { usePgp: true },
+    idBundDeMailbox: { useStatusMonitor: true },
+  });
   assert.deepEqual(errors, []);
   console.log(
     'Offer editing UI passed: service/reply schemas, independent process offer, read-only detailed preview and one confirmed PATCH.',

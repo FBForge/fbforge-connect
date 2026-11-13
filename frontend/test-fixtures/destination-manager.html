@@ -59,20 +59,23 @@
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           fixture.calls.push(command);
           if (args.apiVersion !== session.apiVersion || args.sessionId !== session.sessionId)
             throw 'session_missing';
           if (command === 'list_destinations')
             return envelope({
               canManageDestinations: !options.has('readonly'),
-              offset: 0,
-              totalCount: 2,
-              destinations: [...records.values()].map(({ destinationId, name, status, type }) => ({
-                destinationId,
-                name,
-                status,
-                type,
-              })),
+              offset: args.offset || 0,
+              totalCount: records.size,
+              destinations: [...records.values()]
+                .slice(args.offset || 0, (args.offset || 0) + 20)
+                .map(({ destinationId, name, status, type }) => ({
+                  destinationId,
+                  name,
+                  status,
+                  type,
+                })),
             });
           if (command === 'load_managed_destination') {
             const r = records.get(args.destinationId);
@@ -83,6 +86,11 @@
               type: 'A',
               offersJson: '{"publicServices":[],"processMessages":[]}',
               contactJson: JSON.stringify(r.contactInformation),
+              extrasJson: JSON.stringify({
+                publicForRouting: r.publicForRouting ?? false,
+                senderAccessRestricted: r.senderAccessRestricted ?? { enabled: false },
+                ...(r.callback ? { callback: { url: r.callback.url } } : {}),
+              }),
               metadataVersions: r.metadataVersions,
               possibleNextStatus: r.possibleNextStatus,
             });

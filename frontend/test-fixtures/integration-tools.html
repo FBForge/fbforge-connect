@@ -9,6 +9,7 @@
     <div id="app"></div>
     <script type="module">
       import { createApp } from 'vue/dist/vue.esm-bundler.js';
+      import { answerSchemaFixture } from './answer-schema-fixture.js';
       import { testLibraryFixture } from './test-library-fixture.js';
       import { ref, provide, watch } from 'vue';
       import MalwareScannerSettings from '../src/integration/MalwareScannerSettings.vue';
@@ -57,6 +58,7 @@
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return answerSchemaFixture(args.action);
           fixture.calls.push({ command, args });
           if (
             command === 'test_library' &&

@@ -2,6 +2,11 @@
 
 ## 0.4.0 (unveröffentlicht)
 
+- Profile der anderen API ausdrücklich für Tests übernehmen, die Nachrichtenauswahl unter der Antwortoption anzeigen und aktive Tests mit gespeichertem Fortschritt schließen.
+- Destinations in Gruppen auswählen und direkt aus der Übersicht sichern. Sicherungsdateien anhand von Name, ID und Aufnahmezeit erkennen. Verwaltungsrechte erst anhand tatsächlicher Berechtigungsnachweise beurteilen. Routing, Absenderfreigaben, Kontaktkopien und Callback in der Bearbeitung anbieten. Die dokumentierten Antwortkanäle je Leistung konfigurieren, ohne andere Kanäle beim Ändern der FIT-Connect-Schemata zu verlieren.
+- Generierte Antwortschemas und Entwürfe im geschützten Profil aufbewahren und über ihre URI automatisch lokal verwenden. Import und Export bleiben möglich. Vorhandene Definitionen nur nach Bestätigung ersetzen.
+- Empfangene Formulare und Vorgangskopien mit zeilenweise angeordneten Beschriftungen und Werten lesen, Gruppen gemeinsam öffnen oder schließen und eindeutig zugeordnete Anlagen am Namen erkennen. Originalwerte und Quelltext bleiben unverändert verfügbar.
+
 - Öffentliche Schemaquellen auch bei Sammeldownload und Sammelannahme abfragen. Schemaabweichungen nach ausdrücklicher Freigabe gemeinsam annehmen und als `schema-violation` mit `instance: data` in der Empfangsbestätigung melden. Einzelannahmen verwenden dieselben Problemangaben und einen Bestätigungsdialog innerhalb der App.
 - Nachrichten als unveränderte Originaldateien ohne zusätzliche `export.json` speichern. Bereits ausgewählte Exportordner wiederverwenden und vorhandene Einreichungen weiterhin vor Überschreiben schützen.
 - Netzwerk- und Proxy-Eingaben erst nach dem Laden der gespeicherten Einstellungen freigeben, damit verspätete Antworten keine neuen Eingaben überschreiben.

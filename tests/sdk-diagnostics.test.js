@@ -4,6 +4,7 @@ import { diagnosticCode, errorMessage } from '../frontend/src/diagnostics.js';
 import { sdkDiagnostics } from '../frontend/src/sdk-diagnostics.ts';
 import { observeInvoke, createDiagnosticLog, buildSupportReport } from '../frontend/src/support-report.js';
 import { verifySubmission } from '../frontend/src/receiving.js';
+import { emptySchemaLibrary } from './helpers/schema-library.js';
 
 const details = [
   {
@@ -25,7 +26,7 @@ test('structured SDK reasons survive receiving and are recorded locally without 
     }, log.record);
     await assert.rejects(
       verifySubmission(
-        invoke,
+        emptySchemaLibrary(invoke),
         {
           apiVersion,
           environment: 'TEST',

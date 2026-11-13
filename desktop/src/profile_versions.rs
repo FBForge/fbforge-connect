@@ -28,6 +28,7 @@ pub fn for_api(
         client_secret: source.client_secret.clone(),
         keys: vec![],
         defaults: ProfileDefaults::default(),
+        answer_schemas: source.answer_schemas.clone(),
     });
     if target.profile_id != id
         || target.api_version != api
@@ -58,6 +59,7 @@ mod tests {
             client_secret: "synthetic-secret".into(),
             keys: vec![serde_json::json!({"synthetic":"v2-only"})],
             defaults: ProfileDefaults::default(),
+            answer_schemas: vec![],
         }
     }
     const TARGET: &str = "22222222-2222-4222-8222-222222222222";

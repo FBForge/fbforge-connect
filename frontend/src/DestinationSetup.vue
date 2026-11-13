@@ -153,10 +153,15 @@ const {
           </label>
         </div>
       </fieldset>
-      <DestinationSetupData v-if="!usingBackup" :controller="controller" />
+      <DestinationSetupData v-if="!usingBackup" :controller="controller" :session="session" />
       <fieldset v-else-if="kind === 'A'" v-show="wizardStep === 1" data-setup-step="1" :disabled="disabled">
         <legend>Leistungen und Schemata aus der Sicherung</legend>
-        <DestinationOffers v-model="seedOffers" :disabled="disabled" prefix="backup-setup-offer" />
+        <DestinationOffers
+          :session="session"
+          v-model="seedOffers"
+          :disabled="disabled"
+          prefix="backup-setup-offer"
+        />
       </fieldset>
       <p v-if="wizardStep === 2 && kind === 'C'">
         Onlinedienst-Destinations vom Typ C benötigen keine Zertifikate oder dauerhaften Schlüssel. Prüfen Sie

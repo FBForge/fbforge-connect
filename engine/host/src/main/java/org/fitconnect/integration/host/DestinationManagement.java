@@ -16,7 +16,8 @@ final class DestinationManagement {
             List<String> metadataVersions,
             List<String> possibleNextStatus,
             String type,
-            String offersJson) {}
+            String offersJson,
+            String extrasJson) {}
 
     record Change(
             String destinationId,
@@ -75,7 +76,23 @@ final class DestinationManagement {
                 strings(current.get("metadataVersions"), false),
                 strings(current.get("possibleNextStatus"), false),
                 optional(current, "type"),
-                offers(current));
+                offers(current),
+                extras(current));
+    }
+
+    private static String extras(JsonObject current) {
+        var result = new JsonObject();
+        for (String field : List.of("senderAccessRestricted", "publicForRouting"))
+            if (current.has(field) && !current.get(field).isJsonNull())
+                result.add(field, current.get(field).deepCopy());
+        if (current.has("callback") && current.get("callback").isJsonObject()) {
+            var callback = new JsonObject();
+            if (current.getAsJsonObject("callback").has("url")) {
+                callback.add("url", current.getAsJsonObject("callback").get("url").deepCopy());
+                result.add("callback", callback);
+            }
+        }
+        return result.toString();
     }
 
     private static String offers(JsonObject current) {

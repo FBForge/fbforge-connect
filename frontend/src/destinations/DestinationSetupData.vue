@@ -2,7 +2,7 @@
 import { reactive, toRefs } from 'vue';
 import { demoSchemas, downloadDemoSchema } from '../demo-data.js';
 import SchemaIdentifierFile from '../SchemaIdentifierFile.vue';
-const props = defineProps({ controller: Object });
+const props = defineProps({ controller: Object, session: Object });
 const {
   kind,
   wizardStep,
@@ -62,31 +62,6 @@ const {
           „DE“ für einen bundesweiten Test oder den Regionalschlüssel. Mehrere Gebiete mit Komma trennen.
         </small>
       </label>
-      <div>
-        <button
-          type="button"
-          class="button secondary"
-          @click="
-            schema = demoSchemas.application.schemaUri;
-            mime = 'application/json';
-            replySchema = demoSchemas.reply.schemaUri;
-          "
-        >
-          Mitgelieferte TEST-Schemata einsetzen
-        </button>
-        <p class="small-note">
-          Fiktives Antrags- und Antwortschema für einen ersten Test. Kein amtliches FIM-/XÖV-Schema. Im
-          Test-Client ohne externe Schemafreigabe nutzbar.
-        </p>
-        <div class="client-actions">
-          <button type="button" class="button secondary" @click="downloadDemoSchema('application')">
-            Antragsschema herunterladen
-          </button>
-          <button type="button" class="button secondary" @click="downloadDemoSchema('reply')">
-            Antwortschema herunterladen
-          </button>
-        </div>
-      </div>
       <label for="setup-schema">
         Schema-Kennung / URI
         <input
@@ -110,6 +85,7 @@ const {
         <small>Eintragen, wenn der Testantrag Antworten über FIT-Connect anbieten soll.</small>
       </label>
       <SchemaIdentifierFile
+        :session="session"
         v-if="addressing === 'service'"
         id="setup-reply-file"
         :context-key="`${session?.sessionId}/${addressing}/${service}`"
@@ -118,5 +94,46 @@ const {
         @select="(uri) => (replySchema = uri)"
       />
     </div>
+    <div class="setup-demo-schemas">
+      <p class="small-note">
+        Noch kein eigenes Schema? Die mitgelieferten Beispiele enthalten fiktive Antrags- und Antwortdaten für
+        einen ersten Test.
+      </p>
+      <button
+        type="button"
+        class="button secondary"
+        @click="
+          schema = demoSchemas.application.schemaUri;
+          mime = 'application/json';
+          replySchema = demoSchemas.reply.schemaUri;
+        "
+      >
+        Mitgelieferte TEST-Schemata einsetzen
+      </button>
+      <details>
+        <summary>Beispielschemas herunterladen</summary>
+        <p class="small-note">
+          Kein amtliches FIM-/XÖV-Schema. Im Client ohne externe Schemafreigabe nutzbar.
+        </p>
+        <div class="client-actions">
+          <button type="button" class="button secondary" @click="downloadDemoSchema('application')">
+            Antragsschema herunterladen
+          </button>
+          <button type="button" class="button secondary" @click="downloadDemoSchema('reply')">
+            Antwortschema herunterladen
+          </button>
+        </div>
+      </details>
+    </div>
   </fieldset>
 </template>
+<style scoped>
+.setup-demo-schemas {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.setup-demo-schemas details {
+  margin-top: 1rem;
+}
+</style>

@@ -155,12 +155,6 @@ watch(
             <option v-for="(c, index) in scenario.pack.cases" :key="c.id" :value="index">{{ c.name }}</option>
           </select>
         </label>
-        <label v-if="options.length > 1">
-          Nachricht bearbeiten
-          <select v-model="scope" :disabled="disabled">
-            <option v-for="o in options" :key="o.value" :value="o.value">{{ o.name }}</option>
-          </select>
-        </label>
       </div>
       <details>
         <summary>Testfall verwalten</summary>
@@ -190,6 +184,12 @@ watch(
           @change="setFirstReply(scenario, item.id, ($event.target as HTMLInputElement).checked)"
         />
         Fachliche Antwort erwarten
+      </label>
+      <label v-if="options.length > 1">
+        Nachricht bearbeiten
+        <select v-model="scope" :disabled="disabled">
+          <option v-for="o in options" :key="o.value" :value="o.value">{{ o.name }}</option>
+        </select>
       </label>
       <template v-if="message">
         <div class="scenario-fields">

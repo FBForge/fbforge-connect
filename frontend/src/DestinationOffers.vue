@@ -1,8 +1,9 @@
 <script setup>
 import { computed } from 'vue';
-import SchemaIdentifierFile from './SchemaIdentifierFile.vue';
+import DestinationReplyChannels from './destinations/DestinationReplyChannels.vue';
 import MappedMessageSelect from './MappedMessageSelect.vue';
 const props = defineProps({
+  session: Object,
   modelValue: { type: Object, required: true },
   disabled: Boolean,
   prefix: { type: String, default: 'offer' },
@@ -167,42 +168,13 @@ const csv = (value) =>
         >
           Weiteres Schema
         </button>
-        <label v-if="group.key === 'publicServices'" :for="`${prefix}-${index}-replies`">
-          Unterstützte Antwortschemata (optional)
-          <input
-            :id="`${prefix}-${index}-replies`"
-            :value="row.replyChannels?.fitConnect?.processStandards?.join(', ') || ''"
-            maxlength="8192"
-            @input="
-              set(
-                group.key,
-                index,
-                'replyChannels',
-                $event.target.value.trim()
-                  ? { fitConnect: { processStandards: csv($event.target.value) } }
-                  : null,
-              )
-            "
-          />
-          <small>
-            Vereinbarte Schemakennungen für FIT-Connect-Antworten, mit Komma getrennt. Leer bedeutet keinen
-            angebotenen Antwortkanal.
-          </small>
-        </label>
-        <SchemaIdentifierFile
+        <DestinationReplyChannels
           v-if="group.key === 'publicServices'"
-          :id="`${prefix}-${index}-reply-file`"
-          :context-key="JSON.stringify(row)"
-          :disabled="disabled || (row.replyChannels?.fitConnect?.processStandards?.length || 0) >= 16"
-          label="Unterstütztes Antwortschema aus JSON-Datei ergänzen"
-          @select="
-            (uri) =>
-              update((next) => {
-                const entry = next.publicServices[index];
-                const current = entry.replyChannels?.fitConnect?.processStandards || [];
-                entry.replyChannels = { fitConnect: { processStandards: [...new Set([...current, uri])] } };
-              })
-          "
+          :session="session"
+          :prefix="`${prefix}-${index}`"
+          :model-value="row.replyChannels"
+          :disabled="disabled"
+          @update:model-value="set(group.key, index, 'replyChannels', $event)"
         />
         <button
           type="button"

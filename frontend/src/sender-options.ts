@@ -75,6 +75,14 @@ export async function loadSendSchema(
 ) {
   if (!uuid(destinationId) || !selection || !text(selection.schemaUri, 4096))
     throw new Error('invalid_input');
+  const { readAnswerSchema } = await import('./answer-schema-library.js');
+  const saved = await readAnswerSchema(invoke, session, selection.schemaUri);
+  if (saved)
+    return JSON.stringify({
+      schemaPackage: 1,
+      schemaUri: saved.uri,
+      documents: { [saved.uri]: saved.schema },
+    });
   const schemaDocument = JSON.stringify(selection);
   const page: unknown = await requestResource(invoke, session, 'load_send_schema', {
     destinationId,

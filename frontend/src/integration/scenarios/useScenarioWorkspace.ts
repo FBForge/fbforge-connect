@@ -174,6 +174,35 @@ export function useScenarioWorkspace(
     }
     stop();
   }
+  const close = (clearPreparation: () => Promise<void>) =>
+    act(async (current) => {
+      stop();
+      const document = run.value ? clone(run.value) : null;
+      if (document && step.value)
+        addAttempt(document, {
+          status: 'cancelled',
+          detail:
+            'Durchlauf beendet. Bisherige Nachweise bleiben erhalten und können später fortgesetzt werden.',
+          recordId: null,
+        });
+      // Drain earlier writes before the final snapshot. A failed save keeps the test open.
+      await saveQueue;
+      if (document) await storage.saveRun(invoke, document);
+      if (definition.value) await storage.saveScenario(invoke, clone(definition.value));
+      await clearPreparation();
+      if (!current()) return;
+      generation++;
+      run.value = null;
+      definition.value = null;
+      records.value = [];
+      recordId.value = '';
+      comparison.value = null;
+      tab.value = 'prepare';
+      publish();
+      await refresh();
+      notice.value =
+        'Test geschlossen. Gespeicherte Tests und bisherige Durchläufe finden Sie in der Übersicht.';
+    });
   function example(pack: Pack, kind: 'accept' | 'reject' | 'reply') {
     void act(async () => {
       await open(receiptExample(pack, kind));
@@ -440,6 +469,7 @@ export function useScenarioWorkspace(
     refresh,
     open,
     cancelWait,
+    close,
     example,
     importFiles,
     save,

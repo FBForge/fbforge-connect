@@ -1,3 +1,4 @@
+import { emptySchemaLibrary } from './helpers/schema-library.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadReplyTarget, prepareReply, executeReply, cancelReply } from '../frontend/src/reply-sending.js';
@@ -251,7 +252,8 @@ test('execute invokes exactly the approved attempt and never retries ambiguous a
 });
 
 test('reply schema paging keeps the current proof and native identifier, with local upload cleanup', async () => {
-  const { loadReplySchema } = await import('../frontend/src/reply-sending.js');
+  const { loadReplySchema: nativeLoadReplySchema } = await import('../frontend/src/reply-sending.js');
+  const loadReplySchema = (invoke, ...args) => nativeLoadReplySchema(emptySchemaLibrary(invoke), ...args);
   const source = 'ä'.repeat(15000),
     bytes = new TextEncoder().encode(source),
     calls = [];
@@ -296,7 +298,8 @@ test('reply schema paging keeps the current proof and native identifier, with lo
   assert.equal(calls.filter((c) => c === 'read_reply_schema').length, 2);
 });
 test('reply schema malformed pages, missing consent and failed cleanup cannot authorize a draft', async () => {
-  const { loadReplySchema } = await import('../frontend/src/reply-sending.js');
+  const { loadReplySchema: nativeLoadReplySchema } = await import('../frontend/src/reply-sending.js');
+  const loadReplySchema = (invoke, ...args) => nativeLoadReplySchema(emptySchemaLibrary(invoke), ...args);
   const selection = { schemaUri: draft.schemaUri, mimeType: draft.mimeType, allowExternalSchemas: true };
   await assert.rejects(
     loadReplySchema(

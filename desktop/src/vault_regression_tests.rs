@@ -40,6 +40,7 @@ fn profile() -> Profile {
         client_secret: "fictional-secret".into(),
         keys: vec![],
         defaults: ProfileDefaults::default(),
+        answer_schemas: vec![],
     }
 }
 #[cfg(windows)]

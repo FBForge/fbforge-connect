@@ -37,12 +37,12 @@ class DestinationPermissionTest {
                 List.of(
                         new Grant(
                                 token("read-destinations manage-destinations", "synthetic"), true),
-                        new Grant(token("read-destinations", "synthetic"), false),
+                        new Grant(token("read-destinations", "synthetic"), null),
                         new Grant(token("", "synthetic"), null),
                         new Grant(token("openid profile email", "synthetic"), null),
                         new Grant(token("manage-destinations-other", "synthetic"), null),
                         new Grant(token(null, jwt("manage-destinations")), true),
-                        new Grant(token(null, jwt("read-destinations")), false),
+                        new Grant(token(null, jwt("read-destinations")), null),
                         new Grant(token(null, jwt("openid profile email")), null),
                         new Grant(token(null, "synthetic-opaque"), null),
                         new Grant(token(null, "invalid.%%%.payload"), null),

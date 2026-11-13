@@ -2,6 +2,35 @@
 
 ## 0.4.0 in Vorbereitung
 
+### Testwerkzeuge, Destination-Verwaltung und Formularansicht – 13. November 2026
+
+Die Nachprüfung folgt den gemeldeten Screenshots: Profile beider APIs werden in
+der Testvorbereitung aufgelöst, die Nachrichtenauswahl steht unter der
+Antwortoption und ein geöffneter Test lässt sich mit gespeichertem Fortschritt
+schließen. Mehrfachsicherungen, gruppenweise Auswahl, verständliche Rechtehinweise
+und die dokumentierten Antwortkanäle ergänzen die Destination-Verwaltung.
+Generierte Antwortschemas bleiben im geschützten Profil und werden anhand ihrer
+URI ohne erneuten Dateiimport verwendet. Empfang und Vorgänge teilen die
+überarbeitete Formularansicht. Die Originaldateien bleiben unverändert.
+
+Die Hilfe enthält 63 aktuelle Aufnahmen mit fiktiven Daten. Testvorbereitung,
+Formularansicht, Mehrfachauswahl, Sicherung und Profilbibliothek wurden visuell
+geprüft und relevante Aufnahmen im Chat gezeigt. Die 16 gezielten Browserfälle
+für Destination-Bearbeitung, Angebotsänderungen, Umgebungsdialog, PDF-Vorschau
+und Speichern vor Annahme bestehen. Die native Vertragssuite besteht mit
+140 Tests. Der vollständige Windows-Code einschließlich Tests besteht die
+Cross-Compile-Prüfung. Die Java-Gesamtsuite bestand mit 301 Tests, anschließend
+besteht die erweiterte Destination-Suite einschließlich des neuen Tests für
+die zusätzlichen Antwortkanäle.
+
+Die abschließende Windows-Installation und die vollständige reale TEST-Abnahme
+des neuen Kandidaten stehen noch aus. Der Live-Treiber enthält zusätzlich vier
+echte Testserien-Durchläufe, die Profilbibliothek nach Neustart, automatisch
+geladene Antwortschemas und die Mehrfachsicherung. Prozessnachrichten bleiben
+Teil der vollständigen Abnahme. Ein vorbereiteter Treiber gilt nicht als
+ausgeführter Nachweis. Signierung und Veröffentlichung bleiben gesperrt bis zur
+Abnahme durch den Betreiber.
+
 ### Korrektur der Zustellpunkt-Sicherung und Navigation – 12. November 2026
 
 Die erste Implementierung prüfte die Sicherungen isoliert und übersah die

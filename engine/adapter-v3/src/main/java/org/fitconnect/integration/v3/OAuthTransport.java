@@ -79,9 +79,9 @@ final class OAuthTransport implements HttpService {
             if (scope == null || !scope.isTextual() || scope.asText().length() > 8192) return null;
             var scopes = java.util.Arrays.asList(scope.asText().split("\\s+"));
             if (scopes.contains("manage-destinations")) return true;
-            // Identity or unfamiliar scopes do not describe FIT-Connect management rights.
-            // Keep that state unknown; the server still authorizes every destination write.
-            return scopes.contains("read-destinations") ? false : null;
+            // A read scope is not a complete capability statement for the Destination API.
+            // Only the server can deny a particular management operation.
+            return null;
         } catch (Exception ignored) {
             return null;
         }

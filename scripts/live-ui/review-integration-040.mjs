@@ -7,6 +7,7 @@ import { check, cleanEnvironment, until } from './desktop.mjs';
 import { connectProfile, navigate } from './exchange.mjs';
 import { nativeFile } from './downloads.mjs';
 import { testOverview } from './test-workspace.mjs';
+import { reviewExecutedSeries } from './review-series.mjs';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 async function savedJson(desktop, fixture, action, file) {
   const path = await nativeFile(desktop, fixture, action, file);
@@ -108,9 +109,13 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
   const name = `${fixture.runName} variable Daten`;
   await page.getByLabel('Testname', { exact: true }).fill(name);
   await page.getByLabel('Empfangs-Destination', { exact: true }).fill(fixture.destination);
-  await page
-    .getByLabel('Fachdaten', { exact: true })
-    .fill(JSON.stringify({ referenz: 'fiktive-basis', status: 'eingegangen' }));
+  await page.getByLabel('Fachdaten', { exact: true }).fill(
+    JSON.stringify({
+      antragstellendePerson: { vorname: 'Erika', nachname: 'Musterfrau' },
+      anliegen: 'Fiktive Testserie',
+      referenz: 'fiktive-basis',
+    }),
+  );
   await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
   await page
     .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
@@ -125,7 +130,7 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
   await page
     .getByRole('combobox', { name: 'Inhaltsvergleich', exact: true })
     .selectOption('field-exceptions');
-  await page.getByRole('combobox', { name: 'Feld für Erwartung', exact: true }).selectOption('/status');
+  await page.getByRole('combobox', { name: 'Feld für Erwartung', exact: true }).selectOption('/anliegen');
   await button(page, 'Erwartung hinzufügen').click();
   await page.getByRole('combobox', { name: 'Bedingung', exact: true }).selectOption('present');
   const definition = await savedJson(
@@ -146,6 +151,18 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
   await page
     .getByText('Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.', { exact: true })
     .waitFor();
+  await page.locator('.flow-context summary').click();
+  for (const api of ['v2', 'v3']) {
+    await page
+      .getByRole('combobox', { name: 'API-Version für diesen Ablauf', exact: true })
+      .selectOption(api);
+    await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).selectOption(senders[api]);
+    await page
+      .getByRole('combobox', { name: 'Empfänger-Profil', exact: true })
+      .selectOption(fixture.receiverProfiles.find((p) => p.api === api).id);
+    if (api === 'v3')
+      await page.getByLabel('Absender-Destination (API v3)', { exact: true }).fill(process.env.SENDERDEST);
+  }
   await button(page, 'Als Testserie planen').click();
   let series = page.locator('section.scenario-series');
   await series.getByRole('checkbox', { name: 'Zweite Gegenprobe', exact: true }).check();
@@ -185,8 +202,9 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
     'ui-040-definition-after-restart.json',
   );
   check(isDeepStrictEqual(restored, definition), 'live_ui_040_definition_restart_changed');
+  await reviewExecutedSeries(desktop, fixture, senders, definition, name, savedJson);
   await navigate(page, 'Testwerkzeuge');
   console.log(
-    'Real installed desktop: variables, two datasets, full comparison with field condition, definition export and restart durability, four-row v2/v3 series and honest not-started result export passed',
+    'Real installed desktop: variables, two datasets, field condition, restart durability and four executed v2/v3 series rows with real send, read, compare and acceptance proof passed',
   );
 }

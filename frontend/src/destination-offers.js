@@ -1,3 +1,4 @@
+import { validReplyChannels } from './destination-reply-channels.js';
 /** Exact, public v3 offers; accepts DTO nulls but never opaque extension/private fields. */
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const text = (value, max = 1024) =>
@@ -39,10 +40,7 @@ export function validOffers(value) {
         /^urn:de:fim:leika:leistung:[0-9]{14}$/.test(row.identifier) &&
         list(row.regions, 32, (item) => typeof item === 'string' && /^DE[0-9]{0,12}$/.test(item), false) &&
         schemas(row.submissionSchemas) &&
-        (row.replyChannels == null ||
-          (fields(row.replyChannels, ['fitConnect']) &&
-            fields(row.replyChannels.fitConnect, ['processStandards']) &&
-            list(row.replyChannels.fitConnect.processStandards, 16, uri))),
+        validReplyChannels(row.replyChannels),
     ) ||
     !list(
       value.processMessages,

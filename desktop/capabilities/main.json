@@ -30,6 +30,7 @@
     "allow-open-saved-profile",
     "allow-copy-profile-for-api",
     "allow-profile-status",
+    "allow-profile-answer-schemas",
     "allow-save-profile-state",
     "allow-probe-engine",
     "allow-open-session",

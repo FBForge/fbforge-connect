@@ -33,6 +33,7 @@
       });
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           if (command === 'list_generated_keys') return envelope({ bundles: fixture.bundles });
           if (command === 'generate_test_keys') {
             const n = 10 + fixture.generated++ * 3,

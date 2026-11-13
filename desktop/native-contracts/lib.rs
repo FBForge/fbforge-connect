@@ -1,4 +1,6 @@
 //! Protocol and storage tests runnable without WebView/GTK build dependencies.
+#[path = "../src/answer_schema_model.rs"]
+pub mod answer_schema_model;
 #[path = "../src/command_error.rs"]
 pub mod command_error;
 #[path = "../src/destination_backup_model.rs"]

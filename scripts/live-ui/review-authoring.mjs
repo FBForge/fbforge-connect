@@ -122,6 +122,14 @@ async function installOffer(page, fixture, path, uri) {
         .includes(uri),
     'live_ui_authored_offer_not_applied',
   );
+  await page.getByText('Weitere Antwortkanäle', { exact: true }).first().click();
+  await page.getByRole('checkbox', { name: 'E-Mail', exact: true }).first().check();
+  await page.getByRole('checkbox', { name: 'PGP-Verschlüsselung unterstützen', exact: true }).first().check();
+  await page.getByRole('checkbox', { name: 'DeutschlandID-Bürgerpostfach', exact: true }).first().check();
+  await page
+    .getByRole('checkbox', { name: 'Statusmonitor der DeutschlandID nutzen', exact: true })
+    .first()
+    .check();
   await button(page, 'Änderungsvorschau erstellen').click();
   await button(page, 'Diese Änderungen verbindlich in der gewählten Umgebung speichern').click();
   const preview = page.locator('[aria-labelledby="update-preview-title"]');
@@ -170,12 +178,18 @@ async function installOffer(page, fixture, path, uri) {
   }
   const actual = JSON.parse((await fixture.readOwnedDestination()).offersJson);
   check(
-    actual.publicServices.some((s) => s.replyChannels?.fitConnect?.processStandards?.includes(uri)),
+    actual.publicServices.some(
+      (s) =>
+        s.replyChannels?.fitConnect?.processStandards?.includes(uri) &&
+        s.replyChannels?.eMail?.usePgp === true &&
+        s.replyChannels?.idBundDeMailbox?.useStatusMonitor === true,
+    ),
     'live_ui_authored_offer_not_registered',
   );
 }
 export async function reviewAuthoring(desktop, fixture, senders) {
-  const page = desktop.page;
+  let page = desktop.page;
+  await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
   await navigate(page, 'Testwerkzeuge');
   await page.getByRole('tab', { name: 'Antwortschemas', exact: true }).click();
   const uri = 'urn:fbforge:connect:ci:reply:status:1';
@@ -216,8 +230,32 @@ export async function reviewAuthoring(desktop, fixture, senders) {
     async () => (await page.locator('#channel-title').inputValue()) === 'Fiktive Live-Statusmitteilung',
     'live_ui_schema_draft_restore_failed',
   );
+  const saveInProfile = async () => {
+    await button(page, 'Im Profil speichern').click();
+    await page
+      .getByText('Antwortschema im Profil gespeichert. Bei derselben URI wird es automatisch verwendet.', {
+        exact: true,
+      })
+      .waitFor();
+  };
+  await saveInProfile();
+  await connectProfile(page, senders.v3);
+  await navigate(page, 'Testwerkzeuge');
+  await page.getByRole('tab', { name: 'Antwortschemas', exact: true }).click();
+  await saveInProfile();
+  await desktop.restartGracefully();
+  page = desktop.page;
+  await connectProfile(page, senders.v3);
+  await navigate(page, 'Testwerkzeuge');
+  await page.getByRole('tab', { name: 'Antwortschemas', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Gespeichertes Antwortschema', exact: true }).selectOption(uri);
+  await button(page, 'Entwurf öffnen').click();
+  await until(
+    async () => (await page.locator('#channel-title').inputValue()) === 'Fiktive Live-Statusmitteilung',
+    'live_ui_profile_schema_restart_lost',
+  );
   await installOffer(page, fixture, schema, uri);
-  const custom = { ...fixture, replyUri: uri, replySchemaFile: schema, replyData: JSON.stringify(data) };
+  const custom = { ...fixture, replyUri: uri, replySchemaFile: null, replyData: JSON.stringify(data) };
   await connectProfile(page, senders.v3);
   const message = await sendSubmission(page, custom);
   await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
@@ -238,6 +276,6 @@ export async function reviewAuthoring(desktop, fixture, senders) {
   );
   check(isDeepStrictEqual(JSON.parse(custom.replyData), data), 'live_ui_custom_reply_fixture_changed');
   console.log(
-    'Real desktop UI: authored JSON schema, example and editable draft exported and reimported, schema ID registered only on the owned TEST destination, real custom-schema reply sent, received, validated and acknowledged',
+    'Real desktop UI: authored JSON schema, example and draft exported and reimported, schema persisted in both protected profiles across restart, registered only on the owned TEST destination, real custom-schema reply sent and received using automatic URI lookup without schema re-upload, validated and acknowledged',
   );
 }

@@ -15,6 +15,7 @@ const emit = defineEmits<{
   copy: [entry: TestEntry];
   import: [files: File[]];
   resume: [];
+  close: [];
   restore: [id: string];
   compare: [id: string];
   remove: [entry: TestEntry];
@@ -51,9 +52,12 @@ async function refresh() {
       <span class="small-note">Noch geöffnet</span>
       <h2>{{ c.definition.value.name }}</h2>
     </div>
-    <button class="button secondary" :disabled="disabled" @click="emit('resume')">
-      {{ c.run.value ? 'Durchlauf fortsetzen' : 'Vorbereitung fortsetzen' }}
-    </button>
+    <div class="client-actions">
+      <button class="button secondary" :disabled="disabled" @click="emit('resume')">
+        {{ c.run.value ? 'Durchlauf fortsetzen' : 'Vorbereitung fortsetzen' }}
+      </button>
+      <button class="button secondary" :disabled="disabled" @click="emit('close')">Test schließen</button>
+    </div>
   </section>
   <section class="scenario-create" aria-labelledby="scenario-create-title">
     <div>

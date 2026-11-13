@@ -51,6 +51,17 @@ export function useDestinationManager(props, emit) {
     () => props.session?.apiVersion === 'v3' && page.value?.canManageDestinations !== false && !denied.value,
   );
   const locked = computed(() => preview.value?.status === 'uncertain');
+  const managementReason = computed(() =>
+    !props.session
+      ? 'Bitte zuerst ein Profil verbinden.'
+      : props.session.apiVersion !== 'v3'
+        ? 'Anlegen und Bearbeiten verwenden die Destination API v3. Sie können dieselben Zugangsdaten übernehmen.'
+        : !canEdit.value
+          ? 'Der Client ist für die Destination-Verwaltung nicht berechtigt (manage-destinations).'
+          : disabled.value
+            ? 'Bitte die laufende Aktion abwarten.'
+            : '',
+  );
   const baseChanges = computed(() =>
     destinationEditChanges({
       baseline:
@@ -199,12 +210,12 @@ export function useDestinationManager(props, emit) {
       const result = await listDestinations(invoke, active, offset);
       if (current()) {
         page.value = result;
-        if (!canEdit.value) selected.value = [];
+        if (active.apiVersion !== 'v3') selected.value = [];
       }
     });
   }
   function toggle(row, checked) {
-    if (disabled.value || locked.value || !canEdit.value) return;
+    if (disabled.value || locked.value || props.session?.apiVersion !== 'v3') return;
     offersEnabled.value = false;
     if (checked && selected.value.length < 10) selected.value = [...selected.value, row];
     if (!checked) selected.value = selected.value.filter((item) => item.destinationId !== row.destinationId);
@@ -424,6 +435,7 @@ export function useDestinationManager(props, emit) {
     return result;
   }
   return {
+    managementReason,
     setupOpen,
     existing,
     setupNotice,

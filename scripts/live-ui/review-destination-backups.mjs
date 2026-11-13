@@ -245,6 +245,15 @@ export async function reviewBulkEdit(page, fixture, cloneId, cloneName) {
     await ownListReady(page);
   }
   check(wanted.size === 0, 'live_ui_bulk_selection_incomplete');
+  await button(page, 'Auswahl sichern').click();
+  await button(page, 'Auswahl im Profil speichern').click();
+  await page.getByRole('status').filter({ hasText: '2 von 2 gesichert' }).waitFor();
+  const snapshots = page.getByRole('combobox', { name: 'Gespeicherte Sicherung', exact: true });
+  check(
+    (await snapshots.locator('option').filter({ hasText: cloneName }).count()) >= 1,
+    'live_ui_bulk_backup_missing_clone',
+  );
+  await button(page, 'Zur Destination-Übersicht').click();
   await button(page, '2 Destinations gemeinsam bearbeiten').click();
   await page.getByRole('checkbox', { name: 'Organisationseinheit ändern', exact: true }).check();
   await page.locator('#manager-unit').fill(`${fixture.runName} Sammelprüfung`);
@@ -265,6 +274,6 @@ export async function reviewBulkEdit(page, fixture, cloneId, cloneName) {
     );
   }
   console.log(
-    'Real installed desktop: explicit bulk preview and contact-only update of the two destinations created by this run verified through the actual API',
+    'Real installed desktop: bulk public backup and explicit contact-only update of both destinations created by this run verified through the actual API',
   );
 }

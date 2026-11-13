@@ -1,14 +1,23 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { useDestinationBackups } from './useDestinationBackups.js';
+import DestinationBackupBatch from './DestinationBackupBatch.vue';
 const props = defineProps({
   session: Object,
   busy: Boolean,
   captureDestination: Object,
+  captureDestinations: { type: Array, default: () => [] },
   canManage: { type: Boolean, default: true },
 });
 const emit = defineEmits(['back', 'create', 'edit', 'busy', 'activity', 'fatal', 'changed', 'receive']);
 const c = useDestinationBackups(props, emit);
+const reuseReason = computed(() =>
+  !props.canManage
+    ? 'Der Client ist für das Anlegen oder Ändern nicht berechtigt (manage-destinations).'
+    : !c.reusable.value
+      ? 'Diese Sicherung enthält einen nicht unterstützten Destination-Typ oder ein älteres Angebotsformat.'
+      : '',
+);
 const {
   items,
   selected,
@@ -66,6 +75,16 @@ watch(task, async (value) => {
       gespeichert.
     </p>
     <template v-else>
+      <DestinationBackupBatch
+        v-if="captureDestinations.length"
+        :session="session"
+        :destinations="captureDestinations"
+        :busy="busy || pending"
+        @busy="emit('busy', $event)"
+        @activity="emit('activity', $event)"
+        @fatal="emit('fatal', $event)"
+        @saved="c.reload()"
+      />
       <p v-if="!canManage" role="status">
         Diese Verbindung erlaubt das Sichern und Exportieren. Zum Anlegen oder Ändern wird die Berechtigung
         manage-destinations benötigt.
@@ -132,16 +151,20 @@ watch(task, async (value) => {
           <button
             type="button"
             class="button"
-            :disabled="disabled || !reusable || !canManage"
-            @click="chooseTask('create')"
+            :disabled="disabled"
+            :aria-disabled="!reusable || !canManage"
+            :title="reuseReason || undefined"
+            @click="reusable && canManage && chooseTask('create')"
           >
             Neue Destination daraus anlegen
           </button>
           <button
             type="button"
             class="button secondary"
-            :disabled="disabled || !reusable || !canManage"
-            @click="chooseTask('edit')"
+            :disabled="disabled"
+            :aria-disabled="!reusable || !canManage"
+            :title="reuseReason || undefined"
+            @click="reusable && canManage && chooseTask('edit')"
           >
             Auf bestehende Destination anwenden
           </button>

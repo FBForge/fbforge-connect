@@ -1,4 +1,8 @@
 /* Shared application theme. */
+.button[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 :root .status-badge {
   display: inline-flex;

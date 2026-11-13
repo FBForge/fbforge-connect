@@ -1,3 +1,4 @@
+import { emptySchemaLibrary } from './helpers/schema-library.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runMessageBatch } from '../frontend/src/message-batch.js';
@@ -128,7 +129,7 @@ function fixture(settings = {}) {
     calls,
     outcomes,
     options: {
-      invoke,
+      invoke: emptySchemaLibrary(invoke),
       session,
       items: [{ submissionId: id(3) }, { submissionId: id(6) }],
       destinationId: id(2),

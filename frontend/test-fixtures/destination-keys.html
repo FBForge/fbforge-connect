@@ -48,6 +48,7 @@
       // @tauri-apps/api/core.invoke delegates directly to this method. No native bridge is present.
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           if (args?.apiVersion !== session.apiVersion || args?.sessionId !== session.sessionId)
             throw 'session_missing';
           switch (command) {

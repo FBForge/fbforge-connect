@@ -7,12 +7,14 @@ import { annotateSchema } from './schema-annotations.js';
 import { readSchemaReview } from './schema-review.js';
 import SchemaReview from './SchemaReview.vue';
 const showTechnical = ref(false);
+const expansion = ref(null);
 const props = defineProps({
   text: String,
   format: String,
   schemaDocument: String,
   schemaUri: String,
   schemaStatus: String,
+  attachments: { type: Array, default: () => [] },
 });
 const query = ref(''),
   mode = ref('form'),
@@ -50,6 +52,7 @@ const documentFields = computed(() =>
 watch([() => props.text, () => props.format], () => {
   query.value = '';
   mode.value = 'form';
+  expansion.value = null;
 });
 watch(
   [() => props.text, mode],
@@ -161,6 +164,10 @@ onBeforeUnmount(() => {
             : `${model.fieldCount} Felder · verschachtelte Gruppen aufklappbar`
         }}
       </p>
+      <div class="client-actions" aria-label="Formulargruppen">
+        <button class="button secondary" @click="expansion = { open: true }">Alle Gruppen öffnen</button>
+        <button class="button secondary" @click="expansion = { open: false }">Gruppen schließen</button>
+      </div>
       <template v-if="documentFields?.length">
         <p v-if="filtered.schema?.description" class="application-description">
           {{ filtered.schema.description }}
@@ -178,6 +185,8 @@ onBeforeUnmount(() => {
             :node="node"
             :validation-errors="validationErrors"
             :show-technical="showTechnical"
+            :expansion="expansion"
+            :attachments="attachments"
             :query="query.trim()"
           />
         </div>
@@ -187,6 +196,8 @@ onBeforeUnmount(() => {
         :node="filtered"
         :validation-errors="validationErrors"
         :show-technical="showTechnical"
+        :expansion="expansion"
+        :attachments="attachments"
         :query="query.trim()"
       />
     </template>

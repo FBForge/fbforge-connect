@@ -95,6 +95,7 @@
       if (wholeApp) window.isTauri = true;
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           const envelope = (data) => ({
             apiVersion: args?.apiVersion ?? session.apiVersion,
             sessionId: args?.sessionId ?? session.sessionId,

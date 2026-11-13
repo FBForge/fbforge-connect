@@ -60,6 +60,7 @@ function selectReplySchema(uri) {
     </div>
     <template v-if="offerReplies">
       <SchemaIdentifierFile
+        :session="session"
         id="send-reply-schema-file"
         :context-key="schemaContext"
         :disabled="disabled"

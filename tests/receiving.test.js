@@ -1,13 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  verifySubmission,
-  verifyReply,
+  verifySubmission as nativeVerifySubmission,
+  verifyReply as nativeVerifyReply,
   listReceivedContents,
   readReceivedChunk,
   readReceivedFile,
   discardReceived,
 } from '../frontend/src/receiving.js';
+
+import { emptySchemaLibrary } from './helpers/schema-library.js';
+const verifySubmission = (invoke, ...args) => nativeVerifySubmission(emptySchemaLibrary(invoke), ...args);
+const verifyReply = (invoke, ...args) => nativeVerifyReply(emptySchemaLibrary(invoke), ...args);
 
 const destination = '11111111-1111-4111-8111-111111111111',
   submission = '22222222-2222-4222-8222-222222222222';

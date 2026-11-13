@@ -51,6 +51,7 @@
       window.__eventOverview = { calls: [] };
       window.__TAURI_INTERNALS__ = {
         async invoke(command, args) {
+          if (command === 'profile_answer_schemas') return args.action.action === 'list' ? [] : null;
           window.__eventOverview.calls.push({ command, args });
           const envelope = (data) => ({
             apiVersion: session.apiVersion,

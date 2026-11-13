@@ -5,6 +5,7 @@ import { diagnosticCode, errorMessage } from '../diagnostics.js';
 import { resetsSessions } from '../sessions.ts';
 import { validOffers } from '../destination-offers.js';
 import { destinationConfiguration } from '../destination-extras.js';
+import { destinationBackupFilename } from '../destination-backup-filename.js';
 
 export function useDestinationBackups(props, emit) {
   const items = ref([]),
@@ -173,7 +174,9 @@ export function useDestinationBackups(props, emit) {
       async (active, current) => {
         const result = await destinationBackups(invoke, active, {
           action,
-          ...(action === 'export' ? { id: detail.value.summary.id } : {}),
+          ...(action === 'export'
+            ? { id: detail.value.summary.id, fileName: destinationBackupFilename(detail.value.summary) }
+            : {}),
         });
         if (!current()) return;
         if (action === 'import' && result) {
@@ -216,6 +219,7 @@ export function useDestinationBackups(props, emit) {
     error.value = '';
   }
   return {
+    reload: () => run('Zustellpunkt-Sicherungen laden', refresh),
     items,
     selected,
     detail,

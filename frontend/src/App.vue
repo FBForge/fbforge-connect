@@ -42,6 +42,7 @@ const TestTools = defineAsyncComponent(() => import('./TestTools.vue'));
 const testDraft = shallowRef(null);
 const scenarioSource = shallowRef(null);
 const scenarioActivity = shallowRef(null);
+const testTools = shallowRef(null);
 const toolsOpened = ref(false),
   scannerOpened = ref(false);
 const receiveTarget = shallowRef(null);
@@ -156,6 +157,10 @@ async function changeApi(event) {
   event.target.value = apiVersion.value;
   await connections.changeApi(selected);
 }
+async function closeActiveTest() {
+  await navigate('Testwerkzeuge');
+  testTools.value?.closeTest();
+}
 const workspace = ref(null),
   viewHeading = ref(null);
 const scrollPositions = new Map();
@@ -246,8 +251,10 @@ useFileNavigationGuard();
           <SaveFeedback />
           <ScenarioActivity
             :activity="scenarioActivity"
+            :busy="busy"
             :visible="section !== 'Testwerkzeuge'"
             @open="navigate('Testwerkzeuge')"
+            @close="closeActiveTest"
           />
           <ScannerActivity
             :visible="['Senden', 'Empfangen'].includes(section)"
@@ -300,6 +307,7 @@ useFileNavigationGuard();
             @busy="resourceBusy"
             @activity="recordActivity"
             @fatal="fatal"
+            @manage-api="connections.changeApi('v3')"
             @changed="keyRevision++"
             @receive="
               (id) => {
@@ -386,6 +394,7 @@ useFileNavigationGuard();
           />
           <ApplicationHelp v-if="section === 'Hilfe'" />
           <TestTools
+            ref="testTools"
             :active="section === 'Testwerkzeuge'"
             :test-source="scenarioSource"
             @activity="scenarioActivity = $event"

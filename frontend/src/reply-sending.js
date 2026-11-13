@@ -1,5 +1,6 @@
 import { cancelledProductionAction } from './environments.js';
 import { isDemoSchema } from './demo-identifiers.js';
+import { savedAnswerSchemaFile } from './answer-schema-library.js';
 import { readSchemaPackage } from './sender-options.ts';
 import { requestResource, sameJsonValue } from './resources.js';
 import { uploadContent, discardContent, CONTENT_FILE_BYTES } from './content.js';
@@ -141,6 +142,8 @@ export async function loadReplySchema(invoke, session, proof, selection, localFi
       (!Number.isSafeInteger(localFile.size) || localFile.size < 1 || localFile.size > 2 * 1024 * 1024))
   )
     throw new Error('invalid_input');
+  if (!localFile && !isDemoSchema(selection.schemaUri))
+    localFile = await savedAnswerSchemaFile(invoke, session, selection.schemaUri);
   if (!selection.allowExternalSchemas && !localFile && !isDemoSchema(selection.schemaUri))
     throw new Error('schema_consent_required');
   const active = { ...session },
