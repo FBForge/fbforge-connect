@@ -2,6 +2,7 @@ import { navigate, queryEventLog } from './exchange.mjs';
 import { check, until } from './desktop.mjs';
 import { returnToInbox } from './inbox.mjs';
 import { downloadMessage, nativeFolder, verifyDownload } from './downloads.mjs';
+import { prepareBatchSigningKey } from './batch-controls.mjs';
 import { join } from 'node:path';
 import { readdir } from 'node:fs/promises';
 
@@ -85,14 +86,7 @@ export async function bulkReceive(desktop, fixture, valid, invalid, override) {
       .check();
   await page.getByRole('button', { name: 'Prüfen, speichern und annehmen', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Einreichungen prüfen und annehmen', exact: true });
-  const key = dialog.getByRole('combobox', { name: 'Signaturschlüssel', exact: true });
-  const start = dialog.getByRole('button', { name: 'Zielordner wählen und starten', exact: true });
-  // A single usable key is selected automatically; the selector exists only for multiple keys.
-  await until(
-    async () => (await key.isVisible()) || !(await start.isDisabled()),
-    'live_ui_bulk_signing_key_unavailable',
-  );
-  if (await key.isVisible()) await key.selectOption(fixture.signingKid);
+  const start = await prepareBatchSigningKey(dialog, fixture.signingKid);
   await dialog.getByRole('checkbox', { name: 'Annahmen ohne Malwarescan erlauben', exact: true }).check();
   const folder = await nativeFolder(desktop, fixture, () => start.click());
   const consent = page.getByRole('dialog', { name: 'Öffentliche Schemaquellen laden?', exact: true });
@@ -123,7 +117,7 @@ export async function bulkReceive(desktop, fixture, valid, invalid, override) {
     .getByRole('checkbox', { name: `Einreichung ${override.submissionId} auswählen`, exact: true })
     .check();
   await page.getByRole('button', { name: 'Prüfen, speichern und annehmen', exact: true }).click();
-  if (await key.isVisible()) await key.selectOption(fixture.signingKid);
+  await prepareBatchSigningKey(dialog, fixture.signingKid);
   await dialog
     .getByRole('checkbox', {
       name: 'Trotz Schemaabweichungen annehmen und diese als Problem melden',

@@ -39,6 +39,9 @@ export async function failureDiagnostics(desktop, stage, error) {
   const batch = (
     await page.locator('.message-batch-dialog[open] .batch-results > li > strong').allTextContents()
   ).map((label) => batchLabels[label.trim()] || 'unknown');
+  const batchStart = page
+    .locator('.message-batch-dialog[open]')
+    .getByRole('button', { name: 'Zielordner wählen und starten', exact: true });
   console.error(`Real desktop batch states: ${JSON.stringify(batch)}`);
   console.error(
     `Real desktop UI failure state: ${JSON.stringify({
@@ -48,6 +51,12 @@ export async function failureDiagnostics(desktop, stage, error) {
         .getByRole('dialog', { name: 'Öffentliche Schemaquellen laden?', exact: true })
         .isVisible(),
       receiveDocument: await page.getByRole('heading', { name: 'Antrag lesen', exact: true }).isVisible(),
+      batchDialog: await page.locator('.message-batch-dialog[open]').isVisible(),
+      batchStartDisabled: (await batchStart.count()) === 1 ? await batchStart.isDisabled() : null,
+      batchSignerVisible: await page
+        .locator('.message-batch-dialog[open]')
+        .getByRole('combobox', { name: 'Signaturschlüssel', exact: true })
+        .isVisible(),
     })}`,
   );
   const location = /live-ui[\\/][a-z0-9-]+\.mjs:\d+:\d+/.exec(error.stack || '')?.[0];
