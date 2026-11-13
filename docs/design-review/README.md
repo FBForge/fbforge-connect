@@ -15,21 +15,40 @@ URI ohne erneuten Dateiimport verwendet. Empfang und Vorgänge teilen die
 
 Die Hilfe enthält 63 aktuelle Aufnahmen mit fiktiven Daten. Testvorbereitung,
 Formularansicht, Mehrfachauswahl, Sicherung und Profilbibliothek wurden visuell
-geprüft und relevante Aufnahmen im Chat gezeigt. Die 16 gezielten Browserfälle
-für Destination-Bearbeitung, Angebotsänderungen, Umgebungsdialog, PDF-Vorschau
-und Speichern vor Annahme bestehen. Die native Vertragssuite besteht mit
-140 Tests. Der vollständige Windows-Code einschließlich Tests besteht die
-Cross-Compile-Prüfung. Die Java-Gesamtsuite bestand mit 301 Tests, anschließend
-besteht die erweiterte Destination-Suite einschließlich des neuen Tests für
-die zusätzlichen Antwortkanäle.
+geprüft und relevante Aufnahmen im Chat gezeigt.
 
-Die abschließende Windows-Installation und die vollständige reale TEST-Abnahme
-des neuen Kandidaten stehen noch aus. Der Live-Treiber enthält zusätzlich vier
-echte Testserien-Durchläufe, die Profilbibliothek nach Neustart, automatisch
-geladene Antwortschemas und die Mehrfachsicherung. Prozessnachrichten bleiben
-Teil der vollständigen Abnahme. Ein vorbereiteter Treiber gilt nicht als
-ausgeführter Nachweis. Signierung und Veröffentlichung bleiben gesperrt bis zur
-Abnahme durch den Betreiber.
+Der Windows-Kandidat aus Produktstand
+`2382a88317b4ff0fa4b35cc07a0ade17ec0bbd93` besteht die
+[Windows-Validierung](https://github.com/FBForge/fbforge-connect/actions/runs/43518780320):
+Installation, Deinstallation mit Profilbestand, Upgrade von 0.3.0,
+Offline-Installer, beide SDKs und lokaler ClamAV einschließlich EICAR.
+Die Prüfung mit NVDA 2026.2 kontrolliert aufgezeichnete Sprachsequenzen und
+Fokusführung; sie ersetzt keine Hörprüfung oder vollständige
+Barrierefreiheitsabnahme. Die
+[CI](https://github.com/FBForge/fbforge-connect/actions/runs/43529171144)
+besteht mit 322 Browserfällen, 302 Java-Tests, 428 Node-Tests bei sechs
+Windows-Ausnahmen unter Linux sowie den nativen Windows-Suiten.
+
+Die [reale TEST-Abnahme](https://github.com/FBForge/fbforge-connect/actions/runs/43526184822)
+besteht die native Austauschmatrix und 13 von 16 installierten UI-Funktionsgruppen.
+Belegt sind v2/v3-Austausch, JSON/XML, zwei Prozessnachrichten im selben Vorgang
+über einen Neustart, Antworten und signierte Bestätigungen, Absenderbeschränkung,
+Schlüsselrotation und Proxytransport. In der Oberfläche bestehen außerdem
+Sammelannahme mit signiertem Problem Statement bei Schemaabweichungen,
+Originalexport ohne zusätzliche Export-JSON, Wiederverwendung des Exportordners,
+Profilverwaltung, gespeicherter sechsstufiger Testablauf, Mehrfachsicherung,
+gemeinsame Kontaktänderung und manuelle Destination-Anlage.
+
+Drei Gruppen sind noch nicht vollständig abgenommen: Bearbeiten der
+Schema-Bibliothek, die vier ausgeführten Testserien-Durchläufe und zusätzliche
+Destination-Einstellungen. Die automatische Verwendung des gespeicherten
+Antwortschemas beim echten Antwortaustausch ist bereits belegt. Der Serienlauf
+traf nach einem Neustart auf einen noch startenden Scanner; der nachfolgende
+Testtreiber wartet ausdrücklich auf dessen Bereitschaft. Die beiden weiteren
+Fehler erhalten gezielte Zustandsdiagnosen. Bis zur erfolgreichen Wiederholung
+gelten diese Gruppen als offen. Testtreiberänderungen verändern den validierten
+Installer nicht. Signierung und Veröffentlichung erfolgen erst nach Abnahme
+durch den Betreiber.
 
 ### Korrektur der Zustellpunkt-Sicherung und Navigation – 12. November 2026
 
