@@ -4,6 +4,7 @@
 
 - Öffentliche Schemaquellen auch bei Sammeldownload und Sammelannahme abfragen. Schemaabweichungen nach ausdrücklicher Freigabe gemeinsam annehmen und als `schema-violation` mit `instance: data` in der Empfangsbestätigung melden. Einzelannahmen verwenden dieselben Problemangaben und einen Bestätigungsdialog innerhalb der App.
 - Nachrichten als unveränderte Originaldateien ohne zusätzliche `export.json` speichern. Bereits ausgewählte Exportordner wiederverwenden und vorhandene Einreichungen weiterhin vor Überschreiben schützen.
+- Netzwerk- und Proxy-Eingaben erst nach dem Laden der gespeicherten Einstellungen freigeben, damit verspätete Antworten keine neuen Eingaben überschreiben.
 
 - Öffentliche Zustellpunkt-Konfiguration und öffentliche Schlüssel im Profil sichern und als JSON ohne Passwort exportieren oder importieren. Neue Destinations daraus vorbereiten oder bestehende eigene Destinations nach Vorschau bearbeiten. Private Schlüssel bleiben ausschließlich im Profil.
 - Zustellpunkt-Sicherungen beim Bereichswechsel zuverlässig ausblenden. Kompakte, gleich hohe Verbindungs- und Auswahlfelder in der oberen Leiste.

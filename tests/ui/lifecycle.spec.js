@@ -1,5 +1,45 @@
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
+test('a failed initial network read allows explicit configuration after showing the error', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/lifecycle.html?holdNetwork&failNetwork');
+  const mode = page.getByLabel('Verbindung', { exact: true });
+  await expect(mode).toBeDisabled();
+  await page.evaluate(() => window.__lifecycle.finishNetworkRead());
+  await expect(page.getByRole('alert')).toContainText('konnten nicht gelesen werden');
+  await expect(mode).toBeEnabled();
+  await mode.selectOption('manual');
+  await page.getByLabel('Proxy-Host', { exact: true }).fill('proxy.example.de');
+  await page.getByRole('button', { name: 'Netzwerkeinstellungen übernehmen', exact: true }).click();
+  await page.getByRole('button', { name: 'Übernehmen und trennen', exact: true }).click();
+  expect(
+    await page.evaluate(
+      () =>
+        window.__lifecycle.calls.find((call) => call.command === 'save_network_settings').args.settings.host,
+    ),
+  ).toBe('proxy.example.de');
+});
+test('network controls wait for saved settings before allowing edits or reconnect', async ({ page }) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/lifecycle.html?holdNetwork');
+  const mode = page.getByLabel('Verbindung', { exact: true });
+  const save = page.getByRole('button', { name: 'Netzwerkeinstellungen übernehmen', exact: true });
+  await expect(mode).toBeDisabled();
+  await expect(save).toBeDisabled();
+  await page.evaluate(() => window.__lifecycle.finishNetworkRead());
+  await expect(mode).toBeEnabled();
+  await expect(mode).toHaveValue('manual');
+  await expect(page.getByLabel('Proxy-Host', { exact: true })).toHaveValue('proxy.example.de');
+  await mode.selectOption('direct');
+  await save.click();
+  await page.getByRole('button', { name: 'Übernehmen und trennen', exact: true }).click();
+  expect(
+    await page.evaluate(
+      () =>
+        window.__lifecycle.calls.find((call) => call.command === 'save_network_settings').args.settings.mode,
+    ),
+  ).toBe('direct');
+});
 test('normal close blocks active operations and leaves the app open when checkpointing fails', async ({
   page,
 }) => {

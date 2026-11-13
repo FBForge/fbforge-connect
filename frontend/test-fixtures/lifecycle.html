@@ -43,7 +43,10 @@
             return args.handler;
           }
           if (command === 'test_library') return testLibraryFixture(args.request);
-          if (command === 'network_settings')
+          if (command === 'network_settings') {
+            if (new URLSearchParams(location.search).has('holdNetwork'))
+              await new Promise((resolve) => (fixture.finishNetworkRead = resolve));
+            if (new URLSearchParams(location.search).has('failNetwork')) throw 'network_invalid';
             return {
               mode: 'manual',
               host: 'proxy.example.de',
@@ -51,6 +54,7 @@
               username: 'proxy-user',
               hasPassword: true,
             };
+          }
           if (command === 'close_application' && fixture.fail) throw 'vault_pending';
           if (command === 'save_network_settings') return null;
           return null;

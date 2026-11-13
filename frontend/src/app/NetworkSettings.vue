@@ -1,6 +1,6 @@
 <script setup>
 import NetworkCertificates from './NetworkCertificates.vue';
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { invoke } from '../native.ts';
 const props = defineProps({ busy: Boolean });
 const emit = defineEmits(['changed', 'busy']);
@@ -15,10 +15,12 @@ const settings = ref({
 const certificateInfo = ref([]),
   certificateBusy = ref(false);
 const hasPassword = ref(false),
+  loading = ref(true),
   working = ref(false),
   error = ref(''),
   notice = ref('');
 const dialog = ref(null);
+const locked = computed(() => loading.value || working.value || props.busy);
 onMounted(async () => {
   try {
     const value = await invoke('network_settings');
@@ -35,10 +37,12 @@ onMounted(async () => {
   } catch {
     error.value =
       'Die Netzwerkeinstellungen konnten nicht gelesen werden. Prüfen und speichern Sie die gewünschte Verbindung erneut.';
+  } finally {
+    loading.value = false;
   }
 });
 async function save() {
-  if (working.value || props.busy || certificateBusy.value) return;
+  if (locked.value || certificateBusy.value) return;
   working.value = true;
   emit('busy', true);
   error.value = '';
@@ -61,7 +65,7 @@ async function save() {
 }
 </script>
 <template>
-  <section class="tool-section" aria-labelledby="network-settings-title">
+  <section class="tool-section" aria-labelledby="network-settings-title" :aria-busy="loading">
     <h2 id="network-settings-title">Netzwerk und Proxy</h2>
     <p>
       Die Verbindung gilt für FIT-Connect, die SDKs, öffentliche Schemaquellen, FIM-Leistungsnamen, Updates
@@ -69,7 +73,7 @@ async function save() {
     </p>
     <label>
       Verbindung
-      <select aria-label="Verbindung" v-model="settings.mode" :disabled="busy || working">
+      <select aria-label="Verbindung" v-model="settings.mode" :disabled="locked">
         <option value="system">Systemeinstellungen verwenden</option>
         <option value="direct">Direkt verbinden</option>
         <option value="manual">Eigenen HTTP-Proxy verwenden</option>
@@ -81,26 +85,20 @@ async function save() {
           Proxy-Host
           <input
             v-model.trim="settings.host"
-            :disabled="busy || working"
+            :disabled="locked"
             placeholder="proxy.example.de"
             autocomplete="off"
           />
         </label>
         <label>
           Port
-          <input
-            v-model.number="settings.port"
-            type="number"
-            min="1"
-            max="65535"
-            :disabled="busy || working"
-          />
+          <input v-model.number="settings.port" type="number" min="1" max="65535" :disabled="locked" />
         </label>
       </div>
       <div class="settings-fields">
         <label>
           Benutzername (optional)
-          <input v-model="settings.username" :disabled="busy || working" autocomplete="off" />
+          <input v-model="settings.username" :disabled="locked" autocomplete="off" />
         </label>
         <label>
           Passwort (optional)
@@ -110,7 +108,7 @@ async function save() {
             :placeholder="
               hasPassword && settings.password === null ? 'Gespeichertes Passwort beibehalten' : ''
             "
-            :disabled="busy || working"
+            :disabled="locked"
             autocomplete="new-password"
             @input="settings.password = $event.target.value"
           />
@@ -124,15 +122,11 @@ async function save() {
     <NetworkCertificates
       v-model="settings.trustedCertificates"
       :initial="certificateInfo"
-      :disabled="busy || working"
+      :disabled="locked"
       @busy="certificateBusy = $event"
     />
     <div class="client-actions">
-      <button
-        class="button secondary"
-        :disabled="busy || working || certificateBusy"
-        @click="dialog.showModal()"
-      >
+      <button class="button secondary" :disabled="locked || certificateBusy" @click="dialog.showModal()">
         Netzwerkeinstellungen übernehmen
       </button>
     </div>
@@ -147,7 +141,7 @@ async function save() {
       </p>
       <div class="client-actions">
         <button class="button secondary" autofocus @click="dialog.close()">Abbrechen</button>
-        <button class="button" :disabled="busy || working" @click="save">Übernehmen und trennen</button>
+        <button class="button" :disabled="locked" @click="save">Übernehmen und trennen</button>
       </div>
     </dialog>
   </section>
