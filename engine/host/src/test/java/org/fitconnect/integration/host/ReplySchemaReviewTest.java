@@ -100,6 +100,11 @@ class ReplySchemaReviewTest extends SenderTestSupport {
                                                 issue ->
                                                         issue.stage()
                                                                 .equals("DATA_SCHEMA_INVALID")));
+                        assertEquals(
+                                List.of("DATA_SCHEMA_INVALID", "MALWARE_SCAN_NOT_CONFIGURED"),
+                                result.issues().stream()
+                                        .map(ReceivedContent.Issue::stage)
+                                        .toList());
                         var review =
                                 JsonParser.parseString(result.schemaSnapshot().document())
                                         .getAsJsonObject()

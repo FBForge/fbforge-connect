@@ -270,3 +270,17 @@ test('explicit batch consent accepts verified schema deviations and preserves th
   );
   assert.ok(f.calls.filter((c) => c.command === 'execute_receipt').every((c) => c.reviewConfirmed === true));
 });
+
+test('schema consent never releases an additional unclassified data or metadata warning', async () => {
+  for (const warning of ['DATA', 'METADATA']) {
+    const f = fixture({ warnings: ['DATA_SCHEMA_INVALID', warning, 'MALWARE_SCAN_NOT_CONFIGURED'] });
+    f.options.allowSchemaInvalid = true;
+    f.options.allowNoScanner = true;
+    const result = await runMessageBatch(f.options);
+    assert.ok(result.every((row) => row.status === 'manual' && row.error === 'batch_review_required'));
+    assert.equal(
+      f.calls.some((c) => c.command === 'prepare_receipt' || c.command === 'execute_receipt'),
+      false,
+    );
+  }
+});

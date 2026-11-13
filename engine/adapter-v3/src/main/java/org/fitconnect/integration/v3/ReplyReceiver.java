@@ -80,11 +80,10 @@ final class ReplyReceiver {
                                     item.getDescription(),
                                     stream.readNBytes(32 * 1024 * 1024 + 1)));
                 }
-            var issues = new ArrayList<ReceivedContent.Issue>();
-            for (var issue : result.report().issues())
-                issues.add(new ReceivedContent.Issue(issue.stage().name(), issue.isError()));
+            var issues =
+                    ReceiveDiagnostics.issues(
+                            result.report(), services.http().validation.reviewIssues());
             issues.add(new ReceivedContent.Issue("MALWARE_SCAN_NOT_CONFIGURED", false));
-            issues.addAll(0, services.http().validation.reviewIssues());
             var content =
                     new ReceivedReplyContent(
                             replyId,

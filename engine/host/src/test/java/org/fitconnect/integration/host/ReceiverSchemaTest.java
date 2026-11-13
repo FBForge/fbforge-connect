@@ -125,6 +125,11 @@ class ReceiverSchemaTest extends ReceiverTestSupport {
                                                 issue ->
                                                         issue.stage()
                                                                 .equals("DATA_SCHEMA_INVALID")));
+                        assertEquals(
+                                List.of("DATA_SCHEMA_INVALID", "MALWARE_SCAN_NOT_CONFIGURED"),
+                                result.issues().stream()
+                                        .map(ReceivedContent.Issue::stage)
+                                        .toList());
                         assertEquals(urn, result.schemaSnapshot().schemaUri());
                     }
                 }

@@ -69,11 +69,9 @@ final class Receiver {
                                     stream.readNBytes(32 * 1024 * 1024 + 1)));
                 }
             }
-            var issues = new ArrayList<ReceivedContent.Issue>();
-            for (var issue : result.report().issues())
-                issues.add(new ReceivedContent.Issue(issue.stage().name(), issue.isError()));
+            var issues =
+                    ReceiveDiagnostics.issues(result.report(), transport.validation.reviewIssues());
             issues.add(new ReceivedContent.Issue("MALWARE_SCAN_NOT_CONFIGURED", false));
-            issues.addAll(0, transport.validation.reviewIssues());
             var content =
                     new ReceivedContent(
                             result.getDestinationId(),
@@ -251,7 +249,11 @@ final class Receiver {
                                                                 .ValidationResult.valid()
                                                         : dev.fitko.fitconnect.core.validation.api
                                                                 .ValidationResult.warning(
-                                                                "Fachdaten benötigen eine manuelle Schema-Prüfung.");
+                                                                "Fachdaten benötigen eine manuelle Schema-Prüfung.",
+                                                                new dev.fitko.fitconnect.rest.model
+                                                                        .event.problems.data
+                                                                        .DataSchemaViolation(
+                                                                        "Fachdaten entsprechen nicht dem angegebenen Schema."));
                                             } catch (SessionException failure) {
                                                 http.failed(failure);
                                                 return dev.fitko.fitconnect.core.validation.api
