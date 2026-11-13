@@ -1,4 +1,4 @@
-//! Plaintext exports only enter a newly reserved directory chosen through a native dialog.
+//! Each message enters a newly reserved directory under the user-selected export root.
 use std::{
     fs::{self, File, OpenOptions},
     io::Write,
@@ -8,6 +8,33 @@ use std::{
 pub const FILE_LIMIT: u64 = 32 * 1024 * 1024;
 pub const MESSAGE_LIMIT: u64 = 64 * 1024 * 1024;
 pub const CHUNK_SIZE: usize = 24 * 1024;
+
+/// Reuse a selected export directory, including an older numbered export root.
+pub fn export_root(selected: &Path) -> Result<PathBuf, &'static str> {
+    let name = selected
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("");
+    let reusable = name == "FBForge-Connect-Export"
+        || name
+            .strip_prefix("FBForge-Connect-Export-")
+            .is_some_and(|suffix| !suffix.is_empty() && suffix.bytes().all(|c| c.is_ascii_digit()));
+    if reusable {
+        let metadata = fs::symlink_metadata(selected).map_err(|_| "export_failed")?;
+        if !metadata.is_dir() || metadata.file_type().is_symlink() {
+            return Err("export_failed");
+        }
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::MetadataExt;
+            if metadata.file_attributes() & 0x400 != 0 {
+                return Err("export_failed");
+            }
+        }
+        return Ok(selected.to_path_buf());
+    }
+    reserve(selected, "FBForge-Connect-Export")
+}
 
 pub fn reserve(parent: &Path, name: &str) -> Result<PathBuf, &'static str> {
     for index in 0..10000 {
@@ -110,7 +137,7 @@ impl ExportDirectory {
             complete: false,
         };
         let mut marker = export.create("UNVOLLSTAENDIG.txt")?;
-        marker.write_all(b"Dieser Export ist noch nicht vollstaendig. Ein abgeschlossener Export enthaelt export.json und keine UNVOLLSTAENDIG.txt.")
+        marker.write_all(b"Dieser Export ist noch nicht vollstaendig. Nach erfolgreichem Speichern wird dieser Hinweis entfernt.")
             .and_then(|_| marker.sync_all()).map_err(|_| "export_failed")?;
         Ok(export)
     }
@@ -130,12 +157,7 @@ impl ExportDirectory {
         self.files.push(path);
         Ok(file)
     }
-    pub fn finish(mut self, manifest: &serde_json::Value) -> Result<PathBuf, &'static str> {
-        let mut file = self.create("export.json")?;
-        let bytes = serde_json::to_vec_pretty(manifest).map_err(|_| "export_failed")?;
-        file.write_all(&bytes)
-            .and_then(|_| file.sync_all())
-            .map_err(|_| "export_failed")?;
+    pub fn finish(mut self) -> Result<PathBuf, &'static str> {
         fs::remove_file(self.path.join("UNVOLLSTAENDIG.txt")).map_err(|_| "export_failed")?;
         self.complete = true;
         Ok(self.path.clone())
@@ -192,7 +214,7 @@ mod tests {
             .unwrap()
             .write_all(b"{}")
             .unwrap();
-        let saved = first.finish(&serde_json::json!({"complete":true})).unwrap();
+        let saved = first.finish().unwrap();
         assert!(!saved.join("UNVOLLSTAENDIG.txt").exists());
         let mut failed = ExportDirectory::new(&root, "Einreichung-1").unwrap();
         assert_ne!(saved, failed.path);
@@ -206,6 +228,26 @@ mod tests {
         assert_eq!(fs::read(saved.join("metadata.json")).unwrap(), b"{}");
         fs::remove_dir_all(root).unwrap();
     }
+    #[test]
+    fn selected_export_roots_are_reused_without_overwriting_messages() {
+        let root = root();
+        let selected = export_root(&root).unwrap();
+        assert_eq!(export_root(&selected).unwrap(), selected);
+        let first = ExportDirectory::new(&selected, "Einreichung-1")
+            .unwrap()
+            .finish()
+            .unwrap();
+        let second = ExportDirectory::new(&selected, "Einreichung-1")
+            .unwrap()
+            .finish()
+            .unwrap();
+        assert_ne!(first, second);
+        let numbered = reserve(&root, "FBForge-Connect-Export").unwrap();
+        assert_eq!(export_root(&numbered).unwrap(), numbered);
+        let other = reserve(&root, "FBForge-Connect-Export-other").unwrap();
+        assert_ne!(export_root(&other).unwrap(), other);
+        fs::remove_dir_all(root).unwrap();
+    }
     #[cfg(unix)]
     #[test]
     fn existing_symlinks_are_never_followed() {
@@ -217,6 +259,11 @@ mod tests {
         symlink(&target, export.path.join("data.json")).unwrap();
         assert!(export.create("data.json").is_err());
         assert_eq!(fs::read(target).unwrap(), b"keep");
+        symlink(&root, root.join("FBForge-Connect-Export")).unwrap();
+        assert_eq!(
+            export_root(&root.join("FBForge-Connect-Export")),
+            Err("export_failed")
+        );
         drop(export);
         fs::remove_dir_all(root).unwrap();
     }

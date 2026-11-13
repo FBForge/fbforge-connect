@@ -1,7 +1,7 @@
 export const id = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`;
-export async function openBatch(page, { replies = false, total = 3 } = {}) {
+export async function openBatch(page, { replies = false, total = 3, api = 'v3' } = {}) {
   await page.goto(
-    `http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1${replies ? '&replies=1' : ''}`,
+    `http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1&api=${api}${replies ? '&replies=1' : ''}`,
   );
   await page.evaluate(
     ({ total }) => {
@@ -15,6 +15,8 @@ export async function openBatch(page, { replies = false, total = 3 } = {}) {
         failSave: false,
         cancelFolder: false,
         schemaError: null,
+        requirePublicSchemas: false,
+        schemaMismatch: false,
         uncertain: false,
         delaySave: false,
         releaseSave: null,
@@ -75,8 +77,16 @@ export async function openBatch(page, { replies = false, total = 3 } = {}) {
           result.data.caseId = uuid(70 + Number(args.submissionId.slice(0, 8)) - 3);
           return result;
         }
+        if (command === 'reply_target') {
+          const result = await original(command, args);
+          result.data.submissionId = current;
+          result.data.caseId = uuid(70 + Number(current.slice(0, 8)) - 3);
+          return result;
+        }
         if (command === 'verify_submission' || command === 'verify_reply') {
           current = args.submissionId || args.replyId;
+          if (state.requirePublicSchemas && !JSON.parse(args.schemaDocument).allowExternalSchemas)
+            throw { code: 'schema_consent_required', diagnostics: [] };
           if (current === state.schemaError) throw 'data_schema_invalid';
           const result =
             command === 'verify_submission'
@@ -94,6 +104,37 @@ export async function openBatch(page, { replies = false, total = 3 } = {}) {
           if (command === 'verify_submission') {
             result.data.submissionId = current;
             result.data.caseId = uuid(70 + Number(current.slice(0, 8)) - 3);
+          }
+          if (state.schemaMismatch) {
+            result.data.warnings.push('DATA_SCHEMA_INVALID');
+            result.data.warningCount++;
+            window.__applicationFixture.schemaPacket = {
+              schemaPackage: 1,
+              schemaUri: 'urn:test:person',
+              documents: {
+                'urn:test:person': {
+                  type: 'object',
+                  properties: {
+                    antragsteller: {
+                      type: 'object',
+                      properties: { vorname: { title: 'Vorname', type: 'integer' } },
+                    },
+                  },
+                },
+              },
+              validation: {
+                status: 'invalid',
+                errors: [
+                  {
+                    path: '/antragsteller/vorname',
+                    keyword: 'type',
+                    message: 'Der Datentyp passt nicht zum Schema. Schema-Vorgabe: integer',
+                    line: 0,
+                    column: 0,
+                  },
+                ],
+              },
+            };
           }
           return result;
         }
@@ -132,7 +173,10 @@ export async function openBatch(page, { replies = false, total = 3 } = {}) {
             reason: null,
             description: null,
             attachmentId: null,
-            warnings: ['MALWARE_SCAN_NOT_CONFIGURED'],
+            warnings: [
+              'MALWARE_SCAN_NOT_CONFIGURED',
+              ...(state.schemaMismatch ? ['DATA_SCHEMA_INVALID'] : []),
+            ],
           });
         }
         if (command === 'execute_receipt') {

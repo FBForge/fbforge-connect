@@ -37,7 +37,6 @@ impl Context for DesktopContext<'_> {
             Effect::ConfirmAttachments(count) => {
                 crate::environment_commands::confirm_attachment_review(app, count).await
             }
-            Effect::ConfirmSchema => crate::environment_commands::confirm_schema_review(app).await,
             Effect::MarkRunning(attempt) => {
                 crate::profile_workspace::mark_running(app, state, version, id, attempt).await
             }

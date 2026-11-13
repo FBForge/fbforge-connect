@@ -64,7 +64,10 @@ Der standardmäßige Diagnoseexport übernimmt diese Meldungstexte nicht.
   Scannerpaketen und Virendatenbanken.
   Schemaauswertung und Provenienzaufbau bleiben durch Eingabe- und Operationsgrenzen begrenzt.
 - Kryptografisch geprüfte Inhalte bleiben trotz Schemaabweichung lesbar. Einzelannahme
-  benötigt dann zusätzliche native Bestätigung. Fehlerhafte Sammelfälle bleiben manuell.
+  benötigt dann eine ausdrückliche Bestätigung im App-Dialog. Die Sammelannahme erlaubt
+  Schemaabweichungen nur nach gesonderter Auswahl. Der native Schreibpfad prüft die
+  Bestätigung für den aktuellen Versuch. Der Host bindet `schema-violation` mit `instance: data` aus
+  dem gespeicherten Prüfnachweis an die Annahme. Andere Prüffehler bleiben gesperrt.
   Hash-, Signatur-, Zertifikats- und Entschlüsselungsfehler blockieren die Freigabe.
   Eine technische Prüfung ersetzt keine fachliche Entscheidung.
 - Optionaler lokaler ClamAV läuft auf Loopback als eigener Benutzerprozess und endet

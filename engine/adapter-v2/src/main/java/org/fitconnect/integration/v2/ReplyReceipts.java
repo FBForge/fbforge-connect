@@ -34,7 +34,8 @@ final class ReplyReceipts {
                     || !evidence.attachments().keySet().containsAll(request.blockedAttachments()))
                 throw new SessionException("verification_failed");
             return new AcceptReply(
-                    ReceiptSigner.attachmentProblems(request.blockedAttachments()),
+                    ReceiptSigner.acceptanceProblems(
+                            request.blockedAttachments(), request.schemaViolation()),
                     new AuthenticationTags(
                             evidence.data(), evidence.metadata(), evidence.attachments()));
         }

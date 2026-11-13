@@ -101,7 +101,6 @@ where
         });
     }
     let mut directory = ExportDirectory::new(parent, &format!("{prefix}-{}", message_id))?;
-    let mut files = vec![];
     for (index, part) in parts.iter().enumerate() {
         let size = part["totalBytes"].as_u64().ok_or("engine_protocol_error")? as usize;
         let content = part["contentId"].as_str().ok_or("engine_protocol_error")?;
@@ -137,15 +136,15 @@ where
             result.map_err(|_| "export_failed")?;
         }
         file.sync_all().map_err(|_| "export_failed")?;
-        files.push(json!({"file":name,"originalName":part["fileName"],"kind":part["kind"],"mimeType":part["mimeType"],"contentId":part["contentId"],"bytes":size}));
     }
-    let path = directory.finish(&json!({"format":"FBForge Connect message export v1","environment":environment,"source":if local{"local-copy"}else{"verified-received-content"},"messageId":message_id,"files":files}))?;
+    let path = directory.finish()?;
     Ok(json!({"directory":path.to_string_lossy(),"fileCount":parts.len(),"totalBytes":bytes}))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::Engine;
     use std::{
         fs,
         task::{Context, Poll, Waker},
@@ -163,10 +162,11 @@ mod tests {
     fn id(n: usize) -> String {
         format!("{n:08}-1111-4111-8111-111111111111")
     }
+    const ORIGINAL_DATA: &[u8] = b"{ \"a\": 1.00, \"large\": 9007199254740993 }\r\n";
     fn parts() -> Vec<Value> {
         vec![
             json!({"contentId":id(1),"kind":"metadata","fileName":"metadata.json","mimeType":"application/json","totalBytes":2}),
-            json!({"contentId":id(2),"kind":"data","fileName":"data.json","mimeType":"application/json","totalBytes":7}),
+            json!({"contentId":id(2),"kind":"data","fileName":"data.json","mimeType":"application/json","totalBytes":ORIGINAL_DATA.len()}),
             json!({"contentId":id(3),"kind":"attachment","fileName":"../../CON:binary.bin","mimeType":"application/octet-stream","totalBytes":3}),
         ]
     }
@@ -177,9 +177,9 @@ mod tests {
                 .find(|part| part["contentId"] == content)
                 .unwrap();
             let chunk = match part["kind"].as_str().unwrap() {
-                "metadata" => "e30=",
-                "data" => "eyJhIjoxfQ==",
-                _ => "QQBC",
+                "metadata" => "e30=".to_owned(),
+                "data" => base64::engine::general_purpose::STANDARD.encode(ORIGINAL_DATA),
+                _ => "QQBC".to_owned(),
             };
             json!({"contentId":content,"byteOffset":offset,"totalBytes":part["totalBytes"],"chunk":chunk,"complete":true})
         } else {
@@ -187,7 +187,7 @@ mod tests {
         }
     }
     #[test]
-    fn original_metadata_data_and_binary_bytes_are_saved_only_with_a_complete_manifest() {
+    fn original_metadata_data_and_binary_bytes_are_saved_without_extra_files() {
         let parent = std::env::temp_dir();
         let root = store::reserve(&parent, "fbforge-stream-test").unwrap();
         let parts = parts();
@@ -202,12 +202,14 @@ mod tests {
         .unwrap();
         let path = Path::new(result["directory"].as_str().unwrap());
         assert_eq!(fs::read(path.join("metadata.json")).unwrap(), b"{}");
-        assert_eq!(fs::read(path.join("data.json")).unwrap(), b"{\"a\":1}");
-        let manifest: Value =
-            serde_json::from_slice(&fs::read(path.join("export.json")).unwrap()).unwrap();
-        let attachment = manifest["files"][2]["file"].as_str().unwrap();
-        assert_eq!(fs::read(path.join(attachment)).unwrap(), b"A\0B");
-        assert_eq!(manifest["files"][2]["originalName"], "../../CON:binary.bin");
+        assert_eq!(fs::read(path.join("data.json")).unwrap(), ORIGINAL_DATA);
+        assert!(!path.join("export.json").exists());
+        assert!(!path.join("UNVOLLSTAENDIG.txt").exists());
+        assert_eq!(fs::read_dir(path).unwrap().count(), 3);
+        assert_eq!(
+            fs::read(path.join(store::attachment_name(3, Some("../../CON:binary.bin")))).unwrap(),
+            b"A\0B"
+        );
         assert_eq!(result["fileCount"], 3);
         fs::remove_dir_all(root).unwrap();
     }
@@ -245,7 +247,7 @@ mod tests {
         }
     }
     #[test]
-    fn a_historical_copy_exports_available_bytes_and_reports_its_local_origin() {
+    fn a_historical_copy_exports_only_available_original_files() {
         let root = store::reserve(&std::env::temp_dir(), "fbforge-local-export").unwrap();
         let parts = vec![parts()[1].clone()];
         let result = ready(export(
@@ -258,12 +260,10 @@ mod tests {
         ))
         .unwrap();
         let path = Path::new(result["directory"].as_str().unwrap());
-        assert_eq!(fs::read(path.join("data.json")).unwrap(), b"{\"a\":1}");
+        assert_eq!(fs::read(path.join("data.json")).unwrap(), ORIGINAL_DATA);
         assert!(!path.join("metadata.json").exists());
-        let manifest: Value =
-            serde_json::from_slice(&fs::read(path.join("export.json")).unwrap()).unwrap();
-        assert_eq!(manifest["source"], "local-copy");
-        assert_eq!(manifest["environment"], "STAGE");
+        assert!(!path.join("export.json").exists());
+        assert_eq!(fs::read_dir(path).unwrap().count(), 1);
         fs::remove_dir_all(root).unwrap();
     }
 

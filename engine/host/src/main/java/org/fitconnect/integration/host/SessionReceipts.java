@@ -85,6 +85,12 @@ final class SessionReceipts {
                 draft.request().action().equals("accept")
                         ? new ReplyReceiptDraft(
                                 draft.request()
+                                        .withSchemaViolation(
+                                                this.state
+                                                        .receivedReplies
+                                                        .state(version, id, draft.proofId())
+                                                        .warnings()
+                                                        .contains("DATA_SCHEMA_INVALID"))
                                         .withBlockedAttachments(
                                                 this.state
                                                         .receivedReplies
@@ -129,6 +135,8 @@ final class SessionReceipts {
         var proof =
                 this.state.receivedReplies.state(
                         entry.key().version(), entry.id(), draft.proofId());
+        if (draft.request().schemaViolation() != proof.warnings().contains("DATA_SCHEMA_INVALID"))
+            throw new SessionException("verification_failed");
         if (!draft.request()
                 .blockedAttachments()
                 .equals(
@@ -193,14 +201,20 @@ final class SessionReceipts {
             throw new SessionException("invalid_input");
         var bound =
                 request.action().equals("accept")
-                        ? request.withBlockedAttachments(
-                                this.state
-                                        .received
-                                        .state(version, id, proofId)
-                                        .blockedAttachments()
-                                        .stream()
-                                        .map(BlockedAttachment::attachmentId)
-                                        .toList())
+                        ? request.withSchemaViolation(
+                                        this.state
+                                                .received
+                                                .state(version, id, proofId)
+                                                .warnings()
+                                                .contains("DATA_SCHEMA_INVALID"))
+                                .withBlockedAttachments(
+                                        this.state
+                                                .received
+                                                .state(version, id, proofId)
+                                                .blockedAttachments()
+                                                .stream()
+                                                .map(BlockedAttachment::attachmentId)
+                                                .toList())
                         : request;
         SignedReceipt signed;
         List<String> warnings = validateReceipt(entry, bound, proofId);
@@ -266,6 +280,9 @@ final class SessionReceipts {
                                     || !proof.submissionId().equals(submission)
                                     || !proof.caseId().equals(request.caseId().toString())
                                     || !evidence.caseId().equals(request.caseId()))
+                                throw new SessionException("verification_failed");
+                            if (request.schemaViolation()
+                                    != proof.warnings().contains("DATA_SCHEMA_INVALID"))
                                 throw new SessionException("verification_failed");
                             if (!request.blockedAttachments()
                                     .equals(

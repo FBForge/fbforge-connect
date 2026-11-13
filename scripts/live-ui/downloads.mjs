@@ -12,8 +12,9 @@ export async function nativeFolder(
   cancel = false,
   schemaReview = false,
   fileOptions = null,
+  selectedFolder = null,
 ) {
-  const folder = join(fixture.directory, 'desktop-ui', 'exports');
+  const folder = selectedFolder || join(fixture.directory, 'desktop-ui', 'exports');
   await mkdir(folder, { recursive: true });
   const helper = spawn(
     join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'),
@@ -38,7 +39,6 @@ export async function nativeFolder(
             fileOptions.title || 'Datei speichern',
           ]
         : []),
-      ...(schemaReview === true || schemaReview === 'schema' ? ['-SchemaReview'] : []),
       ...(schemaReview === 'attachment' ? ['-AttachmentReview'] : []),
       ...(schemaReview === 'scanner' ? ['-ScannerReview'] : []),
       ...(schemaReview === 'scanner-update' ? ['-ScannerUpdate'] : []),
@@ -102,60 +102,52 @@ async function filesBelow(folder) {
 }
 export async function verifyDownload(folder, message, reply = false) {
   const all = await filesBelow(folder);
-  const manifestFiles = all.filter((path) => path.endsWith('export.json'));
-  let found = false;
-  for (const path of manifestFiles) {
-    const manifest = JSON.parse(await readFile(path, 'utf8'));
-    if (manifest.messageId === (reply ? message.replyId : message.submissionId)) {
-      const directory = join(path, '..');
-      const parts = await readdir(directory);
+  const id = reply ? message.replyId : message.submissionId;
+  const prefix = `${reply ? 'Antwort' : 'Einreichung'}-${id}`;
+  const candidates = all.filter(
+    (path) => /[\\/]data\.json$/.test(path) && join(path, '..').split(/[\\/]/).at(-1).startsWith(prefix),
+  );
+  check(candidates.length > 0, 'live_ui_export_original_files_missing');
+  for (const data of candidates) {
+    const directory = join(data, '..');
+    const parts = await readdir(directory);
+    check(
+      parts.includes('metadata.json') &&
+        !parts.includes('export.json') &&
+        !parts.includes('UNVOLLSTAENDIG.txt'),
+      'live_ui_export_parts_missing',
+    );
+    check(JSON.parse(await readFile(data, 'utf8')), 'live_ui_export_data_invalid');
+    if (!reply) {
+      check((await readFile(data, 'utf8')) === message.text, 'live_ui_export_data_changed');
+      const attachment = parts.find((name) => name.endsWith('-ui-test-attachment.txt'));
       check(
-        parts.includes('metadata.json') &&
-          parts.includes('data.json') &&
-          !parts.includes('UNVOLLSTAENDIG.txt'),
-        'live_ui_export_parts_missing',
+        attachment &&
+          (await readFile(join(directory, attachment), 'utf8')) ===
+            'Fiktive TEST-Anlage aus der installierten Oberfläche.',
+        'live_ui_export_attachment_changed',
       );
-      check(JSON.parse(await readFile(join(directory, 'data.json'), 'utf8')), 'live_ui_export_data_invalid');
-      if (!reply)
-        check(
-          (await readFile(join(directory, 'data.json'), 'utf8')) === message.text,
-          'live_ui_export_data_changed',
-        );
-      check(manifest.environment === 'TEST', 'live_ui_export_environment_wrong');
-      if (!reply) {
-        const attachment = manifest.files.find(
-          (file) => file.kind === 'attachment' && file.originalName === 'ui-test-attachment.txt',
-        );
-        check(
-          attachment &&
-            (await readFile(join(directory, attachment.file), 'utf8')) ===
-              'Fiktive TEST-Anlage aus der installierten Oberfläche.',
-          'live_ui_export_attachment_changed',
-        );
-        const pdf = manifest.files.find((file) => file.originalName === 'ui-fictional-attachment.pdf');
-        check(
-          pdf &&
-            (await readFile(join(directory, pdf.file))).equals(
-              await readFile(
-                new URL('../../frontend/test-fixtures/assets/fictional-attachment.pdf', import.meta.url),
-              ),
+      const pdf = parts.find((name) => name.endsWith('-ui-fictional-attachment.pdf'));
+      check(
+        pdf &&
+          (await readFile(join(directory, pdf))).equals(
+            await readFile(
+              new URL('../../frontend/test-fixtures/assets/fictional-attachment.pdf', import.meta.url),
             ),
-          'live_ui_export_pdf_changed',
-        );
-      }
-      found = true;
+          ),
+        'live_ui_export_pdf_changed',
+      );
     }
   }
-  check(found, 'live_ui_export_manifest_missing');
   console.log(
-    `Real desktop UI: ${reply ? 'reply' : 'submission'} metadata, data and export manifest saved through native folder picker`,
+    `Real desktop UI: ${reply ? 'reply' : 'submission'} original metadata, data and attachments saved without an export manifest`,
   );
 }
 
 export async function downloadMessage(desktop, fixture, message, reply = false) {
   const page = desktop.page;
   const download = page.getByRole('button', { name: 'Alle Dateien herunterladen', exact: true });
-  // Cancelling the warning must not become an implicit export permission.
+  // Cancelling the folder selection must not export any files.
   await nativeFolder(desktop, fixture, () => download.click(), true);
   await download.waitFor({ state: 'visible' });
   const folder = await nativeFolder(desktop, fixture, () => download.click());
@@ -165,9 +157,6 @@ export async function downloadMessage(desktop, fixture, message, reply = false) 
     .waitFor();
   await verifyDownload(folder, message, reply);
 }
-
-export const nativeSchemaReview = (desktop, fixture, operation, cancel = false) =>
-  nativeFolder(desktop, fixture, operation, cancel, true);
 
 export const nativeAttachmentReview = (desktop, fixture, operation) =>
   nativeFolder(desktop, fixture, operation, false, 'attachment');

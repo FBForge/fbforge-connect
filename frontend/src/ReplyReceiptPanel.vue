@@ -1,4 +1,5 @@
 <script setup>
+import ReceiptWarnings from './ReceiptWarnings.vue';
 import { cancelledProductionAction } from './environments.js';
 
 import { useEnvironment } from './environments.js';
@@ -175,7 +176,12 @@ async function confirm() {
   await run(
     value.attempt.action === 'accept' ? 'Antwort annehmen' : 'Antwort ablehnen',
     async (_, current) => {
-      const result = await executeReplyReceipt(invoke, active, value.attempt);
+      const result = await executeReplyReceipt(
+        invoke,
+        active,
+        value.attempt,
+        value.warnings.includes('DATA_SCHEMA_INVALID'),
+      );
       prepared.value = null;
       dialog.value?.close();
       const published = { ...result, apiVersion: active.apiVersion, sessionId: active.sessionId };
@@ -333,13 +339,7 @@ function openEvents() {
           </dd>
         </template>
       </dl>
-      <p v-if="prepared.warnings.length">
-        Die technischen Prüfhinweise bleiben bestehen. Bitte auch den Inhalt fachlich prüfen.
-      </p>
-      <p v-if="prepared.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')" class="action-notice warning">
-        Gesperrte Anlagen bleiben unzugänglich. Die Annahme bestätigt die gesamte Antwort und meldet die
-        betroffenen Anlagen als Problem an FIT-Connect. Eine zusätzliche Bestätigung ist erforderlich.
-      </p>
+      <ReceiptWarnings :warnings="prepared.warnings" />
       <p>Die Aktion wird einmalig gesendet. Die Freigabe gilt höchstens 60 Sekunden.</p>
       <div class="client-actions">
         <button class="button secondary" type="button" autofocus :disabled="working" @click="dismiss">
@@ -350,7 +350,9 @@ function openEvents() {
             prepared.attempt.action === 'accept'
               ? prepared.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')
                 ? 'Mit Anlagenproblemen annehmen'
-                : 'Jetzt annehmen'
+                : prepared.warnings.includes('DATA_SCHEMA_INVALID')
+                  ? 'Mit Schemaabweichungen annehmen'
+                  : 'Jetzt annehmen'
               : 'Jetzt ablehnen'
           }}
         </button>

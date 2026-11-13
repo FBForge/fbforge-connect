@@ -80,7 +80,6 @@ impl Context for Fake {
             Effect::CheckpointProfile => ("save_profile", Value::Null),
             Effect::CheckpointCases => ("save_cases", Value::Null),
             Effect::ConfirmAttachments(count) => ("attachments", json!(count)),
-            Effect::ConfirmSchema => ("schema", Value::Null),
             Effect::MarkRunning(attempt) => ("running", json!(attempt)),
             Effect::InvalidateEngine => ("invalidate", Value::Null),
             Effect::Journal(data) => ("journal", data.clone()),
@@ -320,18 +319,34 @@ async fn durable_dispatch_intent_precedes_remote_creation_and_profile_failure_bl
 }
 
 #[tokio::test]
-async fn receipt_reviews_are_bound_to_attempt_and_native_confirmation_cannot_be_skipped() {
+async fn receipt_reviews_require_bound_acknowledgement_and_keep_attachment_confirmation() {
     for operation in ["execute_receipt", "execute_reply_receipt"] {
-        for blocked in [0, 1, 39] {
+        let missing = Fake::with(vec![
+            json!({"requiresConfirmation":true,"attachmentProblemCount":0}),
+        ]);
+        assert_eq!(missing.run(operation).await, Err("receipt_review_required"));
+        assert_eq!(missing.commands().len(), 1);
+        let accepted = Fake::with(vec![
+            json!({"requiresConfirmation":true,"attachmentProblemCount":0}),
+            json!({"status":"confirmed"}),
+        ]);
+        run(
+            &accepted,
+            ApiVersion::V2,
+            SESSION,
+            json!({"command":operation,"attemptId":"attempt","reviewConfirmed":true}),
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            accepted.commands().last().unwrap().get("reviewConfirmed"),
+            None
+        );
+        for blocked in [1, 39] {
             let fake = Fake::with(vec![
                 json!({"requiresConfirmation":true,"attachmentProblemCount":blocked}),
             ]);
-            let name = if blocked == 0 {
-                "schema"
-            } else {
-                "attachments"
-            };
-            fake.fail(name, vec![Err("review_cancelled")]);
+            fake.fail("attachments", vec![Err("review_cancelled")]);
             assert_eq!(fake.run(operation).await, Err("review_cancelled"));
             assert_eq!(
                 fake.commands(),

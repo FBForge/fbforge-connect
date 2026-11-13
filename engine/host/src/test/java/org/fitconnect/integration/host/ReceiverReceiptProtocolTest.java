@@ -372,8 +372,9 @@ class ReceiverReceiptProtocolTest extends ReceiverTestSupport {
 
     private static String rendererDocument(ReceiptRequest request) {
         var document = new Gson().toJsonTree(request).getAsJsonObject();
-        // Host-only scanner problems are never part of the renderer draft contract.
+        // Host-only scanner/schema problems are never part of the renderer draft contract.
         document.remove("blockedAttachments");
+        document.remove("schemaViolation");
         return document.toString();
     }
 }

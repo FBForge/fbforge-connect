@@ -206,18 +206,19 @@ test('cancelled production confirmation before dispatch never becomes an uncerta
   assert.equal(calls, 1);
 });
 
-test('local case guard before dispatch never becomes an uncertain remote write', async () => {
-  let calls = 0;
-  await assert.rejects(
-    executeReceipt(
-      async () => {
-        calls++;
-        throw new Error('case_storage_pending');
-      },
-      session,
-      attempt,
-    ),
-    /case_storage_pending/,
-  );
-  assert.equal(calls, 1);
-});
+for (const failure of ['case_storage_pending', 'receipt_review_required'])
+  test(`${failure} before dispatch never becomes an uncertain remote write`, async () => {
+    let calls = 0;
+    await assert.rejects(
+      executeReceipt(
+        async () => {
+          calls++;
+          throw new Error(failure);
+        },
+        session,
+        attempt,
+      ),
+      new RegExp(failure),
+    );
+    assert.equal(calls, 1);
+  });

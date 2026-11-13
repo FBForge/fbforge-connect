@@ -35,6 +35,7 @@ export function errorMessage(code) {
       'Für diese lokale Kopie sind noch keine entschlüsselten Fachdaten verfügbar. Öffnen Sie die Nachricht im Empfang und entschlüsseln und prüfen Sie die Inhalte zuerst.',
     export_expired:
       'Der Zielordner ist nicht mehr für diesen Durchlauf freigegeben. Bitte den Download erneut starten.',
+    receipt_review_required: 'Bitte die Schemaabweichungen im Annahmedialog ausdrücklich bestätigen.',
     batch_review_required:
       'Die Dateien wurden gespeichert. Offene technische Prüfungen oder die fehlende Malwarescan-Freigabe erfordern eine manuelle Entscheidung.',
     batch_list_changed:
@@ -139,6 +140,7 @@ const reportableCodes = new Set([
   'scanner_update_failed',
   'scanner_scan_failed',
 
+  'receipt_review_required',
   'batch_review_required',
   'batch_list_changed',
   'batch_selection_limit',

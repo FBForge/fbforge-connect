@@ -10,6 +10,7 @@ import { prepareReceipt, executeReceipt, cancelReceipt, receiptState } from './r
 import { errorMessage } from './diagnostics.js';
 import { resetsSessions } from './sessions.ts';
 import ReceiptDownloadChoice from './ReceiptDownloadChoice.vue';
+import ReceiptWarnings from './ReceiptWarnings.vue';
 import { downloadMessage, exportSource } from './message-export.js';
 
 const props = defineProps({
@@ -78,16 +79,6 @@ const messages = {
   resource_unavailable:
     'Die Aktion konnte nicht abgeschlossen werden. Bei einem ungewissen Ausgang nicht erneut senden.',
 };
-const warning = (stage) =>
-  ({
-    MALWARE_SCAN_PASSED: 'Der eingerichtete Scanner hat die Inhalte freigegeben.',
-    MALWARE_ATTACHMENT_BLOCKED:
-      'Anlagen wurden vom Virenscan gesperrt. Eine Annahme meldet diese Anlagen als Problem an FIT-Connect.',
-    MALWARE_SCAN_NOT_CONFIGURED: 'Kein Malwarescan durchgeführt.',
-    XML_SCHEMA_NOT_CHECKED: 'Keine XSD-Prüfung durchgeführt.',
-    DATA_SCHEMA_INVALID:
-      'Die Fachdaten weichen vom Schema ab. Eine Annahme erfordert Ihre ausdrückliche Bestätigung.',
-  })[stage] || `SDK-Prüfhinweis: ${stage}`;
 const explain = (cause) =>
   messages[typeof cause === 'string' ? cause : cause?.message] || errorMessage(cause);
 
@@ -267,7 +258,12 @@ async function confirm() {
         const saved = await downloadMessage(invoke, active, exportSource(props.proof), current);
         if (!saved || !current()) return 'Abgebrochen';
       }
-      const result = await executeReceipt(invoke, active, value.attempt);
+      const result = await executeReceipt(
+        invoke,
+        active,
+        value.attempt,
+        value.warnings.includes('DATA_SCHEMA_INVALID'),
+      );
       prepared.value = null;
       dialog.value?.close();
       emit('outcome', { ...result, apiVersion: active.apiVersion, sessionId: active.sessionId });
@@ -457,9 +453,7 @@ async function confirm() {
           </dd>
         </template>
       </dl>
-      <ul v-if="prepared.warnings.length">
-        <li v-for="stage in prepared.warnings" :key="stage">{{ warning(stage) }}</li>
-      </ul>
+      <ReceiptWarnings :warnings="prepared.warnings" />
       <ReceiptDownloadChoice
         v-if="
           prepared.attempt.action === 'accept' && !prepared.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')
@@ -480,9 +474,13 @@ async function confirm() {
             prepared.attempt.action === 'accept'
               ? prepared.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')
                 ? 'Mit Anlagenproblemen annehmen'
-                : saveBeforeAccept
-                  ? 'Speichern und annehmen'
-                  : 'Jetzt annehmen'
+                : prepared.warnings.includes('DATA_SCHEMA_INVALID')
+                  ? saveBeforeAccept
+                    ? 'Speichern und mit Problemen annehmen'
+                    : 'Mit Schemaabweichungen annehmen'
+                  : saveBeforeAccept
+                    ? 'Speichern und annehmen'
+                    : 'Jetzt annehmen'
               : 'Jetzt ablehnen'
           }}
         </button>

@@ -257,3 +257,14 @@ test('a successful configured malware scan allows bulk acceptance while other re
     );
   }
 });
+
+test('explicit batch consent accepts verified schema deviations and preserves the review acknowledgement', async () => {
+  const f = fixture({ warnings: ['DATA_SCHEMA_INVALID', 'MALWARE_SCAN_PASSED'] });
+  f.options.allowSchemaInvalid = true;
+  const result = await runMessageBatch(f.options);
+  assert.deepEqual(
+    result.map((row) => row.status),
+    ['accepted', 'accepted'],
+  );
+  assert.ok(f.calls.filter((c) => c.command === 'execute_receipt').every((c) => c.reviewConfirmed === true));
+});

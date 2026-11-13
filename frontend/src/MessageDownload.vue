@@ -49,6 +49,7 @@ async function download() {
     >
       {{ pending ? 'Dateien werden gespeichert …' : 'Alle Dateien herunterladen' }}
     </button>
+    <p v-if="!blocked" class="small-note">Originaldateien unverschlüsselt im gewählten Ordner speichern.</p>
     <p v-if="blocked" class="small-note">
       Ein vollständiger Originaldownload ist wegen gesperrter Anlagen nicht möglich. Unauffällige Dateien
       können Sie einzeln speichern.

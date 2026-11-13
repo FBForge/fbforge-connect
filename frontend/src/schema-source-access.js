@@ -1,3 +1,4 @@
+import { diagnosticCode } from './diagnostics.js';
 import { computed, inject, ref, watch } from 'vue';
 
 export const schemaSourceAccessKey = Symbol('schemaSourceAccess');
@@ -26,7 +27,7 @@ export async function withSchemaSourceAccess(operation, request, current = () =>
   try {
     return await operation();
   } catch (cause) {
-    if ((typeof cause === 'string' ? cause : cause?.message) !== 'schema_consent_required') throw cause;
+    if (diagnosticCode(cause) !== 'schema_consent_required') throw cause;
     if (!current() || !(await request()) || !current()) throw new Error('content_cancelled');
     return operation();
   }

@@ -60,7 +60,7 @@ for (const api of ['v2', 'v3'])
     await page.goto(`http://127.0.0.1:1420/test-fixtures/reply-receipt.html?blocked=1&api=${api}`);
     await page.getByRole('button', { name: 'Aktion vorbereiten', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Antwort annehmen?', exact: true });
-    await expect(dialog).toContainText('Die Annahme bestätigt die gesamte Antwort');
+    await expect(dialog).toContainText('Die Annahme bestätigt die gesamte Nachricht');
     await expect(
       dialog.getByRole('button', { name: 'Mit Anlagenproblemen annehmen', exact: true }),
     ).toBeVisible();

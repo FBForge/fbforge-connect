@@ -43,6 +43,11 @@ class ReceiptDraftTest {
             value.addProperty(field, 1);
             assertThrows(SessionException.class, () -> ReceiptDraft.resolve(value.toString()));
         }
+        for (boolean schemaViolation : List.of(false, true)) {
+            var value = draft();
+            value.addProperty("schemaViolation", schemaViolation);
+            assertThrows(SessionException.class, () -> ReceiptDraft.resolve(value.toString()));
+        }
         assertThrows(
                 SessionException.class,
                 () ->

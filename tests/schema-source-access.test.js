@@ -92,3 +92,21 @@ test('cancel, stale context and a second refusal never retry again', async () =>
   );
   assert.equal(calls, 5);
 });
+
+test('structured native SDK failures still request public schema access', async () => {
+  let attempts = 0;
+  let requests = 0;
+  const result = await withSchemaSourceAccess(
+    () => {
+      if (++attempts === 1) throw { code: 'schema_consent_required', diagnostics: [] };
+      return 'verified';
+    },
+    async () => {
+      requests++;
+      return true;
+    },
+  );
+  assert.equal(result, 'verified');
+  assert.equal(requests, 1);
+  assert.equal(attempts, 2);
+});

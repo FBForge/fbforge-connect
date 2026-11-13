@@ -15,7 +15,8 @@ public record ReceiptRequest(
         String reason,
         String description,
         UUID attachmentId,
-        List<UUID> blockedAttachments) {
+        List<UUID> blockedAttachments,
+        boolean schemaViolation) {
     public ReceiptRequest(
             UUID destinationId,
             UUID submissionId,
@@ -37,6 +38,43 @@ public record ReceiptRequest(
                 List.of());
     }
 
+    public ReceiptRequest(
+            UUID destinationId,
+            UUID submissionId,
+            UUID caseId,
+            String action,
+            String signingKid,
+            String reason,
+            String description,
+            UUID attachmentId,
+            List<UUID> blockedAttachments) {
+        this(
+                destinationId,
+                submissionId,
+                caseId,
+                action,
+                signingKid,
+                reason,
+                description,
+                attachmentId,
+                blockedAttachments,
+                false);
+    }
+
+    public ReceiptRequest withSchemaViolation(boolean invalid) {
+        return new ReceiptRequest(
+                destinationId,
+                submissionId,
+                caseId,
+                action,
+                signingKid,
+                reason,
+                description,
+                attachmentId,
+                blockedAttachments,
+                invalid);
+    }
+
     public ReceiptRequest withBlockedAttachments(List<UUID> ids) {
         return new ReceiptRequest(
                 destinationId,
@@ -47,10 +85,12 @@ public record ReceiptRequest(
                 reason,
                 description,
                 attachmentId,
-                ids);
+                ids,
+                schemaViolation);
     }
 
     public ReceiptRequest {
+        if (schemaViolation && !"accept".equals(action)) invalid();
         if (blockedAttachments == null
                 || blockedAttachments.size() > 39
                 || blockedAttachments.stream().anyMatch(Objects::isNull)

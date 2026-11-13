@@ -1,10 +1,11 @@
+import { diagnosticCode } from './diagnostics.js';
 import { loadSubmission } from './submissions.js';
 import { verifySubmission, verifyReply, listReceivedContents, discardReceived } from './receiving.js';
 import { prepareReceipt, executeReceipt, cancelReceipt } from './receipts.js';
 import { exportMessage, exportSource } from './message-export.js';
 import { withSchemaSourceAccess } from './schema-source-access.js';
 
-const code = (cause) => (typeof cause === 'string' ? cause : cause?.message || 'resource_unavailable');
+const code = diagnosticCode;
 const check = (current) => {
   if (!current()) throw new Error('content_cancelled');
 };
@@ -45,6 +46,7 @@ export async function runMessageBatch(options) {
         current,
       );
       check(current);
+      row.schemaViolation = proof.warnings.includes('DATA_SCHEMA_INVALID');
       if (proof.blockedAttachments?.length || proof.warnings.includes('MALWARE_ATTACHMENT_BLOCKED')) {
         row.status = 'manual';
         row.error = 'message_content_blocked';
@@ -86,6 +88,7 @@ export async function runMessageBatch(options) {
         proof.warnings.some(
           (warning) =>
             warning !== 'MALWARE_SCAN_PASSED' &&
+            (warning !== 'DATA_SCHEMA_INVALID' || !options.allowSchemaInvalid) &&
             (warning !== 'MALWARE_SCAN_NOT_CONFIGURED' || !options.allowNoScanner),
         );
       if (blocked) {
@@ -111,7 +114,12 @@ export async function runMessageBatch(options) {
       check(current);
       row.status = 'accepting';
       onProgress([...results]);
-      const outcome = await executeReceipt(invoke, session, prepared.attempt);
+      const outcome = await executeReceipt(
+        invoke,
+        session,
+        prepared.attempt,
+        options.allowSchemaInvalid === true,
+      );
       prepared = null;
       onOutcome({ ...outcome, apiVersion: session.apiVersion, sessionId: session.sessionId });
       row.status =

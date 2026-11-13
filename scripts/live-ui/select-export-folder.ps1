@@ -1,18 +1,18 @@
 ﻿[CmdletBinding()]
-param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$SchemaReview, [switch]$AttachmentReview, [switch]$ScannerReview, [switch]$ScannerUpdate, [switch]$ScannerInstall, [switch]$SaveFile, [switch]$OpenFile, [string]$FileName, [string]$DialogTitle = 'Datei speichern')
+param([Parameter(Mandatory)][int]$ApplicationId, [Parameter(Mandatory)][string]$Folder, [switch]$Cancel, [switch]$AttachmentReview, [switch]$ScannerReview, [switch]$ScannerUpdate, [switch]$ScannerInstall, [switch]$SaveFile, [switch]$OpenFile, [string]$FileName, [string]$DialogTitle = 'Datei speichern')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 trap {
     $code = $_.Exception.Message
     if ($code -notmatch '^ui_[a-z_]+$') { $code = 'ui_folder_driver_failed' }
     Write-Output $code
-    if ($code -eq 'ui_export_warning_missing') {
+    if ($code -eq 'ui_export_folder_dialog_missing') {
         $pidCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $ApplicationId)
         $windowCondition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)
         $both = [System.Windows.Automation.AndCondition]::new($pidCondition, $windowCondition)
         $windows = [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Descendants, $both)
         Write-Output ('ui_folder_diagnostic owned_windows=' + $windows.Count)
-        $expected = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, 'Nachrichten herunterladen')
+        $expected = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, 'Zielordner für Nachrichten')
         $found = [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Descendants, $expected)
         Write-Output ('ui_folder_diagnostic expected_title_nodes=' + $found.Count)
     }
@@ -201,16 +201,8 @@ if ($AttachmentReview -or $ScannerReview) {
     Write-Output 'Native scanner-review confirmation handled'
     exit 0
 }
-if ($SchemaReview) {
-    $notice = Wait-Ui { Find-Dialog 'Trotz Schemaabweichungen annehmen?' } 'ui_schema_warning_missing'
-    Invoke-Button $notice $(if ($Cancel) { 'Abbrechen' } else { 'Trotz Abweichungen annehmen' })
-    Write-Output 'Native schema-review confirmation handled'
-    exit 0
-}
-$notice = Wait-Ui { Find-Dialog 'Nachrichten herunterladen' } 'ui_export_warning_missing'
-Invoke-Button $notice $(if ($Cancel) { 'Abbrechen' } else { 'Zielordner wählen' })
-if ($Cancel) { Write-Output 'Native plaintext-export warning cancelled'; exit 0 }
 $dialog = Wait-Ui { Find-Dialog 'Zielordner für Nachrichten' } 'ui_export_folder_dialog_missing'
+if ($Cancel) { Invoke-Button $dialog 'Abbrechen'; Write-Output 'Native folder selection cancelled'; exit 0 }
 $handle = [IntPtr]$dialog.Current.NativeWindowHandle
 $null = [ExportWindowFocus]::SetForegroundWindow($handle)
 $null = Wait-Ui { [ExportWindowFocus]::GetForegroundWindow() -eq $handle } 'ui_folder_focus_missing'

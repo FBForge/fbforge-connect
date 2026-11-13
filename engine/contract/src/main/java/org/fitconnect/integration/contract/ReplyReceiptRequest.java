@@ -12,7 +12,8 @@ public record ReplyReceiptRequest(
         String reason,
         String description,
         UUID attachmentId,
-        List<UUID> blockedAttachments) {
+        List<UUID> blockedAttachments,
+        boolean schemaViolation) {
     public ReplyReceiptRequest(
             UUID caseId,
             UUID replyId,
@@ -23,12 +24,36 @@ public record ReplyReceiptRequest(
         this(caseId, replyId, action, reason, description, attachmentId, List.of());
     }
 
+    public ReplyReceiptRequest(
+            UUID caseId,
+            UUID replyId,
+            String action,
+            String reason,
+            String description,
+            UUID attachmentId,
+            List<UUID> blockedAttachments) {
+        this(caseId, replyId, action, reason, description, attachmentId, blockedAttachments, false);
+    }
+
+    public ReplyReceiptRequest withSchemaViolation(boolean invalid) {
+        return new ReplyReceiptRequest(
+                caseId,
+                replyId,
+                action,
+                reason,
+                description,
+                attachmentId,
+                blockedAttachments,
+                invalid);
+    }
+
     public ReplyReceiptRequest withBlockedAttachments(List<UUID> ids) {
         return new ReplyReceiptRequest(
-                caseId, replyId, action, reason, description, attachmentId, ids);
+                caseId, replyId, action, reason, description, attachmentId, ids, schemaViolation);
     }
 
     public ReplyReceiptRequest {
+        if (schemaViolation && !"accept".equals(action)) invalid();
         if (blockedAttachments == null
                 || blockedAttachments.size() > 39
                 || blockedAttachments.stream().anyMatch(Objects::isNull)

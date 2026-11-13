@@ -107,20 +107,31 @@ class ReplySchemaReviewTest extends SenderTestSupport {
                         assertEquals("invalid", review.get("status").getAsString());
                         assertFalse(review.getAsJsonArray("errors").isEmpty());
                         assertNotNull(result.evidence());
-                        assertNotNull(
+                        var receipt =
                                 adapters.withSession(
                                         api,
                                         session,
                                         value ->
                                                 value.prepareReplyReceipt(
                                                         new ReplyReceiptRequest(
-                                                                CASE,
-                                                                fixture.replyId,
-                                                                "accept",
-                                                                null,
-                                                                null,
-                                                                null),
-                                                        result.evidence())));
+                                                                        CASE,
+                                                                        fixture.replyId,
+                                                                        "accept",
+                                                                        null,
+                                                                        null,
+                                                                        null)
+                                                                .withSchemaViolation(true),
+                                                        result.evidence()));
+                        var payload = JsonParser.parseString(receipt.body()).getAsJsonObject();
+                        assertTrue(payload.has("authenticationTags"));
+                        var problems = payload.getAsJsonArray("problems");
+                        assertEquals(1, problems.size());
+                        assertEquals(
+                                "data",
+                                problems.get(0).getAsJsonObject().get("instance").getAsString());
+                        assertEquals(
+                                "https://schema.fitko.de/fit-connect/events/problems/schema-violation",
+                                problems.get(0).getAsJsonObject().get("type").getAsString());
                     }
                 }
             }

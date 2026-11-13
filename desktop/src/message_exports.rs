@@ -8,7 +8,7 @@ use crate::{
 use serde_json::{json, Value};
 use std::{collections::HashMap, hash::BuildHasher};
 use tauri::{Manager, State};
-use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+use tauri_plugin_dialog::DialogExt;
 
 #[derive(Default)]
 pub struct MessageExports(tokio::sync::Mutex<HashMap<String, Permit>>);
@@ -37,15 +37,21 @@ pub async fn begin_message_export(
     let window = app.get_webview_window("main").ok_or("export_failed")?;
     let dialog_app = app.clone();
     let path = tauri::async_runtime::spawn_blocking(move || {
-        let confirmed = dialog_app.dialog().message("Metadaten, Fachdaten und Anlagen werden entschlüsselt gespeichert. Die Dateien sind außerhalb der geschützten Vorgangsablage lesbar und können personenbezogene Daten enthalten. Wählen Sie einen geeigneten Zielordner.")
-            .parent(&window).title("Nachrichten herunterladen").kind(MessageDialogKind::Warning)
-            .buttons(MessageDialogButtons::OkCancelCustom("Zielordner wählen".into(), "Abbrechen".into())).blocking_show();
-        if !confirmed { return Ok(None); }
-        let mut dialog = dialog_app.dialog().file().set_parent(&window).set_title("Zielordner für Nachrichten");
-        if let Ok(directory) = dialog_app.path().download_dir() { dialog = dialog.set_directory(directory); }
-        dialog.blocking_pick_folder()
-            .map(|file| file.into_path().map_err(|_| "export_failed")).transpose()
-    }).await.map_err(|_| "export_failed")??;
+        let mut dialog = dialog_app
+            .dialog()
+            .file()
+            .set_parent(&window)
+            .set_title("Zielordner für Nachrichten");
+        if let Ok(directory) = dialog_app.path().download_dir() {
+            dialog = dialog.set_directory(directory);
+        }
+        dialog
+            .blocking_pick_folder()
+            .map(|file| file.into_path().map_err(|_| "export_failed"))
+            .transpose()
+    })
+    .await
+    .map_err(|_| "export_failed")??;
     let Some(path) = path else {
         return Ok(None);
     };
@@ -56,7 +62,7 @@ pub async fn begin_message_export(
         session_id.clone(),
     )
     .await?;
-    let root = store::reserve(&path, "FBForge-Connect-Export")?;
+    let root = store::export_root(&path)?;
     let token = format!(
         "export-{:016x}",
         std::collections::hash_map::RandomState::new().hash_one((&session_id, &root))

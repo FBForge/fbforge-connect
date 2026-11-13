@@ -32,6 +32,7 @@ pub(crate) async fn execute_reply_receipt(
     api_version: ApiVersion,
     session_id: String,
     attempt_id: String,
+    review_confirmed: Option<bool>,
 ) -> Result<SessionResource, &'static str> {
     if !valid_session_id(&attempt_id) {
         return Err("invalid_input");
@@ -41,7 +42,7 @@ pub(crate) async fn execute_reply_receipt(
         &state,
         api_version,
         &session_id,
-        serde_json::json!({"command":"execute_reply_receipt","attemptId":attempt_id}),
+        serde_json::json!({"command":"execute_reply_receipt","attemptId":attempt_id,"reviewConfirmed":review_confirmed.unwrap_or(false)}),
     )
     .await
 }

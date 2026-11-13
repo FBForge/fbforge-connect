@@ -1,6 +1,6 @@
 import { cancelledProductionAction } from './environments.js';
 import { requestResource } from './resources.js';
-import { uncertainOperationError } from './diagnostics.js';
+import { diagnosticCode, uncertainOperationError } from './diagnostics.js';
 
 const uuid = (value) =>
   typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
@@ -101,18 +101,21 @@ export async function prepareReplyReceipt(invoke, session, draft, proof = null) 
     throw cause;
   }
 }
-export async function executeReplyReceipt(invoke, session, attempt) {
+export async function executeReplyReceipt(invoke, session, attempt, reviewConfirmed = false) {
   const expected = state(attempt);
   if (expected.status !== 'prepared') throw new Error('invalid_input');
   try {
     const result = state(
-      await requestResource(invoke, session, 'execute_reply_receipt', { attemptId: expected.attemptId }),
+      await requestResource(invoke, session, 'execute_reply_receipt', {
+        attemptId: expected.attemptId,
+        reviewConfirmed,
+      }),
       expected,
     );
     if (!['confirmed', 'failed', 'uncertain'].includes(result.status)) fail();
     return result;
   } catch (cause) {
-    if (cancelledProductionAction(cause)) throw cause;
+    if (cancelledProductionAction(cause) || diagnosticCode(cause) === 'receipt_review_required') throw cause;
     const code = typeof cause === 'string' ? cause : cause?.message;
     if (code === 'engine_busy' || code?.startsWith('vault_') || code === 'case_storage_pending') throw cause;
     return Object.freeze({ ...expected, status: 'uncertain', error: uncertainOperationError(cause) });

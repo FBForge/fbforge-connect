@@ -33,7 +33,8 @@ const results = ref([]),
   finished = ref(false);
 const error = ref(''),
   directory = ref(''),
-  allowNoScanner = ref(false);
+  allowNoScanner = ref(false),
+  allowSchemaInvalid = ref(false);
 let generation = 0,
   opener;
 const context = computed(
@@ -92,6 +93,7 @@ async function show(accept) {
   finished.value = false;
   stopped.value = false;
   allowNoScanner.value = false;
+  allowSchemaInvalid.value = false;
   dialog.value.showModal();
   if (accept) {
     loading.value = true;
@@ -145,6 +147,7 @@ async function start() {
       accept: mode.value === 'accept',
       signingKid: signingKid.value,
       allowNoScanner: allowNoScanner.value,
+      allowSchemaInvalid: allowSchemaInvalid.value,
       schemas: props.schemas,
       allowExternalSchemas: () => external.value,
       requestSchemas: () => schemaDialog.value.request(),
@@ -197,17 +200,19 @@ defineExpose({ show });
           {{ snapshot.length }} {{ reply ? 'Antworten' : 'Einreichungen' }} ausgewählt. Jede Nachricht wird
           separat geprüft und mit Metadaten, Fachdaten und Anlagen in einem eigenen Ordner gespeichert.
         </p>
-        <p class="small-note">
-          Auch ein Download benötigt eine erfolgreiche Entschlüsselung und technische Prüfung. Nicht prüfbare
-          Nachrichten bleiben offen und werden nicht automatisch abgelehnt.
+        <p v-if="!finished && mode === 'accept'">
+          Angenommen wird erst nach erfolgreicher Prüfung und Speicherung. Ausnahmen geben Sie unten frei.
+          Andere Prüffehler bleiben zur Einzelprüfung stehen.
         </p>
-        <p v-if="mode === 'accept'">
-          Nur vollständig gespeicherte Nachrichten mit erfolgreicher technischer Prüfung werden angenommen.
-          Schemafehler und andere offene Prüfungen erfordern Ihre manuelle Entscheidung. Die technische
-          Prüfung ersetzt keine fachliche Prüfung.
+        <p v-else-if="!finished" class="small-note">
+          Der Download benötigt eine erfolgreiche Entschlüsselung und technische Prüfung. Nicht prüfbare
+          Nachrichten bleiben offen.
         </p>
         <p v-if="session?.environment === 'PROD'" class="batch-production-note">
           PROD: Jede Annahme wird zusätzlich im nativen Bestätigungsdialog abgefragt.
+        </p>
+        <p class="small-note">
+          Die Originaldateien werden unverschlüsselt gespeichert. Wählen Sie einen geeigneten Zielordner.
         </p>
         <template v-if="!finished && mode === 'accept'">
           <p v-if="loading" role="status">Signaturschlüssel werden geladen …</p>
@@ -221,6 +226,10 @@ defineExpose({ show });
               <option value="">Bitte auswählen</option>
               <option v-for="key in keys" :key="key.kid" :value="key.kid">{{ key.kid }}</option>
             </select>
+          </label>
+          <label class="checkbox-label">
+            <input v-model="allowSchemaInvalid" type="checkbox" :disabled="running" />
+            Trotz Schemaabweichungen annehmen und diese als Problem melden
           </label>
           <label class="checkbox-label">
             <input v-model="allowNoScanner" type="checkbox" :disabled="running" />
@@ -248,7 +257,13 @@ defineExpose({ show });
         <div v-if="directory" class="small-note"><CopyValue :value="directory" label="Exportordner" /></div>
         <ol v-if="results.length" class="batch-results" aria-label="Ergebnisse des Durchlaufs">
           <li v-for="item in results" :key="item.replyId || item.submissionId">
-            <strong>{{ labels[item.status] }}</strong>
+            <strong>
+              {{
+                item.status === 'accepted' && item.schemaViolation
+                  ? 'Gespeichert und mit Schemaabweichungen angenommen'
+                  : labels[item.status]
+              }}
+            </strong>
             <p class="small-note">
               {{ reply ? 'Reply ID' : 'Submission ID' }}: {{ item.replyId || item.submissionId }}
             </p>

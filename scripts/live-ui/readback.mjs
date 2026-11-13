@@ -1,7 +1,9 @@
 import { navigate, queryEventLog } from './exchange.mjs';
 import { check, until } from './desktop.mjs';
 import { returnToInbox } from './inbox.mjs';
-import { downloadMessage, nativeFolder, nativeSchemaReview, verifyDownload } from './downloads.mjs';
+import { downloadMessage, nativeFolder, verifyDownload } from './downloads.mjs';
+import { join } from 'node:path';
+import { readdir } from 'node:fs/promises';
 
 export async function previewPdf(page) {
   const row = page
@@ -69,7 +71,7 @@ export async function receiveReply(desktop, fixture, message, download = false) 
   );
 }
 
-export async function bulkReceive(desktop, fixture, valid, invalid) {
+export async function bulkReceive(desktop, fixture, valid, invalid, override) {
   const { page } = desktop;
   await navigate(page, 'Empfangen');
   await page.getByRole('tab', { name: 'Einreichungen', exact: true }).click();
@@ -93,6 +95,15 @@ export async function bulkReceive(desktop, fixture, valid, invalid) {
   if (await key.isVisible()) await key.selectOption(fixture.signingKid);
   await dialog.getByRole('checkbox', { name: 'Annahmen ohne Malwarescan erlauben', exact: true }).check();
   const folder = await nativeFolder(desktop, fixture, () => start.click());
+  const consent = page.getByRole('dialog', { name: 'Öffentliche Schemaquellen laden?', exact: true });
+  await until(
+    async () =>
+      (await consent.isVisible()) ||
+      (await dialog.getByRole('button', { name: 'Schließen', exact: true }).isVisible()),
+    'live_ui_bulk_consent_or_result_missing',
+  );
+  if (await consent.isVisible())
+    await consent.getByRole('button', { name: 'Für diese Verbindung erlauben', exact: true }).click();
   await dialog.getByRole('button', { name: 'Schließen', exact: true }).waitFor();
   const rows = dialog.locator('.batch-results > li');
   check((await rows.count()) === 2, 'live_ui_bulk_result_incomplete');
@@ -106,6 +117,44 @@ export async function bulkReceive(desktop, fixture, valid, invalid) {
   console.log(
     'Real desktop UI: multi-selection saved and accepted only valid data; schema-invalid data remained open for manual review',
   );
+  for (const selected of await page.getByRole('checkbox', { name: /^Einreichung .* auswählen$/ }).all())
+    await selected.uncheck();
+  await page
+    .getByRole('checkbox', { name: `Einreichung ${override.submissionId} auswählen`, exact: true })
+    .check();
+  await page.getByRole('button', { name: 'Prüfen, speichern und annehmen', exact: true }).click();
+  if (await key.isVisible()) await key.selectOption(fixture.signingKid);
+  await dialog
+    .getByRole('checkbox', {
+      name: 'Trotz Schemaabweichungen annehmen und diese als Problem melden',
+      exact: true,
+    })
+    .check();
+  await dialog.getByRole('checkbox', { name: 'Annahmen ohne Malwarescan erlauben', exact: true }).check();
+  const existing = join(folder, 'FBForge-Connect-Export');
+  await nativeFolder(desktop, fixture, () => start.click(), false, false, null, existing);
+  await dialog.getByText('Gespeichert und mit Schemaabweichungen angenommen', { exact: true }).waitFor();
+  await verifyDownload(existing, override);
+  check(
+    !(await readdir(existing)).some((name) => name.startsWith('FBForge-Connect-Export')),
+    'live_ui_export_nested_root',
+  );
+  await dialog.getByRole('button', { name: 'Schließen', exact: true }).click();
+  await queryEventLog(page, fixture, override);
+  await schemaProblemEvent(page, override);
+  console.log(
+    'Real desktop UI: explicit bulk schema override, signed problem statement and reuse of the existing export root passed',
+  );
+}
+
+async function schemaProblemEvent(page, message) {
+  const accepted = page
+    .locator('.event-log-entry')
+    .filter({ hasText: message.submissionId })
+    .filter({ has: page.getByText('Einreichung angenommen', { exact: true }) });
+  await accepted
+    .getByText('https://schema.fitko.de/fit-connect/events/problems/schema-violation', { exact: true })
+    .waitFor();
 }
 
 export async function rejectInvalid(page, fixture, message) {
@@ -181,26 +230,17 @@ export async function acceptInvalid(desktop, fixture, message) {
     await page.getByRole('button', { name: 'Annahme prüfen', exact: true }).click();
   }
   await dialog.getByRole('radio', { name: 'Nein, ohne Download annehmen', exact: true }).check();
-  await nativeSchemaReview(
-    desktop,
-    fixture,
-    () => dialog.getByRole('button', { name: 'Jetzt annehmen', exact: true }).click(),
-    true,
-  );
-  await until(
-    async () => !(await dialog.getByRole('button', { name: 'Jetzt annehmen', exact: true }).isDisabled()),
-    'live_ui_review_cancel_did_not_resume',
-  );
+  await dialog.getByRole('button', { name: 'Abbrechen', exact: true }).click();
   check(
     !(await page.getByText('Annahme von FIT-Connect bestätigt', { exact: true }).isVisible()),
     'live_ui_review_cancel_accepted',
   );
-  await nativeSchemaReview(desktop, fixture, () =>
-    dialog.getByRole('button', { name: 'Jetzt annehmen', exact: true }).click(),
-  );
+  await page.getByRole('button', { name: 'Annehmen', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Mit Schemaabweichungen annehmen', exact: true }).click();
   await page.getByText('Annahme von FIT-Connect bestätigt', { exact: true }).waitFor();
   await queryEventLog(page, fixture, message);
+  await schemaProblemEvent(page, message);
   console.log(
-    'Real desktop UI: invalid data and schema visible, native cancellation sent nothing, explicit schema override and signed acceptance passed',
+    'Real desktop UI: invalid data and schema visible, in-app cancellation sent nothing, explicit schema override and signed acceptance passed',
   );
 }

@@ -45,7 +45,9 @@ final class ReceiptSigner {
                 payload.metadataAuthTag(evidence.metadata())
                         .dataAuthTag(evidence.data())
                         .attachmentAuthTags(evidence.attachments())
-                        .problems(attachmentProblems(request.blockedAttachments()));
+                        .problems(
+                                acceptanceProblems(
+                                        request.blockedAttachments(), request.schemaViolation()));
             } else payload.problems(List.of(problem(request)));
             var signer = new SecurityEventTokenService(sdk.config, sdk.validation, key);
             var token =
@@ -110,6 +112,17 @@ final class ReceiptSigner {
                 || !evidence.caseId().equals(request.caseId())
                 || !evidence.attachments().keySet().containsAll(request.blockedAttachments()))
             throw new SessionException("verification_failed");
+    }
+
+    static List<Problem> acceptanceProblems(List<UUID> ids, boolean schemaViolation) {
+        var problems = new ArrayList<Problem>(attachmentProblems(ids));
+        if (schemaViolation)
+            problems.add(
+                    problem(
+                            "data-schema-violation",
+                            "The submitted data does not conform to its declared schema. Accepted after explicit review.",
+                            null));
+        return List.copyOf(problems);
     }
 
     static List<Problem> attachmentProblems(List<UUID> ids) {

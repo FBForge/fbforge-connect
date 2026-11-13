@@ -121,9 +121,10 @@ export async function exerciseDesktopUI(fixture) {
         const invalid = await sendSubmission(page, fixture, 'v3', false, true);
         stage = 'bulk_manual_fixture_send';
         const manual = await sendSubmission(page, fixture, 'v3', false, true);
+        const override = await sendSubmission(page, fixture, 'v3', false, true);
         await connectProfile(page, fixture.receiverProfiles.find((p) => p.api === 'v3').id);
         stage = 'bulk_schema_safety';
-        await bulkReceive(desktop, fixture, valid, invalid);
+        await bulkReceive(desktop, fixture, valid, invalid, override);
         stage = 'schema_failure_manual_acceptance';
         await acceptInvalid(desktop, fixture, manual);
         stage = 'schema_failure_manual_rejection';

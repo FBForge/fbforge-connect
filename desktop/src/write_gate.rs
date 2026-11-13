@@ -11,7 +11,6 @@ pub(crate) enum Effect<'a> {
     CheckpointProfile,
     CheckpointCases,
     ConfirmAttachments(u64),
-    ConfirmSchema,
     MarkRunning(&'a str),
     InvalidateEngine,
     Journal(&'a Value),
@@ -128,7 +127,8 @@ pub(crate) async fn run<C: Context>(
         "execute_receipt" | "execute_reply_receipt"
     ) {
         // The host binds review status to this exact attempt and current proof. A renderer cannot
-        // suppress the native confirmation by omitting a warning or altering UI state.
+        // suppress problem statements by omitting a warning. Schema acknowledgement belongs to
+        // this exact prepared attempt and is given by its in-app confirmation dialog.
         let review: SessionResource = context.request(serde_json::json!({
             "command": if operation == "execute_receipt" { "receipt_review" } else { "reply_receipt_review" },
             "apiVersion": version, "sessionId": id, "attemptId": command["attemptId"]
@@ -149,10 +149,14 @@ pub(crate) async fn run<C: Context>(
         if requires_confirmation {
             if blocked > 0 {
                 context.effect(Effect::ConfirmAttachments(blocked)).await?;
-            } else {
-                context.effect(Effect::ConfirmSchema).await?;
+            } else if command["reviewConfirmed"] != true {
+                return Err("receipt_review_required".into());
             }
         }
+        command
+            .as_object_mut()
+            .ok_or("invalid_input")?
+            .remove("reviewConfirmed");
         context
             .effect(Effect::CheckpointCases)
             .await

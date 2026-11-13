@@ -14,6 +14,9 @@ class ReceiptSchemaReviewTest extends ReceiverTestSupport {
         for (var api : ApiVersion.values())
             for (boolean mismatch : List.of(false, true)) {
                 var fixture = new ReceiverFixture(api, false, false);
+                var sent =
+                        new java.util.concurrent.atomic.AtomicReference<
+                                com.google.gson.JsonObject>();
                 ResourceExchange remote =
                         new ResourceExchange() {
                             public String get(String url, Map<String, String> headers) {
@@ -31,8 +34,21 @@ class ReceiptSchemaReviewTest extends ReceiverTestSupport {
                                     String url,
                                     Map<String, String> headers,
                                     String body) {
-                                throw new AssertionError(
-                                        "Reviewing an attempt must not send a receipt");
+                                try {
+                                    sent.set(
+                                            checkedReceipt(
+                                                    new SignedReceipt(
+                                                            UUID.fromString(DEST),
+                                                            UUID.fromString(SUB),
+                                                            UUID.fromString(CASE),
+                                                            "accept",
+                                                            "synthetic-sign",
+                                                            body),
+                                                    "accept"));
+                                } catch (Exception failure) {
+                                    throw new AssertionError(failure);
+                                }
+                                return new Response(204, "");
                             }
                         };
                 try (var adapters = registry();
@@ -114,7 +130,26 @@ class ReceiptSchemaReviewTest extends ReceiverTestSupport {
                     assertThrows(
                             SessionException.class,
                             () -> sessions.receiptReview(api, owner, attempt, true));
-                    sessions.receipt(api, owner, "cancel_receipt", attempt);
+                    assertNull(sent.get(), "Preparing and reviewing must not transmit");
+                    sessions.receipt(api, owner, "execute_receipt", attempt);
+                    var problems =
+                            sent.get()
+                                    .getAsJsonObject("events")
+                                    .getAsJsonObject(
+                                            "https://schema.fitko.de/fit-connect/events/accept-submission")
+                                    .getAsJsonArray("problems");
+                    assertEquals(
+                            mismatch ? 1 : 0,
+                            problems == null ? 0 : problems.size(),
+                            api + ": " + sent.get());
+                    if (mismatch) {
+                        var problem = problems.get(0).getAsJsonObject();
+                        assertEquals(
+                                "https://schema.fitko.de/fit-connect/events/problems/schema-violation",
+                                problem.get("type").getAsString());
+                        assertTrue(problem.get("detail").getAsString().contains("schema"));
+                        assertEquals("data", problem.get("instance").getAsString());
+                    }
                     assertThrows(
                             SessionException.class,
                             () -> sessions.receiptReview(api, owner, attempt, false));
