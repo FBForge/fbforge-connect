@@ -61,10 +61,16 @@ function Find-Dialog([string]$Title) {
     # Owned native modal dialogs can be descendants of the main window in UIA.
     return [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
 }
-function Invoke-Button($Root, [string]$Name) {
-    $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $Name)
-    $button = $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-    if (-not $button -or $button.Current.ControlType -ne [System.Windows.Automation.ControlType]::Button) { throw 'ui_folder_button_missing' }
+function Invoke-Button($Root, [string[]]$Names) {
+    $button = Wait-Ui {
+        foreach ($name in $Names) {
+            $label = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty, $name)
+            $type = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
+            $condition = [System.Windows.Automation.AndCondition]::new($label, $type)
+            $candidate = $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+            if ($candidate -and $candidate.Current.IsEnabled -and -not $candidate.Current.IsOffscreen) { return $candidate }
+        }
+    } 'ui_folder_button_missing'
     $button.SetFocus()
     $pattern = $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
     $pattern.Invoke()
@@ -202,7 +208,12 @@ if ($AttachmentReview -or $ScannerReview) {
     exit 0
 }
 $dialog = Wait-Ui { Find-Dialog 'Zielordner für Nachrichten' } 'ui_export_folder_dialog_missing'
-if ($Cancel) { Invoke-Button $dialog 'Abbrechen'; Write-Output 'Native folder selection cancelled'; exit 0 }
+if ($Cancel) {
+    Invoke-Button $dialog @('Cancel', 'Abbrechen')
+    $null = Wait-Ui { -not (Find-Dialog 'Zielordner für Nachrichten') } 'ui_folder_cancel_not_closed'
+    Write-Output 'Native folder selection cancelled'
+    exit 0
+}
 $handle = [IntPtr]$dialog.Current.NativeWindowHandle
 $null = [ExportWindowFocus]::SetForegroundWindow($handle)
 $null = Wait-Ui { [ExportWindowFocus]::GetForegroundWindow() -eq $handle } 'ui_folder_focus_missing'
@@ -233,5 +244,6 @@ try {
     } 'ui_folder_select_missing'
     $button.SetFocus()
     $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-    Write-Output 'Native plaintext-export warning and owned folder selection confirmed'
+    $null = Wait-Ui { -not (Find-Dialog 'Zielordner für Nachrichten') } 'ui_folder_select_not_closed'
+    Write-Output 'Native owned folder selection confirmed'
 } finally { $null = [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
