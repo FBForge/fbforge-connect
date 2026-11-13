@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import { check, until } from './desktop.mjs';
+import { reviewSchemaLibraryChanges } from './review-schema-library.mjs';
 import { navigate, connectProfile, sendSubmission, openSubmission, replyAndAccept } from './exchange.mjs';
 import { receiveReply } from './readback.mjs';
 import { nativeFile } from './downloads.mjs';
@@ -275,6 +276,9 @@ export async function reviewAuthoring(desktop, fixture, senders) {
     'live_ui_custom_reply_not_readable',
   );
   check(isDeepStrictEqual(JSON.parse(custom.replyData), data), 'live_ui_custom_reply_fixture_changed');
+  await navigate(page, 'Testwerkzeuge');
+  await page.getByRole('tab', { name: 'Antwortschemas', exact: true }).click();
+  await reviewSchemaLibraryChanges(page, uri, 'Fiktive Live-Statusmitteilung');
   console.log(
     'Real desktop UI: authored JSON schema, example and draft exported and reimported, schema persisted in both protected profiles across restart, registered only on the owned TEST destination, real custom-schema reply sent and received using automatic URI lookup without schema re-upload, validated and acknowledged',
   );
