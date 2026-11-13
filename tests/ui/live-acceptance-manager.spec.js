@@ -129,6 +129,7 @@ test('bulk acceptance keeps selection when its second owned destination is on th
       readManagedFixture: (id) =>
         page.evaluate(
           (id) => ({
+            ...window.__destinationFixture.records.get(id),
             contactJson: JSON.stringify(window.__destinationFixture.records.get(id).contactInformation),
           }),
           id,
@@ -141,4 +142,26 @@ test('bulk acceptance keeps selection when its second owned destination is on th
   expect(
     await page.evaluate((ids) => ids.map((id) => window.__destinationFixture.records.get(id).name), ids),
   ).toEqual(['Fiktive Abnahme', 'Fiktive Kopie']);
+  // The group selection deliberately remains after editing. A subsequent single edit must clear it.
+  const nextFixture = {
+    readManagedFixture: (id) =>
+      page.evaluate((id) => {
+        const row = window.__destinationFixture.records.get(id);
+        return {
+          ...row,
+          contactJson: JSON.stringify(row.contactInformation),
+          offersJson: JSON.stringify({
+            publicServices: row.publicServices,
+            processMessages: row.processMessages,
+          }),
+          extrasJson: JSON.stringify({
+            publicForRouting: row.publicForRouting ?? false,
+            senderAccessRestricted: row.senderAccessRestricted,
+            callback: row.callback ? { url: row.callback.url } : null,
+          }),
+        };
+      }, id),
+  };
+  await reviewDestinationExtras(page, nextFixture, ids[1], 'Fiktive Kopie', ids[0]);
+  expect(await page.evaluate(() => window.__destinationFixture.writes)).toBe(3);
 });

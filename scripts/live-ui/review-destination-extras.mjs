@@ -8,6 +8,8 @@ export async function reviewDestinationExtras(page, fixture, id, expectedName, s
   const edit = async () => {
     await button(page, 'Bestehende Destinations').click();
     await button(page, 'Eigene Destinations laden').click();
+    const clearSelection = button(page, 'Auswahl aufheben');
+    if (await clearSelection.isVisible()) await clearSelection.click();
     const target = page.locator(`[data-edit-destination="${id}"]`);
     for (let offset = 0; offset <= 200; offset += 20) {
       await until(
