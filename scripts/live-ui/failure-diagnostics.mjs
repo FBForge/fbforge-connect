@@ -5,7 +5,7 @@ export async function failureDiagnostics(desktop, stage, error) {
   await sendDiagnostics(page).catch(() => {});
   const values = await page
     .locator(
-      '[aria-labelledby="event-log-title"] .small-note code, .action-notice:visible code, [aria-labelledby="trace-title"] .trace-details code',
+      '[aria-labelledby="event-log-title"] .small-note code, .action-notice:visible code, [aria-labelledby="trace-title"] .trace-details code, .message-batch-dialog[open] .trace-details code',
     )
     .allTextContents()
     .catch(() => []);
@@ -25,6 +25,21 @@ export async function failureDiagnostics(desktop, stage, error) {
       ),
   );
   console.error(`Real desktop failure codes: ${JSON.stringify({ codes, sdkTypes, sdkHttp })}`);
+  const batchLabels = {
+    'Wird geprüft': 'checking',
+    'Wird gespeichert': 'saving',
+    'Annahme wird bestätigt': 'accepting',
+    Gespeichert: 'saved',
+    'Gespeichert und angenommen': 'accepted',
+    'Gespeichert und mit Schemaabweichungen angenommen': 'accepted_with_schema_problem',
+    'Manuell prüfen': 'manual',
+    'Ausgang ungewiss': 'uncertain',
+    Abgebrochen: 'cancelled',
+  };
+  const batch = (
+    await page.locator('.message-batch-dialog[open] .batch-results > li > strong').allTextContents()
+  ).map((label) => batchLabels[label.trim()] || 'unknown');
+  console.error(`Real desktop batch states: ${JSON.stringify(batch)}`);
   console.error(
     `Real desktop UI failure state: ${JSON.stringify({
       submissionDetail: await page.locator('.submission-information').isVisible(),

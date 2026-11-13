@@ -133,7 +133,11 @@ export async function bulkReceive(desktop, fixture, valid, invalid, override) {
   await dialog.getByRole('checkbox', { name: 'Annahmen ohne Malwarescan erlauben', exact: true }).check();
   const existing = join(folder, 'FBForge-Connect-Export');
   await nativeFolder(desktop, fixture, () => start.click(), false, false, null, existing);
-  await dialog.getByText('Gespeichert und mit Schemaabweichungen angenommen', { exact: true }).waitFor();
+  await dialog.getByRole('button', { name: 'Schließen', exact: true }).waitFor();
+  check(
+    await dialog.getByText('Gespeichert und mit Schemaabweichungen angenommen', { exact: true }).isVisible(),
+    'live_ui_bulk_schema_acceptance_missing',
+  );
   await verifyDownload(existing, override);
   check(
     !(await readdir(existing)).some((name) => name.startsWith('FBForge-Connect-Export')),
