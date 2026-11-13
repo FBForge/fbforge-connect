@@ -37,7 +37,7 @@ test('a blocked attachment remains named without bytes or full export; single ac
   await expect(page.getByRole('button', { name: 'Alle Dateien herunterladen', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Annehmen', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Einreichung annehmen?', exact: true });
-  await expect(dialog).toContainText('Eine Annahme meldet diese Anlagen als Problem');
+  await expect(dialog).toContainText('meldet die Anlagen als Problem an FIT-Connect');
   await expect(dialog.getByRole('radio')).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Mit Anlagenproblemen annehmen', exact: true }).click();
   await expect(dialog).toBeHidden();

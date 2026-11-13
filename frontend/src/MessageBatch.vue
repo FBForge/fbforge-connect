@@ -360,4 +360,14 @@ defineExpose({ show });
   background: var(--status-error-bg);
   color: var(--status-error-ink);
 }
+@media (max-height: 600px) {
+  .message-batch-dialog[open] {
+    display: block;
+    overflow: auto;
+  }
+  .batch-dialog-body {
+    margin-block: 16px;
+    overflow: visible;
+  }
+}
 </style>

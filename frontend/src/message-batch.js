@@ -93,7 +93,10 @@ export async function runMessageBatch(options) {
         );
       if (blocked) {
         row.status = 'manual';
-        row.error = 'batch_review_required';
+        row.error =
+          row.schemaViolation && !options.allowSchemaInvalid
+            ? 'data_schema_invalid'
+            : 'batch_review_required';
         continue;
       }
       prepared = await prepareReceipt(

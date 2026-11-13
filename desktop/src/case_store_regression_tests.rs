@@ -3,13 +3,16 @@ const PROFILE: &str = "11111111-1111-4111-8111-111111111111";
 const RECORD: &str = "22222222-2222-4222-8222-222222222222";
 const OTHER: &str = "33333333-3333-4333-8333-333333333333";
 fn root() -> PathBuf {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static SEQUENCE: AtomicU64 = AtomicU64::new(0);
     let root = std::env::temp_dir().join(format!(
-        "fbforge-case-regression-{}-{}",
+        "fbforge-case-regression-{}-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .as_nanos()
+            .as_nanos(),
+        SEQUENCE.fetch_add(1, Ordering::Relaxed)
     ));
     fs::create_dir(&root).unwrap();
     root

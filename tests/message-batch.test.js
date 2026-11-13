@@ -218,6 +218,8 @@ test('only expressly allowed absence of a malware scan can pass, other warnings 
       results.every((row) => row.saved),
       true,
     );
+    if (warnings.includes('DATA_SCHEMA_INVALID'))
+      assert.ok(results.every((row) => row.error === 'data_schema_invalid'));
   }
 });
 test('an uncertain acknowledgement stops the batch without retrying or accepting another message', async () => {

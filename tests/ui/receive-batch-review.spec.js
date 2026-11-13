@@ -100,7 +100,11 @@ test('schema override stays readable in a small dark window with enlarged text',
   });
   await choice.check();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await expect(dialog.getByRole('button', { name: 'Zielordner wählen und starten' })).toBeInViewport();
+  await choice.locator('..').scrollIntoViewIfNeeded();
+  await expect(choice.locator('..')).toBeInViewport({ ratio: 1 });
+  const start = dialog.getByRole('button', { name: 'Zielordner wählen und starten' });
+  await start.scrollIntoViewIfNeeded();
+  await expect(start).toBeInViewport({ ratio: 1 });
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.screenshot({ path: join(screenshots, 'receive-batch-compact-dark.png') });
   await page.keyboard.press('Escape');
