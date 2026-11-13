@@ -1,7 +1,9 @@
 import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 import { sendDiagnostics } from './send-diagnostics.mjs';
+import { interactionDiagnostics } from './interaction-diagnostics.mjs';
 export async function failureDiagnostics(desktop, stage, error) {
   const page = desktop.page;
+  await interactionDiagnostics(page, error).catch(() => {});
   await sendDiagnostics(page).catch(() => {});
   const values = await page
     .locator(

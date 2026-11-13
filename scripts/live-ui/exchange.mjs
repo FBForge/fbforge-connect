@@ -172,6 +172,11 @@ export async function sendSubmission(
       })),
     );
   } else await page.locator('input#send-attachments').setInputFiles([attachment, pdf]);
+  if (process.env.FBFORGE_UI_SCANNER === 'true')
+    await page
+      .locator('.scan-status')
+      .getByText('Lokaler Virenscan bereit', { exact: true })
+      .waitFor({ timeout: 120000 });
   await page.getByRole('button', { name: 'Versand vorbereiten', exact: true }).click();
   const sendStarted = performance.now();
   await page
