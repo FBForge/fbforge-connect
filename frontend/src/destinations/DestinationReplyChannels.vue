@@ -1,6 +1,12 @@
 <script setup>
 import SchemaIdentifierFile from '../SchemaIdentifierFile.vue';
-const props = defineProps({ modelValue: Object, prefix: String, session: Object, disabled: Boolean });
+const props = defineProps({
+  modelValue: Object,
+  prefix: String,
+  contextKey: String,
+  session: Object,
+  disabled: Boolean,
+});
 const emit = defineEmits(['update:modelValue']);
 const channels = [
   ['eMail', 'E-Mail'],
@@ -44,7 +50,7 @@ function standards(values) {
   <SchemaIdentifierFile
     :session="session"
     :id="`${prefix}-reply-file`"
-    :context-key="JSON.stringify(modelValue)"
+    :context-key="JSON.stringify([contextKey, modelValue])"
     :disabled="disabled || (modelValue?.fitConnect?.processStandards?.length || 0) >= 16"
     label="Unterstütztes Antwortschema aus JSON-Datei ergänzen"
     @select="standards([...(modelValue?.fitConnect?.processStandards || []), $event])"

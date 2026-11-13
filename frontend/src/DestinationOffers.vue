@@ -173,6 +173,7 @@ const csv = (value) =>
           :session="session"
           :prefix="`${prefix}-${index}`"
           :model-value="row.replyChannels"
+          :context-key="JSON.stringify(row)"
           :disabled="disabled"
           @update:model-value="set(group.key, index, 'replyChannels', $event)"
         />

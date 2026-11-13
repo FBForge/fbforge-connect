@@ -46,6 +46,9 @@ test('bulk acceptance keeps selection when its second owned destination is on th
 }) => {
   test.setTimeout(30000);
   await page.goto('http://127.0.0.1:1420/test-fixtures/destination-manager.html');
+  await page.evaluate(async () =>
+    (await import('/test-fixtures/destination-backup-fixture.js')).installBackupBridge({ empty: true }),
+  );
   const ids = ['11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222'];
   await page.evaluate((ids) => {
     const fixture = window.__destinationFixture;
