@@ -313,7 +313,7 @@ pub async fn case_workspace(
         if let Some(store) = &store {
             store.delete(id)?;
         }
-        return engine(
+        let result = engine(
             &app,
             &state,
             api_version,
@@ -323,7 +323,17 @@ pub async fn case_workspace(
             None,
             0,
         )
-        .await;
+        .await?;
+        // Explicitly deleting the final local copy also completes a scoped quarantine cleanup.
+        if live.iter().all(|record| record["recordId"] == id) {
+            if let Some(store) = &store {
+                if store.records()?.is_empty() {
+                    store.clear_quarantine_scope()?;
+                    state.case_errors.lock().await.remove(&session_id);
+                }
+            }
+        }
+        return Ok(result);
     }
     if !matches!(operation.as_str(), "parts" | "read") {
         return Err("invalid_input");

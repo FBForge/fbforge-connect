@@ -127,7 +127,9 @@ async function installOffer(page, fixture, path, uri) {
   );
   await page.getByRole('checkbox', { name: 'E-Mail', exact: true }).first().check();
   await page.getByRole('checkbox', { name: 'PGP-verschlüsselt', exact: true }).first().check();
-  await page.getByRole('checkbox', { name: 'BundID', exact: true }).first().check();
+  for (const name of ['BundID', 'ELSTER', 'DE-Mail', 'FINK']) {
+    await page.getByRole('checkbox', { name, exact: true }).first().check();
+  }
   await page.getByRole('checkbox', { name: 'Statusmonitor der BundID nutzen', exact: true }).first().check();
   await button(page, 'Änderungsvorschau erstellen').click();
   await button(page, 'Diese Änderungen verbindlich in der gewählten Umgebung speichern').click();
@@ -181,7 +183,10 @@ async function installOffer(page, fixture, path, uri) {
       (s) =>
         s.replyChannels?.fitConnect?.processStandards?.includes(uri) &&
         s.replyChannels?.eMail?.usePgp === true &&
-        s.replyChannels?.idBundDeMailbox?.useStatusMonitor === true,
+        s.replyChannels?.idBundDeMailbox?.useStatusMonitor === true &&
+        ['elster', 'deMail', 'fink'].every(
+          (key) => s.replyChannels?.[key] && typeof s.replyChannels[key] === 'object',
+        ),
     ),
     'live_ui_authored_offer_not_registered',
   );

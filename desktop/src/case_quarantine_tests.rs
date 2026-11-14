@@ -200,3 +200,31 @@ fn uncertain_archive_inventory_records_a_durable_scope_denial_outside_the_case_d
     assert!(!store.scope_quarantined().unwrap());
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn unreadable_denial_metadata_keeps_the_scope_blocked_after_filesystem_recovery() {
+    let root = root();
+    let store = CaseStore::new(root.clone(), PROFILE, "v3").unwrap();
+    fs::create_dir_all(&store.root).unwrap();
+    fs::write(store.path(RECORD).unwrap(), b"old encrypted sentinel").unwrap();
+    fs::create_dir(root.join("quarantine")).unwrap();
+    fs::write(
+        root.join("quarantine").join(PROFILE),
+        b"unavailable control directory",
+    )
+    .unwrap();
+    assert_eq!(
+        store.quarantine_message("submission", RECORD, OTHER),
+        Err("vault_unavailable")
+    );
+    drop(store);
+    fs::remove_file(root.join("quarantine").join(PROFILE)).unwrap();
+    let store = CaseStore::new(root.clone(), PROFILE, "v3").unwrap();
+    assert_eq!(
+        store.resource(RECORD, "read", Some(OTHER), 0),
+        Err("malware_detected")
+    );
+    store.delete(RECORD).unwrap();
+    store.clear_quarantine_scope().unwrap();
+    fs::remove_dir_all(root).unwrap();
+}

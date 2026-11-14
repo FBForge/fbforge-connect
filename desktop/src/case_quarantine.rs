@@ -135,10 +135,15 @@ impl CaseStore {
                     && record[subject_key] == subject
                     && record[context_key] == context)
             {
-                self.quarantine_record(
-                    record["recordId"].as_str().ok_or("vault_invalid")?,
-                    !uncertain,
-                )?;
+                if self
+                    .quarantine_record(
+                        record["recordId"].as_str().ok_or("vault_invalid")?,
+                        !uncertain,
+                    )
+                    .is_err()
+                {
+                    return self.quarantine_scope();
+                }
             }
         }
         Ok(())
