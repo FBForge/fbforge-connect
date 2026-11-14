@@ -103,21 +103,18 @@ und signierte Update-Abnahme: [RELEASING.md](RELEASING.md#update-signierung-einm
 
 ## Bekannte Abhängigkeitsbefunde
 
-Stand des npm-Abgleichs: 6. November 2026. Der npm-Abgleich einschließlich der
-Abdeckungswerkzeuge bestätigt die unten genannten Werkzeugbefunde. Andere
-Abhängigkeitsbewertungen wurden am 2. November 2026 vorgenommen. Lockfiles und Actions-Versionen sind festgelegt.
+Stand des npm-Abgleichs: 14. November 2026. `npm audit` meldet für den aktuellen
+Lockfile einschließlich der Entwicklungs- und Abdeckungswerkzeuge keine bekannten
+npm-Schwachstellen. Andere Abhängigkeitsbewertungen wurden am 2. November 2026
+vorgenommen. Lockfiles und Actions-Versionen sind festgelegt.
 Vor Releases npm, Maven und Rust einschließlich plattformspezifischer Pfade erneut
 gegen Sicherheitsmeldungen prüfen. JDK und WebView2 separat aktuell halten.
 
-- npm meldete keine bekannten Laufzeit-Schwachstellen.
-  `GHSA-g3hv-75wg-m249` betrifft `minimatch 10.2.6` im Entwicklungs-/Prüfwerkzeugbaum:
-  Ressourcenverbrauch durch präparierte Glob-Muster. Zusätzlich betrifft
-  `GHSA-3g3m-2fjr-6pw4` den Abbruch von Dateisuchen in `glob 13.0.6`, einer
-  Entwicklungsabhängigkeit von c8. Insgesamt 16 moderate abhängige npm-Einträge.
-  Die Prüfwerkzeuge verwenden festgelegte lokale Muster, keine Muster aus Einreichungen.
-  Im verwendeten Werkzeugbaum wird keine kompatible Korrektur angeboten. Die
-  vorgeschlagenen Hauptversions-Downgrades werden nicht ungeprüft übernommen.
-  Beide Befunde betreffen keine Laufzeitfunktion der Windows-App.
+- Die bisherigen Werkzeugbefunde `GHSA-g3hv-75wg-m249` für `minimatch 10.2.6`
+  und `GHSA-3g3m-2fjr-6pw4` für `glob 13.0.6` sind im aktuellen Werkzeugbaum
+  durch die festgelegten Versionen `minimatch 11.0.8` und `glob 14.0.6` behoben.
+  Die vollständige CI einschließlich Abdeckungswerkzeugen bestand mit diesen
+  Versionen. Der npm-Abgleich bewertet weder Maven- noch Rust-Abhängigkeiten.
 - `GHSA-qwgh-2vcv-g2f7` betrifft laut OSV `block-buffer 0.10.4` im Tauri-Buildbaum,
   nicht im Windows-Laufzeitbaum. Die konkret betroffene `ReadBuffer`-Implementierung
   ist in dieser Version nicht enthalten. Den weit gefassten Versionsbereich bei Updates erneut prüfen.
