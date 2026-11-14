@@ -3,7 +3,7 @@
 FBForge Connect erwirbt unter Windows vor dem Tauri-Builder und damit vor
 Java-/Arbeitsstart eine native Lease für `org.fitconnect.integration-client`. Der Startthread behält sie
 bis zum Ende des Eventloops und der vorhandenen Exit-Callbacks. `run_return`
-ermöglicht die Freigabe auf demselben Thread; anschließend endet der Prozess
+ermöglicht die Freigabe auf demselben Thread. Anschließend endet der Prozess
 mit dem vom Eventloop gelieferten Exitcode. Die Lease ist weder Send noch Sync.
 Sie wird nicht in Tauri-State, einen Tokio-Task oder einen anderen Prozess verschoben.
 
@@ -11,7 +11,7 @@ Bei Busy oder nicht verfügbarer Koordination erscheint ein nativer Hinweis und
 nur der neue Einstieg endet. Verlassener Besitz wird gehalten übernommen, für
 diesen Start abgewiesen und auf dem Besitzerthread freigegeben. Ein späterer
 expliziter Start kann neu erwerben. Ein solcher Erwerb beweist keine frühere
-Java-/Datenwiederherstellung: Drop verbraucht das Abandoned-Signal; nach dem
+Java-/Datenwiederherstellung: Drop verbraucht das Abandoned-Signal. Nach dem
 letzten Handle-Close kann das OS die Historie vollständig verlieren. Es gibt
 keinen dauerhaften Crashmarker. Die bestehende Ressourceninitialisierung bleibt
 verpflichtend und wird nicht umgangen. Es wird kein ungeprüfter Health-Gate simuliert.
@@ -20,7 +20,7 @@ verwendet die Windows-Startlease nicht.
 
 Die vorhandenen Close-/Shutdownpfade bleiben bestehen. Der Starteinstieg beendet
 keine laufende Anwendung oder fremde Arbeit. Connects vorhandenes Single-Instance-
-Plugin bleibt eine Komfortfunktion; es ist kein Sicherheitsnachweis. Der frühere
+Plugin bleibt eine Komfortfunktion. Es ist kein Sicherheitsnachweis. Der frühere
 Windows-Zweiteinstieg wird nun vor dem Builder mit einem Busy-Hinweis beendet.
 
 ## Bewusste Grenzen
@@ -29,7 +29,7 @@ Dieser Schritt bindet weder NSIS noch den appinternen Updater ein. Deren bisheri
 Start-/Exitlogik bleibt unverändert. Insbesondere umgeht der Windows-Updater mit
 `process::exit` einen regulären Rust-Drop. Daraus folgt keine sichere oder
 unterbrechungsfreie Installerübergabe. Die vorhandene NSIS-Prüfung kann weiterhin
-laufende Prozesse schließen; dieser Schritt gibt Installer oder Updates nicht frei.
+laufende Prozesse schließen. Dieser Schritt gibt Installer oder Updates nicht frei.
 
 Nur kooperierende Versionen derselben Windows-Benutzer-SID verwenden diesen
 Ausschluss. Alte Apps, Java-Kinder nach einem Absturz, andere Benutzer-SIDs und
@@ -47,7 +47,7 @@ und genaue Quellhashes stehen in dessen `PROVENANCE.md`.
 Die portable Bibliothek verwendet weiterhin Rust 1.90. Ihre Mindestversion wird
 mit einer getrennt heruntergeladenen, per offiziellem SHA256 geprüften Rust-1.90-
 Toolchain getestet. Die Anwendung verwendet ihren bisherigen Buildvertrag
-(Rust 1.99.0); ihre `rust-version = "1.90"` wird nicht angehoben.
+(Rust 1.99.0). Ihre `rust-version = "1.90"` wird nicht angehoben.
 
 Native Vertragsprüfungen:
 
@@ -109,12 +109,12 @@ cargo clippy --manifest-path desktop/Cargo.toml --target x86_64-pc-windows-gnu -
 blieb innerhalb des 600-Sekunden-Sitzungslimits unvollständig. Der erfolgreiche
 Adapter-Clippy ist ausdrücklich kein vollständiger Desktop-Clippy. Die spätere
 Präzisierung des Abandoned-Warntexts und Testnamens wird separat am vollständigen
-Adapter erneut kompiliert/geprüft; die Eventloopintegration bleibt unverändert.
+Adapter erneut kompiliert/geprüft. Die Eventloopintegration bleibt unverändert.
 
 Connect bestand 150 portable native Vertragstests und den zugehörigen nativen
 Build mit Rust 1.99.0. Die Sandbox benötigte für vorhandene lokale TLS-Tests die
 öffentliche synthetische `unrelated-ca.pem` als System-CA und eine lokale
-Hosts-/NSS-Fixture für `localhost`; kein Hosttrust oder externes Netz wurde
+Hosts-/NSS-Fixture für `localhost`. Kein Hosttrust oder externes Netz wurde
 freigegeben. Der erste Lauf ohne CA scheiterte erwartungsgemäß am Clientbuilder;
 ohne Hosts-Datei hing der lokale Test bis zum Sitzungslimit. Die Auflösung wurde
 gezielt von Exit 2 auf `127.0.0.1`/Exit 0 geprüft und der unveränderte Gesamtlauf
@@ -123,3 +123,6 @@ wegen bestehender, außerhalb dieses Patches unveränderter Lints rot, darunter
 `scanner_install.rs:142`, `scanner_runtime.rs:266`, `network_settings.rs:155`
 und nicht verwendete bestehende Module/Felder. Es wurden weder Prüfungen
 abgeschwächt noch diese fremden Bereiche geändert.
+
+
+Nach unabhängiger statischer Durchsicht wurden ausschließlich die festen Startmeldungen präzisiert. Bei belegter Sperre verweist die Meldung auf die vorhandene Anwendung. Der Warntext zur unterbrochenen Koordination verwendet vollständige Sätze. Die Lizenzherkunft behauptet keine frühere Betreiberentscheidung. Rustformat und Whitespaceprüfung bestanden erneut. Die Kontrollfluss-/Eventloopintegration und die oben abgegrenzten Laufzeitnachweise bleiben unverändert. Für diese Textänderungen wurden keine zusätzlichen Anwendungstests ausgeführt.
