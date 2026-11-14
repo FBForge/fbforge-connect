@@ -59,6 +59,11 @@ impl From<&'static str> for CommandError {
         }
     }
 }
+impl AsRef<str> for CommandError {
+    fn as_ref(&self) -> &str {
+        self.code
+    }
+}
 impl Serialize for CommandError {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         if self.diagnostics.is_empty() {

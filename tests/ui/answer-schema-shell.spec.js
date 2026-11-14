@@ -57,5 +57,11 @@ test('the full desktop shell keeps the schema library usable after case navigati
   await expect(library.getByRole('alert')).toBeVisible();
   await navigation.getByRole('button', { name: 'Vorgänge', exact: true }).click();
   await openLibrary();
+  await expect(library.getByRole('alert')).toBeVisible();
+  // Connection setup also reads the catalog. Count only the explicit library retry.
+  await page.evaluate(() => (window.__schemaReadFailures = 0));
+  await library.getByRole('button', { name: 'Bibliothek aktualisieren', exact: true }).click();
+  await expect(library.getByRole('alert')).toBeVisible();
+  await page.locator('#channel-title').fill('Entwurf trotz nicht verfügbarer Bibliothek');
   expect(await page.evaluate(() => window.__schemaReadFailures)).toBe(1);
 });

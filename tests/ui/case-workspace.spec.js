@@ -184,3 +184,38 @@ test('live acceptance waits for the native retention acknowledgement and clicks 
     ),
   ).toBe(2);
 });
+
+test('a quarantined local case explains the block, exposes no content and can be deleted', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/case-workspace.html');
+  await page.evaluate(() => {
+    const record = window.__caseFixture.scopes.a[0];
+    record.status = 'blocked';
+    record.warnings = ['MALWARE_DETECTED'];
+    record.totalBytes = 0;
+    record.attachmentCount = 0;
+  });
+  await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
+  await page.getByRole('button', { name: 'Testprofil wechseln', exact: true }).click();
+  await page.getByRole('button', { name: 'Fiktiver Antrag auf Testleistung', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('nach einem Virenfund gesperrt');
+  await expect(page.getByRole('button', { name: 'Alle Dateien herunterladen', exact: true })).toHaveCount(0);
+  await expect(page.locator('.pdf-preview')).toHaveCount(0);
+  expect(
+    await page.evaluate(() => window.__caseFixture.calls.filter((call) => call.operation === 'read')),
+  ).toEqual([]);
+  const row = page
+    .getByRole('list', { name: 'Lokale Vorgänge' })
+    .locator(':scope > li')
+    .filter({ has: page.getByRole('button', { name: 'Fiktiver Antrag auf Testleistung', exact: true }) });
+  await row.getByText('Einzelne lokale Kopien verwalten', { exact: true }).click();
+  await expect(page.getByText(/Vom Virenscan gesperrt/)).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Lokale Kopie löschen: Fiktiver Antrag auf Testleistung', exact: true })
+    .click();
+  await expect(page.getByRole('status').filter({ hasText: 'Lokale Kopie gelöscht' })).toBeVisible();
+  expect(
+    await page.evaluate(() => window.__caseFixture.scopes.a.some((record) => record.status === 'blocked')),
+  ).toBe(false);
+});

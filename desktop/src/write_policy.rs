@@ -34,6 +34,11 @@ impl Context for DesktopContext<'_> {
             Effect::RequireProfile => profiles::require_profile(state, version, id).await,
             Effect::CheckpointProfile => profiles::checkpoint(app, state, version, id).await,
             Effect::CheckpointCases => cases::checkpoint(app, state, version, id).await,
+            Effect::QuarantineCase {
+                kind,
+                subject,
+                context,
+            } => cases::quarantine(app, state, version, id, kind, subject, context).await,
             Effect::ConfirmAttachments(count) => {
                 crate::environment_commands::confirm_attachment_review(app, count).await
             }
@@ -49,10 +54,12 @@ impl Context for DesktopContext<'_> {
             }
             Effect::RecordCaseError(failure) => {
                 let mut errors = state.case_errors.lock().await;
-                if let Some(code) = failure {
-                    errors.insert(id.to_owned(), code);
-                } else {
-                    errors.remove(id);
+                if errors.get(id) != Some(&"malware_detected") {
+                    if let Some(code) = failure {
+                        errors.insert(id.to_owned(), code);
+                    } else {
+                        errors.remove(id);
+                    }
                 }
                 Ok(())
             }

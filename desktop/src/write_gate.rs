@@ -10,6 +10,11 @@ pub(crate) enum Effect<'a> {
     RequireProfile,
     CheckpointProfile,
     CheckpointCases,
+    QuarantineCase {
+        kind: &'static str,
+        subject: &'a str,
+        context: &'a str,
+    },
     ConfirmAttachments(u64),
     MarkRunning(&'a str),
     InvalidateEngine,
@@ -17,7 +22,7 @@ pub(crate) enum Effect<'a> {
     RecordCaseError(Option<&'static str>),
 }
 pub(crate) trait Context: Sync {
-    type Error: From<&'static str> + Send;
+    type Error: From<&'static str> + AsRef<str> + Send;
     fn environment(&self) -> Environment;
     fn request(
         &self,
@@ -169,7 +174,41 @@ pub(crate) async fn run<C: Context>(
             ))
             .await?;
     }
-    let value: SessionResource = context.request(command).await?;
+    let quarantine = match operation.as_str() {
+        "verify_submission" => Some((
+            "submission",
+            command["submissionId"].as_str().unwrap_or("").to_owned(),
+            command["destinationId"].as_str().unwrap_or("").to_owned(),
+        )),
+        "verify_reply" => Some((
+            "reply",
+            command["replyId"].as_str().unwrap_or("").to_owned(),
+            command["caseId"].as_str().unwrap_or("").to_owned(),
+        )),
+        _ => None,
+    };
+    let value: SessionResource = match context.request(command).await {
+        Ok(value) => value,
+        Err(error) => {
+            if error.as_ref() == "malware_detected" {
+                if let Some((kind, subject, resource)) = quarantine {
+                    let failure = context
+                        .effect(Effect::QuarantineCase {
+                            kind,
+                            subject: &subject,
+                            context: &resource,
+                        })
+                        .await
+                        .err();
+                    // Preserve the finding; a failed durable block also locks local case reads.
+                    context
+                        .effect(Effect::RecordCaseError(failure.map(|_| "malware_detected")))
+                        .await?;
+                }
+            }
+            return Err(error);
+        }
+    };
     if !value.validate(version, id) {
         context.effect(Effect::InvalidateEngine).await?;
         return Err("engine_protocol_error".into());

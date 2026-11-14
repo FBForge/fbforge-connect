@@ -132,6 +132,8 @@ final class CaseRepository implements AutoCloseable {
 
     String receive(String scope, ReceivedContent data) {
         String existing = find(scope, "submission", "received", id(data.submissionId()));
+        if (existing != null && records.get(existing).summary().status().equals("blocked"))
+            return existing;
         if (existing != null
                 && !records.get(existing).summary().status().equals("unverified")
                 && ScanFindings.blocked(data.issues()).isEmpty()) return existing;
@@ -163,7 +165,7 @@ final class CaseRepository implements AutoCloseable {
                 scope,
                 "submission",
                 "received",
-                title(
+                CaseDisplay.title(
                         data.metadata(),
                         existing == null
                                 ? "Empfangene Einreichung"
@@ -183,6 +185,8 @@ final class CaseRepository implements AutoCloseable {
 
     String receive(String scope, ReceivedReplyContent data) {
         String existing = find(scope, "reply", "received", id(data.replyId()));
+        if (existing != null && records.get(existing).summary().status().equals("blocked"))
+            return existing;
         if (existing != null
                 && !records.get(existing).summary().status().equals("unverified")
                 && ScanFindings.blocked(data.issues()).isEmpty()) return existing;
@@ -214,7 +218,7 @@ final class CaseRepository implements AutoCloseable {
                 scope,
                 "reply",
                 "received",
-                title(data.metadata(), "Empfangene Antwort"),
+                CaseDisplay.title(data.metadata(), "Empfangene Antwort"),
                 "verified",
                 id(data.caseId()),
                 null,
@@ -327,7 +331,7 @@ final class CaseRepository implements AutoCloseable {
     void outcome(
             String recordId, String status, String caseId, String submissionId, String replyId) {
         var item = records.get(recordId);
-        if (item == null) return;
+        if (item == null || item.summary().status().equals("blocked")) return;
         var s = item.summary();
         records.put(
                 recordId,
@@ -416,6 +420,8 @@ final class CaseRepository implements AutoCloseable {
         var item = records.get(recordId);
         if (item == null || !item.scope().equals(scope))
             throw new SessionException("invalid_resource");
+        if (item.summary().status().equals("blocked"))
+            throw new SessionException("malware_detected");
         int offset = v.get("offset").getAsInt();
         if (operation.equals("parts")) {
             if (offset < 0 || offset > item.files().size() || offset % 2 != 0)
@@ -446,6 +452,36 @@ final class CaseRepository implements AutoCloseable {
                 end == file.bytes().length);
     }
 
+    void quarantine(String scope, String kind, String subject, String context) {
+        String record = find(scope, kind, "received", subject);
+        if (record == null) return;
+        var item = records.get(record);
+        var s = item.summary();
+        if (!Objects.equals(context, kind.equals("reply") ? s.caseId() : s.destinationId())) return;
+        bytes -= s.totalBytes();
+        item.files().forEach(f -> Arrays.fill(f.bytes(), (byte) 0));
+        records.put(
+                record,
+                new Item(
+                        scope,
+                        new Summary(
+                                s.recordId(),
+                                UUID.randomUUID().toString(),
+                                s.kind(),
+                                s.direction(),
+                                s.title(),
+                                s.createdAt(),
+                                "blocked",
+                                s.caseId(),
+                                s.submissionId(),
+                                s.replyId(),
+                                s.destinationId(),
+                                0,
+                                0,
+                                List.of("MALWARE_DETECTED")),
+                        List.of()));
+    }
+
     void delete(String scope, String id) {
         var item = records.get(id);
         if (item == null) return;
@@ -453,25 +489,6 @@ final class CaseRepository implements AutoCloseable {
         records.remove(id);
         bytes -= item.summary().totalBytes();
         item.files().forEach(f -> Arrays.fill(f.bytes(), (byte) 0));
-    }
-
-    private static String title(byte[] metadata, String fallback) {
-        try {
-            var json =
-                    StrictJson.object(
-                            new String(metadata, StandardCharsets.UTF_8), 2 * 1024 * 1024);
-            if (json.has("subject")
-                    && json.get("subject").isJsonPrimitive()
-                    && json.get("subject").getAsJsonPrimitive().isString()) {
-                String value = json.get("subject").getAsString();
-                if (!value.isBlank()
-                        && value.length() <= 256
-                        && value.chars().noneMatch(Character::isISOControl)) return value;
-            }
-        } catch (RuntimeException ignored) {
-            /* Optional display label only. */
-        }
-        return fallback;
     }
 
     public void close() {

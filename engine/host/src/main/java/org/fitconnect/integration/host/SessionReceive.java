@@ -152,6 +152,10 @@ final class SessionReceive {
             return new Data<>(
                     version.wireValue(), id, IntegrationEnvironment.current().name(), summary);
         } catch (RuntimeException failure) {
+            if (failure instanceof SessionException known
+                    && known.code().equals("malware_detected"))
+                this.state.cases.quarantine(
+                        this.state.caseScopes.get(id), "submission", submission, destination);
             invalidateReceived(entry);
             throw failure;
         }
@@ -227,6 +231,10 @@ final class SessionReceive {
                     IntegrationEnvironment.current().name(),
                     publishReplyCase(version, id, caseId, replyId, result));
         } catch (RuntimeException failure) {
+            if (failure instanceof SessionException known
+                    && known.code().equals("malware_detected"))
+                this.state.cases.quarantine(
+                        this.state.caseScopes.get(id), "reply", replyId, caseId);
             invalidateReceived(entry);
             throw failure;
         }

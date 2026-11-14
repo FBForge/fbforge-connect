@@ -28,7 +28,8 @@ export function caseGroups(records) {
         latest,
         attention: messages.filter(
           (record) =>
-            ['uncertain', 'failed', 'unavailable'].includes(record.status) || record.available === false,
+            ['uncertain', 'failed', 'unavailable', 'blocked'].includes(record.status) ||
+            record.available === false,
         ),
       };
     })

@@ -10,9 +10,12 @@ const MAX_RECORD: u64 = 128 * 1024 * 1024;
 const MAX_STORE: u64 = 256 * 1024 * 1024;
 const MAX_BLOCK: usize = 65536;
 const MAGIC: &[u8] = b"FBForge Connect case v1\n";
+#[path = "case_quarantine.rs"]
+mod quarantine;
 
 pub struct CaseStore {
     root: PathBuf,
+    quarantine_control: PathBuf,
     purpose: Vec<u8>,
 }
 impl CaseStore {
@@ -21,6 +24,10 @@ impl CaseStore {
             return Err("invalid_input");
         }
         Ok(Self {
+            quarantine_control: root
+                .join("quarantine")
+                .join(profile)
+                .join(format!("{api}.blocked")),
             root: root.join(profile).join(api),
             purpose: format!("FBForge Connect/cases/v1/{profile}/{api}").into_bytes(),
         })
@@ -130,7 +137,7 @@ impl CaseStore {
         .concat()
     }
     pub fn header(&self, id: &str) -> Result<Value, &'static str> {
-        let value = self.block(&mut self.open(id)?, id, 0, None)?;
+        let mut value = self.block(&mut self.open(id)?, id, 0, None)?;
         if value["version"] != 1
             || value["summary"]["recordId"] != id
             || !value["pageCount"]
@@ -138,6 +145,12 @@ impl CaseStore {
                 .is_some_and(|n| n > 0 && n <= 21)
         {
             return Err("vault_invalid");
+        }
+        if self.is_quarantined(id)? {
+            value["summary"]["status"] = "blocked".into();
+            value["summary"]["warnings"] = serde_json::json!([self.quarantine_warning(id)?]);
+            value["summary"]["attachmentCount"] = 0.into();
+            value["summary"]["totalBytes"] = 0.into();
         }
         Ok(value)
     }
@@ -148,6 +161,9 @@ impl CaseStore {
         content_id: Option<&str>,
         offset: usize,
     ) -> Result<Value, &'static str> {
+        if self.is_quarantined(id)? {
+            return Err("malware_detected");
+        }
         let mut file = self.open(id)?;
         let header = self.block(&mut file, id, 0, None)?;
         if header["summary"]["recordId"] != id {
@@ -233,9 +249,13 @@ impl CaseStore {
         if path.try_exists().map_err(|_| "vault_unavailable")? {
             fs::remove_file(path).map_err(|_| "vault_unavailable")?;
         }
+        self.clear_quarantine(id)?;
         Ok(())
     }
     pub fn begin(&self, id: &str, total: u64) -> Result<(File, PathBuf), &'static str> {
+        if self.is_quarantined(id)? {
+            return Err("malware_detected");
+        }
         fs::create_dir_all(&self.root).map_err(|_| "vault_unavailable")?;
         let used = fs::read_dir(&self.root)
             .map_err(|_| "vault_unavailable")?

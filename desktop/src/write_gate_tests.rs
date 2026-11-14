@@ -79,6 +79,14 @@ impl Context for Fake {
             Effect::RequireProfile => ("profile", Value::Null),
             Effect::CheckpointProfile => ("save_profile", Value::Null),
             Effect::CheckpointCases => ("save_cases", Value::Null),
+            Effect::QuarantineCase {
+                kind,
+                subject,
+                context,
+            } => (
+                "quarantine_case",
+                json!({"kind":kind,"subject":subject,"context":context}),
+            ),
             Effect::ConfirmAttachments(count) => ("attachments", json!(count)),
             Effect::MarkRunning(attempt) => ("running", json!(attempt)),
             Effect::InvalidateEngine => ("invalidate", Value::Null),

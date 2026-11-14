@@ -3,6 +3,46 @@ use super::*;
 use serde_json::json;
 
 #[tokio::test]
+async fn malware_verdict_quarantines_only_the_affected_message_without_replaying_the_request() {
+    for operation in ["verify_submission", "verify_reply"] {
+        for storage_failure in [false, true] {
+            let fake = Fake::default();
+            fake.responses
+                .lock()
+                .unwrap()
+                .push_back(Err("malware_detected"));
+            if storage_failure {
+                fake.fail("quarantine_case", vec![Err("vault_unavailable")]);
+            }
+            let command = json!({"command":operation,"submissionId":OTHER,"destinationId":SESSION,"replyId":OTHER,"caseId":SESSION});
+            assert_eq!(
+                run(&fake, ApiVersion::V2, SESSION, command).await.err(),
+                Some("malware_detected")
+            );
+            assert_eq!(fake.commands().len(), 1);
+            let kind = if operation == "verify_reply" {
+                "reply"
+            } else {
+                "submission"
+            };
+            assert!(fake.events().contains(&json!({"effect":"quarantine_case","detail":{"kind":kind,"subject":OTHER,"context":SESSION}})));
+            assert!(fake.events().contains(&json!({"effect":"case_error","detail":if storage_failure { Some("malware_detected") } else { None }})));
+            assert!(!fake.events().contains(&effect("save_cases")));
+        }
+        let fake = Fake::default();
+        fake.responses
+            .lock()
+            .unwrap()
+            .push_back(Err("scanner_unavailable"));
+        assert_eq!(fake.run(operation).await, Err("scanner_unavailable"));
+        assert!(!fake
+            .events()
+            .iter()
+            .any(|event| event["effect"] == "quarantine_case"));
+    }
+}
+
+#[tokio::test]
 async fn case_save_failure_before_receipt_blocks_acknowledgement() {
     let fake = Fake::with(vec![
         json!({"requiresConfirmation":false,"attachmentProblemCount":0}),

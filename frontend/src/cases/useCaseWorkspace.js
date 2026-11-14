@@ -92,6 +92,7 @@ export function useCaseWorkspace(props, emit) {
     canPersist.value = result.canPersist;
     if (result.storageError)
       error.value =
+        caseErrorMessage(result.storageError) ||
         'Die dauerhafte Sicherung ist fehlgeschlagen. Die aktuelle Kopie bleibt in dieser Anwendungssitzung erhalten. Vor dem Annehmen oder Ablehnen wird die Sicherung erneut geprüft.';
   }
   let loadedContext = '';
@@ -107,6 +108,7 @@ export function useCaseWorkspace(props, emit) {
       canPersist.value = result.canPersist;
       if (result.storageError)
         error.value =
+          caseErrorMessage(result.storageError) ||
           'Die dauerhafte Sicherung ist fehlgeschlagen. Die Sitzungskopie ist noch vorhanden. Bitte Speicherplatz prüfen und erneut laden.';
     });
   }

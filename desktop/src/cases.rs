@@ -97,6 +97,9 @@ pub async fn checkpoint(
         return Ok(());
     }
     for summary in live(app, state, api, session).await? {
+        if summary["status"] == "blocked" {
+            continue;
+        }
         let id = summary["recordId"]
             .as_str()
             .filter(|id| valid_session_id(id))
@@ -184,6 +187,21 @@ pub async fn checkpoint(
     }
     Ok(())
 }
+pub async fn quarantine(
+    app: &tauri::AppHandle,
+    state: &EngineState,
+    api: ApiVersion,
+    session: &str,
+    kind: &str,
+    subject: &str,
+    context: &str,
+) -> Result<(), &'static str> {
+    // Include previously archived copies even when new persistence has been switched off.
+    if let Some(store) = disk(app, state, api, session).await? {
+        store.quarantine_message(kind, subject, context)?;
+    }
+    Ok(())
+}
 #[tauri::command]
 pub async fn case_workspace(
     app: tauri::AppHandle,
@@ -226,18 +244,21 @@ pub async fn case_workspace(
         let previous = store.enabled().unwrap_or(false);
         store.enable(persistent.ok_or("invalid_input")?)?;
         if let Err(code) = checkpoint(&app, &state, api_version, &session_id).await {
-            state
-                .case_errors
-                .lock()
-                .await
-                .insert(session_id.clone(), code);
+            let mut errors = state.case_errors.lock().await;
+            if errors.get(&session_id) != Some(&"malware_detected") {
+                errors.insert(session_id.clone(), code);
+            }
+            drop(errors);
             // A failed first checkpoint must not silently opt a profile into future persistence.
             if !previous {
                 let _ = store.enable(false);
             }
             return Err(code);
         }
-        state.case_errors.lock().await.remove(&session_id);
+        let mut errors = state.case_errors.lock().await;
+        if errors.get(&session_id) != Some(&"malware_detected") {
+            errors.remove(&session_id);
+        }
     }
     if matches!(operation.as_str(), "list" | "storage") {
         let saved = if let Some(store) = &store {
@@ -271,8 +292,9 @@ pub async fn case_workspace(
             for record in store.records()? {
                 store.delete(record["recordId"].as_str().ok_or("vault_invalid")?)?;
             }
+            store.clear_quarantine_scope()?;
         }
-        return engine(
+        let result = engine(
             &app,
             &state,
             api_version,
@@ -282,7 +304,9 @@ pub async fn case_workspace(
             None,
             0,
         )
-        .await;
+        .await?;
+        state.case_errors.lock().await.remove(&session_id);
+        return Ok(result);
     }
     let id = record_id.as_deref().ok_or("invalid_input")?;
     if operation == "delete" {
@@ -303,6 +327,9 @@ pub async fn case_workspace(
     }
     if !matches!(operation.as_str(), "parts" | "read") {
         return Err("invalid_input");
+    }
+    if state.case_errors.lock().await.get(&session_id) == Some(&"malware_detected") {
+        return Err("malware_detected");
     }
     if live.iter().any(|s| s["recordId"] == id) {
         return engine(

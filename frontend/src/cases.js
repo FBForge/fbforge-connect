@@ -15,6 +15,7 @@ export const caseStatus = (value) =>
     failed: 'Fehlgeschlagen',
     uncertain: 'Ausgang ungewiss',
     unavailable: 'Kopie nicht lesbar',
+    blocked: 'Vom Virenscan gesperrt',
     prepared: 'Vorbereitet',
     running: 'In Bearbeitung',
     cancelled: 'Abgebrochen',
@@ -153,6 +154,8 @@ export async function readCaseFile(invoke, session, recordId, part, { signal } =
 export function caseErrorMessage(cause) {
   const code = typeof cause === 'string' ? cause : cause?.message;
   return {
+    malware_detected:
+      'Diese lokale Kopie wurde nach einem Virenfund gesperrt. Vorschau und Download sind nicht verfügbar. Sie können die Kopie entfernen.',
     vault_limit:
       'Die geschützte Vorgangsablage hat ihre Größen- oder Datensatzgrenze erreicht. Löschen Sie nicht mehr benötigte lokale Kopien.',
     vault_invalid:

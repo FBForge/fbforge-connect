@@ -209,6 +209,7 @@
             data.splice(data.indexOf(record), 1);
             return envelope({ deleted: true });
           }
+          if (record.status === 'blocked') throw 'malware_detected';
           const files = record.recordId === id(2) ? parts : [parts[0]];
           if (args.operation === 'parts')
             return envelope({
