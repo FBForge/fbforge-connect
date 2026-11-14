@@ -10,9 +10,18 @@ Prüfverlauf erhalten. Fachliche Dialoge unterstützen mehrere Antworten im selb
 Die [Versionshinweise](RELEASE_NOTES.md) beschreiben den Umfang. Veröffentlichung
 setzt die Abnahme des endgültigen Releasekandidaten voraus.
 
+## 0.5.0 geplant: macOS
+
+Apple Silicon nativ unterstützen, einschließlich geschützter Speicherung,
+Java-Laufzeit, lokalem Scanner, Plattformbedienung, signierten Updates und
+vollständiger Windows-/Mac-Abnahme. Der
+[Umsetzungsplan](docs/plans/RELEASE_0.5.0_MACOS.md) enthält Arbeitspakete,
+Abhängigkeiten, Abnahmekriterien und offene technische Entscheidungen.
+Der Planungsstand ist keine Implementierung oder Veröffentlichungszusage.
+
 ## Später
 
-- macOS und Linux nach eigener Prüfung von Paketierung, Installation und
+- Intel-Macs und Linux nach eigener Prüfung von Paketierung, Installation und
   geschützter Speicherung unterstützen. Kein unverschlüsselter Ersatzspeicher.
 - Tests des ZBP-Adapters prüfen, sobald passende Testzugänge und Zertifikate
   sowie ein konkreter Anwendungsfall vorliegen.
