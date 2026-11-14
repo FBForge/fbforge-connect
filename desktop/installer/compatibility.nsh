@@ -1,5 +1,5 @@
 ; Keep profile and upgrade identities stable while renaming the executable.
-!include "${__FILEDIR__}/guard.nsh"
+!include "${__FILEDIR__}\guard.nsh"
 !macro NSIS_HOOK_PREINSTALL
   Call FBForgeRequireStagingV2
 !macroend

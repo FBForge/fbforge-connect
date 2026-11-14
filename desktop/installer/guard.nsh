@@ -2,8 +2,8 @@
 !define FBFORGE_GUARD_DIR "${__FILEDIR__}"
 !define FBFORGE_GUARD_TOOL_ID "fbforge-connect"
 !define FBFORGE_GUARD_APP_ID "org.fitconnect.integration-client"
-!addplugindir /x86-unicode "${__FILEDIR__}/guard"
-!include "${__FILEDIR__}/safe-utils.nsh"
+!addplugindir /x86-unicode "${__FILEDIR__}\guard"
+!include "${__FILEDIR__}\safe-utils.nsh"
 Var FBForgeGuardReply
 Var FBForgeGuardSentinel
 Var FBForgeGuardHeld
@@ -85,4 +85,4 @@ Function ${PREFIX}FBForgeRelease
 FunctionEnd
 !macroend
 
-!include "${__FILEDIR__}/guard-v2.nsh"
+!include "${__FILEDIR__}\guard-v2.nsh"

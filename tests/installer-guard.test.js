@@ -21,6 +21,26 @@ const ordered = (text, ...steps) => {
     previous = current;
   }
 };
+test('NSIS include arguments resolve beside their source on the Windows compiler', async () => {
+  const directory = String.raw`C:\fixture\desktop\installer`;
+  for (const [name, expected] of [
+    ['guard.nsh', ['safe-utils.nsh', 'guard-v2.nsh']],
+    ['compatibility.nsh', ['guard.nsh']],
+  ]) {
+    const text = await read(name);
+    const includes = [...text.matchAll(/^!include "([^"]+)"$/gm)];
+    assert.equal(includes.length, expected.length);
+    for (const [index, match] of includes.entries()) {
+      const expanded = match[1].replace('${__FILEDIR__}', directory);
+      const separator = expanded.lastIndexOf('\\');
+      assert.equal(expanded.slice(0, separator), directory);
+      assert.equal(expanded.slice(separator + 1), expected[index]);
+    }
+  }
+  const guard = await read('guard.nsh');
+  const pluginPath = /^!addplugindir \/x86-unicode "([^"]+)"$/m.exec(guard)?.[1];
+  assert.equal(pluginPath?.replace('${__FILEDIR__}', directory), directory + String.raw`\guard`);
+});
 test('native V2 preparation precedes protected sections while uninstall keeps its deny gate', async () => {
   const text = await read('installer.nsi');
   const init = body(text, '.onInit');
