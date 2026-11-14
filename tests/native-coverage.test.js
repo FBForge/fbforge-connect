@@ -40,3 +40,28 @@ test('native coverage refuses duplicate, truncated, foreign and contradictory so
   assert.throws(() => productLineCounts(hits, 'short\n', []), /raw_count_mismatch/);
   assert.throws(() => productLineCounts(hits, source, [[4, 99]]), /test_span_invalid/);
 });
+
+test('native coverage includes the real marker helper with Windows consumer paths', () => {
+  for (const path of [
+    'desktop/cooperation_marker.rs',
+    'C:\\work\\desktop\\native-contracts\\..\\cooperation_marker.rs',
+    'C:\\work\\desktop\\cooperation_marker.rs',
+  ]) {
+    const files = parseNativeLcov(lcov.replace('C:\\work\\desktop\\src\\sample.rs', path));
+    assert.equal(files.size, 1);
+    const marker = files.get('desktop/cooperation_marker.rs');
+    assert.ok(marker);
+    assert.equal(productLineCounts(marker.hits, source, [[4, 7]]).count, 3);
+  }
+  for (const path of [
+    'desktop/build.rs',
+    'desktop/vendor/suite-coordination/src/lib.rs',
+    'desktop/installer/guard-source/crates/suite-core/src/lib.rs',
+    'desktop/native-contracts/examples/coverage-source.rs',
+  ]) {
+    assert.throws(
+      () => parseNativeLcov(lcov.replace('C:\\work\\desktop\\src\\sample.rs', path)),
+      /native_coverage_non_product_source/,
+    );
+  }
+});

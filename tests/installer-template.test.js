@@ -30,9 +30,13 @@ test('guarded installer preserves branding, legacy identity and exact scanner ad
     /^[ \t]*; FBForge scanner begin[^\n]*\n[\s\S]*?^[ \t]*; FBForge scanner end[^\n]*\n/gm,
   );
   assert.equal(scannerBlocks.length, 6);
+  // V2 adds checked writes and requires an unselected component to stay absent.
+  assert.match(scannerBlocks.join(''), /Unselected component is absent from the signed active payload/);
+  assert.match(template, /\$R9 = 1[\s\S]*File \/a[\s\S]*FBForgeCheckWrite/);
+  assert.match(template, /\$ScannerChoice = 1[\s\S]*StrCpy \$FBForgeV2Components "scanner"/);
   assert.equal(
     createHash('sha256').update(scannerBlocks.join('')).digest('hex'),
-    '7666c9a2eb754407938b61a87ffa907477af195fa1f9fa44921ea2007e704e30',
+    '26889ce00e854f86e1eecf9b57de75f9a82c83cdbedf1263b865b8a945813aea',
   );
   assert.equal(app.productName, productName);
   assert.equal(app.bundle.publisher, 'FBForge');
