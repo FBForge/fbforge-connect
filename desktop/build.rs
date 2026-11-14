@@ -1,3 +1,5 @@
+mod cooperation_marker;
+
 fn main() {
     println!("cargo:rerun-if-changed=scanner-component.json");
     println!("cargo:rerun-if-changed=resources/scanner/component.zip");
@@ -7,8 +9,19 @@ fn main() {
         panic!("Scanner component missing. Run npm run stage:scanner before building the release installer.");
     }
     println!("cargo:rerun-if-changed=update-public-key.txt");
-    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
-        tauri_build::AppManifest::new().commands(&[
+    let mut attributes = tauri_build::Attributes::new();
+    let target = std::env::var("TARGET").expect("Cargo target missing");
+    let out_dir = std::path::PathBuf::from(
+        std::env::var_os("OUT_DIR").expect("Cargo output directory missing"),
+    );
+    if let Some(resource) = cooperation_marker::resource_for_target(&target, &out_dir)
+        .expect("Cooperation marker generation failed")
+    {
+        attributes = attributes
+            .windows_attributes(tauri_build::WindowsAttributes::new().append_rc_content(resource));
+    }
+    tauri_build::try_build(
+        attributes.app_manifest(tauri_build::AppManifest::new().commands(&[
             "close_application",
             "network_settings",
             "inspect_network_certificate",
@@ -134,7 +147,7 @@ fn main() {
             "discard_event_log",
             "list_replies",
             "list_reply_channels",
-        ]),
-    ))
+        ])),
+    )
     .expect("Tauri build configuration failed");
 }
