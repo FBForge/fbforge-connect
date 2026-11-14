@@ -12,6 +12,8 @@ test('the full desktop shell keeps the schema library usable after case navigati
   await page.getByRole('button', { name: 'Verbindung herstellen', exact: true }).click();
   await page.locator('#client-id').fill('synthetic-library-client');
   await page.locator('#client-secret').fill('synthetic-library-secret');
+  await page.getByRole('checkbox', { name: /Zugangsdaten und Schlüssel/ }).check();
+  await page.locator('#profile-name').fill('Synthetische Schema-Bibliothek');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   const navigation = page.getByRole('navigation', { name: 'Hauptnavigation', exact: true });
   const openLibrary = async () => {
@@ -25,7 +27,35 @@ test('the full desktop shell keeps the schema library usable after case navigati
   await page.getByRole('button', { name: 'Im Profil speichern', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: 'automatisch verwendet' })).toBeVisible();
   await navigation.getByRole('button', { name: 'Vorgänge', exact: true }).click();
+  await page.locator('.connection-button').click();
+  const profile = await page.evaluate(() => window.__profilesFixture.profiles[0].profileId);
+  await page.locator('#saved-profile-choice').selectOption(profile);
+  await page.getByRole('button', { name: 'Mit Profil verbinden', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true }).waitFor({ state: 'hidden' });
   await openLibrary();
+  await expect(page.getByRole('combobox', { name: 'Gespeichertes Antwortschema', exact: true })).toBeVisible({
+    timeout: 3000,
+  });
   await reviewSchemaLibraryChanges(page, uri, 'Fiktive Live-Statusmitteilung');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('fixture-answer-schemas')))).toEqual([]);
+  await page.evaluate(() => {
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    window.__schemaReadFailures = 0;
+    window.__TAURI_INTERNALS__.invoke = (command, args) => {
+      if (command === 'profile_answer_schemas' && args.action.action === 'list') {
+        window.__schemaReadFailures++;
+        return Promise.reject('vault_unavailable');
+      }
+      return invoke(command, args);
+    };
+  });
+  await page.locator('.connection-button').click();
+  await page.locator('#saved-profile-choice').selectOption(profile);
+  await page.getByRole('button', { name: 'Mit Profil verbinden', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true }).waitFor({ state: 'hidden' });
+  const library = page.getByRole('region', { name: 'Antwortschemas im Profil', exact: true });
+  await expect(library.getByRole('alert')).toBeVisible();
+  await navigation.getByRole('button', { name: 'Vorgänge', exact: true }).click();
+  await openLibrary();
+  expect(await page.evaluate(() => window.__schemaReadFailures)).toBe(1);
 });

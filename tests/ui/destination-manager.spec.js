@@ -1,6 +1,42 @@
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 
+test('an API rejection keeps bounded technical details available without repeating the write', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/destination-manager.html');
+  await page.evaluate(() => {
+    window.__destinationFixture.updateFailure = {
+      error: 'resource_unavailable',
+      httpStatus: 400,
+      problemType: 'invalid-request',
+    };
+  });
+  await page.getByRole('button', { name: 'Eigene Destinations laden', exact: true }).click();
+  await page.getByRole('button', { name: 'Bearbeiten', exact: true }).first().click();
+  await page.getByLabel('Name', { exact: true }).fill('Onlinedienst Nord Test');
+  await page.getByRole('button', { name: 'Änderungsvorschau erstellen', exact: true }).click();
+  const preview = page.locator('[aria-labelledby="update-preview-title"]');
+  await preview
+    .getByRole('button', {
+      name: 'Diese Änderungen verbindlich in der gewählten Umgebung speichern',
+      exact: true,
+    })
+    .click();
+  await expect(preview.getByRole('heading', { name: 'Teilweise abgeschlossen', exact: true })).toBeVisible();
+  await expect(preview).toContainText('Die Destination API hat die Änderung abgelehnt');
+  const details = preview.locator('details.destination-failure');
+  await expect(details).not.toHaveAttribute('open');
+  await details.getByText('Technische Fehlerdetails', { exact: true }).click();
+  await expect(details.getByText('resource_unavailable', { exact: true })).toBeVisible();
+  await expect(details.getByText('400', { exact: true })).toBeVisible();
+  await expect(details.getByText('invalid-request', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => window.__destinationFixture.writes)).toBe(1);
+  expect(await page.evaluate(() => [...window.__destinationFixture.records.values()][0].name)).toBe(
+    'Onlinedienst Nord',
+  );
+});
+
 test('destination details open visibly, return focus and preserve a shared selection', async ({ page }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/destination-manager.html');
   await page.getByRole('button', { name: 'Eigene Destinations laden', exact: true }).click();

@@ -16,7 +16,8 @@ const rows = ref([]),
   error = ref(''),
   notice = ref(''),
   confirmation = ref(null);
-let generation = 0;
+let generation = 0,
+  refreshNeeded = false;
 onBeforeUnmount(() => {
   generation++;
   emit('busy', false);
@@ -40,8 +41,11 @@ async function act(operation) {
 }
 function refresh() {
   return act(async (active, current) => {
+    refreshNeeded = false;
     const value = await listAnswerSchemas(invoke, active);
-    if (current()) rows.value = value;
+    if (current()) {
+      rows.value = value;
+    }
   });
 }
 watch(
@@ -52,9 +56,16 @@ watch(
     choice.value = '';
     confirmation.value = null;
     pending.value = false;
+    refreshNeeded = Boolean(props.session);
     void refresh();
   },
   { immediate: true },
+);
+watch(
+  () => props.disabled,
+  (disabled) => {
+    if (!disabled && refreshNeeded) void refresh();
+  },
 );
 watch(
   () => props.result,

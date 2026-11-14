@@ -58,11 +58,21 @@ test('a bulk preview remains separate from its one confirmed execution and recov
     return envelope({
       ...preview,
       status: 'uncertain',
-      changes: [{ ...row, status: 'uncertain', error: 'resource_unavailable' }],
+      changes: [
+        {
+          ...row,
+          status: 'uncertain',
+          error: 'resource_unavailable',
+          httpStatus: 503,
+          problemType: 'service-unavailable',
+        },
+      ],
     });
   }, session);
   assert.equal(reads, 1);
   assert.equal(result.status, 'uncertain');
+  assert.equal(result.changes[0].httpStatus, 503);
+  assert.equal(result.changes[0].problemType, 'service-unavailable');
 });
 
 test('invalid fields, duplicate IDs and v2 writes cannot reach the native boundary', async () => {
@@ -87,6 +97,10 @@ test('invalid fields, duplicate IDs and v2 writes cannot reach the native bounda
 test('foreign sessions, changed attempts, unknown properties and foreign destinations cannot report success', async () => {
   for (const invalid of [
     { ...preview, unexpected: true },
+    { ...preview, changes: [{ ...row, httpStatus: '400' }] },
+    { ...preview, changes: [{ ...row, httpStatus: 600 }] },
+    { ...preview, changes: [{ ...row, httpStatus: 400 }] },
+    { ...preview, changes: [{ ...row, error: 'resource_unavailable', problemType: '<unsafe>' }] },
     { ...preview, attemptId: 'invalid' },
     { ...preview, changes: [{ ...row, destinationId: B }] },
     { ...preview, changes: [{ ...row, afterJson: '{"clientSecret":"no"}' }] },

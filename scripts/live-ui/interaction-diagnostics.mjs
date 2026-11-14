@@ -1,4 +1,5 @@
 // Fixed diagnostic categories only: never print Playwright call logs, input values or page text.
+import { diagnosticCode } from '../../frontend/src/diagnostics.js';
 export function interactionFailure(error) {
   const message = String(error?.message || '');
   return {
@@ -65,6 +66,13 @@ export async function interactionDiagnostics(page, error) {
         status: heading.length === 1 ? previewStatuses[heading[0].trim()] || 'unknown' : 'absent',
         rows: rows.map((text) => previewStatuses[text.split(' · ').at(-1).trim()] || 'unknown'),
         messages: await preview.locator('article [role="status"]').count(),
+        codes: (await preview.locator('[data-destination-error]').allTextContents()).map(diagnosticCode),
+        http: (await preview.locator('[data-destination-http]').allTextContents())
+          .map(Number)
+          .filter((n) => Number.isInteger(n) && n >= 100 && n <= 599),
+        problems: (await preview.locator('[data-destination-problem]').allTextContents()).filter((v) =>
+          /^[a-z][a-z0-9-]{0,127}$/.test(v),
+        ),
         confirm: await controlState(
           button(preview, 'Diese Änderungen verbindlich in der gewählten Umgebung speichern'),
         ),

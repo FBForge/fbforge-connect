@@ -40,7 +40,9 @@ export async function reviewDestinationExtras(page, fixture, id, expectedName, s
     .getByLabel('Kopie der Kontaktbenachrichtigung an (E-Mail)', { exact: true })
     .fill('integration@example.invalid');
   await page.getByText('Callback einrichten oder ändern', { exact: true }).click();
-  const url = 'https://example.invalid/fbforge-owned-ci';
+  // The Destination API requires resolvable callback hosts. This is our own domain;
+  // this unused fixture receives no submissions and is removed after the check.
+  const url = 'https://fbforge.de/fbforge-owned-ci-callback';
   await page.getByLabel('Callback-Adresse', { exact: true }).fill(url);
   await page
     .getByLabel('Neues Callback-Secret', { exact: true })

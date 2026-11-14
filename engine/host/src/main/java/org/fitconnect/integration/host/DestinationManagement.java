@@ -25,7 +25,9 @@ final class DestinationManagement {
             String beforeJson,
             String afterJson,
             String status,
-            String error) {}
+            String error,
+            Integer httpStatus,
+            String problemType) {}
 
     record Preview(String attemptId, String status, List<Change> changes) {}
 
@@ -161,6 +163,8 @@ final class DestinationManagement {
                             before.toString(),
                             DestinationExtras.readable(patch).toString(),
                             patch.isEmpty() ? "unchanged" : "prepared",
+                            null,
+                            null,
                             null);
             rows.add(new Pending(id, snapshot, patch, row));
         }
@@ -382,7 +386,14 @@ final class DestinationManagement {
                 boolean unknown = dispatched[0] && !rejected;
                 uncertain |= unknown;
                 failed = true;
-                rows.set(i, outcome(row.view(), unknown ? "uncertain" : "failed", known.code()));
+                rows.set(
+                        i,
+                        outcome(
+                                row.view(),
+                                unknown ? "uncertain" : "failed",
+                                known.code(),
+                                known.httpStatus(),
+                                known.problemType()));
             }
             state = new Preview(id, "running", List.copyOf(rows));
         }
@@ -437,8 +448,20 @@ final class DestinationManagement {
     }
 
     private static Change outcome(Change row, String status, String error) {
+        return outcome(row, status, error, null, null);
+    }
+
+    private static Change outcome(
+            Change row, String status, String error, Integer httpStatus, String problemType) {
         return new Change(
-                row.destinationId(), row.name(), row.beforeJson(), row.afterJson(), status, error);
+                row.destinationId(),
+                row.name(),
+                row.beforeJson(),
+                row.afterJson(),
+                status,
+                error,
+                httpStatus,
+                problemType);
     }
 
     private static String optional(JsonObject o, String field) {

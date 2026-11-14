@@ -113,10 +113,17 @@ function callback() {
         Sie ein neues Secret. Erst Ihre Bestätigung der Vorschau speichert die Änderung.
       </p>
       <div class="client-fields">
-        <label>
-          Callback-Adresse
-          <input v-model="url" type="url" maxlength="4096" />
-        </label>
+        <div>
+          <label :for="`${fieldId}-callback-url`">Callback-Adresse</label>
+          <input
+            :id="`${fieldId}-callback-url`"
+            :aria-describedby="`${fieldId}-callback-hint`"
+            v-model="url"
+            type="url"
+            maxlength="4096"
+          />
+          <small :id="`${fieldId}-callback-hint`">HTTPS-Adresse mit öffentlich auflösbarem Hostnamen.</small>
+        </div>
         <div>
           <label :for="`${fieldId}-secret`">Neues Callback-Secret</label>
           <input

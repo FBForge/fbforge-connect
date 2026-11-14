@@ -114,6 +114,8 @@ async function installOffer(page, fixture, path, uri) {
   await page
     .getByRole('checkbox', { name: 'Leistungen, Schemata und Prozessnachrichten bearbeiten', exact: true })
     .check();
+  await page.getByRole('checkbox', { name: 'FIT-Connect', exact: true }).first().check();
+  await page.getByText('Standard aus JSON-Datei ergänzen', { exact: true }).first().click();
   await page.locator('#manager-offer-0-reply-file').setInputFiles(path);
   await until(
     async () =>
@@ -123,14 +125,10 @@ async function installOffer(page, fixture, path, uri) {
         .includes(uri),
     'live_ui_authored_offer_not_applied',
   );
-  await page.getByText('Weitere Antwortkanäle', { exact: true }).first().click();
   await page.getByRole('checkbox', { name: 'E-Mail', exact: true }).first().check();
-  await page.getByRole('checkbox', { name: 'PGP-Verschlüsselung unterstützen', exact: true }).first().check();
-  await page.getByRole('checkbox', { name: 'DeutschlandID-Bürgerpostfach', exact: true }).first().check();
-  await page
-    .getByRole('checkbox', { name: 'Statusmonitor der DeutschlandID nutzen', exact: true })
-    .first()
-    .check();
+  await page.getByRole('checkbox', { name: 'PGP-verschlüsselt', exact: true }).first().check();
+  await page.getByRole('checkbox', { name: 'BundID', exact: true }).first().check();
+  await page.getByRole('checkbox', { name: 'Statusmonitor der BundID nutzen', exact: true }).first().check();
   await button(page, 'Änderungsvorschau erstellen').click();
   await button(page, 'Diese Änderungen verbindlich in der gewählten Umgebung speichern').click();
   const preview = page.locator('[aria-labelledby="update-preview-title"]');

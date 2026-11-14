@@ -48,6 +48,7 @@
         records,
         writes: 0,
         loseResponse: false,
+        updateFailure: null,
         calls: [],
         state: { attemptId: null, status: 'idle', changes: [] },
       });
@@ -154,6 +155,18 @@
             if (args.attemptId !== fixture.state.attemptId || fixture.state.status !== 'prepared')
               throw 'destination_update_locked';
             fixture.writes++;
+            if (fixture.updateFailure) {
+              fixture.state = {
+                ...fixture.state,
+                status: 'partial',
+                changes: fixture.state.changes.map((row) => ({
+                  ...row,
+                  status: 'failed',
+                  ...fixture.updateFailure,
+                })),
+              };
+              return envelope(fixture.state);
+            }
             fixture.state = {
               ...fixture.state,
               status: 'completed',

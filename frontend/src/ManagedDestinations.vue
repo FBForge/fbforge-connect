@@ -12,6 +12,7 @@ import DestinationCleanup from './DestinationCleanup.vue';
 import DestinationOffers from './DestinationOffers.vue';
 import DestinationKeyRotation from './DestinationKeyRotation.vue';
 import DestinationExtraFields from './destinations/DestinationExtraFields.vue';
+import DestinationFailure from './destinations/DestinationFailure.vue';
 import { useDestinationManager } from './destinations/useDestinationManager.js';
 const props = defineProps({ session: Object, busy: Boolean, creationSeed: Object });
 const emit = defineEmits([
@@ -406,8 +407,13 @@ defineExpose({ controller: reactive(controller) });
             <code>{{ row.destinationId }}</code>
           </p>
           <p v-if="row.error" role="status">
-            {{ messages[row.error] || 'Änderung nicht bestätigt. Bitte die Destination neu laden.' }}
+            {{
+              row.httpStatus >= 400 && row.httpStatus < 500
+                ? 'Die Destination API hat die Änderung abgelehnt. Prüfen Sie die Angaben und die technischen Fehlerdetails.'
+                : messages[row.error] || 'Änderung nicht bestätigt. Bitte die Destination neu laden.'
+            }}
           </p>
+          <DestinationFailure v-if="row.error" :failure="row" />
           <DestinationComparison :before="row.before" :after="row.after" />
           <template v-if="row.after.publicServices || row.after.processMessages">
             <h5>Angebote nach der Änderung</h5>

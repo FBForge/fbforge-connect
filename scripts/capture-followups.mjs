@@ -34,9 +34,14 @@ export async function captureFollowups({ page, open, button, capture }) {
     .getByLabel('Leistungskennung (LeiKa-URN)', { exact: true })
     .fill('urn:de:fim:leika:leistung:99008001014002');
   await page.locator('#manager-offer-publicServices-0-schema-0').fill('urn:beispiel:antrag:1');
+  await page.getByRole('checkbox', { name: 'FIT-Connect', exact: true }).check();
   await page.locator('#manager-offer-0-replies').fill('urn:beispiel:antwort:1');
-  await page.getByText('Weitere Antwortkanäle', { exact: true }).click();
   await page.getByRole('checkbox', { name: 'E-Mail', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'DeutschlandID-Bürgerpostfach', exact: true }).check();
-  await capture('destination-reply-channels', page.locator('#manager-offer-0-replies').locator('..'));
+  await page.getByRole('checkbox', { name: 'BundID', exact: true }).check();
+  for (const name of ['ELSTER', 'DE-Mail', 'FINK'])
+    await page.getByRole('checkbox', { name, exact: true }).check();
+  await capture(
+    'destination-reply-channels',
+    page.getByRole('group', { name: 'Antwortkanäle', exact: true }),
+  );
 }

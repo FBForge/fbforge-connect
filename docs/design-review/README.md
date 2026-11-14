@@ -2,6 +2,34 @@
 
 ## 0.4.0 in Vorbereitung
 
+### SSP-Kanäle und Nachprüfung – 14. November 2026
+
+Die Antwortkanäle folgen dem SSP: Postweg als automatischer Rückfall sowie
+BundID, FIT-Connect, ELSTER, E-Mail, DE-Mail und FINK als getrennte Auswahl.
+PGP steht direkt bei E-Mail. Datenaustauschstandards gehören zu FIT-Connect.
+Die tatsächliche Oberfläche wurde bei 1440 px hell und 520 px dunkel angesehen.
+Die Anleitung enthält die neue Aufnahme. Die gezielten Kanaltests prüfen auch
+390 px, die Reihenfolge und den Weg in die Änderungsvorschau.
+
+Ein vollständiger App-Test reproduziert den beim Profilwechsel übersprungenen
+Abruf gespeicherter Antwortschemas. Die Bibliothek lädt nun nach dem Ende des
+Verbindungsaufbaus. Ein fehlgeschlagener Abruf wird nicht automatisch wiederholt.
+Destination-Fehler zeigen aufklappbar den begrenzten Fehlercode, HTTP-Status und
+Problemtyp. Die Profilhistorie versteht diese Angaben und bisherige Einträge.
+
+Die [Live-Wiederholung](https://github.com/FBForge/fbforge-connect/actions/runs/43539579641)
+bestand 12 von 16 UI-Gruppen. Sammelverarbeitung und Testserie scheiterten beim
+Anlagen-Upload an HTTP 500 mit ungewissem Versand. Es gab keine automatische
+Wiederholung. Der Bibliotheksfehler ist lokal reproduziert und korrigiert.
+Für den Callback-Test wurde die nicht auflösbare `.invalid`-Adresse durch einen
+Pfad auf der eigenen Domain ersetzt, entsprechend der Destination-API-Dokumentation.
+Die unbenutzte Test-Destination empfängt dabei keine Einreichungen.
+
+Diese Änderungen betreffen das Produkt. Der nachfolgend dokumentierte Installer
+aus `2382a883` enthält sie noch nicht und ist kein Nachweis für diesen Stand.
+Eine neue Windows-Validierung und reale UI-Wiederholung sind erforderlich.
+Signierung und Veröffentlichung bleiben bis zur Betreiberabnahme aus.
+
 ### Testwerkzeuge, Destination-Verwaltung und Formularansicht – 13. November 2026
 
 Die Nachprüfung folgt den gemeldeten Screenshots: Profile beider APIs werden in
@@ -177,8 +205,8 @@ Der folgende Nachweis bezieht sich auf `46991b21b4d497ce66fc8ea4e3d875318bf1a4d9
 Version 0.4.0 ist noch nicht veröffentlicht. Die folgenden Prüfungen verwenden
 fiktive Daten und ersetzen keine installierte Windows- oder FIT-Connect-TEST-Abnahme.
 
-| Prüfung | Tatsächlich geprüfter Umfang |
-| --- | --- |
+| Prüfung                                                                                   | Tatsächlich geprüfter Umfang                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Checks 42304998045](https://github.com/FBForge/fbforge-connect/actions/runs/42304998045) | `46991b2`, Frontend, Java, native Windows-Verträge und vollständige native Windows-Tests einschließlich ihrer Abdeckungsgrenzen. Neue Serien werden mit Windows-DPAPI gespeichert und mit unveränderten Durchlaufzuordnungen erneut geöffnet. |
 
 Lokal bestehen 391 Node-Tests, sechs Plattformfälle werden übersprungen. Alle
@@ -242,22 +270,22 @@ sind keine Prüfung späterer Produktänderungen. Main wurde auf denselben volls
 Commit wie der abgenommene Release-Branch übernommen. Dadurch bleibt die vorhandene
 Windows-Validierung gültig. Ein neuer Merge-, Rebase- oder Produktcommit wäre separat zu prüfen.
 
-| Abschließende Prüfung | Tatsächlich geprüfter Umfang |
-| --- | --- |
-| [Checks 41531392702](https://github.com/FBForge/fbforge-connect/actions/runs/41531392702) | `4d5f4b4`, Node, Browser, Java, native Windows-Tests und Coverage-Grenzen |
-| [Windows 41531392037](https://github.com/FBForge/fbforge-connect/actions/runs/41531392037) | `4d5f4b4`, normales und vollständiges Offline-Setup, Upgrade von signiertem 0.2.0, Profilerhalt, NVDA, echte ClamAV-Prüfung mit sauberer Datei und EICAR sowie lesende TEST-Anmeldung |
-| [CodeQL 41541239704](https://github.com/FBForge/fbforge-connect/actions/runs/41541239704) | `4d5f4b4`, Actions, Java/Kotlin, JavaScript/TypeScript, Python und Rust |
-| [Signierung 41542584783](https://github.com/FBForge/fbforge-connect/actions/runs/41542584783) | `4d5f4b4`, Authenticode mit Zeitstempeln, Updater-Signatur und unabhängige Installation beider signierter Pakete |
+| Abschließende Prüfung                                                                         | Tatsächlich geprüfter Umfang                                                                                                                                                          |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Checks 41531392702](https://github.com/FBForge/fbforge-connect/actions/runs/41531392702)     | `4d5f4b4`, Node, Browser, Java, native Windows-Tests und Coverage-Grenzen                                                                                                             |
+| [Windows 41531392037](https://github.com/FBForge/fbforge-connect/actions/runs/41531392037)    | `4d5f4b4`, normales und vollständiges Offline-Setup, Upgrade von signiertem 0.2.0, Profilerhalt, NVDA, echte ClamAV-Prüfung mit sauberer Datei und EICAR sowie lesende TEST-Anmeldung |
+| [CodeQL 41541239704](https://github.com/FBForge/fbforge-connect/actions/runs/41541239704)     | `4d5f4b4`, Actions, Java/Kotlin, JavaScript/TypeScript, Python und Rust                                                                                                               |
+| [Signierung 41542584783](https://github.com/FBForge/fbforge-connect/actions/runs/41542584783) | `4d5f4b4`, Authenticode mit Zeitstempeln, Updater-Signatur und unabhängige Installation beider signierter Pakete                                                                      |
 
 Frühere Live-Abnahmen bleiben getrennt zugeordnet:
 
-| Prüfung | Tatsächlich geprüfter Umfang |
-| --- | --- |
-| [Checks 41488660955](https://github.com/FBForge/fbforge-connect/actions/runs/41488660955) | `530b8be`, Node, Browser, Java und native Verträge vor den abschließenden Bedienkorrekturen |
-| [Scanner 41488699487](https://github.com/FBForge/fbforge-connect/actions/runs/41488699487) | `530b8be`, Windows-Paketbau, offizielle Signaturen, drei Einrichtungen mit sauberem Scan, EICAR und Prozessende |
-| [Windows 41448697391](https://github.com/FBForge/fbforge-connect/actions/runs/41448697391) | `426960a`, normale und Offline-Installation, Upgrade von 0.2.0, Profilerhalt und NVDA |
+| Prüfung                                                                                                         | Tatsächlich geprüfter Umfang                                                                                    |
+| --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [Checks 41488660955](https://github.com/FBForge/fbforge-connect/actions/runs/41488660955)                       | `530b8be`, Node, Browser, Java und native Verträge vor den abschließenden Bedienkorrekturen                     |
+| [Scanner 41488699487](https://github.com/FBForge/fbforge-connect/actions/runs/41488699487)                      | `530b8be`, Windows-Paketbau, offizielle Signaturen, drei Einrichtungen mit sauberem Scan, EICAR und Prozessende |
+| [Windows 41448697391](https://github.com/FBForge/fbforge-connect/actions/runs/41448697391)                      | `426960a`, normale und Offline-Installation, Upgrade von 0.2.0, Profilerhalt und NVDA                           |
 | [Installierte TEST-Oberfläche 41455480784](https://github.com/FBForge/fbforge-connect/actions/runs/41455480784) | `8f1153b`, v2/v3-Nachrichtenfluss, Downloads, Profile, lokale Scanner-Einrichtung, Abbruch und erneuter Versuch |
-| [SDK-Matrix 41440500168](https://github.com/FBForge/fbforge-connect/actions/runs/41440500168) | `18587c5`, v2/v3, JSON/XML, Prozessnachrichten, Antworten, Absenderbeschränkung und Schlüsselwechsel |
+| [SDK-Matrix 41440500168](https://github.com/FBForge/fbforge-connect/actions/runs/41440500168)                   | `18587c5`, v2/v3, JSON/XML, Prozessnachrichten, Antworten, Absenderbeschränkung und Schlüsselwechsel            |
 
 Die spätere Historienkonsolidierung hat den Produktbaum von `8f1153b` unverändert
 übernommen. Der danach korrigierte GPG-Paketbau wurde separat unter Windows geprüft.
@@ -273,11 +301,11 @@ gemeinsame Gesamtquote und keine Behauptung von 95 oder 100 Prozent Gesamtdeckun
 
 Gemessene native Produktzeilen am Release-Stand `4d5f4b4`:
 
-| Umfang | Zeilenabdeckung |
-| --- | --- |
-| Isolierte Verträge unter Linux am früheren Referenzstand `426960a` | 69,08 % |
-| Isolierte Verträge unter Windows | 79,77 % |
-| Vollständige native Windows-Tests | 38,04 % |
+| Umfang                                                             | Zeilenabdeckung |
+| ------------------------------------------------------------------ | --------------- |
+| Isolierte Verträge unter Linux am früheren Referenzstand `426960a` | 69,08 %         |
+| Isolierte Verträge unter Windows                                   | 79,77 %         |
+| Vollständige native Windows-Tests                                  | 38,04 %         |
 
 Node erreicht 56,56 % Produktzeilen, der Browser 83,22 % und Java 83,52 %.
 Die Werte stammen aus Checks `41531392702` und sind nicht zu einer Gesamtquote addierbar.

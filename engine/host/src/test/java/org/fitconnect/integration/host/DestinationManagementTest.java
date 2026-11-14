@@ -305,6 +305,32 @@ class DestinationManagementTest {
     }
 
     @Test
+    void serverProblemTypeAndStatusSurviveThePreviewWithoutAResponseBodyOrRetry() throws Exception {
+        var remote =
+                new Remote() {
+                    @Override
+                    public Response request(
+                            String method, String url, Map<String, String> headers, String body) {
+                        patches.add(body);
+                        throw new SessionException(
+                                "resource_unavailable",
+                                400,
+                                "https://schema.fitko.de/fit-connect/destination-api/problems/invalid-request");
+                    }
+                };
+        var manager = new DestinationManagement(ApiVersion.V3, remote);
+        try (var registry = registry();
+                var session = session(registry, ApiVersion.V3, remote)) {
+            var preview = manager.prepare(session, request("{\"name\":\"new\"}", A));
+            var result = manager.execute(session, preview.attemptId()).changes().getFirst();
+            assertEquals("failed", result.status());
+            assertEquals(400, result.httpStatus());
+            assertEquals("invalid-request", result.problemType());
+            assertEquals(1, remote.patches.size());
+        }
+    }
+
+    @Test
     void serverConflictIsAKnownRejectionWithoutAnAutomaticRetry() throws Exception {
         var remote = new Remote();
         remote.denyAt = 1;
@@ -317,6 +343,7 @@ class DestinationManagementTest {
             assertEquals("partial", result.status());
             assertEquals("failed", result.changes().getFirst().status());
             assertEquals("destination_conflict", result.changes().getFirst().error());
+            assertEquals(409, result.changes().getFirst().httpStatus());
             assertEquals(1, remote.patches.size());
         }
     }

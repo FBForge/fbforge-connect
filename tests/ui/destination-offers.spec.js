@@ -14,12 +14,17 @@ test('destination-offers with synthetic native fixtures', async ({ createPage })
     .getByLabel('Leistungskennung (LeiKa-URN)', { exact: true })
     .fill('urn:de:fim:leika:leistung:99008001014002');
   await page.locator('#manager-offer-publicServices-0-schema-0').fill('urn:test:application');
+  await expect(page.getByRole('checkbox', { name: 'Postweg', exact: true })).toBeChecked();
+  await page.getByRole('checkbox', { name: 'FIT-Connect', exact: true }).check();
   await page.locator('#manager-offer-0-replies').fill('urn:test:reply');
-  await page.getByText('Weitere Antwortkanäle', { exact: true }).click();
+  await page.getByRole('checkbox', { name: 'DE-Mail', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'FINK', exact: true }).check();
+  await expect(page.getByRole('checkbox', { name: 'Postweg', exact: true })).not.toBeChecked();
+  await page.getByRole('checkbox', { name: 'ELSTER', exact: true }).check();
   await page.getByRole('checkbox', { name: 'E-Mail', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'PGP-Verschlüsselung unterstützen', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'DeutschlandID-Bürgerpostfach', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'Statusmonitor der DeutschlandID nutzen', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'PGP-verschlüsselt', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'BundID', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Statusmonitor der BundID nutzen', exact: true }).check();
   await page.locator('#manager-offer-0-replies').fill('urn:test:reply:2');
   await expect(page.getByRole('checkbox', { name: 'E-Mail', exact: true })).toBeChecked();
   await page.getByRole('button', { name: 'Prozessnachricht hinzufügen', exact: true }).click();
@@ -43,6 +48,9 @@ test('destination-offers with synthetic native fixtures', async ({ createPage })
   expect(channels).toEqual({
     fitConnect: { processStandards: ['urn:test:reply:2'] },
     eMail: { usePgp: true },
+    elster: {},
+    deMail: {},
+    fink: {},
     idBundDeMailbox: { useStatusMonitor: true },
   });
   assert.deepEqual(errors, []);

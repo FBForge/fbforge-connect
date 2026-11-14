@@ -57,6 +57,8 @@ test('destination offers take only the agreed schema ID and committed model mapp
   page,
 }) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/channel-authoring.html');
+  await page.getByRole('checkbox', { name: 'FIT-Connect', exact: true }).check();
+  await page.getByText('Standard aus JSON-Datei ergänzen', { exact: true }).click();
   await upload(page.locator('#authoring-0-reply-file'), schema);
   await expect(page.locator('#authoring-0-replies')).toHaveValue(schema.$id);
   await page.getByRole('button', { name: 'Prozessnachricht hinzufügen', exact: true }).click();
@@ -79,6 +81,9 @@ test('schema authoring supports dark mode, keyboard access and narrow windows', 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('http://127.0.0.1:1420/test-fixtures/channel-authoring.html');
   await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+  for (const name of ['BundID', 'FIT-Connect', 'ELSTER', 'E-Mail', 'DE-Mail', 'FINK'])
+    await page.getByRole('checkbox', { name, exact: true }).check();
+  await page.locator('#authoring-0-replies').fill('urn:test:reply');
   await page.locator('#channel-uri').focus();
   await page.keyboard.press('Tab');
   await expect(page.locator('#channel-title')).toBeFocused();
@@ -97,6 +102,8 @@ test('a delayed schema import cannot change a different destination service draf
       return new Promise((resolve) => (window.__releaseSchemaImport = () => read.call(this).then(resolve)));
     };
   });
+  await page.getByRole('checkbox', { name: 'FIT-Connect', exact: true }).check();
+  await page.getByText('Standard aus JSON-Datei ergänzen', { exact: true }).click();
   await upload(page.locator('#authoring-0-reply-file'), schema);
   await expect.poll(() => page.evaluate(() => typeof window.__releaseSchemaImport)).toBe('function');
   await page.locator('#authoring-publicServices-0-id').fill('urn:de:fim:leika:leistung:99000000000001');
@@ -104,7 +111,7 @@ test('a delayed schema import cannot change a different destination service draf
   await expect(page.locator('#authoring-0-reply-file')).toBeEnabled();
   await expect(page.locator('#authoring-0-replies')).toHaveValue('');
   const offers = await page.evaluate(() => window.__channelFixture.offers);
-  expect(offers.publicServices[0].replyChannels).toBeUndefined();
+  expect(offers.publicServices[0].replyChannels).toEqual({ fitConnect: { processStandards: [] } });
 });
 
 async function offer(page, api = 'v3') {

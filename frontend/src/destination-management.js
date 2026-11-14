@@ -115,7 +115,20 @@ export function checkedPreview(data, expectedId, expectedRows) {
   const seen = new Set();
   const changes = data.changes.map((row) => {
     if (
-      !exact(row, ['destinationId', 'name', 'beforeJson', 'afterJson', 'status', 'error']) ||
+      !exact(row, [
+        'destinationId',
+        'name',
+        'beforeJson',
+        'afterJson',
+        'status',
+        'error',
+        ...['httpStatus', 'problemType'].filter((key) => Object.hasOwn(row || {}, key)),
+      ]) ||
+      (row.httpStatus != null &&
+        (!Number.isInteger(row.httpStatus) || row.httpStatus < 100 || row.httpStatus > 599)) ||
+      (row.problemType != null &&
+        (typeof row.problemType !== 'string' || !/^[a-z][a-z0-9-]{0,127}$/.test(row.problemType))) ||
+      (!row.error && (row.httpStatus != null || row.problemType != null)) ||
       !uuid(row.destinationId) ||
       seen.has(row.destinationId) ||
       !text(row.name, 512, true) ||

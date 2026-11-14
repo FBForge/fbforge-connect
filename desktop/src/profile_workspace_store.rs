@@ -128,7 +128,17 @@ fn valid_snapshot(value: &Value) -> bool {
     rows.len() <= 10
         && rows.iter().all(|row| {
             row.as_object().is_some_and(|r| {
-                r.len() == 6
+                (6..=8).contains(&r.len())
+                    && [
+                        "destinationId",
+                        "name",
+                        "beforeJson",
+                        "afterJson",
+                        "status",
+                        "error",
+                    ]
+                    .iter()
+                    .all(|key| r.contains_key(*key))
                     && r.keys().all(|k| {
                         [
                             "destinationId",
@@ -137,10 +147,26 @@ fn valid_snapshot(value: &Value) -> bool {
                             "afterJson",
                             "status",
                             "error",
+                            "httpStatus",
+                            "problemType",
                         ]
                         .contains(&k.as_str())
                     })
             }) && row["destinationId"].as_str().is_some_and(valid_session_id)
+                && (row["httpStatus"].is_null()
+                    || row["httpStatus"]
+                        .as_u64()
+                        .is_some_and(|n| (100..=599).contains(&n)))
+                && (row["problemType"].is_null()
+                    || row["problemType"].as_str().is_some_and(|s| {
+                        !s.is_empty()
+                            && s.len() <= 128
+                            && s.as_bytes()[0].is_ascii_lowercase()
+                            && s.bytes()
+                                .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+                    }))
+                && (!row["error"].is_null()
+                    || (row["httpStatus"].is_null() && row["problemType"].is_null()))
                 && (row["name"].is_null() || row["name"].as_str().is_some_and(|s| s.len() <= 512))
                 && (row["error"].is_null()
                     || row["error"].as_str().is_some_and(|s| {
@@ -399,6 +425,33 @@ mod tests {
         invalid["changes"][0]["afterJson"] = serde_json::json!("{\"clientSecret\":\"never\"}");
         assert!(data.journal(invalid).is_err());
         assert_eq!(data.history[0]["snapshot"]["status"], "cancelled");
+    }
+    #[test]
+    fn journal_accepts_bounded_api_diagnostics_and_legacy_snapshots() {
+        let mut value = snapshot("partial");
+        let row = &mut value["changes"][0];
+        row["status"] = serde_json::json!("failed");
+        row["error"] = serde_json::json!("resource_unavailable");
+        row["httpStatus"] = serde_json::json!(400);
+        row["problemType"] = serde_json::json!("invalid-request");
+        let mut data = Workspace::default();
+        data.journal(value.clone()).unwrap();
+        assert_eq!(data.history[0]["snapshot"], value);
+        for (field, bad) in [
+            ("httpStatus", serde_json::json!(600)),
+            (
+                "problemType",
+                serde_json::json!("https://example.invalid/raw"),
+            ),
+            ("problemType", serde_json::json!("")),
+            ("error", Value::Null),
+            ("body", serde_json::json!("must-not-be-retained")),
+        ] {
+            let mut invalid = value.clone();
+            invalid["changes"][0][field] = bad;
+            assert!(data.journal(invalid).is_err());
+        }
+        data.journal(snapshot("prepared")).unwrap();
     }
     #[test]
     fn retention_is_bounded_and_corrupt_or_unprotected_history_is_rejected() {
