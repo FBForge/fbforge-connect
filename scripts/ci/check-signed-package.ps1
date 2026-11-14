@@ -33,6 +33,10 @@ $keyBytes = [Text.Encoding]::UTF8.GetBytes([IO.File]::ReadAllText((Join-Path $PS
 $hasher = [Security.Cryptography.SHA256]::Create()
 try { $expectedUpdateKey = [BitConverter]::ToString($hasher.ComputeHash($keyBytes)).Replace('-', '').ToLowerInvariant() } finally { $hasher.Dispose() }
 if ($manifest.updatePublicKeySha256 -ne $expectedUpdateKey) { throw 'update_public_key_provenance_mismatch' }
+# A current unsigned baseline is deliberately not installable. Check its refusal
+# independently; signed-to-signed upgrade/profile acceptance remains an open gate.
+& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'test-unsigned-installer.ps1') -ToolId fbforge-connect -InstallerPath $previous[0].FullName
+if ($LASTEXITCODE -ne 0) { throw 'unsigned_baseline_rejection_failed' }
 $bridge = Join-Path $PSScriptRoot '../../desktop/native-contracts/target/debug/examples/profile-checkpoint.exe'
-& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot '../windows-install-smoke.ps1') -InstallerPath $setup -ExpectedBinaryPath $binary -CheckpointBridge $bridge -PreviousInstallerPath $previous[0].FullName -ExpectedSignerThumbprint $Thumbprint -SignatureReportPath (Join-Path $Directory 'signature-info.json')
+& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot '../windows-install-smoke.ps1') -InstallerPath $setup -ExpectedBinaryPath $binary -CheckpointBridge $bridge -ExpectedSignerThumbprint $Thumbprint -SignatureReportPath (Join-Path $Directory 'signature-info.json')
 if ($LASTEXITCODE -ne 0) { throw 'signed_installer_validation_failed' }

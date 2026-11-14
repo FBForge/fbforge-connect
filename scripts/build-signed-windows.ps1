@@ -26,7 +26,6 @@ $binary = Join-Path $output 'fbforge-connect.exe'
 $signer = Join-Path $PSScriptRoot 'sign-windows-file.ps1'
 $config = @{ bundle = @{ windows = @{ certificateThumbprint = $Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = $TimestampUrl; tsp = $true; signCommand = @{ cmd = 'powershell.exe'; args = @('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',$signer,'-Thumbprint',$Thumbprint,'-TimestampUrl',$TimestampUrl,'-SignedMainBinaryPath',$binary,'-Path','%1') } } } }
 if ($Offline) { $config.bundle.windows.webviewInstallMode = @{ type = 'offlineInstaller'; silent = $true } }
-[IO.File]::WriteAllText($temporary, ($config | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
 Push-Location $root
 try {
     $head = & git rev-parse HEAD
@@ -36,6 +35,14 @@ try {
     $bundle = Join-Path $root 'desktop\target\release\bundle\nsis'
     if (Test-Path -LiteralPath $bundle) { Remove-Item -LiteralPath $bundle -Recurse -Force }
     $null = New-Item -ItemType Directory -Path $output
+    & node.exe scripts/installer-guard.mjs
+    if ($LASTEXITCODE -ne 0) { throw 'signing_guard_build_failed' }
+    $guard = Join-Path $root 'desktop/installer/guard/fbforge_suite_nsis_guard.dll'
+    Invoke-WindowsFileSigning -Path $guard -Thumbprint $Thumbprint -TimestampUrl $TimestampUrl -SignTool $signTool -MainBinaryPath (Join-Path $root 'desktop/target/release/fbforge-connect.exe') -SignedMainBinaryPath $binary
+    $guardSignature = Assert-WindowsSignature -Path $guard -Thumbprint $Thumbprint -SignTool $signTool
+    # Preserve the signed guard through Tauri's later beforeBundle hook.
+    $config.build = @{ beforeBundleCommand = ('node scripts/installer-guard.mjs verify ' + $guardSignature.sha256 + ' && node desktop/installer/nsis/toolchain.mjs prepare') }
+    [IO.File]::WriteAllText($temporary, ($config | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
     & npm.cmd run desktop:build -- --config $temporary -- --locked
     if ($LASTEXITCODE -ne 0) { throw 'signing_build_failed' }
     $dirty = & git status --porcelain --untracked-files=no

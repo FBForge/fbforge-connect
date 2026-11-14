@@ -7,7 +7,8 @@
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build:frontend",
     "devUrl": "http://127.0.0.1:1420",
-    "frontendDist": "../frontend/dist"
+    "frontendDist": "../frontend/dist",
+    "beforeBundleCommand": "node scripts/installer-guard.mjs && node desktop/installer/nsis/toolchain.mjs prepare"
   },
   "app": {
     "windows": [
@@ -69,6 +70,7 @@
         "template": "installer/installer.nsi",
         "installerHooks": "installer/compatibility.nsh"
       }
-    }
+    },
+    "useLocalToolsDir": true
   }
 }

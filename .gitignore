@@ -57,3 +57,6 @@ __pycache__/
 /.cache/
 /coverage/
 /.c8_output/
+
+# Generated, separately signed installer guard.
+/desktop/installer/guard/*.dll
