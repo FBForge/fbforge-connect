@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useFlowProfiles } from './useFlowProfiles.ts';
 import type { Environment, FlowAssignment, FlowContext } from '../contracts.d.ts';
 const props = defineProps<{
@@ -7,6 +8,8 @@ const props = defineProps<{
   disabled?: boolean;
   side?: FlowContext['side'];
   fixedApi?: boolean;
+  expanded?: boolean;
+  mode?: 'sender' | 'receiver' | 'both';
   receiverDestinationOutside?: boolean;
 }>();
 const emit = defineEmits<{
@@ -17,6 +20,9 @@ const sides = [
   { side: 'sender', title: 'Sender' },
   { side: 'receiver', title: 'Empfänger' },
 ] as const;
+const visibleSides = computed(() =>
+  sides.filter((item) => !props.mode || props.mode === 'both' || props.mode === item.side),
+);
 const { profiles, pending, error, load, select } = useFlowProfiles(props, (value) =>
   emit('update:context', value),
 );
@@ -32,13 +38,16 @@ function changeApi(event: Event) {
 }
 </script>
 <template>
-  <details class="flow-context">
-    <summary>
+  <component
+    :is="expanded ? 'section' : 'details'"
+    class="flow-context"
+    :class="{ 'flow-context-expanded': expanded }"
+  >
+    <summary v-if="!expanded">
       {{ receiverDestinationOutside ? 'Profile und API (optional)' : 'Sender und Empfänger zuordnen' }}
     </summary>
-    <p class="small-note">
-      Nur Profilkennungen und Destinations werden gespeichert. Zugangsdaten bleiben im geschützten Profil.
-      Jeder Versand wird weiterhin einzeln bestätigt.
+    <p v-if="!expanded" class="small-note">
+      Wählen Sie gespeicherte Profile oder verbinden Sie sich später im jeweiligen Testschritt.
     </p>
     <div class="flow-profile-toolbar">
       <label v-if="!fixedApi">
@@ -52,12 +61,11 @@ function changeApi(event: Event) {
         {{ pending ? 'Profile werden vorbereitet …' : 'Profile aktualisieren' }}
       </button>
     </div>
-    <p class="small-note">
-      Profile der anderen API können Sie ebenfalls auswählen. Ihre Zugangsdaten werden geschützt übernommen
-      und für die gewählte API geprüft.
+    <p v-if="!expanded" class="small-note">
+      Profile können für beide API-Versionen verwendet werden. Zugangsdaten bleiben im geschützten Profil.
     </p>
     <div class="settings-fields">
-      <fieldset v-for="item in sides" :key="item.side">
+      <fieldset v-for="item in visibleSides" :key="item.side">
         <legend>{{ item.title }}</legend>
         <label>
           Gespeichertes Profil
@@ -97,7 +105,7 @@ function changeApi(event: Event) {
       </fieldset>
     </div>
     <p v-if="error" role="alert">{{ error }}</p>
-  </details>
+  </component>
   <button
     v-if="side"
     class="button secondary"
@@ -110,6 +118,9 @@ function changeApi(event: Event) {
 <style scoped>
 .settings-fields fieldset > label + label {
   margin-top: 12px;
+}
+.flow-context-expanded .flow-profile-toolbar {
+  margin-block: 0 16px;
 }
 .flow-profile-toolbar {
   display: flex;

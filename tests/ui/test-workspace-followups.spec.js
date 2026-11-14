@@ -1,3 +1,4 @@
+import { preparationPage } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import { button, openScenario, createScenario, latestRun } from './scenario-helpers.js';
 
@@ -14,7 +15,7 @@ test('test profiles load automatically and explicitly reuse protected credential
   await button(page, 'Anmelden').click();
   await button(page, 'Testwerkzeuge').click();
   await createScenario(page);
-  await page.locator('.flow-context summary').click();
+  await preparationPage(page, 'Verbindung');
   const sender = page.getByRole('combobox', { name: 'Sender-Profil', exact: true });
   await expect(sender.locator('option', { hasText: 'Testzugang' })).toHaveCount(1);
   await page.getByRole('combobox', { name: 'API-Version für diesen Ablauf', exact: true }).selectOption('v3');
@@ -37,13 +38,16 @@ test('the reply editor follows its enabling checkbox and a closed run remains re
 }) => {
   await openScenario(page);
   await createScenario(page);
+  await preparationPage(page, 'Testdaten');
   const checkbox = page.getByRole('checkbox', { name: 'Fachliche Antwort erwarten', exact: true });
   await checkbox.check();
   const selector = page.getByRole('combobox', { name: 'Nachricht bearbeiten', exact: true });
   expect((await selector.boundingBox()).y).toBeGreaterThan((await checkbox.boundingBox()).y);
+  await preparationPage(page, 'Verbindung');
   await page
     .getByRole('combobox', { name: 'Welche Gegenstelle testen Sie?', exact: true })
     .selectOption('receiver');
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   const original = await latestRun(page);
   await button(page, 'Auf Nachweis warten').click();
@@ -69,6 +73,7 @@ test('the reply editor follows its enabling checkbox and a closed run remains re
 test('a failed final save leaves the run open and preserves its evidence', async ({ page }) => {
   await openScenario(page);
   await createScenario(page);
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   const original = await latestRun(page);
   await page.evaluate(() => {

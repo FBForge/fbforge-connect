@@ -9,6 +9,7 @@ const props = defineProps<{
   assignment: Assignment;
   item: TestCase;
   disabled: boolean;
+  expanded?: boolean;
 }>();
 const emit = defineEmits<{ apply: [value: Partial<TestCase>] }>();
 const offer = ref<RecipientOptions | null>(null),
@@ -82,8 +83,8 @@ function apply() {
 }
 </script>
 <template>
-  <details>
-    <summary>Angebot der Gegenstelle übernehmen</summary>
+  <component :is="expanded ? 'section' : 'details'" class="scenario-section">
+    <component :is="expanded ? 'h4' : 'summary'">Angebot der Gegenstelle übernehmen</component>
     <p class="small-note">
       Übernehmen Sie Leistungs-, Prozess- und Schema-Kennungen aus der zugeordneten Empfangs-Destination.
     </p>
@@ -133,5 +134,5 @@ function apply() {
     <p v-if="pending" role="status">Empfängerangebot wird geladen …</p>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="notice" role="status">{{ notice }}</p>
-  </details>
+  </component>
 </template>

@@ -1,3 +1,4 @@
+import { preparationPage, testReuse } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import pack from '../../frontend/src/examples/integration.fctest.json' with { type: 'json' };
@@ -17,14 +18,17 @@ for (const api of ['v2', 'v3']) {
       buffer: Buffer.from(JSON.stringify(pack)),
     });
     await page.getByLabel('Testname', { exact: true }).fill('Abnahmetest gespeichert');
+    await testReuse(page);
     await button(page, 'Test speichern').click();
     await expect(page.getByRole('status').filter({ hasText: 'dauerhaft' })).toBeVisible();
     const download = page.waitForEvent('download');
+    await testReuse(page);
     await button(page, 'Testdatei exportieren').click();
     expect((await download).suggestedFilename()).toBe('integrationstest.fcscenario.json');
     await page.reload();
     await page.getByRole('button', { name: 'Test öffnen: Abnahmetest gespeichert', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Abnahmetest gespeichert', exact: true })).toBeFocused();
+    await preparationPage(page, 'Prüfen und starten');
     await button(page, 'Test starten').click();
     await button(page, 'Versandentwurf öffnen').click();
     const emitted = await page.evaluate(() => window.__integration.emitted);

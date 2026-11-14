@@ -1,3 +1,4 @@
+import { testReuse } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import pack from '../../frontend/src/examples/integration.fctest.json' with { type: 'json' };
@@ -80,6 +81,7 @@ test('saved 0.3 test data opens directly in the common workspace without overwri
   await page.getByRole('button', { name: `Test öffnen: ${original.name}`, exact: true }).click();
   await expect(page.getByLabel('Testname', { exact: true })).toHaveValue(original.name);
   await page.getByLabel('Testname', { exact: true }).fill('Bearbeitete Kopie');
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   expect(await page.evaluate((id) => window.__integration.savedPacks[id], id)).toEqual(original);
   await button(page, 'Zur Testübersicht').click();

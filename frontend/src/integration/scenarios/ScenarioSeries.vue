@@ -109,6 +109,7 @@ function requestChange(action: () => Promise<void>) {
             :context="context(api)"
             :environment="environment as Environment"
             fixed-api
+            expanded
             :disabled="disabled || pending"
             @update:context="contexts[api] = { ...$event, apiVersion: api }"
             @open="emit('context', $event)"

@@ -1,3 +1,4 @@
+import { preparationPage, testReuse } from '../scenario-navigation.mjs';
 // Real installed WebView2 acceptance of the original round trip in the current UI.
 // No mocked IPC, traces or credential artifacts.
 import { reviewProvenRun } from './review-integration-040.mjs';
@@ -85,6 +86,7 @@ async function savePack(desktop, fixture, pack) {
     'live_ui_package_export_changed',
   );
   await openStoredTest(page, 'pack', pack.name);
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   await page
     .getByText('Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.', { exact: true })
@@ -93,14 +95,16 @@ async function savePack(desktop, fixture, pack) {
 async function flowReview(desktop, fixture, senders, pack) {
   let page = desktop.page;
   await testTools(page);
+  await preparationPage(page, 'Verbindung');
   await page.getByLabel('Empfangs-Destination', { exact: true }).fill(fixture.destination);
-  await page.locator('.flow-context summary').click();
+  await preparationPage(page, 'Verbindung');
   await button(page, 'Profile aktualisieren').click();
   await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).selectOption(senders.v3);
   await page
     .getByRole('combobox', { name: 'Empfänger-Profil', exact: true })
     .selectOption(fixture.receiverProfiles.find((p) => p.api === 'v3').id);
   await page.getByLabel('Absender-Destination (API v3)', { exact: true }).fill(process.env.SENDERDEST);
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   const message = await sendSubmission(page, fixture);
   await testTools(page);
@@ -124,7 +128,7 @@ async function flowReview(desktop, fixture, senders, pack) {
   const progress = page.locator('.scenario-workspace').getByText(/Schritt 2 von 6/);
   await progress.waitFor();
   await button(page, 'Vorbereiten').click();
-  await page.locator('.flow-context summary').click();
+  await preparationPage(page, 'Verbindung');
   await until(
     async () =>
       (await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).inputValue()) ===
@@ -186,6 +190,7 @@ async function flowReview(desktop, fixture, senders, pack) {
   await page.getByText('6 von 6 Schritten automatisch nachgewiesen.', { exact: true }).waitFor();
   await reviewProvenRun(desktop, fixture, runId);
   await button(page, 'Vorbereiten').click();
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   await page
     .locator('.scenario-workspace')
@@ -307,6 +312,7 @@ async function durability(desktop, fixture, senders, pack, message) {
   );
   await setRetention(restored, true);
   await openStoredTest(page, 'test', pack.name);
+  await testReuse(page);
   const path = await nativeFile(
     desktop,
     fixture,

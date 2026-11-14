@@ -1,3 +1,4 @@
+import { preparationPage, testOptions, testReuse } from '../scenario-navigation.mjs';
 // Exercise 0.4 authoring and durable results in the installed app, with actual native storage.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -75,6 +76,7 @@ export async function reviewProvenRun(desktop, fixture, runId) {
     'Real installed desktop: successful real round trip pinned as a protected reference, deletion refused, ticket text present in actual Windows clipboard and versioned result export verified',
   );
   await button(page, 'Vorbereiten').click();
+  await testReuse(page);
   await button(page, 'Als Testserie planen').click();
   const series = page.locator('section.scenario-series');
   await button(series, 'Testserie anlegen').click();
@@ -109,6 +111,7 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
   const name = `${fixture.runName} variable Daten`;
   await page.getByLabel('Testname', { exact: true }).fill(name);
   await page.getByLabel('Empfangs-Destination', { exact: true }).fill(fixture.destination);
+  await preparationPage(page, 'Testdaten');
   await page.getByLabel('Fachdaten', { exact: true }).fill(
     JSON.stringify({
       antragstellendePerson: { vorname: 'Erika', nachname: 'Musterfrau' },
@@ -116,7 +119,7 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
       referenz: 'fiktive-basis',
     }),
   );
-  await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
+  await testOptions(page, 'variables');
   await page
     .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
     .selectOption('/referenz');
@@ -126,13 +129,14 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
   await button(page, 'Datensatz hinzufügen').click();
   await page.getByLabel('Datensatzname', { exact: true }).nth(1).fill('Zweite Gegenprobe');
   await page.getByLabel('Fiktive Referenz', { exact: true }).nth(1).fill('fiktiver-zweiter-wert');
-  await page.getByText('Prüferwartungen anpassen', { exact: true }).click();
+  await testOptions(page, 'expectations');
   await page
     .getByRole('combobox', { name: 'Inhaltsvergleich', exact: true })
     .selectOption('field-exceptions');
   await page.getByRole('combobox', { name: 'Feld für Erwartung', exact: true }).selectOption('/anliegen');
   await button(page, 'Erwartung hinzufügen').click();
   await page.getByRole('combobox', { name: 'Bedingung', exact: true }).selectOption('present');
+  await testReuse(page);
   const definition = await savedJson(
     desktop,
     fixture,
@@ -147,11 +151,12 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
       definition.comparison === 'field-exceptions',
     'live_ui_040_authoring_export_invalid',
   );
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   await page
     .getByText('Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.', { exact: true })
     .waitFor();
-  await page.locator('.flow-context summary').click();
+  await preparationPage(page, 'Verbindung');
   for (const api of ['v2', 'v3']) {
     await page
       .getByRole('combobox', { name: 'API-Version für diesen Ablauf', exact: true })
@@ -163,6 +168,7 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
     if (api === 'v3')
       await page.getByLabel('Absender-Destination (API v3)', { exact: true }).fill(process.env.SENDERDEST);
   }
+  await testReuse(page);
   await button(page, 'Als Testserie planen').click();
   let series = page.locator('section.scenario-series');
   await series.getByRole('checkbox', { name: 'Zweite Gegenprobe', exact: true }).check();
@@ -195,6 +201,7 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
   const dialog = page.getByRole('dialog', { name: 'Anderen Test öffnen?', exact: true });
   if (await dialog.isVisible())
     await dialog.getByRole('button', { name: 'Test wechseln', exact: true }).click();
+  await testReuse(page);
   const restored = await savedJson(
     desktop,
     fixture,

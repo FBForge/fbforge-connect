@@ -1,3 +1,4 @@
+import { preparationPage, testOptions, testReuse } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { withReplies } from '../helpers/scenarios.js';
@@ -20,12 +21,13 @@ test('response editing synchronizes process offers, reorders messages and remove
 }) => {
   await openScenario(page);
   await createScenario(page, 'reply');
-  await page.getByText('Weitere Antworten im selben Vorgang', { exact: true }).click();
+  await testOptions(page, 'responses');
   await button(page, 'Weitere Antwort hinzufügen').click();
   await button(page, 'Weitere Antwort hinzufügen').click();
   const replies = page.locator('.scenario-response-list > li');
   await replies.nth(0).getByLabel('Bezeichnung der Antwort').fill('Unterlagen nachfordern');
   await replies.nth(1).getByLabel('Bezeichnung der Antwort').fill('Vorgang abschließen');
+  await preparationPage(page, 'Testdaten');
   const select = page.getByRole('combobox', { name: 'Nachricht bearbeiten', exact: true });
   await select.selectOption({ label: 'Unterlagen nachfordern' });
   const selected = await select.inputValue();
@@ -33,11 +35,11 @@ test('response editing synchronizes process offers, reorders messages and remove
   await page
     .getByLabel('Fachdaten', { exact: true })
     .fill('{"status":"unterlagen_erforderlich","nachricht":"Fiktive Nachforderung"}');
-  await page.getByText('Adressierung der ausgewählten Antwort', { exact: true }).click();
+  await testOptions(page, 'addressing');
   await page.getByRole('checkbox', { name: 'Antwort als Prozessnachricht (API v3)', exact: true }).check();
   await page.getByLabel('Prozessmodell der Antwort', { exact: true }).fill('urn:test:process');
   await page.getByLabel('Nachrichtenkennung der Antwort', { exact: true }).fill('nachforderung');
-  await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
+  await testOptions(page, 'variables');
   await page
     .getByRole('combobox', { name: 'Nachricht für variable Angaben', exact: true })
     .selectOption(selected);
@@ -45,10 +47,11 @@ test('response editing synchronizes process offers, reorders messages and remove
     .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
     .selectOption('/nachricht');
   await button(page, 'Variable Angabe hinzufügen').click();
-  await page.getByText('Prüferwartungen anpassen', { exact: true }).click();
+  await testOptions(page, 'expectations');
   await page.getByRole('combobox', { name: 'Nachricht für Erwartung', exact: true }).selectOption(selected);
   await page.getByRole('combobox', { name: 'Feld für Erwartung', exact: true }).selectOption('/status');
   await button(page, 'Erwartung hinzufügen').click();
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   let saved = await page.evaluate(
     () =>
@@ -60,10 +63,13 @@ test('response editing synchronizes process offers, reorders messages and remove
   expect(saved.pack.cases[0].request.replyOffer.processMessages).toEqual([
     { processModelId: 'urn:test:process', messageId: 'nachforderung' },
   ]);
+  await testOptions(page, 'responses');
   await button(replies.nth(0), 'Nach unten').click();
   await expect(replies.nth(0).getByLabel('Bezeichnung der Antwort')).toHaveValue('Vorgang abschließen');
   await button(replies.nth(1), 'Antwort entfernen').click();
+  await preparationPage(page, 'Testdaten');
   await expect(select).toHaveValue('request');
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   saved = await page.evaluate(
     () =>
@@ -111,6 +117,7 @@ for (const api of ['v2', 'v3'])
       };
     });
     await importScenario(page, s);
+    await preparationPage(page, 'Prüfen und starten');
     await button(page, 'Test starten').click();
     const run = await latestRun(page),
       ids = new Map();
@@ -150,6 +157,7 @@ test('failed content comparisons survive reopening and exports require opt-in fo
   s.pack.cases[0].request.attachments = [];
   await openScenario(page);
   await importScenario(page, s);
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   const run = await latestRun(page),
     step = scenarioSteps(run.definition)[0];
@@ -172,6 +180,7 @@ test('failed content comparisons survive reopening and exports require opt-in fo
     expect(json.includes('PRIVATE_TEST_VALUE')).toBe(values);
   }
   await button(page, 'Vorbereiten').click();
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   await button(page, 'Ergebnisse').click();
   await expect(
@@ -191,6 +200,7 @@ test('a successful retry keeps the earlier concrete mismatch accessible after re
   s.pack.cases[0].request.attachments = [];
   await openScenario(page);
   await importScenario(page, s);
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   const run = await latestRun(page),
     step = scenarioSteps(run.definition)[0];
@@ -213,7 +223,7 @@ test('a successful retry keeps the earlier concrete mismatch accessible after re
 test('multiple reply editors reflow without clipped controls in both themes', async ({ page }) => {
   await openScenario(page);
   await createScenario(page, 'process');
-  await page.getByText('Weitere Antworten im selben Vorgang', { exact: true }).click();
+  await preparationPage(page, 'Testdaten');
   await page
     .getByRole('combobox', { name: 'Nachricht bearbeiten', exact: true })
     .selectOption({ label: 'Unterlagen nachfordern' });

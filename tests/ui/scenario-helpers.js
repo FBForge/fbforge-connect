@@ -1,3 +1,4 @@
+import { testReuse } from '../../scripts/scenario-navigation.mjs';
 import { expect } from './fixtures.js';
 export const button = (page, name) => page.getByRole('button', { name, exact: true });
 export async function openScenario(page, api = 'v3') {
@@ -43,7 +44,10 @@ export async function showSeries(page) {
   const active = button(page, 'Aktive Testserie öffnen');
   if (await back.isVisible()) await back.click();
   else if (await active.isVisible()) await active.click();
-  else await button(page, 'Als Testserie planen').click();
+  else {
+    await testReuse(page);
+    await button(page, 'Als Testserie planen').click();
+  }
   await expect(series).toBeVisible();
   return series;
 }

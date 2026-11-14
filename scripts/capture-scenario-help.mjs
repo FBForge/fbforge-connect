@@ -1,18 +1,22 @@
+import { preparationPage, testOptions, testReuse } from './scenario-navigation.mjs';
 // Continues capture-help's real application session. Only native replies are synthetic.
 export async function captureScenarioHelp(page, capture) {
   const button = (name) => page.getByRole('button', { name, exact: true });
   await button('Vorbereiten').click();
-  await page.getByText('Weitere Antworten im selben Vorgang', { exact: true }).click();
+  await testOptions(page, 'responses');
+  await testOptions(page, 'responses');
   await button('Weitere Antwort hinzufügen').click();
   await page
     .getByRole('textbox', { name: 'Bezeichnung der Antwort', exact: true })
     .fill('Unterlagen nachfordern');
+  await preparationPage(page, 'Testdaten');
   await page
     .getByRole('combobox', { name: 'Nachricht bearbeiten', exact: true })
     .selectOption({ label: 'Unterlagen nachfordern' });
   await page
     .getByRole('textbox', { name: 'Fachdaten', exact: true })
     .fill('{"status":"unterlagen_erforderlich","nachricht":"Bitte den fiktiven Nachweis nachreichen."}');
+  await testOptions(page, 'responses');
   await button('Weitere Antwort hinzufügen').click();
   await page
     .getByRole('textbox', { name: 'Bezeichnung der Antwort', exact: true })
@@ -22,6 +26,7 @@ export async function captureScenarioHelp(page, capture) {
     'integration-responses',
     page.getByText('Weitere Antworten im selben Vorgang', { exact: true }).locator('..'),
   );
+  await testReuse(page);
   await button('Als Testserie planen').click();
   const series = page.locator('.scenario-series');
   for (const api of ['v2', 'v3'])
@@ -100,4 +105,29 @@ export async function captureScenarioHelp(page, capture) {
   );
   await button('Zur Testserie').click();
   await capture('integration-series', series);
+}
+
+export async function captureTestJourney({ page, open, button, capture }) {
+  await open('test-fixtures/profiles.html?flow-context&destinations=1');
+  await button('Verbindung herstellen').click();
+  await page.locator('#client-id').fill('synthetic-guide-client');
+  await page.locator('#client-secret').fill('synthetic-guide-secret');
+  await button('Anmelden').click();
+  await button('Testwerkzeuge').click();
+  await page.getByRole('combobox', { name: 'Testvorlage', exact: true }).selectOption('reply');
+  await button('Test vorbereiten').click();
+  await capture('integration-preparation', page.locator('.scenario-setup'));
+  await preparationPage(page, 'Testdaten');
+  await capture('integration-data', page.locator('.scenario-setup'));
+  await preparationPage(page, 'Prüfen und starten');
+  await capture('integration-review', page.locator('.scenario-setup'));
+  await button('Test starten').click();
+  await page.getByRole('heading', { name: 'Einreichung senden', exact: true }).waitFor();
+  await capture('integration-run', page.locator('.scenario-editor h2').first());
+  await button('Ergebnisse').click();
+  await capture(
+    'integration-results',
+    page.getByRole('heading', { name: 'Ergebnisse dieses Durchlaufs', exact: true }),
+  );
+  await captureScenarioHelp(page, capture);
 }

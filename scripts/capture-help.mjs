@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { xmlPacket } from '../frontend/test-fixtures/xml-message-schema.js';
 import { captureReceiptHelp } from './capture-receipt-help.mjs';
-import { captureScenarioHelp } from './capture-scenario-help.mjs';
+import { captureTestJourney } from './capture-scenario-help.mjs';
 import { captureSdkHelp } from './capture-sdk-help.mjs';
 import { captureDestinationBackups } from './capture-destination-backups.mjs';
 import { captureFollowups } from './capture-followups.mjs';
@@ -448,24 +448,7 @@ try {
     'destination-templates',
     page.getByRole('heading', { name: 'Destination bearbeiten', exact: true }),
   );
-  await open('test-fixtures/profiles.html?flow-context&destinations=1');
-  await button('Verbindung herstellen').click();
-  await page.locator('#client-id').fill('synthetic-guide-client');
-  await page.locator('#client-secret').fill('synthetic-guide-secret');
-  await button('Anmelden').click();
-  await button('Testwerkzeuge').click();
-  await page.getByRole('combobox', { name: 'Testvorlage', exact: true }).selectOption('reply');
-  await button('Test vorbereiten').click();
-  await capture('integration-preparation', page.getByRole('textbox', { name: 'Testname', exact: true }));
-  await button('Test starten').click();
-  await expect(page.getByRole('heading', { name: 'Einreichung senden', exact: true })).toBeVisible();
-  await capture('integration-run', page.locator('.scenario-editor h2').first());
-  await button('Ergebnisse').click();
-  await capture(
-    'integration-results',
-    page.getByRole('heading', { name: 'Ergebnisse dieses Durchlaufs', exact: true }),
-  );
-  await captureScenarioHelp(page, capture);
+  await captureTestJourney({ page, open, button, capture });
   await captureFollowups({ page, open, button, capture });
   console.log(`${captures.size} Abbildungen mit fiktiven Testdaten: ${directory}`);
 } finally {

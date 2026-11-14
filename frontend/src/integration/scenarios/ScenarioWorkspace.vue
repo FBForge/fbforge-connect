@@ -6,7 +6,7 @@ import { usePreparationRecovery } from './usePreparationRecovery.ts';
 import TestDifferences from '../TestDifferences.vue';
 import ScenarioLibrary from './ScenarioLibrary.vue';
 import ScenarioSeries from './ScenarioSeries.vue';
-import ScenarioPreparation from './ScenarioPreparation.vue';
+import ScenarioSetup from './ScenarioSetup.vue';
 import ScenarioRunPanel from './ScenarioRunPanel.vue';
 import ScenarioResults from './ScenarioResults.vue';
 import { useScenarioWorkspace } from './useScenarioWorkspace.ts';
@@ -283,7 +283,7 @@ watch(
           </button>
         </div>
       </div>
-      <nav class="scenario-tabs" aria-label="Testschritte">
+      <nav v-if="run" class="scenario-tabs" aria-label="Testschritte">
         <button
           v-for="(t, index) in [
             { id: 'prepare', name: 'Vorbereiten' },
@@ -301,59 +301,23 @@ watch(
           {{ t.name }}
         </button>
       </nav>
-      <template v-if="tab === 'prepare'">
-        <ScenarioPreparation
-          :session="session"
-          v-model="definition"
-          v-model:assignment="assignment"
-          :disabled="disabled"
-          @context="emit('context', $event)"
-          @busy="editorBusy = $event"
-        />
-        <label v-if="definition.variants.length > 1">
-          Datensatz für den nächsten Durchlauf
-          <select v-model="variant" :disabled="disabled">
-            <option v-for="v in definition.variants" :key="v.id" :value="v.id">{{ v.name }}</option>
-          </select>
-        </label>
-        <label class="checkbox-label">
-          <input v-model="recovery.enabled.value" type="checkbox" :disabled="disabled" />
-          Vorbereitung automatisch geschützt speichern
-        </label>
-        <p class="small-note" role="status">
-          {{
-            !recovery.enabled.value
-              ? 'Änderungen bleiben nur in dieser Sitzung.'
-              : recovery.state.value === 'saved'
-                ? 'Vorbereitung für Ihr Windows-Benutzerkonto gesichert.'
-                : recovery.state.value === 'saving'
-                  ? 'Vorbereitung wird gesichert …'
-                  : 'Ungespeicherte Änderungen werden nach kurzer Pause gesichert.'
-          }}
-        </p>
-        <div class="scenario-toolbar">
-          <p v-if="!session" class="small-note">
-            Zum Starten ein Profil verbinden. Vorbereiten und Speichern funktionieren auch ohne Verbindung.
-          </p>
-          <div class="client-actions">
-            <button class="button" :disabled="disabled || !session" @click="controller.start">
-              Test starten
-            </button>
-            <button class="button secondary" :disabled="disabled" @click="saveTest">Test speichern</button>
-            <button class="button secondary" :disabled="disabled" @click="controller.exportDefinition">
-              Testdatei exportieren
-            </button>
-            <button
-              v-if="!activeSeries"
-              class="button secondary"
-              :disabled="disabled"
-              @click="seriesView = true"
-            >
-              Als Testserie planen
-            </button>
-          </div>
-        </div>
-      </template>
+      <ScenarioSetup
+        v-if="tab === 'prepare'"
+        v-model="definition"
+        v-model:assignment="assignment"
+        v-model:variant="variant"
+        v-model:autosave="recovery.enabled.value"
+        :session="session"
+        :disabled="disabled"
+        :active-series="Boolean(activeSeries)"
+        :recovery-state="recovery.state.value"
+        @context="emit('context', $event)"
+        @busy="editorBusy = $event"
+        @start="controller.start"
+        @save="saveTest"
+        @export="controller.exportDefinition"
+        @series="seriesView = true"
+      />
       <ScenarioRunPanel
         v-if="tab === 'run' && run"
         :run="run"
@@ -412,10 +376,7 @@ watch(
         @change="changeSeries"
       />
     </div>
-    <p class="small-note">
-      Gespeicherte Tests und Ergebnisse bleiben nach einem Neustart verfügbar. Exportierte Dateien sind
-      unverschlüsselt.
-    </p>
+
     <Teleport to="body">
       <dialog
         ref="dialog"

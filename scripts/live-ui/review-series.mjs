@@ -1,3 +1,4 @@
+import { testReuse } from '../scenario-navigation.mjs';
 // Each series row uses real installed controls and its own confirmed TEST exchange.
 import { check, until } from './desktop.mjs';
 import { connectProfile, sendSubmission, openSubmission, acceptReceived } from './exchange.mjs';
@@ -6,6 +7,7 @@ import { resolvePack } from '../../frontend/src/integration/scenarios/data.ts';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 export async function reviewExecutedSeries(desktop, fixture, senders, definition, name, savedJson) {
   const page = desktop.page;
+  await testReuse(page);
   await button(page, 'Als Testserie planen').click();
   const series = page.locator('section.scenario-series');
   await series

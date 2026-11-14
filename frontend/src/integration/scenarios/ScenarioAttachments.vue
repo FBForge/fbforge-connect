@@ -3,7 +3,7 @@ import { ref, watch, onBeforeUnmount } from 'vue';
 import FileDropInput from '../../FileDropInput.vue';
 import { attachmentsFromFiles, requireAttachmentBudget } from './attachments.ts';
 import type { Message, Scenario } from './types.ts';
-const props = defineProps<{ message: Message; scenario: Scenario; disabled: boolean }>();
+const props = defineProps<{ message: Message; scenario: Scenario; disabled: boolean; expanded?: boolean }>();
 const emit = defineEmits<{ update: [value: Message['attachments']]; busy: [value: boolean] }>();
 const replacement = ref<number | null>(null),
   pending = ref(false),
@@ -57,8 +57,10 @@ function remove(index: number) {
 }
 </script>
 <template>
-  <details>
-    <summary>Anlagen bearbeiten ({{ message.attachments.length }})</summary>
+  <component :is="expanded ? 'section' : 'details'" class="scenario-section">
+    <component :is="expanded ? 'h4' : 'summary'">
+      Anlagen bearbeiten ({{ message.attachments.length }})
+    </component>
     <p class="small-note">
       Diese Dateien gehören zum erwarteten Inhalt. Der Virenscan erfolgt beim Senden oder Empfangen.
     </p>
@@ -113,5 +115,5 @@ function remove(index: number) {
     <p v-if="pending" role="status">Anlagen werden eingelesen …</p>
     <p v-if="notice" role="status" class="small-note">{{ notice }}</p>
     <p v-if="error" role="alert">{{ error }}</p>
-  </details>
+  </component>
 </template>

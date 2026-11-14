@@ -1,3 +1,4 @@
+import { preparationPage, testReuse } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import pack from '../../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 import { openStoredTest, testOverview, checkTestStep } from '../../scripts/live-ui/test-workspace.mjs';
@@ -21,6 +22,7 @@ test('the native acceptance driver opens a converted test through one stable col
   );
   await openStoredTest(page, 'pack', pack.name);
   await expect(page.getByLabel('Testname', { exact: true })).toHaveValue(pack.name);
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   await expect(
     page.getByText('Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.', { exact: true }),
@@ -50,6 +52,7 @@ test('the native acceptance driver advances proven contents and refuses ambiguou
   const definition = scenarioFrom(value);
   await openScenario(page);
   await importScenario(page, definition);
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   await injectEvidence(page, scenarioSteps(definition)[0], value.cases[0].request.data);
   await checkTestStep(page);

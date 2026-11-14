@@ -1,3 +1,4 @@
+import { preparationPage, testOptions, testReuse } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { createScenario, latestRun } from './scenario-helpers.js';
@@ -25,8 +26,9 @@ test('offline preparation has no prop warnings and offers XML-compatible variabl
   const xml = structuredClone(original);
   xml.cases = [xml.cases[1]];
   await importPack(page, xml);
+  await preparationPage(page, 'Prüfen und starten');
   await expect(button(page, 'Test starten')).toBeDisabled();
-  await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
+  await testOptions(page, 'variables');
   await page
     .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
     .selectOption({ index: 1 });
@@ -117,22 +119,25 @@ test('recipient offers recover from missing reply schemas and discard a late res
   await page
     .getByRole('textbox', { name: 'Empfangs-Destination', exact: true })
     .fill('11111111-1111-4111-8111-111111111111');
-  await page.getByText('Angebot der Gegenstelle übernehmen', { exact: true }).click();
+  await testOptions(page, 'offers');
   await button(page, 'Aktuelles Empfängerangebot laden').click();
   await button(page, 'Ausgewähltes Angebot übernehmen').click();
   await expect(page.getByRole('alert')).toContainText('kein passendes Antwortschema');
   await page.getByRole('combobox', { name: 'Leistungsangebot', exact: true }).selectOption('1');
   await button(page, 'Ausgewähltes Angebot übernehmen').click();
   await expect(page.getByRole('alert')).toHaveCount(0);
+  await preparationPage(page, 'Testdaten');
   await expect(page.getByLabel('Schema-Kennung', { exact: true })).toHaveValue('urn:test:angebot');
   await page.evaluate(() => {
     window.__holdOffer = true;
   });
+  await testOptions(page, 'offers');
   await button(page, 'Aktuelles Empfängerangebot laden').click();
   await expect(page.getByText('Empfängerangebot wird geladen …', { exact: true })).toBeVisible();
-  await page.getByText('Profile und API (optional)', { exact: true }).click();
+  await preparationPage(page, 'Verbindung');
   await page.getByRole('combobox', { name: 'API-Version für diesen Ablauf', exact: true }).selectOption('v2');
   await page.evaluate(() => window.__releaseOffer());
+  await testOptions(page, 'offers');
   await expect(page.getByText('Empfängerangebot wird geladen …', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('combobox', { name: 'Leistungsangebot', exact: true })).toHaveCount(0);
 });
@@ -174,6 +179,7 @@ for (const api of ['v2', 'v3'])
   test(`guided runs persist failures and compare with protected references (${api})`, async ({ page }) => {
     await open(page, api);
     await importPack(page, simple());
+    await preparationPage(page, 'Prüfen und starten');
     await button(page, 'Test starten').click();
     await expect(page.getByRole('heading', { name: 'Einreichung senden', exact: true })).toBeVisible();
     await record(page, 'sent');
@@ -186,6 +192,7 @@ for (const api of ['v2', 'v3'])
     await expect(button(page, 'Referenz aufheben')).toBeVisible();
     const reference = (await latestRun(page)).id;
     await button(page, 'Vorbereiten').click();
+    await preparationPage(page, 'Prüfen und starten');
     await button(page, 'Test starten').click();
     await record(page, 'sent', true);
     await button(page, 'Ergebnisse').click();
@@ -206,23 +213,25 @@ for (const api of ['v2', 'v3'])
 test('variable editing, variants, selected expectations and legacy imports stay local', async ({ page }) => {
   await open(page);
   await createScenario(page, 'reply');
-  await page.getByText('Variable Angaben und Datensätze', { exact: true }).click();
+  await testOptions(page, 'variables');
   await page
     .getByRole('combobox', { name: 'Feld für variable Angabe', exact: true })
     .selectOption('/antragstellendePerson/vorname');
   await button(page, 'Variable Angabe hinzufügen').click();
   await page.getByRole('combobox', { name: 'Wert erzeugen als', exact: true }).selectOption('uuid');
   await button(page, 'Datensatz hinzufügen').click();
+  await preparationPage(page, 'Prüfen und starten');
   await expect(
     page
       .getByRole('combobox', { name: 'Datensatz für den nächsten Durchlauf', exact: true })
       .locator('option'),
   ).toHaveCount(2);
-  await page.getByText('Prüferwartungen anpassen', { exact: true }).click();
+  await testOptions(page, 'expectations');
   await page.getByRole('combobox', { name: 'Feld für Erwartung', exact: true }).selectOption('/anliegen');
   await button(page, 'Erwartung hinzufügen').click();
   await page.getByRole('combobox', { name: 'Inhaltsvergleich', exact: true }).selectOption('rules');
   await expect(page.getByText(/Andere Fachdatenfelder werden nicht verglichen/)).toBeVisible();
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   await expect(page.getByRole('status').filter({ hasText: 'dauerhaft' })).toBeVisible();
   const calls = await page.evaluate(() => window.__integration.calls.map((c) => c.command));
@@ -236,6 +245,7 @@ test('waiting remains cancellable after navigation and stops on profile change',
   await page
     .getByRole('combobox', { name: 'Welche Gegenstelle testen Sie?', exact: true })
     .selectOption('receiver');
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   await button(page, 'Auf Nachweis warten').click();
   await expect(button(page, 'Warten beenden')).toBeVisible();

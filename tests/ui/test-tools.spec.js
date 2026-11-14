@@ -1,3 +1,4 @@
+import { preparationPage } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
@@ -27,6 +28,7 @@ test('test packages and schema comparisons work offline and remain available acr
   page.on('pageerror', (error) => errors.push(error.message));
   await openTools(page);
   await importPack(page, example);
+  await preparationPage(page, 'Testdaten');
   await expect(
     page.getByRole('combobox', { name: 'Testfall bearbeiten', exact: true }).locator('option'),
   ).toHaveCount(2);
@@ -57,6 +59,7 @@ test('test packages and schema comparisons work offline and remain available acr
 test('bad package and schema API error files preserve the previous content', async ({ page }) => {
   await openTools(page);
   await importPack(page, example);
+  await preparationPage(page, 'Testdaten');
   await button(page, 'Zur Testübersicht').click();
   await page.getByText('Testdatei importieren', { exact: true }).click();
   await dropFiles(
@@ -128,11 +131,14 @@ test('a test package is imported only after confirmation and a matching current 
     };
   }, example);
   await importPack(page, example);
+  await preparationPage(page, 'Testdaten');
   await button(page, 'Verbinden').click();
   await page.locator('#client-id').fill('synthetic-client');
   await page.locator('#client-secret').fill('synthetic-secret-marker');
   await button(page, 'Anmelden').click();
+  await preparationPage(page, 'Verbindung');
   await page.getByLabel('Empfangs-Destination', { exact: true }).fill('22222222-2222-4222-8222-222222222222');
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   await button(page, 'Versandentwurf öffnen').click();
   await page.locator('#send-target').fill('22222222-2222-4222-8222-222222222222');
@@ -169,6 +175,7 @@ for (const width of [1280, 640, 320])
     await page.setViewportSize({ width, height: 1000 });
     await openTools(page);
     await importPack(page, example);
+    await preparationPage(page, 'Testdaten');
     for (const mode of ['Tests', 'Schema-Vergleich']) {
       await page.getByRole('tab', { name: mode, exact: true }).click();
       if (mode === 'Schema-Vergleich') await button(page, 'Fiktiven Beispielvergleich öffnen').click();

@@ -2,7 +2,7 @@
 import { clone } from './model.ts';
 import type { Scenario } from './types.ts';
 const scenario = defineModel<Scenario>({ required: true });
-const props = defineProps<{ caseId: string; disabled: boolean }>();
+const props = defineProps<{ caseId: string; disabled: boolean; expanded?: boolean }>();
 function add() {
   const item = scenario.value.pack.cases.find((c) => c.id === props.caseId);
   if (!item?.reply || (scenario.value.followups || []).length >= 16) return;
@@ -32,8 +32,8 @@ function move(id: string, delta: number) {
 }
 </script>
 <template>
-  <details>
-    <summary>Weitere Antworten im selben Vorgang</summary>
+  <component :is="expanded ? 'section' : 'details'" class="scenario-section">
+    <component :is="expanded ? 'h4' : 'summary'">Weitere Antworten im selben Vorgang</component>
     <div class="scenario-section">
       <p class="small-note">
         Ergänzen Sie fachliche Rückmeldungen wie Bearbeitungsstand oder Nachforderung. Jede Antwort erhält
@@ -88,9 +88,9 @@ function move(id: string, delta: number) {
         beginnen.
       </p>
       <p v-else class="small-note">
-        Bearbeiten Sie den Inhalt anschließend unter „Nachricht bearbeiten“. Abweichende Prozessnachrichten
-        wählen Sie unter „Adressierung der ausgewählten Antwort“.
+        Den Inhalt bearbeiten Sie unter „Testdaten → Nachricht bearbeiten“. Prozesskennungen ändern Sie in den
+        weiteren Testeinstellungen unter „Adressierung und Prozessnachrichten“.
       </p>
     </div>
-  </details>
+  </component>
 </template>

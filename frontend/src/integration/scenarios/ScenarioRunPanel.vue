@@ -60,11 +60,11 @@ const instructions = computed(() =>
       ? 'Die Gegenstelle nimmt die Einreichung an oder lehnt sie ab. Connect prüft die Bestätigung im Event Log.'
       : 'Die Gegenstelle öffnet und prüft die Antwort. Sie können deren Rückmeldung als manuelle Bestätigung festhalten.'
     : {
-        send: 'Öffnen Sie den Versandentwurf und bestätigen Sie den Versand. Laden Sie anschließend den lokalen Nachweis.',
+        send: 'Öffnen Sie den Versandentwurf und bestätigen Sie den Versand. Kehren Sie danach zum Test zurück und wählen Sie „Prüfen und weiter“.',
         receive: 'Öffnen und prüfen Sie die passende Einreichung im Empfang.',
-        compare: 'Vergleichen Sie die freigegebenen Inhalte mit Ihren Erwartungen.',
+        compare: '„Prüfen und weiter“ vergleicht die empfangenen Inhalte mit Ihren Testdaten.',
         receipt:
-          'Nehmen Sie die Einreichung an oder lehnen Sie sie ab. Prüfen Sie anschließend den Nachweis.',
+          'Nehmen Sie die Einreichung an oder lehnen Sie sie ab. Kehren Sie danach zurück und wählen Sie „Prüfen und weiter“.',
         reply:
           'Verfassen und senden Sie die Antwort im Empfang. Die Annahme der Einreichung schließt den Antwortkanal nicht.',
         check_reply: 'Öffnen und prüfen Sie die Antwort im Empfang des sendenden Profils.',

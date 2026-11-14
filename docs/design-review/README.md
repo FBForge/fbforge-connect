@@ -2,6 +2,41 @@
 
 ## 0.4.0 in Vorbereitung
 
+### Geführte Testvorbereitung – 14. November 2026
+
+Die Vorbereitung führt jetzt durch „Verbindung“, „Testdaten“ und „Prüfen und
+starten“. Verbindung und Testdaten enthalten keine Aufklappbereiche. Zusätzliche
+Antworten, Anlagen, Adressierung, Testfälle, Datensätze und Prüfregeln sind in
+einem eigenen Einstellungsbereich erreichbar. Speichern, Export und Testserien
+stehen in der abschließenden Übersicht. Die automatische Sicherung bleibt
+standardmäßig aktiv und kann dort abgewählt werden.
+
+Profile erscheinen passend zur getesteten Seite. Beim Wechsel der Schritte
+bleiben die Zuordnung, Testdaten und ausgewählte Nachricht erhalten. Ein bereits
+geladenes Profil wird nicht bei jedem Zurückgehen erneut geladen. Erneutes Öffnen
+eines Tests beginnt bei der Verbindung. Die Durchführung benennt „Prüfen und
+weiter“ ausdrücklich als normalen Weg für den Inhaltsnachweis.
+
+Der Apple-Design-Review wurde auf die vorhandene Windows-/Vue-Oberfläche
+übertragen: relative Wichtigkeit und Gruppierung aus HIG „Layout“, klare
+Folgeschritte aus „Writing“ sowie wenige hervorgehobene Aktionen aus „Buttons“.
+Die tatsächliche App mit fiktiven nativen Antworten wurde in Hell bei 1440 px
+und Dunkel bei 520 px angesehen. Die Anleitung enthält acht aktualisierte oder
+neue Aufnahmen des Testablaufs, insgesamt 15 Kapitel und 65 referenzierte Bilder.
+
+Die 62 betroffenen Browserfälle bestehen. Sie prüfen unter anderem beide APIs,
+Testserien, zusätzliche Antworten, Wiederherstellung, Profilwechsel und den
+Tastaturpfad. Alle Vorbereitungsschritte bestehen die axe-Prüfung in Hell und
+Dunkel bei 320, 420 und 1180 px sowie den Umbruch mit 200 Prozent Schriftgröße.
+Lint, Typprüfung, Formatierung, Größen- und Lizenzprüfung sowie Produktionsbuild
+und Bundleprüfung bestehen. Die Node-Suite besteht mit 431 Fällen und sechs
+Windows-Ausnahmen unter Linux, einschließlich erneut geprüfter Web-/Wiki-Exporte.
+
+Dieser UI-Stand benötigt eine neue installierte Windows-/Live-Abnahme. Die
+bisherigen Installer enthalten diese Änderung noch nicht. Die Anleitung bleibt
+auf dem getrennten Doku-Branch, ohne Main-Merge, Signierung oder Veröffentlichung.
+
+
 ### SSP-Kanäle und Nachprüfung – 14. November 2026
 
 Die Antwortkanäle folgen dem SSP: Postweg als automatischer Rückfall sowie

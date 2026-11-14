@@ -1,3 +1,4 @@
+import { preparationPage, testOptions, testReuse } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { openScenario, createScenario, button } from './scenario-helpers.js';
@@ -15,6 +16,7 @@ test('integration preparation opens directly from Start without requiring a conn
   await expect(page.getByRole('heading', { name: 'Neuen Test vorbereiten', exact: true })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Verbindung verwalten', exact: true })).toBeHidden();
   await createScenario(page);
+  await testReuse(page);
   await expect(button(page, 'Test starten')).toBeDisabled();
   await expect(button(page, 'Test speichern')).toBeEnabled();
 });
@@ -23,9 +25,10 @@ test('test editor can add a reply, edit its attachments and manage individual ca
 }, testInfo) => {
   await openScenario(page);
   await createScenario(page);
+  await preparationPage(page, 'Testdaten');
   await page.getByRole('checkbox', { name: 'Fachliche Antwort erwarten', exact: true }).check();
   await page.getByRole('combobox', { name: 'Nachricht bearbeiten', exact: true }).selectOption('reply');
-  await page.getByText('Anlagen bearbeiten (0)', { exact: true }).click();
+  await testOptions(page, 'attachments');
   await page
     .locator('#scenario-add-files')
     .setInputFiles({ name: 'reply.txt', mimeType: 'text/plain', buffer: Buffer.from('expected response') });
@@ -37,7 +40,7 @@ test('test editor can add a reply, edit its attachments and manage individual ca
   await expect(page.getByText('changed.txt', { exact: true })).toBeVisible();
   await button(page, 'Entfernen: changed.txt').click();
   await expect(page.getByText('changed.txt', { exact: true })).toHaveCount(0);
-  await page.getByText('Testfall verwalten', { exact: true }).click();
+  await testOptions(page, 'cases');
   await button(page, 'Testfall duplizieren').click();
   await expect(
     page.getByRole('combobox', { name: 'Testfall bearbeiten', exact: true }).locator('option'),
@@ -54,6 +57,7 @@ test('unfinished JSON is recovered after restart and still cannot start a test',
   await openScenario(page);
   await createScenario(page);
   await page.getByLabel('Testname', { exact: true }).fill('Unfertiger Test');
+  await preparationPage(page, 'Testdaten');
   await page.getByLabel('Fachdaten', { exact: true }).fill('{"unfinished":');
   await expect
     .poll(async () => (await savedPreparation(page))?.definition.pack.cases[0].request.data)
@@ -62,7 +66,9 @@ test('unfinished JSON is recovered after restart and still cannot start a test',
   await expect(button(page, 'Vorbereitung wiederherstellen')).toBeVisible();
   await button(page, 'Vorbereitung wiederherstellen').click();
   await expect(page.getByLabel('Testname', { exact: true })).toHaveValue('Unfertiger Test');
+  await preparationPage(page, 'Testdaten');
   await expect(page.getByLabel('Fachdaten', { exact: true })).toHaveValue('{"unfinished":');
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   await expect(page.getByRole('alert').filter({ hasText: /JSON|ungültig|Fachdaten/ })).toBeVisible();
   expect(
@@ -77,6 +83,7 @@ test('session-only preparation removes its recovery snapshot and stays unpersist
   await openScenario(page);
   await createScenario(page);
   await expect.poll(async () => Boolean(await savedPreparation(page))).toBe(true);
+  await preparationPage(page, 'Prüfen und starten');
   await page
     .getByRole('checkbox', { name: 'Vorbereitung automatisch geschützt speichern', exact: true })
     .uncheck();
@@ -89,6 +96,7 @@ test('session-only preparation removes its recovery snapshot and stays unpersist
       ),
     )
     .toBe(true);
+  await preparationPage(page, 'Verbindung');
   await page.getByLabel('Testname', { exact: true }).fill('Nur Sitzung');
   await page.reload();
   await expect(button(page, 'Vorbereitung wiederherstellen')).toHaveCount(0);
@@ -101,7 +109,7 @@ for (const width of [1180, 420, 320])
     await openScenario(page);
     await createScenario(page, 'reply');
     await page.addStyleTag({ content: 'body { font-family: "DejaVu Sans", sans-serif !important; }' });
-    await page.getByText('Prüferwartungen anpassen', { exact: true }).click();
+    await testOptions(page, 'expectations');
     await page
       .getByRole('combobox', { name: 'Inhaltsvergleich', exact: true })
       .selectOption('field-exceptions');
@@ -157,7 +165,7 @@ test('closing waits for an attachment import and then flushes the newest protect
 }) => {
   await page.goto(root + '/test-fixtures/lifecycle.html?preparation=1');
   await createScenario(page);
-  await page.getByText('Anlagen bearbeiten (1)', { exact: true }).click();
+  await testOptions(page, 'attachments');
   await page.evaluate(() => {
     const read = File.prototype.arrayBuffer;
     File.prototype.arrayBuffer = async function () {
@@ -203,6 +211,7 @@ test('an unreadable previous recovery is preserved until explicit discard', asyn
   await expect(page.getByRole('alert').filter({ hasText: 'Sie wird nicht überschrieben' })).toBeVisible();
   await createScenario(page);
   await page.getByLabel('Testname', { exact: true }).fill('Neue Vorbereitung');
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   expect(
     await page.evaluate(() =>
@@ -232,8 +241,9 @@ test('check and continue accepts one matching proof but asks explicitly when sev
 }) => {
   await openScenario(page);
   await createScenario(page);
-  await page.getByText('Anlagen bearbeiten (1)', { exact: true }).click();
+  await testOptions(page, 'attachments');
   await page.getByRole('button', { name: /^Entfernen:/ }).click();
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   await page.evaluate(() => {
     const id = crypto.randomUUID();
@@ -300,6 +310,7 @@ test('Send uses the same protected test collection and keeps its first destinati
   await button(page, 'Testwerkzeuge').click();
   await createScenario(page);
   await page.getByLabel('Testname', { exact: true }).fill('Gemeinsamer Integrationstest');
+  await testReuse(page);
   await button(page, 'Test speichern').click();
   await page.locator('.connection-button').click();
   await page.locator('#client-id').fill('synthetic-client');

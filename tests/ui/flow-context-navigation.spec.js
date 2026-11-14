@@ -1,3 +1,4 @@
+import { preparationPage } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import pack from '../../frontend/src/examples/integration.fctest.json' with { type: 'json' };
 const button = (page, name) => page.getByRole('button', { name, exact: true });
@@ -29,9 +30,10 @@ test('the real application routes a mapped profile while its automatic key read 
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(pack)),
   });
-  await page.locator('.flow-context summary').click();
+  await preparationPage(page, 'Verbindung');
   await button(page, 'Profile aktualisieren').click();
   await page.getByRole('combobox', { name: 'Sender-Profil', exact: true }).selectOption(target);
+  await preparationPage(page, 'Prüfen und starten');
   await button(page, 'Test starten').click();
   const shortcut = button(page, 'Versandentwurf öffnen');
   await expect(shortcut).toBeEnabled();
