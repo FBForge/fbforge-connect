@@ -100,3 +100,6 @@ pub mod scanner_download;
 mod network_trust;
 #[path = "../src/network_trust_bundle.rs"]
 mod network_trust_bundle;
+
+#[path = "../src/app_coordination.rs"]
+pub mod app_coordination;

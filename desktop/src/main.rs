@@ -65,7 +65,18 @@ use std::time::Duration;
 use tauri::Manager;
 use write_policy::resource_action;
 
+#[cfg(windows)]
+mod app_coordination;
+
 fn main() {
+    #[cfg(windows)]
+    let lease = match app_coordination::acquire() {
+        Ok(lease) => lease,
+        Err(error) => {
+            app_coordination::show_error(error);
+            return;
+        }
+    };
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(window) = app.get_webview_window("main") {
@@ -253,7 +264,7 @@ fn main() {
         })
         .build(tauri::generate_context!())
         .expect("Desktop startup failed");
-    app.run(|app, event| {
+    let exit_code = app.run_return(|app, event| {
         if matches!(event, tauri::RunEvent::Exit) {
             local_scanner::shutdown(app);
             let state = app.state::<EngineState>();
@@ -268,6 +279,10 @@ fn main() {
             });
         }
     });
+    // Keep ownership on the startup thread until all existing exit callbacks finish.
+    #[cfg(windows)]
+    drop(lease);
+    std::process::exit(exit_code);
 }
 
 mod scanner_install;

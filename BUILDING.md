@@ -277,3 +277,9 @@ und die erneute Komponenten-Abnahme; Signaturupdates ersetzen kein Engine-Update
 Für die gezielte Windows-Abnahme einer Scanner-Änderung kann `Windows release
 validation` mit `scanner_only=true` gestartet werden. Dieser Modus baut keinen
 Installer und ersetzt keine vollständige Release-Validierung oder Signierfreigabe.
+
+## Native Appstart-Koordination
+
+Vertrag, vendorte Herkunft und abgegrenzte Prüfnachweise stehen unter
+[Native Appstart-Koordination](docs/plans/app-coordination.md). Installer und
+appinterner Updatehandoff sind in diesem Schritt nicht angebunden.
