@@ -82,7 +82,7 @@ test('protected V2 phases stage before publishing and never force shutdown or de
     'StrCpy $INSTDIR $FBForgeV2Target',
     'WriteRegStr',
   );
-  assert.match(section(text, 'Uninstall'), /^Section Uninstall\n  Call un.FBForgeRequireMutationEvidence/);
+  assert.match(section(text, 'Uninstall'), /^Section Uninstall\n {2}Call un.FBForgeRequireMutationEvidence/);
   const compatibility = await read('compatibility.nsh');
   assert.match(compatibility, /Call FBForgeRequireStagingV2/);
 });
