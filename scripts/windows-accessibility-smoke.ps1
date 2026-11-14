@@ -233,18 +233,20 @@ automaticUpdates = disabled
     $null = Wait-Check { [System.Windows.Automation.AutomationElement]::FocusedElement.Current.Name -eq 'Verbinden' } 'native_dialog_focus_not_restored'
     $null = Check-Spoken 'Verbinden' $buttonType
     $null = Check-Spoken 'Umgebung' ([System.Windows.Automation.ControlType]::ComboBox)
+    # Activate navigation through the native keyboard path observed by NVDA.
+    # UIA Invoke is reserved for the initial, pointer-anchored bootstrap.
     foreach ($name in @('Senden','Empfangen','Prozesse')) {
-        $control = Check-Spoken $name $buttonType
-        Invoke-Control $control
+        $null = Check-Spoken $name $buttonType
+        [AccessibilityKeys]::Press(0x0d)
     }
-    $demo = Check-Spoken 'Fiktiven Demo-Prozess öffnen' $buttonType
-    Invoke-Control $demo
+    $null = Check-Spoken 'Fiktiven Demo-Prozess öffnen' $buttonType
+    [AccessibilityKeys]::Press(0x0d)
     $null = Check-Spoken 'Modell einpassen' $buttonType
-    $cases = Check-Spoken 'Vorgänge' $buttonType
-    Invoke-Control $cases
+    $null = Check-Spoken 'Vorgänge' $buttonType
+    [AccessibilityKeys]::Press(0x0d)
     $null = Check-Spoken 'Vorgänge durchsuchen' $editType
-    $help = Check-Spoken 'Hilfe' $buttonType
-    Invoke-Control $help
+    $null = Check-Spoken 'Hilfe' $buttonType
+    [AccessibilityKeys]::Press(0x0d)
     $null = Check-Spoken 'Schnellstart (Website im Browser öffnen)' ([System.Windows.Automation.ControlType]::Hyperlink)
     Write-Output ('Actual NVDA 2026.2 speech observation, ' + $checks.Count + ' control labels, protected field, native Tab order and Escape focus restoration passed')
     $report = [ordered]@{ application = 'FBForge Connect'; nvda = $ready.nvdaVersion; installerSha256 = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant(); harnessCommit = $env:GITHUB_SHA; runId = $env:GITHUB_RUN_ID; candidate = $(if ($ExpectedBinaryPath) { 'current build' } else { 'pinned previously verified installer' }); scope = 'Installed Windows WebView; generated speech sequences with silent synthesizer, not an auditory usability assessment'; checks = @($checks.ToArray()); initialWebViewActivation = 'one pointer click in empty Client-ID field'; keyboardTab = 'passed'; modalFocusRestoration = 'passed' }

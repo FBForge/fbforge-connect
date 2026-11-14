@@ -1,6 +1,33 @@
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 
+test('keyboard activation leaves the process diagram and reaches the case search in reading order', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/profiles.html');
+  async function tabTo(control) {
+    await expect(control).toBeVisible();
+    for (let step = 0; step < 60; step++) {
+      if (await control.evaluate((element) => element === document.activeElement)) return;
+      await page.keyboard.press('Tab');
+    }
+    await expect(control).toBeFocused();
+  }
+  const button = (name) => page.getByRole('button', { name, exact: true });
+  await tabTo(button('Prozesse'));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Prozesse', exact: true, level: 1 })).toBeFocused();
+  await tabTo(button('Fiktiven Demo-Prozess öffnen'));
+  await page.keyboard.press('Enter');
+  await tabTo(button('Modell einpassen'));
+  await tabTo(button('Vorgänge'));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Vorgänge', exact: true, level: 1 })).toBeFocused();
+  // Connection action, help link and retention disclosure precede the search.
+  for (let step = 0; step < 4; step++) await page.keyboard.press('Tab');
+  await expect(page.getByRole('searchbox', { name: 'Vorgänge durchsuchen', exact: true })).toBeFocused();
+});
+
 test('main workspaces support keyboard navigation, reflow and automated accessibility checks', async ({
   page,
 }) => {
