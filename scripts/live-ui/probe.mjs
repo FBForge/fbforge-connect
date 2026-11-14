@@ -1,3 +1,4 @@
+import { testReuse } from '../scenario-navigation.mjs';
 // Bootstrap diagnosis before any credentials are entered or TEST resources created.
 import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -38,6 +39,7 @@ try {
     await localScannerReady(desktop.page, false);
     await navigate(desktop.page, 'Testwerkzeuge');
     await openTestPreparation(desktop.page);
+    await testReuse(desktop.page);
     const exported = await nativeFile(
       desktop,
       { directory },

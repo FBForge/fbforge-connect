@@ -1,3 +1,4 @@
+import { testReuse } from '../../scripts/scenario-navigation.mjs';
 import { test, expect } from './fixtures.js';
 import AxeBuilder from '@axe-core/playwright';
 import { openTestPreparation, selectLocalScanner } from '../../scripts/live-ui/local-tools.mjs';
@@ -12,6 +13,8 @@ test('live acceptance opens the test package explicitly after the remembered sca
     'aria-selected',
     'true',
   );
+  await testReuse(page);
+  await expect(page.getByRole('button', { name: 'Testdatei exportieren', exact: true })).toBeEnabled();
 });
 async function open(page, api = 'v3') {
   await page.goto(`http://127.0.0.1:1420/test-fixtures/integration-tools.html?api=${api}`);

@@ -1,3 +1,4 @@
+import { preparationPage } from '../scenario-navigation.mjs';
 import { nativeScannerInstall, nativeScannerReview } from './downloads.mjs';
 import { isDeepStrictEqual } from 'node:util';
 import { navigate } from './exchange.mjs';
@@ -152,10 +153,12 @@ export async function openTestPreparation(page) {
   if (await replace.isVisible())
     await replace.getByRole('button', { name: 'Test wechseln', exact: true }).click();
   await page.getByRole('textbox', { name: 'Testname', exact: true }).waitFor();
+  await preparationPage(page, 'Testdaten');
   check(
     (await page.getByRole('textbox', { name: 'Fachdaten', exact: true }).inputValue()).length > 0,
     'live_ui_test_data_empty',
   );
+  await preparationPage(page, 'Verbindung');
 }
 
 export async function localTools(page) {
