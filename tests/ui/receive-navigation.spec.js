@@ -54,6 +54,36 @@ for (const [width, height, theme] of [
 }
 
 for (const api of ['v2', 'v3']) {
+  test(`a submission without a reply channel can be reopened under ${api}`, async ({ page }) => {
+    await page.goto(`http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1&api=${api}`);
+    await page.evaluate(() => {
+      const original = window.__TAURI_INTERNALS__.invoke;
+      window.__TAURI_INTERNALS__.invoke = async (command, args) => {
+        if (command === 'reply_target') throw 'reply_channel_missing';
+        return original(command, args);
+      };
+    });
+    for (let opening = 0; opening < 2; opening++) {
+      await page.locator('#pickup-submission').fill(submissionId);
+      await page.getByRole('button', { name: 'Einreichung öffnen und prüfen', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Antrag lesen', exact: true })).toBeVisible();
+      await expect(
+        page.getByText('Für diesen Vorgang wurde kein Antwortkanal angeboten.', { exact: true }),
+      ).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Annehmen', exact: true })).toBeEnabled();
+      await page.getByRole('button', { name: 'Zurück zum Eingang', exact: true }).click();
+    }
+    expect(
+      await page.evaluate(
+        () => window.__applicationFixture.calls.filter((command) => command === 'verify_submission').length,
+      ),
+    ).toBe(2);
+    expect(
+      await page.evaluate(() =>
+        window.__applicationFixture.calls.some((command) => command.startsWith('execute_')),
+      ),
+    ).toBe(false);
+  });
   test(`inbox navigation is available when ${api} content verification fails`, async ({ page }) => {
     await page.goto(`http://127.0.0.1:1420/test-fixtures/application-view.html?browser=1&api=${api}`);
     await page.evaluate(() => {

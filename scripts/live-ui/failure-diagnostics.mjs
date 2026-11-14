@@ -49,6 +49,13 @@ export async function failureDiagnostics(desktop, stage, error) {
     `Real desktop UI failure state: ${JSON.stringify({
       submissionDetail: await page.locator('.submission-information').isVisible(),
       submissionLoadError: await page.locator('.submission-inbox [role="alert"]').isVisible(),
+      receiveErrorCodes: [
+        ...new Set(
+          (await page.locator('.receive-workspace .action-notice:visible code').allTextContents())
+            .map((value) => diagnosticCode(value.trim()))
+            .filter((code) => code !== 'unknown_error'),
+        ),
+      ],
       schemaConsent: await page
         .getByRole('dialog', { name: 'Öffentliche Schemaquellen laden?', exact: true })
         .isVisible(),

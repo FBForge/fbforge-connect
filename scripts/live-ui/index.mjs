@@ -81,6 +81,9 @@ export async function exerciseDesktopUI(fixture) {
       });
     const focused = process.env.FBFORGE_UI_REVIEW_ONLY === 'true';
     const baseOnly = process.env.FBFORGE_UI_BASE_ONLY === 'true';
+    // Exercise editing during signature updates before any uncertain send can
+    // legitimately lock the shared send form. Never clear that lock for a test.
+    if (!baseOnly) addReview('runtime_030', () => reviewRuntime(desktop, fixture));
     if (!focused) {
       for (const api of ['v3', 'v2']) {
         addReview(`${api}_roundtrip`, async () => {
@@ -148,7 +151,6 @@ export async function exerciseDesktopUI(fixture) {
       addReview('stored_test_roundtrip', () => review030(desktop, fixture, senders));
       addReview('workspaces', () => otherAreas(desktop.page));
       addReview('scanner_problem_acceptance', () => scannerProblemAcceptance(desktop, fixture));
-      addReview('runtime_030', () => reviewRuntime(desktop, fixture));
       addReview('custom_schema_reply', () => reviewAuthoring(desktop, fixture, senders));
       addReview('integration_040', () => reviewIntegrationAuthoring(desktop, fixture, senders));
       addReview('public_destination_backups', () => reviewDestinationBackups(desktop, fixture));

@@ -6,6 +6,7 @@ import { check, until } from './desktop.mjs';
 import { connectProfile, navigate } from './exchange.mjs';
 import { nativeFile, nativeOpenFile } from './downloads.mjs';
 import { reviewDestinationExtras } from './review-destination-extras.mjs';
+import { sameDestinationOffers } from '../live-destination-comparison.mjs';
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 const ownListReady = (page) =>
   until(
@@ -93,12 +94,20 @@ export async function reviewDestinationBackups(desktop, fixture) {
     'live_ui_backup_configuration_missing',
   );
   const owned = await fixture.readOwnedDestination();
-  check(
-    saved.configuration.name === owned.name &&
-      saved.configuration.status === owned.status &&
-      isDeepStrictEqual(saved.configuration.publicServices, JSON.parse(owned.offersJson).publicServices),
-    'live_ui_backup_server_readback_differs',
-  );
+  const readback = {
+    nameMatches: saved.configuration.name === owned.name,
+    statusMatches: saved.configuration.status === owned.status,
+    offersMatch: sameDestinationOffers(
+      {
+        publicServices: saved.configuration.publicServices,
+        processMessages: saved.configuration.processMessages,
+      },
+      JSON.parse(owned.offersJson),
+    ),
+  };
+  if (!Object.values(readback).every(Boolean))
+    console.error(`Real public backup readback: ${JSON.stringify(readback)}`);
+  check(Object.values(readback).every(Boolean), 'live_ui_backup_server_readback_differs');
   await exportSnapshot(desktop, fixture, 'ui-backup-cancel.json', true);
   await button(page, 'Sicherung importieren').click();
   await nativeOpenFile(
@@ -192,7 +201,7 @@ export async function reviewDestinationBackups(desktop, fixture) {
     JSON.parse(updated.contactJson).unit === `${fixture.runName} Snapshot verified` &&
       updated.name === owned.name &&
       updated.status === owned.status &&
-      isDeepStrictEqual(JSON.parse(updated.offersJson), JSON.parse(owned.offersJson)),
+      sameDestinationOffers(JSON.parse(updated.offersJson), JSON.parse(owned.offersJson)),
     'live_ui_backup_apply_changed_unselected_fields',
   );
   await navigate(page, 'Destinations');
