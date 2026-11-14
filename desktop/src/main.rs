@@ -54,6 +54,7 @@ mod commands;
 mod engine;
 mod network_commands;
 mod network_settings;
+mod update_handoff;
 mod update_install;
 mod update_policy;
 mod update_state;
@@ -77,6 +78,13 @@ fn main() {
             return;
         }
     };
+    #[cfg(windows)]
+    let installer = application_updates::InstallerQueue::default();
+    #[cfg(windows)]
+    let updates =
+        application_updates::ApplicationUpdates::with_installer(std::sync::Arc::clone(&installer));
+    #[cfg(not(windows))]
+    let updates = application_updates::ApplicationUpdates::default();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(window) = app.get_webview_window("main") {
@@ -91,7 +99,7 @@ fn main() {
                 .pubkey(application_updates::PUBLIC_KEY.trim())
                 .build(),
         )
-        .manage(application_updates::ApplicationUpdates::default())
+        .manage(updates)
         .manage(EngineState::default())
         .manage(local_scanner::LocalScanner::default())
         .manage(message_exports::MessageExports::default())
@@ -281,7 +289,18 @@ fn main() {
     });
     // Keep ownership on the startup thread until all existing exit callbacks finish.
     #[cfg(windows)]
-    drop(lease);
+    let exit_code = match update_handoff::finish_after_exit(
+        lease,
+        &installer,
+        exit_code,
+        application_updates::PendingInstaller::install,
+    ) {
+        Ok(exit_code) => exit_code,
+        Err(_) => {
+            app_coordination::show_update_error();
+            1
+        }
+    };
     std::process::exit(exit_code);
 }
 
