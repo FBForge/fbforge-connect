@@ -83,6 +83,7 @@ test('schema authoring supports dark mode, keyboard access and narrow windows', 
   await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
   for (const name of ['BundID', 'FIT-Connect', 'ELSTER', 'E-Mail', 'DE-Mail', 'FINK'])
     await page.getByRole('checkbox', { name, exact: true }).check();
+  await page.getByRole('button', { name: 'Standard hinzufügen', exact: true }).click();
   await page.locator('#authoring-0-replies').fill('urn:test:reply');
   await page.locator('#channel-uri').focus();
   await page.keyboard.press('Tab');
@@ -109,7 +110,7 @@ test('a delayed schema import cannot change a different destination service draf
   await page.locator('#authoring-publicServices-0-id').fill('urn:de:fim:leika:leistung:99000000000001');
   await page.evaluate(() => window.__releaseSchemaImport());
   await expect(page.locator('#authoring-0-reply-file')).toBeEnabled();
-  await expect(page.locator('#authoring-0-replies')).toHaveValue('');
+  await expect(page.locator('#authoring-0-replies')).toHaveCount(0);
   const offers = await page.evaluate(() => window.__channelFixture.offers);
   expect(offers.publicServices[0].replyChannels).toEqual({ fitConnect: { processStandards: [] } });
 });

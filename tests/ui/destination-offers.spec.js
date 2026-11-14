@@ -16,7 +16,8 @@ test('destination-offers with synthetic native fixtures', async ({ createPage })
   await page.locator('#manager-offer-publicServices-0-schema-0').fill('urn:test:application');
   await expect(page.getByRole('checkbox', { name: 'Postweg', exact: true })).toBeChecked();
   await page.getByRole('checkbox', { name: 'FIT-Connect', exact: true }).check();
-  await page.locator('#manager-offer-0-replies').fill('urn:test:reply');
+  await page.getByRole('button', { name: 'Standard hinzufügen', exact: true }).click();
+  await page.locator('#manager-offer-0-replies').pressSequentially('urn:test:reply');
   await page.getByRole('checkbox', { name: 'DE-Mail', exact: true }).check();
   await page.getByRole('checkbox', { name: 'FINK', exact: true }).check();
   await expect(page.getByRole('checkbox', { name: 'Postweg', exact: true })).not.toBeChecked();
@@ -25,7 +26,12 @@ test('destination-offers with synthetic native fixtures', async ({ createPage })
   await page.getByRole('checkbox', { name: 'PGP-verschlüsselt', exact: true }).check();
   await page.getByRole('checkbox', { name: 'BundID', exact: true }).check();
   await page.getByRole('checkbox', { name: 'Statusmonitor der BundID nutzen', exact: true }).check();
-  await page.locator('#manager-offer-0-replies').fill('urn:test:reply:2');
+  await page.getByRole('button', { name: 'Standard hinzufügen', exact: true }).click();
+  await expect(page.locator('#manager-offer-0-replies-1')).toBeFocused();
+  await page.locator('#manager-offer-0-replies-1').pressSequentially('urn:test:reply:2');
+  await page.getByRole('button', { name: 'Standard 1 entfernen', exact: true }).click();
+  await expect(page.locator('#manager-offer-0-replies')).toBeFocused();
+  await expect(page.locator('#manager-offer-0-replies')).toHaveValue('urn:test:reply:2');
   await expect(page.getByRole('checkbox', { name: 'E-Mail', exact: true })).toBeChecked();
   await page.getByRole('button', { name: 'Prozessnachricht hinzufügen', exact: true }).click();
   await page.getByLabel('FIT-Connect-Modellkennung', { exact: true }).fill('model-1');

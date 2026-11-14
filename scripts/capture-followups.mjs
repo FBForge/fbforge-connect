@@ -35,6 +35,7 @@ export async function captureFollowups({ page, open, button, capture }) {
     .fill('urn:de:fim:leika:leistung:99008001014002');
   await page.locator('#manager-offer-publicServices-0-schema-0').fill('urn:beispiel:antrag:1');
   await page.getByRole('checkbox', { name: 'FIT-Connect', exact: true }).check();
+  await page.getByRole('button', { name: 'Standard hinzufügen', exact: true }).click();
   await page.locator('#manager-offer-0-replies').fill('urn:beispiel:antwort:1');
   await page.getByRole('checkbox', { name: 'E-Mail', exact: true }).check();
   await page.getByRole('checkbox', { name: 'BundID', exact: true }).check();

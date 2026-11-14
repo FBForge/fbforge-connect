@@ -119,10 +119,11 @@ async function installOffer(page, fixture, path, uri) {
   await page.locator('#manager-offer-0-reply-file').setInputFiles(path);
   await until(
     async () =>
-      (await page.locator('#manager-offer-0-replies').inputValue())
-        .split(',')
-        .map((v) => v.trim())
-        .includes(uri),
+      (
+        await page
+          .locator('input[data-reply-standard][id^="manager-offer-0-replies"]')
+          .evaluateAll((inputs) => inputs.map((input) => input.value))
+      ).includes(uri),
     'live_ui_authored_offer_not_applied',
   );
   await page.getByRole('checkbox', { name: 'E-Mail', exact: true }).first().check();

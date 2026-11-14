@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick } from 'vue';
 import SchemaIdentifierFile from '../SchemaIdentifierFile.vue';
 const props = defineProps({
   modelValue: Object,
@@ -35,7 +35,31 @@ function toggle(key, checked) {
   change(key, checked ? value : null);
 }
 function standards(values) {
-  change('fitConnect', { processStandards: [...new Set(values)] });
+  change('fitConnect', { processStandards: values });
+}
+const standardId = (index) => `${props.prefix}-replies${index ? `-${index}` : ''}`;
+async function addStandard() {
+  const values = props.modelValue?.fitConnect?.processStandards || [];
+  if (props.disabled || values.length >= 16) return;
+  standards([...values, '']);
+  await nextTick();
+  document.getElementById(standardId(values.length))?.focus();
+}
+function updateStandard(index, value) {
+  standards(props.modelValue.fitConnect.processStandards.map((entry, i) => (i === index ? value : entry)));
+}
+async function removeStandard(index) {
+  const values = props.modelValue.fitConnect.processStandards.filter((_, i) => i !== index);
+  standards(values);
+  await nextTick();
+  document
+    .getElementById(
+      values.length ? standardId(Math.min(index, values.length - 1)) : `${props.prefix}-standard-add`,
+    )
+    ?.focus();
+}
+function importStandard(uri) {
+  standards([...new Set([...(props.modelValue.fitConnect.processStandards || []).filter(Boolean), uri])]);
 }
 </script>
 <template>
@@ -80,25 +104,45 @@ function standards(values) {
         </label>
       </div>
       <div v-if="key === 'fitConnect' && modelValue?.fitConnect" class="channel-settings">
-        <label :for="`${prefix}-replies`">
-          Datenaustauschstandards
-          <input
-            :id="`${prefix}-replies`"
+        <p class="reply-standards-title">Datenaustauschstandards</p>
+        <div
+          v-for="(uri, index) in modelValue.fitConnect.processStandards || []"
+          :key="index"
+          class="reply-standard-row"
+        >
+          <label :for="standardId(index)">
+            Standard {{ index + 1 }}
+            <input
+              :id="standardId(index)"
+              data-reply-standard
+              :disabled="disabled"
+              :value="uri"
+              :aria-describedby="`${prefix}-standards-note`"
+              @input="updateStandard(index, $event.target.value)"
+            />
+          </label>
+          <button
+            class="button secondary"
+            type="button"
             :disabled="disabled"
-            :value="modelValue.fitConnect.processStandards?.join(', ') || ''"
-            :aria-describedby="`${prefix}-standards-note`"
-            @input="
-              standards(
-                $event.target.value
-                  .split(',')
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              )
-            "
-          />
-        </label>
+            :aria-label="`Standard ${index + 1} entfernen`"
+            @click="removeStandard(index)"
+          >
+            Entfernen
+          </button>
+        </div>
+        <button
+          :id="`${prefix}-standard-add`"
+          class="button secondary"
+          type="button"
+          :disabled="disabled || (modelValue.fitConnect.processStandards?.length || 0) >= 16"
+          @click="addStandard"
+        >
+          <span aria-hidden="true">＋</span>
+          Standard hinzufügen
+        </button>
         <small :id="`${prefix}-standards-note`">
-          Mindestens eine vereinbarte Schema-URI angeben. Mehrere Kennungen mit Komma trennen.
+          Je Standard eine vereinbarte Schema-URI. Für FIT-Connect ist mindestens ein Standard erforderlich.
         </small>
         <details>
           <summary>Standard aus JSON-Datei ergänzen</summary>
@@ -108,7 +152,7 @@ function standards(values) {
             :context-key="JSON.stringify([contextKey, modelValue])"
             :disabled="disabled || (modelValue.fitConnect.processStandards?.length || 0) >= 16"
             label="Unterstütztes Antwortschema aus JSON-Datei ergänzen"
-            @select="standards([...(modelValue.fitConnect.processStandards || []), $event])"
+            @select="importStandard"
           />
         </details>
       </div>
@@ -166,6 +210,30 @@ function standards(values) {
   padding-inline-start: 1.75rem;
   min-width: 0;
 }
+.reply-standards-title {
+  margin: 0;
+  font-weight: 600;
+}
+.reply-standard-row {
+  display: flex;
+  align-items: end;
+  gap: 0.5rem;
+}
+.reply-standard-row label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.reply-standard-row input {
+  width: 100%;
+}
+.reply-standard-row .button {
+  flex-shrink: 0;
+}
+.channel-settings:has(.reply-standards-title) {
+  display: grid;
+  gap: 0.75rem;
+}
 .channel-settings details {
   margin-bottom: 0;
 }
@@ -174,6 +242,12 @@ function standards(values) {
   color: var(--muted);
 }
 @media (max-width: 700px) {
+  .reply-standard-row {
+    flex-wrap: wrap;
+  }
+  .reply-standard-row label {
+    flex-basis: 12rem;
+  }
   .channel-option {
     margin-inline-start: 1.75rem !important;
   }
