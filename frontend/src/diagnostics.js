@@ -54,7 +54,7 @@ export function errorMessage(code) {
     engine_disconnected: 'Die Verbindung zum lokalen Java-Kern wurde beendet.',
     engine_protocol_error: 'Die Antwort des lokalen Java-Kerns ist ungültig.',
     vault_profile_required:
-      'Bitte zuerst mit einem gespeicherten Windows-Profil verbinden. Die automatisch erzeugten privaten Schlüssel müssen vor der Registrierung gesichert sein.',
+      'Bitte zuerst mit einem gespeicherten Profil verbinden. Die automatisch erzeugten privaten Schlüssel müssen vor der Registrierung gesichert sein.',
     backup_invalid: 'Die Zustellpunkt-Sicherung ist ungültig oder beschädigt.',
     backup_unavailable: 'Die Zustellpunkt-Sicherung konnte nicht gelesen oder gespeichert werden.',
     schema_library_invalid:
@@ -63,7 +63,12 @@ export function errorMessage(code) {
     schema_library_limit:
       'Die Antwortschema-Bibliothek ist voll. Pro Profil können bis zu 32 Definitionen gespeichert werden.',
     vault_unavailable:
-      'Der geschützte Windows-Speicher ist nicht verfügbar. Bitte das Benutzerkonto und den freien Speicherplatz prüfen.',
+      'Der geschützte Speicher ist nicht verfügbar. Bitte das Benutzerkonto und den freien Speicherplatz prüfen.',
+    vault_locked: 'Der macOS-Schlüsselbund ist gesperrt. Entsperren Sie ihn und wiederholen Sie die Aktion.',
+    vault_key_missing:
+      'Der lokale Schutzschlüssel fehlt. Vorhandene Daten bleiben erhalten. Stellen Sie den ursprünglichen Schlüsselbund wieder her.',
+    vault_access_denied:
+      'Der Schlüsselbundzugriff wurde nicht freigegeben. Erlauben Sie FBForge Connect den Zugriff und wiederholen Sie die Aktion.',
     vault_pending:
       'Der bisherige Schlüsselbestand konnte noch nicht gesichert werden. Bitte im bestehenden Profil erneut sichern, bevor Sie die Verbindung wechseln.',
     key_rejected:
@@ -75,7 +80,7 @@ export function errorMessage(code) {
     vault_invalid:
       'Das gespeicherte Profil ist beschädigt oder hat ein nicht unterstütztes Format. Die vorhandene Datei wurde nicht ersetzt.',
     vault_unsupported:
-      'Geschütztes Speichern wird in diesem Entwicklungsstand nur unter Windows unterstützt. Bitte ohne Speichern verbinden.',
+      'Geschütztes Speichern wird auf diesem Betriebssystem nicht unterstützt. Bitte ohne Speichern verbinden.',
     vault_limit:
       'Es können höchstens 32 Profile gespeichert werden. Bitte ein nicht mehr benötigtes Profil entfernen.',
     vault_restore_failed:
@@ -156,6 +161,9 @@ const reportableCodes = new Set([
   'case_storage_pending',
   'vault_profile_required',
   'vault_unavailable',
+  'vault_locked',
+  'vault_key_missing',
+  'vault_access_denied',
   'vault_pending',
   'vault_invalid',
   'vault_unsupported',

@@ -4,6 +4,8 @@ mod documentation;
 mod documentation_links;
 mod environment_commands;
 mod environments;
+#[cfg(target_os = "macos")]
+mod macos_menu;
 mod test_library;
 mod test_library_command;
 use documentation::open_documentation;
@@ -228,6 +230,8 @@ fn main() {
         .setup(|app| {
             #[cfg(target_os = "macos")]
             let _ = vault::protection::initialize(&app.path().app_data_dir()?);
+            #[cfg(target_os = "macos")]
+            macos_menu::install(app.handle())?;
             network_trust_bundle::set_default_roots(
                 app.path()
                     .resource_dir()?

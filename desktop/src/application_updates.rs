@@ -32,7 +32,7 @@ impl Default for ApplicationUpdates {
         Self {
             pending: Mutex::new(Pending::new(
                 policy::public_key(PUBLIC_KEY).is_ok(),
-                cfg!(all(windows, target_arch = "x86_64")),
+                policy::Target::current().is_some(),
             )),
             cancel: AtomicBool::new(false),
         }
@@ -59,11 +59,12 @@ pub async fn check_application_update(
     updates.lock()?.begin_check()?;
     let result = async {
         let raw = update_transport::manifest().await?;
-        if !policy::manifest(&raw, &app.package_info().version.to_string())? {
+        let target = policy::Target::current().ok_or("update_platform_unsupported")?;
+        if !policy::manifest_for(&raw, &app.package_info().version.to_string(), target)? {
             return Ok(None);
         }
         app.updater_builder()
-            .target("windows-x86_64")
+            .target(target.feed_key())
             .pubkey(PUBLIC_KEY.trim())
             .timeout(Duration::from_secs(600))
             .version_comparator(|current, release| {
@@ -106,7 +107,13 @@ pub async fn download_application_update(
         if updates.cancel.load(Ordering::Acquire) {
             return Err("update_cancelled");
         }
-        policy::verify(&bytes, &release.signature, PUBLIC_KEY, &version)?;
+        policy::verify_for(
+            &bytes,
+            &release.signature,
+            PUBLIC_KEY,
+            &version,
+            policy::Target::current().ok_or("update_platform_unsupported")?,
+        )?;
         release
             .verify(&bytes)
             .map_err(|_| "update_signature_invalid")?;

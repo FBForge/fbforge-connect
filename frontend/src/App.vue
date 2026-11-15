@@ -3,6 +3,7 @@ import { ref, shallowRef, provide, computed, nextTick, defineAsyncComponent } fr
 import { environmentKey } from './environments.js';
 import { useEnvironmentSwitch } from './app/useEnvironmentSwitch.js';
 import { useDiagnostics } from './app/useDiagnostics.js';
+import { useNativeNavigation } from './app/useNativeNavigation.js';
 import { useWindowTitle } from './app/useWindowTitle.js';
 import { useTheme } from './app/useTheme.ts';
 import { useConnections } from './app/useConnections.js';
@@ -174,6 +175,7 @@ async function navigate(name) {
   if (workspace.value) workspace.value.scrollTop = scrollPositions.get(name) || 0;
   viewHeading.value?.focus({ preventScroll: true });
 }
+useNativeNavigation(navigate);
 function beginTask(name) {
   if (name === 'Empfangen') receiveTab.value = 'submissions';
   void navigate(name);

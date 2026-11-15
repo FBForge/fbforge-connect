@@ -1,5 +1,6 @@
 #[cfg(windows)]
 use super::MAX_FILE;
+#[cfg(not(target_os = "macos"))]
 use std::path::Path;
 #[cfg(not(any(windows, target_os = "macos")))]
 pub(crate) mod platform {
@@ -135,6 +136,7 @@ pub(crate) mod platform {
     }
 }
 
+#[cfg(not(target_os = "macos"))]
 pub use platform::*;
 
 #[cfg(target_os = "macos")]
