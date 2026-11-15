@@ -1,6 +1,7 @@
 // Read-only feasibility probe: verify upstream, expand into scratch, never run installer scripts.
-import { mkdtemp, mkdir, readFile, writeFile, readdir, lstat, rm, cp } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, readdir, lstat, rm, cp, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { download, manifest, publicGpgArguments, run } from './component.mjs';
@@ -85,11 +86,25 @@ try {
   }
   const execution = {};
   for (const program of ['bin/freshclam', 'bin/sigtool', 'sbin/clamd']) {
-    execution[program] = run(join(relocated, program), ['--version'], {
-      stdio: ['ignore', 'pipe', 'inherit'],
+    const executable = join(relocated, program);
+    await chmod(executable, 0o700);
+    const result = spawnSync(executable, ['--version'], {
       encoding: 'utf8',
+      timeout: 15000,
       env: { ...process.env, DYLD_LIBRARY_PATH: join(relocated, 'lib') },
-    }).stdout.trim();
+    });
+    console.log(
+      JSON.stringify({
+        program,
+        bytes: (await lstat(executable)).size,
+        status: result.status,
+        signal: result.signal,
+        error: result.error?.code,
+        stderr: result.stderr?.slice(0, 3000),
+      }),
+    );
+    if (result.error || result.status !== 0) throw Error('scanner_relocated_execution_failed');
+    execution[program] = result.stdout.trim();
   }
   console.log('Relocated vendor executables:', JSON.stringify(execution));
   run('cargo', [

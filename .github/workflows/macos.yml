@@ -7,11 +7,12 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: macos-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   apple-silicon:
+    if: ${{ !contains(github.event.head_commit.message, '[scanner-probe]') }}
+    concurrency:
+      group: macos-app-${{ github.ref }}
+      cancel-in-progress: false
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -93,6 +94,9 @@ jobs:
           retention-days: 3
 
   scanner-feasibility:
+    concurrency:
+      group: macos-scanner-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: macos-15
     timeout-minutes: 15
     steps:
