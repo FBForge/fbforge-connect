@@ -23,11 +23,9 @@ ManifestDPIAwareness PerMonitorV2
 !include FileFunc.nsh
 !include x64.nsh
 !include WordFunc.nsh
-!include "utils.nsh"
 !include "FileAssociation.nsh"
 !include "Win\COM.nsh"
 !include "Win\Propkey.nsh"
-!include "Win\RestartManager.nsh"
 !include "StrFunc.nsh"
 ${StrCase}
 ${StrLoc}
@@ -44,6 +42,9 @@ ${StrLoc}
 !define VERSIONWITHBUILD "{{version_with_build}}"
 !define HOMEPAGE "{{homepage}}"
 !define INSTALLMODE "{{install_mode}}"
+!if "${INSTALLMODE}" != "currentUser"
+  !error "FBForge native V2 supports currentUser targets only"
+!endif
 !define LICENSE "{{license}}"
 !define INSTALLERICON "{{installer_icon}}"
 !define SIDEBARIMAGE "{{sidebar_image}}"
@@ -74,7 +75,6 @@ ${StrLoc}
 Var PassiveMode
 Var UpdateMode
 Var NoShortcutMode
-Var WixMode
 Var OldMainBinaryName
 ; FBForge scanner begin: variables
 Var ScannerChoice
@@ -82,13 +82,32 @@ Var ScannerCheckbox
 Var ScannerDialog
 ; FBForge scanner end: variables
 
+; Hash exactly the signed application and rendered File map, before signing setup.
+!tempfile FBFORGE_PAYLOAD_MAP
+!tempfile FBFORGE_PAYLOAD_FILE
+!tempfile FBFORGE_PAYLOAD_DEFINITION
+!appendfile /CHARSET=UTF8 /RawNL "${FBFORGE_PAYLOAD_MAP}" '{"schemaVersion":1,"toolId":"${FBFORGE_GUARD_TOOL_ID}","appId":"${BUNDLEID}","version":"${VERSION}","optionalPrefixes":[{"prefix":"resources/scanner/","component":"scanner"}]}$\n'
+!appendfile /CHARSET=UTF8 /RawNL "${FBFORGE_PAYLOAD_MAP}" "${MAINBINARYSRCPATH}$\n${MAINBINARYNAME}.exe$\n"
+{{#each resources}}
+!appendfile /CHARSET=UTF8 /RawNL "${FBFORGE_PAYLOAD_MAP}" "{{no-escape @key}}$\n{{this.[1]}}$\n"
+{{/each}}
+{{#each binaries}}
+!appendfile /CHARSET=UTF8 /RawNL "${FBFORGE_PAYLOAD_MAP}" "{{no-escape @key}}$\n{{this}}$\n"
+{{/each}}
+!execute '$\"node$\" $\"${FBFORGE_GUARD_DIR}/nsis/create-payload.mjs$\" $\"${FBFORGE_PAYLOAD_MAP}$\" $\"${FBFORGE_PAYLOAD_FILE}$\" $\"${FBFORGE_PAYLOAD_DEFINITION}$\" $\"${NSISDIR}$\"' = 0
+!include "${FBFORGE_PAYLOAD_DEFINITION}"
+!delfile "${FBFORGE_PAYLOAD_MAP}"
+!delfile "${FBFORGE_PAYLOAD_DEFINITION}"
+
+!insertmacro FBForgeV2Functions
+!insertmacro FBForgeGuardFunctions "un."
+
 Name "${PRODUCTNAME}"
 BrandingText "${COPYRIGHT}"
 OutFile "${OUTFILE}"
 
-; We don't actually use this value as default install path,
-; it's just for nsis to append the product name folder in the directory selector
-; https://nsis.sourceforge.io/Reference/InstallDir
+; This placeholder and any /D value are never an installation target.
+; Only PathV2 replaces it before product writes.
 !define PLACEHOLDER_INSTALL_DIR "placeholder\${PRODUCTNAME}"
 InstallDir "${PLACEHOLDER_INSTALL_DIR}"
 
@@ -98,6 +117,10 @@ VIAddVersionKey "FileDescription" "${PRODUCTNAME}"
 VIAddVersionKey "LegalCopyright" "${COPYRIGHT}"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "ProductVersion" "${VERSION}"
+; Signed cooperation assertion, independently checked on the held installer PE.
+VIAddVersionKey /LANG=1033 "FBForgeAppId" "${BUNDLEID}"
+VIAddVersionKey /LANG=1033 "FBForgeInstallerProtocol" "1"
+VIAddVersionKey /LANG=1033 "FBForgePayloadManifestSha256" "${FBFORGE_PAYLOAD_SHA256}"
 
 # additional plugins
 !addplugindir "${ADDITIONALPLUGINSPATH}"
@@ -187,217 +210,8 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
   !insertmacro MULTIUSER_PAGE_INSTALLMODE
 !endif
 
-; 4. Custom page to ask user if he wants to reinstall/uninstall
-;    only if a previous installation was detected
-Var ReinstallPageCheck
-Page custom PageReinstall PageLeaveReinstall
-Function PageReinstall
-  ; Uninstall previous WiX installation if exists.
-  ;
-  ; A WiX installer stores the installation info in registry
-  ; using a UUID and so we have to loop through all keys under
-  ; `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`
-  ; and check if `DisplayName` and `Publisher` keys match ${PRODUCTNAME} and ${MANUFACTURER}
-  ;
-  ; This has a potential issue that there maybe another installation that matches
-  ; our ${PRODUCTNAME} and ${MANUFACTURER} but wasn't installed by our WiX installer,
-  ; however, this should be fine since the user will have to confirm the uninstallation
-  ; and they can chose to abort it if doesn't make sense.
-  StrCpy $0 0
-  wix_loop:
-    EnumRegKey $1 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" $0
-    StrCmp $1 "" wix_loop_done ; Exit loop if there is no more keys to loop on
-    IntOp $0 $0 + 1
-    ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$1" "DisplayName"
-    ReadRegStr $R1 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$1" "Publisher"
-    StrCmp "$R0$R1" "${PRODUCTNAME}${MANUFACTURER}" 0 wix_loop
-    ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$1" "UninstallString"
-    ${StrCase} $R1 $R0 "L"
-    ${StrLoc} $R0 $R1 "msiexec" ">"
-    StrCmp $R0 0 0 wix_loop_done
-    StrCpy $WixMode 1
-    StrCpy $R6 "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$1"
-    Goto compare_version
-  wix_loop_done:
-
-  ; Check if there is an existing installation, if not, abort the reinstall page
-  ReadRegStr $R0 SHCTX "${UNINSTKEY}" ""
-  ReadRegStr $R1 SHCTX "${UNINSTKEY}" "UninstallString"
-  ${IfThen} "$R0$R1" == "" ${|} Abort ${|}
-
-  ; Compare this installar version with the existing installation
-  ; and modify the messages presented to the user accordingly
-  compare_version:
-  StrCpy $R4 "$(older)"
-  ${If} $WixMode = 1
-    ReadRegStr $R0 HKLM "$R6" "DisplayVersion"
-  ${Else}
-    ReadRegStr $R0 SHCTX "${UNINSTKEY}" "DisplayVersion"
-  ${EndIf}
-  ${IfThen} $R0 == "" ${|} StrCpy $R4 "$(unknown)" ${|}
-
-  nsis_tauri_utils::SemverCompare "${VERSION}" $R0
-  Pop $R0
-  ; Reinstalling the same version
-  ${If} $R0 = 0
-    StrCpy $R1 "$(alreadyInstalledLong)"
-    StrCpy $R2 "$(addOrReinstall)"
-    StrCpy $R3 "$(uninstallApp)"
-    !insertmacro MUI_HEADER_TEXT "$(alreadyInstalled)" "$(chooseMaintenanceOption)"
-  ; Upgrading
-  ${ElseIf} $R0 = 1
-    StrCpy $R1 "$(olderOrUnknownVersionInstalled)"
-    StrCpy $R2 "$(uninstallBeforeInstalling)"
-    StrCpy $R3 "$(dontUninstall)"
-    !insertmacro MUI_HEADER_TEXT "$(alreadyInstalled)" "$(choowHowToInstall)"
-  ; Downgrading
-  ${ElseIf} $R0 = -1
-    StrCpy $R1 "$(newerVersionInstalled)"
-    StrCpy $R2 "$(uninstallBeforeInstalling)"
-    !if "${ALLOWDOWNGRADES}" == "true"
-      StrCpy $R3 "$(dontUninstall)"
-    !else
-      StrCpy $R3 "$(dontUninstallDowngrade)"
-    !endif
-    !insertmacro MUI_HEADER_TEXT "$(alreadyInstalled)" "$(choowHowToInstall)"
-  ${Else}
-    Abort
-  ${EndIf}
-
-  ; Skip showing the page if passive
-  ;
-  ; Note that we don't call this earlier at the beginning
-  ; of this function because we need to populate some variables
-  ; related to current installed version if detected and whether
-  ; we are downgrading or not.
-  ${If} $PassiveMode = 1
-    Call PageLeaveReinstall
-  ${Else}
-    nsDialogs::Create 1018
-    Pop $R4
-    ${IfThen} $(^RTL) = 1 ${|} nsDialogs::SetRTL $(^RTL) ${|}
-
-    ${NSD_CreateLabel} 0 0 100% 24u $R1
-    Pop $R1
-
-    ${NSD_CreateRadioButton} 30u 50u -30u 8u $R2
-    Pop $R2
-    ${NSD_OnClick} $R2 PageReinstallUpdateSelection
-
-    ${NSD_CreateRadioButton} 30u 70u -30u 8u $R3
-    Pop $R3
-    ; Disable this radio button if downgrading and downgrades are disabled
-    !if "${ALLOWDOWNGRADES}" == "false"
-      ${IfThen} $R0 = -1 ${|} EnableWindow $R3 0 ${|}
-    !endif
-    ${NSD_OnClick} $R3 PageReinstallUpdateSelection
-
-    ; Check the first radio button if this the first time
-    ; we enter this page or if the second button wasn't
-    ; selected the last time we were on this page
-    ${If} $ReinstallPageCheck <> 2
-      SendMessage $R2 ${BM_SETCHECK} ${BST_CHECKED} 0
-    ${Else}
-      SendMessage $R3 ${BM_SETCHECK} ${BST_CHECKED} 0
-    ${EndIf}
-
-    ${NSD_SetFocus} $R2
-    nsDialogs::Show
-  ${EndIf}
-FunctionEnd
-Function PageReinstallUpdateSelection
-  ${NSD_GetState} $R2 $R1
-  ${If} $R1 == ${BST_CHECKED}
-    StrCpy $ReinstallPageCheck 1
-  ${Else}
-    StrCpy $ReinstallPageCheck 2
-  ${EndIf}
-FunctionEnd
-Function PageLeaveReinstall
-  ${NSD_GetState} $R2 $R1
-
-  ; If migrating from Wix, always uninstall
-  ${If} $WixMode = 1
-    Goto reinst_uninstall
-  ${EndIf}
-
-  ; In update mode, always proceeds without uninstalling
-  ${If} $UpdateMode = 1
-    Goto reinst_done
-  ${EndIf}
-
-  ; $R0 holds whether same(0)/upgrading(1)/downgrading(-1) version
-  ; $R1 holds the radio buttons state:
-  ;   1 => first choice was selected
-  ;   0 => second choice was selected
-  ${If} $R0 = 0 ; Same version, proceed
-    ${If} $R1 = 1              ; User chose to add/reinstall
-      Goto reinst_done
-    ${Else}                    ; User chose to uninstall
-      Goto reinst_uninstall
-    ${EndIf}
-  ${ElseIf} $R0 = 1 ; Upgrading
-    ${If} $R1 = 1              ; User chose to uninstall
-      Goto reinst_uninstall
-    ${Else}
-      Goto reinst_done         ; User chose NOT to uninstall
-    ${EndIf}
-  ${ElseIf} $R0 = -1 ; Downgrading
-    ${If} $R1 = 1              ; User chose to uninstall
-      Goto reinst_uninstall
-    ${Else}
-      Goto reinst_done         ; User chose NOT to uninstall
-    ${EndIf}
-  ${EndIf}
-
-  reinst_uninstall:
-    HideWindow
-    ClearErrors
-
-    ${If} $WixMode = 1
-      ReadRegStr $R1 HKLM "$R6" "UninstallString"
-      ExecWait '$R1' $0
-    ${Else}
-      ReadRegStr $4 SHCTX "${MANUPRODUCTKEY}" ""
-      ReadRegStr $R1 SHCTX "${UNINSTKEY}" "UninstallString"
-      ${IfThen} $UpdateMode = 1 ${|} StrCpy $R1 "$R1 /UPDATE" ${|} ; append /UPDATE
-      ${IfThen} $PassiveMode = 1 ${|} StrCpy $R1 "$R1 /P" ${|} ; append /P
-      StrCpy $R1 "$R1 _?=$4" ; append uninstall directory
-      ExecWait '$R1' $0
-    ${EndIf}
-
-    BringToFront
-
-    ${IfThen} ${Errors} ${|} StrCpy $0 2 ${|} ; ExecWait failed, set fake exit code
-
-    ${If} $0 <> 0
-    ${OrIf} ${FileExists} "$INSTDIR\${MAINBINARYNAME}.exe"
-      ; User cancelled wix uninstaller? return to select un/reinstall page
-      ${If} $WixMode = 1
-      ${AndIf} $0 = 1602
-        Abort
-      ${EndIf}
-
-      ; User cancelled NSIS uninstaller? return to select un/reinstall page
-      ${If} $0 = 1
-        Abort
-      ${EndIf}
-
-      ; Other errors? show generic error message and return to select un/reinstall page
-      MessageBox MB_ICONEXCLAMATION "$(unableToUninstall)"
-      Abort
-    ${EndIf}
-
-    ; The NSIS uninstaller was run in place (`_?=`), so it cannot delete itself
-    ; and the install directory, clean them up here once the uninstall succeeded
-    ; https://nsis.sourceforge.io/Docs/Chapter3.html#:~:text=path%20contains%20spaces.-,3.2.3%20Examples,-installer.exe%20/NCRC
-    ${If} $WixMode = 0
-    ${AndIf} $4 != ""
-      Delete "$4\uninstall.exe"
-      RMDir "$4"
-    ${EndIf}
-  reinst_done:
-FunctionEnd
+; No nested historical uninstaller: parent lease, untrusted registry command
+; and historical forced-close semantics cannot safely be delegated.
 
 ; FBForge scanner begin: component page
 ; Optional scanner setup is identical for both WebView2 installer variants.
@@ -429,8 +243,7 @@ FunctionEnd
 
 ; FBForge scanner end: component page
 ; 5. Choose install directory page
-!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfPassive
-!insertmacro MUI_PAGE_DIRECTORY
+; No directory picker. Native V2 chooses existing or default target.
 
 ; 6. Start menu shortcut page
 Var AppStartMenuFolder
@@ -443,17 +256,51 @@ Var AppStartMenuFolder
 !insertmacro MUI_PAGE_STARTMENU Application $AppStartMenuFolder
 
 ; 7. Installation page
+; Desktop choice belongs before the worker, never after native finalization.
+Page custom FBForgeDesktopPage FBForgeDesktopPageLeave
+Function FBForgeDesktopPage
+  ${If} ${Silent}
+  ${OrIf} $PassiveMode = 1
+  ${OrIf} $UpdateMode = 1
+  ${OrIf} $NoShortcutMode = 1
+    Abort
+  ${EndIf}
+  !insertmacro MUI_HEADER_TEXT "Verknüpfungen" "Wählen Sie die gewünschte Desktopverknüpfung."
+  ClearErrors
+  nsDialogs::Create 1018
+  Pop $FBForgeDesktopDialog
+  IfErrors failed
+  StrCmpS $FBForgeDesktopDialog "error" failed
+  ${NSD_CreateCheckbox} 0 0 100% 24u "$(createDesktop)"
+  Pop $FBForgeDesktopCheckbox
+  IfErrors failed
+  StrCmpS $FBForgeDesktopCheckbox 0 failed
+  ${NSD_SetState} $FBForgeDesktopCheckbox $FBForgeDesktopChoice
+  nsDialogs::Show
+  Return
+  failed:
+    Call FBForgeInstallFailed
+FunctionEnd
+Function FBForgeDesktopPageLeave
+  ${NSD_GetState} $FBForgeDesktopCheckbox $FBForgeDesktopChoice
+FunctionEnd
+
+; MUI normally writes Installer Language in its GUI InstFilesLeave callback.
+; Disable that late write. The worker saves it explicitly before FinalizeV2.
+!undef MUI_LANGDLL_REGISTRY_ROOT
+!undef MUI_LANGDLL_REGISTRY_KEY
+!undef MUI_LANGDLL_REGISTRY_VALUENAME
 !insertmacro MUI_PAGE_INSTFILES
+!define MUI_LANGDLL_REGISTRY_ROOT "HKCU"
+!define MUI_LANGDLL_REGISTRY_KEY "${MANUPRODUCTKEY}"
+!define MUI_LANGDLL_REGISTRY_VALUENAME "Installer Language"
+
 
 ; 8. Finish page
 ;
 ; Don't auto jump to finish page after installation page,
 ; because the installation page has useful info that can be used debug any issues with the installer.
 !define MUI_FINISHPAGE_NOAUTOCLOSE
-; Use show readme button in the finish page as a button create a desktop shortcut
-!define MUI_FINISHPAGE_SHOWREADME
-!define MUI_FINISHPAGE_SHOWREADME_TEXT "$(createDesktop)"
-!define MUI_FINISHPAGE_SHOWREADME_FUNCTION CreateOrUpdateDesktopShortcut
 ; Show run app after installation.
 !define MUI_FINISHPAGE_RUN
 !define MUI_FINISHPAGE_RUN_FUNCTION RunMainBinary
@@ -461,7 +308,20 @@ Var AppStartMenuFolder
 !insertmacro MUI_PAGE_FINISH
 
 Function RunMainBinary
+  Call FBForgeRequireCompletedV2
+  ClearErrors
   nsis_tauri_utils::RunAsUser "$INSTDIR\${MAINBINARYNAME}.exe" ""
+  !insertmacro FBForgeCheckWrite
+FunctionEnd
+
+!define MUI_CUSTOMFUNCTION_ABORT FBForgeOnUserAbort
+Function FBForgeOnUserAbort
+  StrCpy $FBForgeInstallFailed 1
+  SetErrorLevel 70
+FunctionEnd
+Function .onInstFailed
+  StrCpy $FBForgeInstallFailed 1
+  SetErrorLevel 70
 FunctionEnd
 
 ; Uninstaller Pages
@@ -519,6 +379,13 @@ FunctionEnd
 {{/each}}
 
 Function .onInit
+  StrCpy $FBForgeInstallFailed 0
+  StrCpy $FBForgeV2Started 0
+  StrCpy $FBForgeV2Complete 0
+  StrCpy $FBForgeGuardReleased 0
+  StrCpy $FBForgeShortcutsFinalized 0
+  StrCpy $FBForgeDesktopChoice 1
+  SetErrorLevel 70
   ${GetOptions} $CMDLINE "/P" $PassiveMode
   ${IfNot} ${Errors}
     StrCpy $PassiveMode 1
@@ -560,32 +427,6 @@ Function .onInit
   ClearErrors
 ; FBForge scanner end: preserve selection and explicit silent override
 
-  ${If} $INSTDIR == "${PLACEHOLDER_INSTALL_DIR}"
-    ; Set default install location
-    !if "${INSTALLMODE}" == "perMachine"
-      ${If} ${RunningX64}
-        !if "${ARCH}" == "x64"
-          StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCTNAME}"
-        !else if "${ARCH}" == "arm64"
-          StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCTNAME}"
-        !else
-          StrCpy $INSTDIR "$PROGRAMFILES\${PRODUCTNAME}"
-        !endif
-      ${Else}
-        StrCpy $INSTDIR "$PROGRAMFILES\${PRODUCTNAME}"
-      ${EndIf}
-    !else if "${INSTALLMODE}" == "currentUser"
-      StrCpy $INSTDIR "$LOCALAPPDATA\${PRODUCTNAME}"
-    !endif
-
-    Call RestorePreviousInstallLocation
-  ${EndIf}
-
-
-  !if "${INSTALLMODE}" == "both"
-    !insertmacro MULTIUSER_INIT
-  !endif
-
   ; Abort downgrades if they are disabled, in the modes that skip the reinstall page choice:
   ; silent, passive and update
   !if "${ALLOWDOWNGRADES}" == "false"
@@ -613,8 +454,8 @@ Function .onInit
   !endif
 FunctionEnd
 
-Section WebView2
-  ; Check if Webview2 is already installed and skip this section
+Function FBForgeReadWebView2Version
+  StrCpy $4 ""
   ${If} ${RunningX64}
     ReadRegStr $4 HKLM "SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\${WEBVIEW2APPGUID}" "pv"
   ${Else}
@@ -623,103 +464,93 @@ Section WebView2
   ${If} $4 == ""
     ReadRegStr $4 HKCU "SOFTWARE\Microsoft\EdgeUpdate\Clients\${WEBVIEW2APPGUID}" "pv"
   ${EndIf}
-
+  ClearErrors
   ${If} $4 == ""
-    ; Webview2 installation
-    ;
-    ; Skip if updating
-    ${If} $UpdateMode <> 1
-      !if "${INSTALLWEBVIEW2MODE}" == "downloadBootstrapper"
-        Delete "$TEMP\MicrosoftEdgeWebview2Setup.exe"
-        DetailPrint "$(webview2Downloading)"
-        NSISdl::download "https://go.microsoft.com/fwlink/p/?LinkId=2124703" "$TEMP\MicrosoftEdgeWebview2Setup.exe"
-        Pop $0
-        ${If} $0 == "success"
-          DetailPrint "$(webview2DownloadSuccess)"
-        ${Else}
-          DetailPrint "$(webview2DownloadError)"
-          Abort "$(webview2AbortError)"
-        ${EndIf}
-        StrCpy $6 "$TEMP\MicrosoftEdgeWebview2Setup.exe"
-        Goto install_webview2
-      !endif
-
-      !if "${INSTALLWEBVIEW2MODE}" == "embedBootstrapper"
-        Delete "$TEMP\MicrosoftEdgeWebview2Setup.exe"
-        File "/oname=$TEMP\MicrosoftEdgeWebview2Setup.exe" "${WEBVIEW2BOOTSTRAPPERPATH}"
-        DetailPrint "$(installingWebview2)"
-        StrCpy $6 "$TEMP\MicrosoftEdgeWebview2Setup.exe"
-        Goto install_webview2
-      !endif
-
-      !if "${INSTALLWEBVIEW2MODE}" == "offlineInstaller"
-        Delete "$TEMP\MicrosoftEdgeWebView2RuntimeInstaller.exe"
-        File "/oname=$TEMP\MicrosoftEdgeWebView2RuntimeInstaller.exe" "${WEBVIEW2INSTALLERPATH}"
-        DetailPrint "$(installingWebview2)"
-        StrCpy $6 "$TEMP\MicrosoftEdgeWebView2RuntimeInstaller.exe"
-        Goto install_webview2
-      !endif
-
-      Goto webview2_done
-
-      install_webview2:
-        DetailPrint "$(installingWebview2)"
-        ; $6 holds the path to the webview2 installer
-        ExecWait "$6 ${WEBVIEW2INSTALLERARGS} /install" $1
-        ${If} $1 = 0
-          DetailPrint "$(webview2InstallSuccess)"
-        ${Else}
-          DetailPrint "$(webview2InstallError)"
-          Abort "$(webview2AbortError)"
-        ${EndIf}
-      webview2_done:
-    ${EndIf}
-  ${Else}
-    !if "${MINIMUMWEBVIEW2VERSION}" != ""
-      ${VersionCompare} "${MINIMUMWEBVIEW2VERSION}" "$4" $R0
-      ${If} $R0 = 1
-        update_webview:
-          DetailPrint "$(installingWebview2)"
-          ${If} ${RunningX64}
-            ReadRegStr $R1 HKLM "SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate" "path"
-          ${Else}
-            ReadRegStr $R1 HKLM "SOFTWARE\Microsoft\EdgeUpdate" "path"
-          ${EndIf}
-          ${If} $R1 == ""
-            ReadRegStr $R1 HKCU "SOFTWARE\Microsoft\EdgeUpdate" "path"
-          ${EndIf}
-          ${If} $R1 != ""
-            ; Chromium updater docs: https://source.chromium.org/chromium/chromium/src/+/main:docs/updater/user_manual.md
-            ; Modified from "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft EdgeWebView\ModifyPath"
-            ExecWait `"$R1" /install appguid=${WEBVIEW2APPGUID}&needsadmin=true` $1
-            ${If} $1 = 0
-              DetailPrint "$(webview2InstallSuccess)"
-            ${Else}
-              MessageBox MB_ICONEXCLAMATION|MB_ABORTRETRYIGNORE "$(webview2InstallError)" IDIGNORE ignore IDRETRY update_webview
-              Quit
-              ignore:
-            ${EndIf}
-          ${EndIf}
-      ${EndIf}
-    !endif
+    Return
   ${EndIf}
+  ${VersionCompare} "0.0.0.0" "$4" $R0
+  ${If} $R0 <> 2
+    StrCpy $4 ""
+    Return
+  ${EndIf}
+  !if "${MINIMUMWEBVIEW2VERSION}" != ""
+    ${VersionCompare} "${MINIMUMWEBVIEW2VERSION}" "$4" $R0
+    ${If} $R0 = 1
+      StrCpy $4 ""
+    ${EndIf}
+  !endif
+FunctionEnd
+
+Section "-FBForge native preparation"
+  Call FBForgeExtractPayload
+  StrCpy $FBForgeV2Components ""
+  ${If} $ScannerChoice = 1
+    StrCpy $FBForgeV2Components "scanner"
+  ${EndIf}
+  Call FBForgePrepareV2
+SectionEnd
+
+Section WebView2
+  Call FBForgeReadWebView2Version
+  StrCmpS $4 "" 0 webview2_ready
+  !if "${INSTALLWEBVIEW2MODE}" == "offlineInstaller"
+    ; Only a fully embedded prerequisite. No bootstrapper, download or system
+    ; updater invocation can bypass the Suite's native network settings.
+    ; PublishedPending recovery has no stage: provision WebView2 separately.
+    Call FBForgeRequireStagingV2
+    Call FBForgeStagePathV2
+    ClearErrors
+    SetOutPath "$FBForgeV2Stage"
+    !insertmacro FBForgeCheckWrite
+    File "/oname=.fbforge-webview2-prerequisite.exe" "${WEBVIEW2INSTALLERPATH}"
+    !insertmacro FBForgeCheckWrite
+    ClearErrors
+    ExecWait '"$FBForgeV2Stage\.fbforge-webview2-prerequisite.exe" ${WEBVIEW2INSTALLERARGS} /install' $1
+    !insertmacro FBForgeCheckWrite
+    ${If} $1 <> 0
+      Call FBForgeInstallFailed
+    ${EndIf}
+    ; This is not a payload leaf. Remove it strictly before native StageHealth.
+    ClearErrors
+    Delete "$FBForgeV2Stage\.fbforge-webview2-prerequisite.exe"
+    !insertmacro FBForgeCheckWrite
+    SetOutPath "$PLUGINSDIR"
+    !insertmacro FBForgeCheckWrite
+    Call FBForgeReadWebView2Version
+    StrCmpS $4 "" 0 webview2_ready
+  !endif
+  SetErrorLevel 70
+  StrCpy $FBForgeInstallFailed 1
+  MessageBox MB_OK|MB_ICONSTOP "${PRODUCTNAME}: Microsoft Edge WebView2 Runtime fehlt oder ist zu alt. Lassen Sie die erforderliche Laufzeit vor diesem Vorgang installieren. Es wird kein Online-Download und kein System-Updater gestartet." /SD IDOK
+  Quit
+  webview2_ready:
 SectionEnd
 
 Section Install
+  Call FBForgePollV2
+  StrCmpS $FBForgeV2Phase "v2:publishedPending" published_metadata
+  StrCmpS $FBForgeV2Phase "v2:recoveryPublishedPending" published_metadata
+  Call FBForgeRequireStagingV2
+  StrCpy $INSTDIR $FBForgeV2Stage
+  ClearErrors
   SetOutPath $INSTDIR
+  !insertmacro FBForgeCheckWrite
 
   !ifmacrodef NSIS_HOOK_PREINSTALL
+    Call FBForgeRequireStagingV2
     !insertmacro NSIS_HOOK_PREINSTALL
+    !insertmacro FBForgeCheckWrite
   !endif
 
-  !insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
 
   ; Copy main executable
   File "${MAINBINARYSRCPATH}"
+  !insertmacro FBForgeCheckWrite
 
   ; Copy resources
   {{#each resources_dirs}}
     CreateDirectory "$INSTDIR\\{{this}}"
+    !insertmacro FBForgeCheckWrite
   {{/each}}
   {{#each resources}}
 ; FBForge scanner begin: resource filter
@@ -733,9 +564,10 @@ Section Install
     ${If} $R9 = 1
 ; FBForge scanner end: resource filter
     File /a "/oname={{this.[1]}}" "{{no-escape @key}}"
+    !insertmacro FBForgeCheckWrite
 ; FBForge scanner begin: resource filter close
     ${Else}
-      Delete "$INSTDIR\{{this.[1]}}"
+      ; Unselected component is absent from the signed active payload.
     ${EndIf}
 ; FBForge scanner end: resource filter close
   {{/each}}
@@ -743,84 +575,135 @@ Section Install
   ; Copy external binaries
   {{#each binaries}}
     File /a "/oname={{this}}" "{{no-escape @key}}"
+    !insertmacro FBForgeCheckWrite
   {{/each}}
+
+  Call FBForgeRequireStagingV2
+  ; A prior interrupted offline prerequisite may remain in recovered staging.
+  !if "${INSTALLWEBVIEW2MODE}" == "offlineInstaller"
+    IfFileExists "$INSTDIR\.fbforge-webview2-prerequisite.exe" 0 no_prerequisite_residue
+      ClearErrors
+      Delete "$INSTDIR\.fbforge-webview2-prerequisite.exe"
+      !insertmacro FBForgeCheckWrite
+    no_prerequisite_residue:
+  !endif
+  ClearErrors
+  WriteUninstaller "$INSTDIR\uninstall.exe"
+  !insertmacro FBForgeCheckWrite
+  Call FBForgePublishV2
+
+  published_metadata:
+  Call FBForgeRequirePublishedV2
+  Call FBForgeTargetPathV2
+  StrCpy $INSTDIR $FBForgeV2Target
+  ClearErrors
+  SetOutPath "$INSTDIR"
+  !insertmacro FBForgeCheckWrite
 
   ; Create file associations
   {{#each file_associations as |association| ~}}
     {{#each association.ext as |ext| ~}}
-       !insertmacro APP_ASSOCIATE "{{ext}}" "{{or association.name ext}}" "{{association-description association.description ext}}" "$INSTDIR\${MAINBINARYNAME}.exe,0" "Open with ${PRODUCTNAME}" "$INSTDIR\${MAINBINARYNAME}.exe $\"%1$\""
+       !insertmacro FBForgeAssociate "{{ext}}" "{{or association.name ext}}" "{{association-description association.description ext}}" "$INSTDIR\${MAINBINARYNAME}.exe,0" "Open with ${PRODUCTNAME}" "$INSTDIR\${MAINBINARYNAME}.exe $\"%1$\""
     {{/each}}
   {{/each}}
 
   ; Register deep links
   {{#each deep_link_protocols as |protocol| ~}}
     WriteRegStr SHCTX "Software\Classes\\{{protocol}}" "URL Protocol" ""
+    !insertmacro FBForgeCheckWrite
     WriteRegStr SHCTX "Software\Classes\\{{protocol}}" "" "URL:${BUNDLEID} protocol"
+    !insertmacro FBForgeCheckWrite
     WriteRegStr SHCTX "Software\Classes\\{{protocol}}\DefaultIcon" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\",0"
+    !insertmacro FBForgeCheckWrite
     WriteRegStr SHCTX "Software\Classes\\{{protocol}}\shell\open\command" "" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\" $\"%1$\""
+    !insertmacro FBForgeCheckWrite
   {{/each}}
-
-  ; Create uninstaller
-  WriteUninstaller "$INSTDIR\uninstall.exe"
 
   ; Save $INSTDIR in registry for future installations
   WriteRegStr SHCTX "${MANUPRODUCTKEY}" "" $INSTDIR
+  !insertmacro FBForgeCheckWrite
 
   !if "${INSTALLMODE}" == "both"
     ; Save install mode to be selected by default for the next installation such as updating
     ; or when uninstalling
     WriteRegStr SHCTX "${UNINSTKEY}" $MultiUser.InstallMode 1
+    !insertmacro FBForgeCheckWrite
   !endif
 
-  ; Remove old main binary if it doesn't match new main binary name
+  ; Retain the old value only for target-checked shortcut migration. A future
+  ; native verified installation plan must name any executable cleanup explicitly.
+  ClearErrors
   ReadRegStr $OldMainBinaryName SHCTX "${UNINSTKEY}" "MainBinaryName"
-  ${If} $OldMainBinaryName != ""
-  ${AndIf} $OldMainBinaryName != "${MAINBINARYNAME}.exe"
-    Delete "$INSTDIR\$OldMainBinaryName"
+  ${If} ${Errors}
+    StrCpy $OldMainBinaryName ""
+    ClearErrors
   ${EndIf}
 
   ; Save current MAINBINARYNAME for future updates
   WriteRegStr SHCTX "${UNINSTKEY}" "MainBinaryName" "${MAINBINARYNAME}.exe"
+  !insertmacro FBForgeCheckWrite
 ; FBForge scanner begin: store choice
   WriteRegDWORD SHCTX "${UNINSTKEY}" "ScannerComponent" $ScannerChoice
+  !insertmacro FBForgeCheckWrite
 ; FBForge scanner end: store choice
 
   ; Registry information for add/remove programs
   WriteRegStr SHCTX "${UNINSTKEY}" "DisplayName" "${PRODUCTNAME}"
+  !insertmacro FBForgeCheckWrite
   WriteRegStr SHCTX "${UNINSTKEY}" "DisplayIcon" "$\"$INSTDIR\${MAINBINARYNAME}.exe$\""
+  !insertmacro FBForgeCheckWrite
   WriteRegStr SHCTX "${UNINSTKEY}" "DisplayVersion" "${VERSION}"
+  !insertmacro FBForgeCheckWrite
   WriteRegStr SHCTX "${UNINSTKEY}" "Publisher" "${MANUFACTURER}"
+  !insertmacro FBForgeCheckWrite
   WriteRegStr SHCTX "${UNINSTKEY}" "InstallLocation" "$\"$INSTDIR$\""
+  !insertmacro FBForgeCheckWrite
   WriteRegStr SHCTX "${UNINSTKEY}" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
+  !insertmacro FBForgeCheckWrite
   WriteRegDWORD SHCTX "${UNINSTKEY}" "NoModify" "1"
+  !insertmacro FBForgeCheckWrite
   WriteRegDWORD SHCTX "${UNINSTKEY}" "NoRepair" "1"
+  !insertmacro FBForgeCheckWrite
 
+  ClearErrors
   ${GetSize} "$INSTDIR" "/M=uninstall.exe /S=0K /G=0" $0 $1 $2
+  !insertmacro FBForgeCheckWrite
   IntOp $0 $0 + ${ESTIMATEDSIZE}
   IntFmt $0 "0x%08X" $0
   WriteRegDWORD SHCTX "${UNINSTKEY}" "EstimatedSize" "$0"
+  !insertmacro FBForgeCheckWrite
 
   !if "${HOMEPAGE}" != ""
     WriteRegStr SHCTX "${UNINSTKEY}" "URLInfoAbout" "${HOMEPAGE}"
+    !insertmacro FBForgeCheckWrite
     WriteRegStr SHCTX "${UNINSTKEY}" "URLUpdateInfo" "${HOMEPAGE}"
+    !insertmacro FBForgeCheckWrite
     WriteRegStr SHCTX "${UNINSTKEY}" "HelpLink" "${HOMEPAGE}"
+    !insertmacro FBForgeCheckWrite
   !endif
 
   ; Create start menu shortcut
   !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
     Call CreateOrUpdateStartMenuShortcut
   !insertmacro MUI_STARTMENU_WRITE_END
+  !insertmacro FBForgeCheckWrite
 
-  ; Create desktop shortcut for silent and passive installers
-  ; because finish page will be skipped
-  ${If} $PassiveMode = 1
-  ${OrIf} ${Silent}
+  ${If} $FBForgeDesktopChoice = 1
     Call CreateOrUpdateDesktopShortcut
   ${EndIf}
 
   !ifmacrodef NSIS_HOOK_POSTINSTALL
+    Call FBForgeRequirePublishedV2
     !insertmacro NSIS_HOOK_POSTINSTALL
+    !insertmacro FBForgeCheckWrite
   !endif
+
+  ; Save language under the native plan, not in MUI's GUI leave callback.
+  ClearErrors
+  WriteRegStr HKCU "${MANUPRODUCTKEY}" "Installer Language" $LANGUAGE
+  !insertmacro FBForgeCheckWrite
+  StrCpy $FBForgeShortcutsFinalized 1
+  Call FBForgeFinalizeV2
 
   ; Auto close this page for passive mode
   ${If} $PassiveMode = 1
@@ -829,19 +712,26 @@ Section Install
 SectionEnd
 
 Function .onInstSuccess
-  ; Check for `/R` flag only in silent and passive installers because
-  ; GUI installer has a toggle for the user to (re)start the app
+  Call FBForgeRequireCompletedV2
   ${If} $PassiveMode = 1
   ${OrIf} ${Silent}
+    ClearErrors
     ${GetOptions} $CMDLINE "/R" $R0
     ${IfNot} ${Errors}
       ${GetOptions} $CMDLINE "/ARGS" $R0
+      ${If} ${Errors}
+        StrCpy $R0 ""
+      ${EndIf}
+      ClearErrors
       nsis_tauri_utils::RunAsUser "$INSTDIR\${MAINBINARYNAME}.exe" "$R0"
+      !insertmacro FBForgeCheckWrite
     ${EndIf}
   ${EndIf}
 FunctionEnd
 
 Function un.onInit
+  Call un.FBForgeAcquire
+  Call un.FBForgeRequireMutationEvidence
   !insertmacro SetContext
 
   !if "${INSTALLMODE}" == "both"
@@ -862,12 +752,13 @@ Function un.onInit
 FunctionEnd
 
 Section Uninstall
+  Call un.FBForgeRequireMutationEvidence
 
   !ifmacrodef NSIS_HOOK_PREUNINSTALL
+    Call un.FBForgeRequireMutationEvidence
     !insertmacro NSIS_HOOK_PREUNINSTALL
   !endif
 
-  !insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
 
   ; Delete the app directory and its content from disk
   ; Copy main executable
@@ -903,7 +794,7 @@ Section Uninstall
   Delete "$INSTDIR\uninstall.exe"
 
   {{#each resources_ancestors}}
-  RMDir /REBOOTOK "$INSTDIR\\{{this}}"
+  RMDir "$INSTDIR\\{{this}}"
   {{/each}}
   RMDir "$INSTDIR"
 
@@ -972,6 +863,7 @@ Section Uninstall
   ${EndIf}
 
   !ifmacrodef NSIS_HOOK_POSTUNINSTALL
+    Call un.FBForgeRequireMutationEvidence
     !insertmacro NSIS_HOOK_POSTUNINSTALL
   !endif
 
@@ -980,6 +872,7 @@ Section Uninstall
   ${OrIf} $UpdateMode = 1
     SetAutoClose true
   ${EndIf}
+  Call un.FBForgeRelease
 SectionEnd
 
 Function RestorePreviousInstallLocation
@@ -1000,21 +893,26 @@ Function un.SkipIfPassive
 FunctionEnd
 
 Function CreateOrUpdateStartMenuShortcut
+  Call FBForgeRequirePublishedV2
   ; We used to use product name as MAINBINARYNAME
   ; migrate old shortcuts to target the new MAINBINARYNAME
   StrCpy $R0 0
 
   !insertmacro IsShortcutTarget "$SMPROGRAMS\$AppStartMenuFolder\${PRODUCTNAME}.lnk" "$INSTDIR\$OldMainBinaryName"
   Pop $0
+  !insertmacro FBForgeCheckWrite
   ${If} $0 = 1
     !insertmacro SetShortcutTarget "$SMPROGRAMS\$AppStartMenuFolder\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
+    !insertmacro FBForgeCheckWrite
     StrCpy $R0 1
   ${EndIf}
 
   !insertmacro IsShortcutTarget "$SMPROGRAMS\${PRODUCTNAME}.lnk" "$INSTDIR\$OldMainBinaryName"
   Pop $0
+  !insertmacro FBForgeCheckWrite
   ${If} $0 = 1
     !insertmacro SetShortcutTarget "$SMPROGRAMS\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
+    !insertmacro FBForgeCheckWrite
     StrCpy $R0 1
   ${EndIf}
 
@@ -1022,44 +920,54 @@ Function CreateOrUpdateStartMenuShortcut
     Return
   ${EndIf}
 
-  ; Skip creating shortcut if in update mode or no shortcut mode
-  ; but always create if migrating from wix
-  ${If} $WixMode = 0
-    ${If} $UpdateMode = 1
-    ${OrIf} $NoShortcutMode = 1
-      Return
-    ${EndIf}
+  ; Historical WiX migration is not delegated by this template.
+  ${If} $UpdateMode = 1
+  ${OrIf} $NoShortcutMode = 1
+    Return
   ${EndIf}
 
   !if "${STARTMENUFOLDER}" != ""
     CreateDirectory "$SMPROGRAMS\$AppStartMenuFolder"
-    CreateShortcut "$SMPROGRAMS\$AppStartMenuFolder\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
-    !insertmacro SetLnkAppUserModelId "$SMPROGRAMS\$AppStartMenuFolder\${PRODUCTNAME}.lnk"
+    !insertmacro FBForgeCheckWrite
+    !insertmacro FBForgeCreateShortcut "$SMPROGRAMS\$AppStartMenuFolder\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
   !else
-    CreateShortcut "$SMPROGRAMS\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
-    !insertmacro SetLnkAppUserModelId "$SMPROGRAMS\${PRODUCTNAME}.lnk"
+    !insertmacro FBForgeCreateShortcut "$SMPROGRAMS\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
   !endif
 FunctionEnd
 
 Function CreateOrUpdateDesktopShortcut
+  ${If} $FBForgeShortcutsFinalized = 1
+    Return
+  ${EndIf}
+  Call FBForgeRequirePublishedV2
   ; We used to use product name as MAINBINARYNAME
   ; migrate old shortcuts to target the new MAINBINARYNAME
   !insertmacro IsShortcutTarget "$DESKTOP\${PRODUCTNAME}.lnk" "$INSTDIR\$OldMainBinaryName"
   Pop $0
+  !insertmacro FBForgeCheckWrite
   ${If} $0 = 1
     !insertmacro SetShortcutTarget "$DESKTOP\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
+    !insertmacro FBForgeCheckWrite
     Return
   ${EndIf}
 
-  ; Skip creating shortcut if in update mode or no shortcut mode
-  ; but always create if migrating from wix
-  ${If} $WixMode = 0
-    ${If} $UpdateMode = 1
-    ${OrIf} $NoShortcutMode = 1
-      Return
-    ${EndIf}
+  ; Historical WiX migration is not delegated by this template.
+  ${If} $UpdateMode = 1
+  ${OrIf} $NoShortcutMode = 1
+    Return
   ${EndIf}
 
-  CreateShortcut "$DESKTOP\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
-  !insertmacro SetLnkAppUserModelId "$DESKTOP\${PRODUCTNAME}.lnk"
+  !insertmacro FBForgeCreateShortcut "$DESKTOP\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
 FunctionEnd
+
+; Runtime bytes stay data in the private plugin directory.
+Function FBForgeExtractPayload
+  ClearErrors
+  InitPluginsDir
+  !insertmacro FBForgeCheckWrite
+  SetOutPath "$PLUGINSDIR"
+  !insertmacro FBForgeCheckWrite
+  File /oname=fbforge-payload.v1.json "${FBFORGE_PAYLOAD_FILE}"
+  !insertmacro FBForgeCheckWrite
+FunctionEnd
+!delfile "${FBFORGE_PAYLOAD_FILE}"

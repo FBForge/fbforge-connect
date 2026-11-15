@@ -1,8 +1,7 @@
 ; Keep profile and upgrade identities stable while renaming the executable.
+!include "${__FILEDIR__}\guard.nsh"
 !macro NSIS_HOOK_PREINSTALL
-  ${If} ${FileExists} "$INSTDIR\fit-connect-integration-client.exe"
-    !insertmacro CheckIfAppIsRunning "$INSTDIR\fit-connect-integration-client.exe" "${PRODUCTNAME}"
-  ${EndIf}
+  Call FBForgeRequireStagingV2
 !macroend
 
 ; Delete only legacy-named shortcuts targeting this installation, with either
@@ -10,13 +9,16 @@
 !macro RemoveLegacyShortcut PATH
   !insertmacro IsShortcutTarget "${PATH}" "$INSTDIR\fit-connect-integration-client.exe"
   Pop $0
+  !insertmacro FBForgeCheckWrite
   ${If} $0 != 1
     !insertmacro IsShortcutTarget "${PATH}" "$INSTDIR\${MAINBINARYNAME}.exe"
     Pop $0
+    !insertmacro FBForgeCheckWrite
   ${EndIf}
   ${If} $0 = 1
     !insertmacro UnpinShortcut "${PATH}"
     Delete "${PATH}"
+    !insertmacro FBForgeCheckWrite
   ${EndIf}
 !macroend
 

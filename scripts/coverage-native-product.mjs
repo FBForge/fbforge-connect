@@ -4,7 +4,9 @@ import { spawnSync } from 'node:child_process';
 
 function nativeSourcePath(value) {
   const path = posix.normalize(value.replaceAll('\\', '/'));
-  const source = /(?:^|\/)(desktop\/src\/.+[.]rs)$/.exec(path)?.[1];
+  // The build-time marker helper is also compiled by the native-contract consumer.
+  // Keep unrelated build scripts and other dependencies outside product coverage.
+  const source = /(?:^|\/)(desktop\/(?:src\/.+[.]rs|cooperation_marker[.]rs))$/.exec(path)?.[1];
   if (!source) throw new Error('native_coverage_non_product_source');
   return source;
 }

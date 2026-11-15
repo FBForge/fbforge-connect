@@ -1027,6 +1027,7 @@ name = "fbforge-connect"
 version = "0.4.0"
 dependencies = [
  "base64 0.22.1",
+ "fbforge-suite-coordination",
  "minisign-verify",
  "reqwest",
  "ring",
@@ -1044,6 +1045,14 @@ dependencies = [
  "windows-sys 0.61.2",
  "x509-parser",
  "zip",
+]
+
+[[package]]
+name = "fbforge-suite-coordination"
+version = "0.1.0-dev.1"
+dependencies = [
+ "ring",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

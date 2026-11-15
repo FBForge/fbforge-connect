@@ -34,3 +34,10 @@ die mitgelieferten Bibliotheken haben eigene Hinweise. Die Originaldateien
 die vollständige Scanner-Distribution mit passendem ClamAV-Quellarchiv,
 Originalsignatur, Buildverweisen und sämtlichen mitgelieferten Lizenzhinweisen.
 Die EUPL-Lizenz der FBForge-Connect-Anwendung ersetzt diese Lizenzen nicht.
+
+## Lokal vendorte FBForge-Koordination
+
+`desktop/vendor/suite-coordination` enthält neu geschriebenen FBForge-Code unter
+EUPL-1.2. Herkunft, unveränderte Quellhashes und Lizenzwahl stehen in dessen
+`PROVENANCE.md`; der vollständige Lizenztext liegt unter `LICENSE`. Die Crate
+verwendet die bereits im Desktop enthaltenen Pakete ring und windows-sys.

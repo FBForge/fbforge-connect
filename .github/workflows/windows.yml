@@ -128,6 +128,8 @@ jobs:
       - name: Install pinned Rust toolchain
         working-directory: desktop
         run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt --component llvm-tools-preview
+      - name: Install pinned x86 installer guard toolchain
+        run: rustup toolchain install 1.93.1 --profile minimal --target i686-pc-windows-msvc
       - name: Resolve locked frontend dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
       - name: Check frontend style and lint
@@ -229,41 +231,11 @@ jobs:
             !desktop/target/release/bundle
             !desktop/target/scanner-dist
           key: ${{ steps.rust-cache.outputs.cache-primary-key }}
-      - name: Load a verified signed upgrade baseline
-        if: inputs.expected_commit != '' || inputs.upgrade_run != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-          UPGRADE_RUN: ${{ inputs.upgrade_run }}
-          UPGRADE_LATEST: ${{ inputs.expected_commit != '' }}
-        run: python scripts/load-upgrade-baseline.py
-      - name: Verify baseline signature and timestamp
-        if: inputs.expected_commit != '' || inputs.upgrade_run != ''
-        run: |
-          Import-Module './scripts/windows-signing.psm1' -Force
-          $tool = Get-WindowsSignTool
-          $null = Assert-WindowsSignature -Path $env:FITCONNECT_PREVIOUS_INSTALLER -Thumbprint $env:FITCONNECT_PREVIOUS_SIGNER -SignTool $tool
-      - name: Install the real desktop application and verify bundled runtime and profile preservation
+      - name: Reject unsigned installer before target mutation
         run: |
           $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
           if ($setup.Count -ne 1) { throw 'installer_missing' }
-          $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', './scripts/windows-install-smoke.ps1', '-InstallerPath', $setup[0].FullName, '-CheckpointBridge', 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe', '-ExpectedBinaryPath', 'desktop/target/release/fbforge-connect.exe')
-          if ($env:FITCONNECT_PREVIOUS_INSTALLER) { $arguments += @('-PreviousInstallerPath', $env:FITCONNECT_PREVIOUS_INSTALLER, '-PreviousBinaryName', $env:FITCONNECT_PREVIOUS_BINARY) }
-          & powershell.exe @arguments
-          if ($LASTEXITCODE -ne 0) { throw 'installed_desktop_validation_failed' }
-      - name: Prepare pinned official NVDA for desktop accessibility checks
-        run: ./scripts/ci/prepare-nvda.ps1
-      - name: Observe actual NVDA speech and native keyboard navigation in installed desktop app
-        run: |
-          $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
-          if ($setup.Count -ne 1) { throw 'installer_missing' }
-          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/windows-accessibility-smoke.ps1 -InstallerPath $setup[0].FullName -ExpectedBinaryPath 'desktop/target/release/fbforge-connect.exe' -NvdaPath $env:FBFC_NVDA_PATH
-          if ($LASTEXITCODE -ne 0) { throw 'installed_accessibility_validation_failed' }
-      - name: Retain bounded credential-free accessibility result
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: windows-nvda-accessibility-result
-          path: ${{ runner.temp }}/fbforge-accessibility-result.json
-          if-no-files-found: error
+          ./scripts/ci/test-unsigned-installer.ps1 -ToolId fbforge-connect -InstallerPath $setup[0].FullName
       - name: Record installer checksum and build provenance
         run: |
           $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
@@ -287,13 +259,12 @@ jobs:
       - name: Bundle offline installer from the same compiled application
         if: github.event_name == 'workflow_dispatch' && inputs.offline
         run: ./scripts/bundle-offline-windows.ps1
-      - name: Verify offline installer and profile preservation
+      - name: Reject unsigned offline installer before target mutation
         if: github.event_name == 'workflow_dispatch' && inputs.offline
         run: |
           $setup = @(Get-ChildItem 'desktop/target/release/bundle/nsis' -Filter '*-setup.exe' -File)
           if ($setup.Count -ne 1) { throw 'offline_installer_missing' }
-          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/windows-install-smoke.ps1 -InstallerPath $setup[0].FullName -CheckpointBridge 'desktop/native-contracts/target/debug/examples/profile-checkpoint.exe' -ExpectedBinaryPath 'desktop/target/release/fbforge-connect.exe'
-          if ($LASTEXITCODE -ne 0) { throw 'offline_installer_validation_failed' }
+          ./scripts/ci/test-unsigned-installer.ps1 -ToolId fbforge-connect -InstallerPath $setup[0].FullName
       - name: Record offline installer checksum and build provenance
         if: github.event_name == 'workflow_dispatch' && inputs.offline
         run: |
