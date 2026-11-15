@@ -61,7 +61,9 @@ test('settings navigation exposes network and updates before application informa
   ).toEqual([]);
 });
 
-test('desktop context menu is suppressed while keyboard editing remains available', async ({ page }) => {
+test('desktop browser context menu is suppressed while standard text editing stays available', async ({
+  page,
+}) => {
   await page.goto('http://127.0.0.1:1420/test-fixtures/application-view.html?app=1');
   await page.getByRole('button', { name: 'Einstellungen', exact: true }).click();
   await page.getByLabel('Verbindung', { exact: true }).selectOption('manual');
@@ -71,14 +73,17 @@ test('desktop context menu is suppressed while keyboard editing remains availabl
   await host.press('ArrowRight');
   await host.press('Backspace');
   await expect(host).toHaveValue('proxy.example.d');
-  for (const target of [host, page.locator('.workspace-heading')]) {
+  for (const [target, prevented] of [
+    [host, false],
+    [page.locator('.workspace-heading'), true],
+  ]) {
     expect(
       await target.evaluate((element) => {
         const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
         element.dispatchEvent(event);
         return event.defaultPrevented;
       }),
-    ).toBe(true);
+    ).toBe(prevented);
   }
 });
 

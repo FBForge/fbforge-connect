@@ -192,7 +192,7 @@ mod tests {
             id: ID.into(),
             document: serde_json::from_value(document()).unwrap(),
         });
-        if cfg!(windows) {
+        if crate::vault::protection::supported() {
             result.unwrap();
             store
                 .execute(LibraryRequest::RunSave {
