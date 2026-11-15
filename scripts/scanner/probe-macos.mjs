@@ -84,14 +84,23 @@ try {
     const source = join(expanded, `clamav-1.5.4.macos.universal-${group}.pkg/Payload/usr/local/clamav`);
     await cp(source, relocated, { recursive: true, dereference: true });
   }
+  const database = join(root, 'probe-database');
+  await mkdir(database);
+  const configuration = join(root, 'probe.conf');
+  await writeFile(
+    configuration,
+    `DatabaseDirectory "${database}"\nDatabaseMirror database.clamav.net\nCVDCertsDirectory "${join(relocated, 'etc/certs')}"\n`,
+  );
   const execution = {};
   for (const program of ['bin/freshclam', 'bin/sigtool', 'sbin/clamd']) {
     const executable = join(relocated, program);
     await chmod(executable, 0o700);
-    const result = spawnSync(executable, ['--version'], {
+    const options =
+      program === 'bin/freshclam' ? ['--config-file', configuration, '--version'] : ['--version'];
+    const result = spawnSync(executable, options, {
       encoding: 'utf8',
       timeout: 15000,
-      env: { ...process.env, DYLD_LIBRARY_PATH: join(relocated, 'lib') },
+      env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('DYLD_'))),
     });
     console.log(
       JSON.stringify({

@@ -37,8 +37,11 @@ pub fn spawn(engine: &Path, configuration: &Path) -> Result<OwnedProcess, &'stat
             scanner_pid: Some(pid),
         }),
         None => {
-            let _ = child.kill();
-            let _ = child.wait();
+            drop(OwnedProcess {
+                child,
+                _lease: Some(lease),
+                scanner_pid: None,
+            });
             Err("scanner_start_failed")
         }
     }

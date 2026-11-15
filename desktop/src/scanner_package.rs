@@ -19,8 +19,9 @@ pub fn program(name: &str) -> PathBuf {
         PathBuf::from(format!("{name}.exe"))
     }
 }
-/// Only our verified component library directory enters the macOS dynamic loader path.
+/// Use the verified component paths and reject inherited dynamic-loader injections.
 pub fn command(engine: &Path, name: &str) -> std::process::Command {
+    #[allow(unused_mut)]
     let mut command = std::process::Command::new(engine.join(program(name)));
     #[cfg(target_os = "macos")]
     {
@@ -35,7 +36,6 @@ pub fn command(engine: &Path, name: &str) -> std::process::Command {
         ] {
             command.env_remove(key);
         }
-        command.env("DYLD_LIBRARY_PATH", engine.join("lib"));
     }
     command
 }

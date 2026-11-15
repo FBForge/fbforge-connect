@@ -36,20 +36,17 @@ pub fn run(engine: &Path, configuration: &Path) -> Result<(), &'static str> {
         let _ = std::io::stdin().read(&mut byte);
         let _ = sender.send(());
     });
-    loop {
-        if child
-            .try_wait()
-            .map_err(|_| "scanner_start_failed")?
-            .is_some()
-        {
-            return Err("scanner_start_failed");
+    let result = loop {
+        match child.try_wait() {
+            Ok(Some(_)) | Err(_) => break Err("scanner_start_failed"),
+            Ok(None) => {}
         }
         match receiver.recv_timeout(Duration::from_millis(100)) {
-            Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+            Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break Ok(()),
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
         }
-    }
+    };
     let _ = child.kill();
     let _ = child.wait();
-    Ok(())
+    result
 }

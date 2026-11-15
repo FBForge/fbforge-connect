@@ -49,6 +49,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("platform unsupported".into());
     }
     let args: Vec<_> = std::env::args().collect();
+    #[cfg(target_os = "macos")]
+    if args.get(1).is_some_and(|v| v == "--abrupt-parent") {
+        if args.len() != 3 {
+            return Err("invalid arguments".into());
+        }
+        let mut runtime = Runtime::open(PathBuf::from(&args[2]))?;
+        let port = runtime.enable(true)?.ok_or("scanner not ready")?;
+        println!("{port}");
+        std::io::stdout().flush()?;
+        loop {
+            std::thread::sleep(Duration::from_secs(1));
+        }
+    }
+
     if args.len() != 3 {
         return Err("usage: scanner-runtime COMPONENT.zip NEW_WORKSPACE".into());
     }
@@ -127,6 +141,51 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_err());
         assert_eq!(runtime.preferences.enabled, false);
         assert!(!scanner_process::owns_port(std::process::id(), port));
+        #[cfg(target_os = "macos")]
+        {
+            use std::{
+                io::{BufRead, BufReader},
+                process::{Command, Stdio},
+                time::Instant,
+            };
+            let mut parent = Command::new(std::env::current_exe()?)
+                .arg("--abrupt-parent")
+                .arg(&root)
+                .stdout(Stdio::piped())
+                .spawn()?;
+            let output = parent.stdout.take().ok_or("missing parent pipe")?;
+            let (send, receive) = std::sync::mpsc::channel();
+            std::thread::spawn(move || {
+                let mut line = String::new();
+                let result = BufReader::new(output)
+                    .read_line(&mut line)
+                    .ok()
+                    .and_then(|_| line.trim().parse::<u16>().ok());
+                let _ = send.send(result);
+            });
+            let port = match receive.recv_timeout(Duration::from_secs(90)).ok().flatten() {
+                Some(port) => port,
+                None => {
+                    let _ = parent.kill();
+                    let _ = parent.wait();
+                    return Err("forced-exit startup timed out".into());
+                }
+            };
+            assert_eq!(scan(port, b"Fiktive saubere Datei")?, "stream: OK");
+            parent.kill()?;
+            parent.wait()?;
+            let deadline = Instant::now() + Duration::from_secs(10);
+            while Instant::now() < deadline
+                && TcpStream::connect(SocketAddrV4::new(Ipv4Addr::LOCALHOST, port)).is_ok()
+            {
+                std::thread::sleep(Duration::from_millis(100));
+            }
+            assert!(
+                TcpStream::connect(SocketAddrV4::new(Ipv4Addr::LOCALHOST, port)).is_err(),
+                "scanner survived forced app exit"
+            );
+            println!("Native macOS scanner pipe lease stops clamd after a forced parent exit");
+        }
         println!("Native ClamAV: verified offline install, owned loopback process, clean/EICAR scans and shutdown passed.");
         Ok(())
     })();

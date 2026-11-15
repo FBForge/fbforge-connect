@@ -12,9 +12,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     package::unpack_upstream(&archive, &root)?;
     let engine = root.join("engine");
     package::verify_engine(&engine)?;
+    let probe = root.join("probe");
+    std::fs::create_dir(&probe)?;
+    let configuration = probe.join("freshclam.conf");
+    std::fs::write(&configuration,format!("DatabaseDirectory \"{}\"\nDatabaseMirror database.clamav.net\nCVDCertsDirectory \"{}\"\n",probe.display(),engine.join("certs").display()))?;
     for program in ["freshclam", "sigtool", "clamd"] {
+        let mut command = package::command(&engine, program);
+        if program == "freshclam" {
+            command.arg("--config-file").arg(&configuration);
+        }
         let output = scanner_process::output_with_cancel(
-            package::command(&engine, program).arg("--version"),
+            command.arg("--version"),
             Duration::from_secs(10),
             &Default::default(),
         )?;
@@ -23,6 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         println!("Native verified relocated scanner executable passed: {program}");
     }
+    std::fs::remove_dir_all(probe)?;
     if !keep {
         std::fs::remove_dir_all(root)?;
     }
