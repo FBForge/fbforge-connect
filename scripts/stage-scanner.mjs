@@ -116,6 +116,7 @@ try {
           env: {
             ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('DYLD_'))),
             DYLD_LIBRARY_PATH: join(engine, 'lib'),
+            CVD_CERTS_DIR: join(engine, 'certs'),
           },
         }
       : {}),

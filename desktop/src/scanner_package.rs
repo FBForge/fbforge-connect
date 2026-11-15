@@ -38,6 +38,8 @@ pub fn command(engine: &Path, name: &str) -> std::process::Command {
         }
         // Vendor RPATH targets /usr/local/clamav. Use only our hash-verified private libraries.
         command.env("DYLD_LIBRARY_PATH", engine.join("lib"));
+        // FreshClam forks libclamav database tests, which read this vendor-defined variable.
+        command.env("CVD_CERTS_DIR", engine.join("certs"));
     }
     command
 }

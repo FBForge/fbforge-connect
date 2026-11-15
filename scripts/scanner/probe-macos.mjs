@@ -112,6 +112,7 @@ try {
       env: {
         ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('DYLD_'))),
         DYLD_LIBRARY_PATH: join(relocated, 'lib'),
+        CVD_CERTS_DIR: join(relocated, 'etc/certs'),
       },
     });
     console.log(
