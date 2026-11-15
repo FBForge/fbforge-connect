@@ -16,10 +16,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir(&probe)?;
     let configuration = probe.join("freshclam.conf");
     std::fs::write(&configuration,format!("DatabaseDirectory \"{}\"\nDatabaseMirror database.clamav.net\nCVDCertsDirectory \"{}\"\n",probe.display(),engine.join("certs").display()))?;
+    let daemon_configuration = probe.join("clamd.conf");
+    std::fs::write(&daemon_configuration,format!("Foreground yes\nTCPAddr 127.0.0.1\nTCPSocket 3310\nDatabaseDirectory \"{}\"\nCVDCertsDirectory \"{}\"\n",probe.display(),engine.join("certs").display()))?;
     for program in ["freshclam", "sigtool", "clamd"] {
         let mut command = package::command(&engine, program);
         if program == "freshclam" {
             command.arg("--config-file").arg(&configuration);
+        }
+        if program == "clamd" {
+            command.arg("--config-file").arg(&daemon_configuration);
         }
         let output = scanner_process::output_with_cancel(
             command.arg("--version"),

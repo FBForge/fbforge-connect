@@ -110,7 +110,12 @@ try {
   const options = {
     cwd: engine,
     ...(process.platform === 'darwin'
-      ? { env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('DYLD_'))) }
+      ? {
+          env: {
+            ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('DYLD_'))),
+            DYLD_LIBRARY_PATH: join(engine, 'lib'),
+          },
+        }
       : {}),
   };
   const database = join(staging, 'database');

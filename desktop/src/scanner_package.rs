@@ -36,6 +36,8 @@ pub fn command(engine: &Path, name: &str) -> std::process::Command {
         ] {
             command.env_remove(key);
         }
+        // Vendor RPATH targets /usr/local/clamav. Use only our hash-verified private libraries.
+        command.env("DYLD_LIBRARY_PATH", engine.join("lib"));
     }
     command
 }

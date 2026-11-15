@@ -2,15 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 test(
   'the packaged engine probes v2 and v3 in one process and exits on EOF',
   { timeout: 30000 },
   async (t) => {
-    const directory =
+    const directory = resolve(
       process.env.FBFORGE_ENGINE_DIRECTORY ||
-      fileURLToPath(new URL('../desktop/resources/engine/', import.meta.url));
+        fileURLToPath(new URL('../desktop/resources/engine/', import.meta.url)),
+    );
     const java = join(directory, `runtime/bin/java${process.platform === 'win32' ? '.exe' : ''}`);
     const jar = join(directory, 'engine-host.jar');
     const env = { ...process.env };

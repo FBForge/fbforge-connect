@@ -91,16 +91,28 @@ try {
     configuration,
     `DatabaseDirectory "${database}"\nDatabaseMirror database.clamav.net\nCVDCertsDirectory "${join(relocated, 'etc/certs')}"\n`,
   );
+  const daemonConfiguration = join(root, 'clamd-probe.conf');
+  await writeFile(
+    daemonConfiguration,
+    `Foreground yes\nTCPAddr 127.0.0.1\nTCPSocket 3310\nDatabaseDirectory "${database}"\nCVDCertsDirectory "${join(relocated, 'etc/certs')}"\n`,
+  );
   const execution = {};
   for (const program of ['bin/freshclam', 'bin/sigtool', 'sbin/clamd']) {
     const executable = join(relocated, program);
     await chmod(executable, 0o700);
     const options =
-      program === 'bin/freshclam' ? ['--config-file', configuration, '--version'] : ['--version'];
+      program === 'bin/freshclam'
+        ? ['--config-file', configuration, '--version']
+        : program === 'sbin/clamd'
+          ? ['--config-file', daemonConfiguration, '--version']
+          : ['--version'];
     const result = spawnSync(executable, options, {
       encoding: 'utf8',
       timeout: 15000,
-      env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('DYLD_'))),
+      env: {
+        ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('DYLD_'))),
+        DYLD_LIBRARY_PATH: join(relocated, 'lib'),
+      },
     });
     console.log(
       JSON.stringify({
