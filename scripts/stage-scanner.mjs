@@ -28,14 +28,16 @@ const scratch = await mkdtemp(join(root, 'desktop/resources/.stage-scanner-'));
 const target = join(root, 'desktop/resources/scanner');
 const staging = join(scratch, 'component');
 const dist = join(root, 'desktop/target/scanner-dist');
+// GnuPG still checks its agent socket path for public-key imports. macOS limits
+// Unix sockets to 104 bytes; the hosted-runner checkout path exceeds that.
+const keyring = process.platform === 'darwin' ? await mkdtemp('/tmp/fbgpg-') : join(scratch, 'gpg');
 try {
   const gpg =
     argument('--gpg') ||
     (process.platform === 'win32'
       ? join(process.env.ProgramFiles || 'C:/Program Files', 'Git/usr/bin/gpg.exe')
       : 'gpg');
-  const keyring = join(scratch, 'gpg');
-  await mkdir(keyring, { mode: 0o700 });
+  await mkdir(keyring, { mode: 0o700, recursive: true });
   const key = fileURLToPath(new URL('./scanner/talos-public-key.asc', import.meta.url));
   const forGpg = (path) => gpgPath(path, gpg);
   const publicGpg = publicGpgArguments(keyring, gpg);
@@ -229,5 +231,6 @@ try {
   await rm(backup, { recursive: true, force: true });
   console.log(`ClamAV ${manifest.version}: pinned engine, signed databases and offline component staged.`);
 } finally {
+  if (process.platform === 'darwin') await rm(keyring, { recursive: true, force: true });
   await rm(scratch, { recursive: true, force: true });
 }
