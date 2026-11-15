@@ -83,9 +83,18 @@ jobs:
             sleep 1
           done
           pgrep -f "$app/Contents/MacOS/fbforge-connect"
-          sleep 3
           mkdir -p desktop/target/macos-probe
-          screencapture -x desktop/target/macos-probe/application.png
+          swiftc scripts/macos/window-readiness.swift -o "$RUNNER_TEMP/fbforge-window-readiness"
+          ready=false
+          for attempt in {1..30}; do
+            screencapture -x desktop/target/macos-probe/application.png
+            if "$RUNNER_TEMP/fbforge-window-readiness" desktop/target/macos-probe/application.png; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = true
       - name: Preserve actual Mac window capture
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

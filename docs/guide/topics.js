@@ -1,25 +1,6 @@
 /** Shared guide for website and wiki. Screenshots contain only fictional examples. */
 export const helpTopics = [
   {
-    id: 'macos',
-    title: 'macOS: Einrichtung und Bedienung',
-    section: 'Start',
-    image: 'macos-start',
-    caption:
-      'Echte Aufnahme des internen Apple-Silicon-Builds 0.5.0. Noch kein veröffentlichtes Distributionspaket.',
-    intro:
-      'macOS-Unterstützung für Apple Silicon wird für 0.5.0 vorbereitet. Die gemeinsamen Fachabläufe entsprechen Windows. Signierte Installation und Update-Abnahme sind noch offen.',
-    steps: [
-      'Die App enthält Java. Für die spätere Nutzung benötigen Sie kein separat installiertes Java, Node.js oder Homebrew. Intel-Macs werden in dieser Version nicht unterstützt.',
-      'Einstellungen öffnen Sie über das App-Menü oder Cmd+Komma. Cmd+Q führt das kontrollierte Beenden aus. Kopieren, Einfügen und Rückgängig verwenden die üblichen Cmd-Kurzbefehle.',
-      'Beim Schließen des Fensters bleiben gespeicherte Daten erhalten. Öffnen Sie das Fenster erneut über das Dock. Beenden Sie laufende Aktionen an ihrer vorgesehenen Stelle und sichern Sie offene Entwürfe.',
-      'Geschützte Daten benötigen den ursprünglichen lokalen Schlüsselbund. Profil-Backups können nicht als Windows-/Mac-Umzug verwendet werden. Richten Sie auf dem neuen Rechner ein eigenes Profil ein und importieren Sie Ihre Schlüssel ausdrücklich. Öffentliche Zustellpunkt-Sicherungen und Testdateien bleiben übertragbar.',
-    ],
-    notes: [
-      'Die freigegebene macOS-Mindestversion und Downloadlinks werden erst mit der Veröffentlichung zugesichert. Diese Anleitung fordert nicht zum Umgehen von Gatekeeper oder Quarantäne auf.',
-    ],
-  },
-  {
     id: 'start',
     title: 'Schnellstart',
     section: 'Start',
@@ -44,6 +25,25 @@ export const helpTopics = [
       'Die Anwendung wird weiterentwickelt. Ein erfolgreiches technisches Ergebnis ersetzt keine fachliche Bewertung des Antrags.',
       'Version 0.2.0 hat keinen integrierten Updater. Die erste Version mit dieser Funktion installieren Sie einmal manuell. Anschließend können neuere kompatible Releases über die App angeboten werden.',
       'Fehlende Update-Informationen, Netzfehler oder ungültige Signaturen sind kein Nachweis, dass Ihre Version aktuell ist. Bis ein Release mit Update-Dateien veröffentlicht ist, meldet die Suche fehlende Informationen. „Manueller Download auf GitHub“ bleibt als Alternative verfügbar. Gespeicherte Profile und Vorgänge bleiben beim regulären Upgrade erhalten.',
+    ],
+  },
+  {
+    id: 'macos',
+    title: 'macOS: Einrichtung und Bedienung',
+    section: 'Start',
+    image: 'macos-start',
+    caption:
+      'Echte Aufnahme des internen Apple-Silicon-Builds 0.5.0. Noch kein veröffentlichtes Distributionspaket.',
+    intro:
+      'macOS-Unterstützung für Apple Silicon wird für 0.5.0 vorbereitet. Die gemeinsamen Fachabläufe entsprechen Windows. Signierte Installation und Update-Abnahme sind noch offen.',
+    steps: [
+      'Die App enthält Java. Für die spätere Nutzung benötigen Sie kein separat installiertes Java, Node.js oder Homebrew. Intel-Macs werden in dieser Version nicht unterstützt.',
+      'Einstellungen öffnen Sie über das App-Menü oder Cmd+Komma. Cmd+Q führt das kontrollierte Beenden aus. Kopieren, Einfügen und Rückgängig verwenden die üblichen Cmd-Kurzbefehle.',
+      'Beim Schließen des Fensters bleiben gespeicherte Daten erhalten. Öffnen Sie das Fenster erneut über das Dock. Beenden Sie laufende Aktionen an ihrer vorgesehenen Stelle und sichern Sie offene Entwürfe.',
+      'Geschützte Daten benötigen den ursprünglichen lokalen Schlüsselbund. Profil-Backups können nicht als Windows-/Mac-Umzug verwendet werden. Richten Sie auf dem neuen Rechner ein eigenes Profil ein und importieren Sie Ihre Schlüssel ausdrücklich. Öffentliche Zustellpunkt-Sicherungen und Testdateien bleiben übertragbar.',
+    ],
+    notes: [
+      'Die freigegebene macOS-Mindestversion und Downloadlinks werden erst mit der Veröffentlichung zugesichert. Diese Anleitung fordert nicht zum Umgehen von Gatekeeper oder Quarantäne auf.',
     ],
   },
   {
