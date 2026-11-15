@@ -104,3 +104,20 @@ test('proxy settings preserve a saved password without exposing it and require d
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });
+
+test('native Mac navigation accepts known areas without executing writes or accepting arbitrary destinations', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/lifecycle.html');
+  await page.evaluate(() => window.__lifecycle.nativeNavigate('settings'));
+  expect(await page.evaluate(() => window.__lifecycle.destination())).toBe('Einstellungen');
+  for (const payload of ['__proto__', 'constructor', 'execute_send', 'https://other.invalid', null]) {
+    await page.evaluate((value) => window.__lifecycle.nativeNavigate(value), payload);
+    expect(await page.evaluate(() => window.__lifecycle.destination())).toBe('Einstellungen');
+  }
+  await page.evaluate(() => window.__lifecycle.nativeNavigate('tests'));
+  expect(await page.evaluate(() => window.__lifecycle.destination())).toBe('Testwerkzeuge');
+  expect(
+    await page.evaluate(() => window.__lifecycle.calls.some((c) => c.command.startsWith('execute_'))),
+  ).toBe(false);
+});

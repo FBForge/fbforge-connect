@@ -1,3 +1,17 @@
+# 0.5.0 – macOS in Entwicklung
+
+Noch kein freigegebenes Release. Apple-Silicon-Unterstützung wird auf
+`release/0.5.0` implementiert und auf einem echten macOS-Runner geprüft.
+
+Bereits umgesetzt: Schlüsselbund-Backend mit authentifizierter Verschlüsselung,
+Plattformfreigaben für dauerhafte Speicherung, native Menüführung und getrennte
+Windows-/macOS-Updateziele. Der lokale Mac-Scanner befindet sich noch in der
+Portierung. Signierung, Notarisierung und vollständige installierte Abnahme
+sind noch offen. Die bisherige 0.4-Anleitung bleibt für die gemeinsamen
+Fachabläufe verlinkt, bis die 0.5-Hilfe mit geprüften Mac-Aufnahmen bereitsteht.
+
+Die folgenden Hinweise beschreiben den bisherigen 0.4-Funktionsumfang.
+
 # Versionshinweise
 
 ## 0.4.0 (unveröffentlicht)

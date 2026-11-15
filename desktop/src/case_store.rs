@@ -281,7 +281,13 @@ impl CaseStore {
         if path.exists() {
             fs::remove_file(&path).map_err(|_| "vault_unavailable")?;
         }
-        let mut file = OpenOptions::new()
+        let mut options = OpenOptions::new();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let mut file = options
             .create_new(true)
             .write(true)
             .open(&path)

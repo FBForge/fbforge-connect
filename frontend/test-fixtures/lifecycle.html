@@ -11,6 +11,7 @@
       import ScenarioWorkspace from '../src/integration/scenarios/ScenarioWorkspace.vue';
       import { testLibraryFixture } from './test-library-fixture.js';
       import ApplicationClose from '../src/app/ApplicationClose.vue';
+      import { useNativeNavigation } from '../src/app/useNativeNavigation.js';
       import NetworkSettings from '../src/app/NetworkSettings.vue';
       import '../src/styles/index.css';
       const callbacks = new Map();
@@ -20,6 +21,11 @@
         calls: [],
         busy: false,
         fail: false,
+        nativeNavigate: (payload) => {
+          const callback = listeners.get('application-navigation');
+          if (!callback) throw new Error('native navigation listener missing');
+          callbacks.get(callback)({ event: 'application-navigation', id: callback, payload });
+        },
         nativeClose: () => {
           const callback = listeners.get('application-close-requested');
           if (!callback) throw new Error('native close listener missing');
@@ -63,6 +69,11 @@
       createApp({
         components: { ApplicationClose, NetworkSettings, ScenarioWorkspace },
         setup() {
+          const destination = ref('Start');
+          useNativeNavigation((name) => {
+            destination.value = name;
+          });
+          window.__lifecycle.destination = () => destination.value;
           const close = ref(null),
             busy = ref(false);
           window.__lifecycle.setBusy = (value) => (busy.value = value);

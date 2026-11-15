@@ -1,5 +1,5 @@
 // Read-only feasibility probe: verify upstream, expand into scratch, never run installer scripts.
-import { mkdtemp, mkdir, readFile, writeFile, readdir, lstat, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, readdir, lstat, rm, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -77,10 +77,24 @@ try {
     }
   }
   await walk(expanded);
+  const relocated = join(root, 'relocated');
+  await mkdir(relocated);
+  for (const group of ['programs', 'libraries']) {
+    const source = join(expanded, `clamav-1.5.4.macos.universal-${group}.pkg/Payload/usr/local/clamav`);
+    await cp(source, relocated, { recursive: true, dereference: true });
+  }
+  const execution = {};
+  for (const program of ['bin/freshclam', 'bin/sigtool', 'sbin/clamd']) {
+    execution[program] = run(join(relocated, program), ['--version'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8',
+    }).stdout.trim();
+  }
+  console.log('Relocated vendor executables:', JSON.stringify(execution));
   await mkdir('desktop/target/macos-probe', { recursive: true });
   await writeFile(
     'desktop/target/macos-probe/scanner-inventory.json',
-    JSON.stringify({ source: expected, files }, null, 2) + '\n',
+    JSON.stringify({ source: expected, execution, files }, null, 2) + '\n',
   );
   console.log('Upstream macOS package verified and inventoried without system installation.');
 } finally {

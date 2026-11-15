@@ -34,6 +34,16 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Real Keychain, encrypted stores and platform contracts
         run: cargo +1.99.0 test --manifest-path desktop/native-contracts/Cargo.toml --locked
+      - name: Real protected profile across separate processes and missing-key recovery
+        env:
+          FBFORGE_MACOS_TEST_ROOT: ${{ runner.temp }}/fbforge-macos-vault-${{ github.run_id }}
+        run: |
+          cargo +1.99.0 build --manifest-path desktop/native-contracts/Cargo.toml --locked --example macos-storage
+          probe=desktop/native-contracts/target/debug/examples/macos-storage
+          "$probe" seed
+          "$probe" reopen
+          "$probe" remove-key
+          "$probe" missing-key
       - working-directory: engine
         run: ./mvnw --batch-mode verify
       - run: npm run stage:engine
@@ -41,24 +51,45 @@ jobs:
       - run: npm run build:frontend
       - name: Build the actual macOS application with its private Java runtime
         run: cargo +1.99.0 test --manifest-path desktop/Cargo.toml --locked
-      - name: Bundle unsigned internal application (no signing or publication)
-        run: npm run desktop:build -- --bundles app
+      - name: Bundle internal debug application (no Developer ID signing or publication)
+        run: npm run desktop:build -- --debug --bundles app
       - name: Validate bundled runtime and architecture
         run: |
-          app='desktop/target/release/bundle/macos/FBForge Connect.app'
+          app='desktop/target/debug/bundle/macos/FBForge Connect.app'
           test -d "$app"
           file "$app/Contents/MacOS/fbforge-connect" | tee /tmp/mac-architecture.txt
           grep -q arm64 /tmp/mac-architecture.txt
           java="$app/Contents/Resources/resources/engine/runtime/bin/java"
           test -x "$java"
           "$java" -version
+          FBFORGE_ENGINE_DIRECTORY="$app/Contents/Resources/resources/engine" npm run test:engine
+      - name: Start the bundled application and capture its actual Mac window
+        run: |
+          app='desktop/target/debug/bundle/macos/FBForge Connect.app'
+          open -n "$app"
+          for attempt in {1..20}; do
+            if pgrep -f "$app/Contents/MacOS/fbforge-connect" >/dev/null; then break; fi
+            sleep 1
+          done
+          pgrep -f "$app/Contents/MacOS/fbforge-connect"
+          sleep 3
+          mkdir -p desktop/target/macos-probe
+          screencapture -x desktop/target/macos-probe/application.png
+      - name: Preserve actual Mac window capture
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: macos-window-capture
+          path: desktop/target/macos-probe/application.png
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Preserve Unix executable bits in the candidate archive
-        run: tar -czf desktop/target/release/bundle/macos/internal-macos-arm64.tar.gz -C desktop/target/release/bundle/macos "FBForge Connect.app"
+        run: tar -czf desktop/target/debug/bundle/macos/internal-macos-arm64.tar.gz -C desktop/target/debug/bundle/macos "FBForge Connect.app"
       - name: Preserve internal candidate and exact source
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: macos-apple-silicon-internal
-          path: desktop/target/release/bundle/macos/*.tar.gz
+          path: desktop/target/debug/bundle/macos/*.tar.gz
           retention-days: 3
 
   scanner-feasibility:

@@ -29,8 +29,9 @@ fn failure(error: security_framework::base::Error) -> &'static str {
     }
 }
 fn key(id: &[u8; 32]) -> Result<Vec<u8>, &'static str> {
-    let mut key = generic_password(PasswordOptions::new_generic_password(SERVICE, &account(id)))
-        .map_err(failure)?;
+    let mut options = PasswordOptions::new_generic_password(SERVICE, &account(id));
+    options.set_access_synchronized(Some(false));
+    let mut key = generic_password(options).map_err(failure)?;
     if key.len() != 32 {
         key.fill(0);
         return Err("vault_invalid");

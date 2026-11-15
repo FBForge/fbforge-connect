@@ -344,3 +344,20 @@ mod tests;
 #[cfg(any(target_os = "macos", test))]
 #[path = "vault/payload.rs"]
 mod payload;
+
+/// Initialize the OS protection backend before opening any persisted store.
+pub fn initialize_platform_store(directory: &Path) -> Result<(), &'static str> {
+    #[cfg(target_os = "macos")]
+    {
+        protection::initialize(directory)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = directory;
+        if protection::supported() {
+            Ok(())
+        } else {
+            Err("vault_unsupported")
+        }
+    }
+}
