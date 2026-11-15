@@ -1,6 +1,6 @@
 use super::*;
 const ID: &str = "11111111-1111-4111-8111-111111111111";
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 const OTHER: &str = "22222222-2222-4222-8222-222222222222";
 fn source() -> Value {
     serde_json::from_str(include_str!(
@@ -50,7 +50,7 @@ fn request_and_pack_boundaries_reject_paths_credentials_and_unknown_actions() {
     assert_eq!(store.execute(LibraryRequest::List {}).unwrap(), json!([]));
     assert!(!store.0.exists());
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 #[test]
 fn unsupported_platform_never_saves_plaintext() {
     let store = TestLibrary(root());
@@ -63,7 +63,7 @@ fn unsupported_platform_never_saves_plaintext() {
     );
     assert!(!store.0.exists());
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 #[test]
 fn protected_restart_roundtrip_preserves_exact_pack_and_isolates_tampered_entries() {
     let path = root();
@@ -122,7 +122,7 @@ fn protected_restart_roundtrip_preserves_exact_pack_and_isolates_tampered_entrie
     assert_eq!(store.execute(LibraryRequest::List {}).unwrap(), json!([]));
     fs::remove_dir_all(path).unwrap();
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 #[test]
 fn legacy_staging_does_not_block_saving_and_conflicts_or_quotas_never_replace_packs() {
     let path = root();

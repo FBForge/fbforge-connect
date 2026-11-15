@@ -1,7 +1,7 @@
 #[cfg(windows)]
 use super::MAX_FILE;
 use std::path::Path;
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 pub(crate) mod platform {
     use super::*;
     pub fn transform_with_purpose(_: &[u8], _: bool, _: &[u8]) -> Result<Vec<u8>, &'static str> {
@@ -136,3 +136,12 @@ pub(crate) mod platform {
 }
 
 pub use platform::*;
+
+#[cfg(target_os = "macos")]
+#[path = "macos.rs"]
+mod macos;
+#[cfg(target_os = "macos")]
+pub use macos::*;
+pub fn supported() -> bool {
+    cfg!(any(windows, target_os = "macos"))
+}

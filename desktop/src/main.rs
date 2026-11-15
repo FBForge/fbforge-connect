@@ -226,6 +226,8 @@ fn main() {
                 .build(),
         )
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            let _ = vault::protection::initialize(&app.path().app_data_dir()?);
             network_trust_bundle::set_default_roots(
                 app.path()
                     .resource_dir()?

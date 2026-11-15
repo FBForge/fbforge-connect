@@ -1026,6 +1026,8 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 name = "fbforge-connect"
 version = "0.4.0"
 dependencies = [
+ "core-foundation 0.10.1",
+ "security-framework",
  "base64 0.22.1",
  "minisign-verify",
  "reqwest",

@@ -1,0 +1,11 @@
+{
+  "bundle": {
+    "targets": ["app", "dmg"],
+    "icon": ["icons/app.png", "icons/app.icns"],
+    "macOS": {
+      "minimumSystemVersion": "15.0",
+      "hardenedRuntime": true,
+      "entitlements": "Entitlements.plist"
+    }
+  }
+}

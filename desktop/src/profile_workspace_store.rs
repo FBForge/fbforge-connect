@@ -465,7 +465,7 @@ mod tests {
         data.history
             .push(serde_json::json!({"recordedAt":0,"snapshot":{"privateKey":"bad"}}));
         assert!(data.validate().is_err());
-        #[cfg(not(windows))]
+        #[cfg(not(any(windows, target_os = "macos")))]
         {
             let root =
                 std::env::temp_dir().join(format!("connect-workspace-test-{}", std::process::id()));

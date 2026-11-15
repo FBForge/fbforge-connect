@@ -47,7 +47,7 @@ pub(crate) async fn open_session(
     {
         return Err("invalid_input");
     }
-    if profile_id.is_some() && !cfg!(windows) {
+    if profile_id.is_some() && !crate::vault::protection::supported() {
         return Err("vault_unsupported");
     }
     if profile_name.as_ref().is_some_and(|name| {

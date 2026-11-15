@@ -244,7 +244,7 @@ mod tests {
         settings.port = 8080;
         settings.password = "synthetic-test-password".into();
         let result = settings.save(&path);
-        if cfg!(windows) {
+        if crate::vault::protection::supported() {
             result.unwrap();
             assert_eq!(
                 NetworkSettings::load(&path).unwrap().password,

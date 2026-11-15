@@ -2,9 +2,9 @@ use super::*;
 const PROFILE: &str = "11111111-1111-4111-8111-111111111111";
 const RECORD: &str = "22222222-2222-4222-8222-222222222222";
 const OTHER: &str = "33333333-3333-4333-8333-333333333333";
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 const SUBJECT: &str = "44444444-4444-4444-8444-444444444444";
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 const CONTEXT: &str = "55555555-5555-4555-8555-555555555555";
 fn root() -> PathBuf {
     let root = std::env::temp_dir().join(format!(
@@ -24,9 +24,9 @@ fn durable_denial_survives_reopen_and_blocks_reads_before_decryption() {
     let store = CaseStore::new(root.clone(), PROFILE, "v3").unwrap();
     fs::create_dir_all(&store.root).unwrap();
     fs::write(store.path(RECORD).unwrap(), b"old encrypted sentinel").unwrap();
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     store.quarantine_record(RECORD, true).unwrap();
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     fs::write(store.quarantine_path(RECORD).unwrap(), b"blocked-v1").unwrap();
     drop(store);
     let store = CaseStore::new(root.clone(), PROFILE, "v3").unwrap();
@@ -64,7 +64,7 @@ fn malformed_marker_fails_closed_and_cannot_enable_reads() {
     assert_eq!(store.begin(RECORD, 10).err(), Some("malware_detected"));
     fs::remove_dir_all(root).unwrap();
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 fn saved(store: &CaseStore, id: &str, kind: &str, direction: &str) {
     let (mut file, temp) = store.begin(id, 14).unwrap();
     let header = serde_json::json!({"version":1,"summary":{"recordId":id,"revision":OTHER,
@@ -128,7 +128,7 @@ fn protected_archives_are_quarantined_even_after_opt_out_or_when_the_content_fil
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 #[test]
 fn unsupported_durable_marker_removes_the_stale_file_instead_of_leaving_it_readable() {
     let root = root();
@@ -168,7 +168,7 @@ fn failed_scope_marker_keeps_a_profile_bound_denial_across_store_reopen() {
     assert!(!store.scope_quarantined().unwrap());
     fs::remove_dir_all(root).unwrap();
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 #[test]
 fn uncertain_archive_inventory_records_a_durable_scope_denial_outside_the_case_directory() {
     let root = root();

@@ -194,7 +194,7 @@ mod tests {
                 document: serde_json::from_value(sample()).unwrap(),
             },
         );
-        if cfg!(windows) {
+        if crate::vault::protection::supported() {
             result.unwrap();
             let value = execute(
                 &library,

@@ -91,12 +91,12 @@ fn scenario_requests_have_strict_native_actions_and_no_plaintext_fallback() {
     let root = std::env::temp_dir().join(format!("fbforge-scenario-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     let result = TestLibrary(root.clone()).execute(request);
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         assert_eq!(result, Err("vault_unsupported"));
         assert!(!root.exists());
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         assert!(result.is_ok());
         let store = TestLibrary(root.clone());

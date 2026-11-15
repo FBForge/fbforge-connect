@@ -106,7 +106,7 @@ fn protected_profile_storage_and_legacy_private_copy_removal() {
         portable_archive::random_id().unwrap()
     ));
     let store = Store::new(&root, OWNER, Environment::TEST).unwrap();
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         let backup = sample();
         store.save_new(&backup).unwrap();
@@ -138,7 +138,7 @@ fn protected_profile_storage_and_legacy_private_copy_removal() {
         store.delete(ID).unwrap();
         assert!(store.list().unwrap().is_empty());
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         assert!(store.save_new(&sample()).is_err());
         assert!(!root.exists());

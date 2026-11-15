@@ -284,7 +284,7 @@ pub async fn case_workspace(
             api_version,
             session_id: session_id.clone(),
             environment: state.environment().name().into(),
-            data: json!({"records":live,"persistent":enabled,"canPersist":cfg!(windows) && store.is_some(),"storageError":storage_error}),
+            data: json!({"records":live,"persistent":enabled,"canPersist":crate::vault::protection::supported() && store.is_some(),"storageError":storage_error}),
         });
     }
     if operation == "clear" {

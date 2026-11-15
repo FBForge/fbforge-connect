@@ -41,7 +41,7 @@ impl CaseStore {
     pub fn enabled(&self) -> Result<bool, &'static str> {
         let path = self.root.join("settings");
         if !path.try_exists().map_err(|_| "vault_unavailable")? {
-            return Ok(cfg!(windows));
+            return Ok(crate::vault::protection::supported());
         }
         let protected = crate::vault::read_bounded(&path, MAX_BLOCK)?;
         let mut plain = protection::transform_with_purpose(&protected, false, &self.purpose)?;
@@ -330,7 +330,7 @@ mod tests {
     const RECORD: &str = "22222222-2222-4222-8222-222222222222";
     const PART: &str = "33333333-3333-4333-8333-333333333333";
     const REVISION: &str = "44444444-4444-4444-8444-444444444444";
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     #[test]
     fn persistence_defaults_on_and_explicit_opt_out_survives_restart_with_profile_isolation() {
         let root = std::env::temp_dir().join(format!(
@@ -388,7 +388,7 @@ mod tests {
             store.block_purpose(RECORD, 1, Some(PROFILE))
         );
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     #[test]
     fn no_unencrypted_content_fallback() {
         assert_eq!(
@@ -396,7 +396,7 @@ mod tests {
             Err("vault_unsupported")
         );
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     fn saved(store: &CaseStore) {
         let (mut file, temp) = store.begin(RECORD, 100).unwrap();
         let header = serde_json::json!({"version":1,"summary":{"recordId":RECORD,"revision":REVISION},"pageCount":1,"blocks":1});
@@ -411,7 +411,7 @@ mod tests {
             .unwrap();
         store.commit(file, &temp, RECORD).unwrap();
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     #[test]
     fn protected_roundtrip_restart_tamper_scope_and_atomic_replacement() {
         let root = std::env::temp_dir().join(format!(

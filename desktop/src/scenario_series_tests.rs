@@ -62,12 +62,12 @@ fn series_use_protected_storage_and_reopen_with_exact_run_links() {
     let request =
         serde_json::from_value(json!({"action":"scenario_series_save","document":value})).unwrap();
     let result = TestLibrary(root.clone()).execute(request);
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         assert_eq!(result, Err("vault_unsupported"));
         assert!(!root.exists());
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         assert!(result.is_ok());
         let mut value = value.clone();

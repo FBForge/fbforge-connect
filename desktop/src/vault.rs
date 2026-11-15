@@ -1,4 +1,4 @@
-//! User-bound encrypted Windows profiles. No plaintext fallback and no renderer access to payloads.
+//! User-bound encrypted profiles. No plaintext fallback and no renderer access to payloads.
 use crate::environments::Environment;
 use crate::protocol::{valid_session_id, ApiVersion, SessionRole};
 use serde::{Deserialize, Serialize};
@@ -311,7 +311,13 @@ pub(crate) fn write_protected(path: &Path, bytes: &[u8]) -> Result<(), &'static 
         .map_err(|_| "vault_unavailable")?
         .as_nanos();
     let temp = path.with_extension(format!("pending-{}-{}", std::process::id(), nonce));
-    let mut file = OpenOptions::new()
+    let mut options = OpenOptions::new();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options
         .write(true)
         .create_new(true)
         .open(&temp)
@@ -334,3 +340,7 @@ pub(crate) mod protection;
 #[cfg(test)]
 #[path = "vault_tests.rs"]
 mod tests;
+
+#[cfg(any(target_os = "macos", test))]
+#[path = "vault/payload.rs"]
+mod payload;

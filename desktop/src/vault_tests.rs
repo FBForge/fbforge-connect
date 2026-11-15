@@ -82,7 +82,7 @@ fn malformed_backup_never_becomes_a_profile() {
         .restore_backup(&vec![0; MAX_BACKUP_BYTES + 1])
         .is_err());
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 #[test]
 fn protected_backup_roundtrip_conflict_tamper_and_atomic_file() {
     let root = std::env::temp_dir().join(format!("fit-connect-backup-{}", std::process::id()));
@@ -135,7 +135,7 @@ fn protected_backup_roundtrip_conflict_tamper_and_atomic_file() {
     assert!(destination.list().unwrap().is_empty());
     fs::remove_dir_all(root).unwrap();
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 #[test]
 fn unsupported_platform_cannot_fall_back_to_plaintext() {
     assert_eq!(
@@ -143,7 +143,7 @@ fn unsupported_platform_cannot_fall_back_to_plaintext() {
         "vault_unsupported"
     );
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 #[test]
 fn dpapi_roundtrip_tamper_atomic_update_and_forget() {
     let directory = std::env::temp_dir().join(format!("fit-connect-vault-{}", std::process::id()));

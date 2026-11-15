@@ -86,7 +86,7 @@ fn stored_flows_reject_incomplete_out_of_order_foreign_and_credential_bearing_st
     );
     assert!(!store.0.exists());
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 #[test]
 fn unsupported_flow_storage_never_falls_back_to_plaintext() {
     let store = TestLibrary(root());
@@ -99,7 +99,7 @@ fn unsupported_flow_storage_never_falls_back_to_plaintext() {
     );
     assert!(!store.0.exists());
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 #[test]
 fn flow_survives_restart_is_encrypted_and_does_not_change_the_pack_collection() {
     let root = root();

@@ -246,11 +246,13 @@ name = "fbforge-connect-native-contracts"
 version = "0.4.0"
 dependencies = [
  "base64 0.22.1",
+ "core-foundation 0.10.1",
  "minisign-verify",
  "proc-macro2",
  "reqwest",
  "ring",
  "rustls",
+ "security-framework",
  "semver",
  "serde",
  "serde_json",
