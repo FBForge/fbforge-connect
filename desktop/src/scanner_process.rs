@@ -87,13 +87,24 @@ impl OwnedProcess {
 impl Drop for OwnedProcess {
     fn drop(&mut self) {
         #[cfg(target_os = "macos")]
-        if matches!(self.child.try_wait(), Ok(None)) {
-            unsafe extern "C" {
-                fn kill(pid: i32, signal: i32) -> i32;
+        {
+            // Closing the private pipe lets the guardian kill AND reap clamd before
+            // we report shutdown. Killing both simultaneously leaves a short interval
+            // where the orphan still owns its listening socket.
+            if self._lease.take().is_some() {
+                let deadline = Instant::now() + Duration::from_secs(2);
+                while matches!(self.child.try_wait(), Ok(None)) && Instant::now() < deadline {
+                    std::thread::sleep(Duration::from_millis(20));
+                }
             }
-            // Only a process group created by this OwnedProcess can be addressed here.
-            unsafe {
-                kill(-(self.child.id() as i32), 9);
+            if matches!(self.child.try_wait(), Ok(None)) {
+                unsafe extern "C" {
+                    fn kill(pid: i32, signal: i32) -> i32;
+                }
+                // Only a process group created by this OwnedProcess can be addressed here.
+                unsafe {
+                    kill(-(self.child.id() as i32), 9);
+                }
             }
         }
         let _ = self.child.kill();
