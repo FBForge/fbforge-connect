@@ -151,7 +151,7 @@ test('unsaved connections show session-only storage and cannot enable durable re
   await expect(choice).toBeDisabled();
   await expect(
     page.getByText(
-      'Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Windows-Speicher.',
+      'Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Speicher.',
     ),
   ).toBeVisible();
 });

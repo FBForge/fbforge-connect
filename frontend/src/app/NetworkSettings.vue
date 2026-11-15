@@ -116,7 +116,7 @@ async function save() {
       </div>
       <p class="small-note">
         Der Proxy muss HTTPS-Tunnel unterstützen. Ein gespeichertes Passwort bleibt verschlüsselt im
-        Windows-Benutzerkonto. Es wird nicht zurück an die Oberfläche übertragen.
+        Benutzerkonto. Es wird nicht zurück an die Oberfläche übertragen.
       </p>
     </template>
     <NetworkCertificates

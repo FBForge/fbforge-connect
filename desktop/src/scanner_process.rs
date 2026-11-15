@@ -7,12 +7,21 @@ use std::{
 
 pub struct OwnedProcess {
     child: Child,
+    #[cfg(target_os = "macos")]
+    _lease: Option<std::process::ChildStdin>,
+    #[cfg(target_os = "macos")]
+    scanner_pid: Option<u32>,
     #[cfg(windows)]
     _job: std::os::windows::io::OwnedHandle,
 }
 impl OwnedProcess {
     pub fn spawn(command: &mut Command) -> Result<Self, &'static str> {
         command.stdin(Stdio::null());
+        #[cfg(target_os = "macos")]
+        {
+            use std::os::unix::process::CommandExt;
+            command.process_group(0);
+        }
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
@@ -56,9 +65,19 @@ impl OwnedProcess {
             })
         }
         #[cfg(not(windows))]
-        Ok(Self { child })
+        Ok(Self {
+            child,
+            #[cfg(target_os = "macos")]
+            _lease: None,
+            #[cfg(target_os = "macos")]
+            scanner_pid: None,
+        })
     }
     pub fn id(&self) -> u32 {
+        #[cfg(target_os = "macos")]
+        if let Some(pid) = self.scanner_pid {
+            return pid;
+        }
         self.child.id()
     }
     pub fn running(&mut self) -> bool {
@@ -67,6 +86,16 @@ impl OwnedProcess {
 }
 impl Drop for OwnedProcess {
     fn drop(&mut self) {
+        #[cfg(target_os = "macos")]
+        if matches!(self.child.try_wait(), Ok(None)) {
+            unsafe extern "C" {
+                fn kill(pid: i32, signal: i32) -> i32;
+            }
+            // Only a process group created by this OwnedProcess can be addressed here.
+            unsafe {
+                kill(-(self.child.id() as i32), 9);
+            }
+        }
         let _ = self.child.kill();
         let _ = self.child.wait();
     }
@@ -189,7 +218,7 @@ pub fn owns_port(pid: u32, port: u16) -> bool {
             && u16::from_be(row.dwLocalPort as u16) == port
     })
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 pub fn owns_port(_pid: u32, _port: u16) -> bool {
     false
 }
@@ -232,4 +261,17 @@ mod tests {
         assert!(output(&mut blocked, Duration::from_millis(100)).is_err());
         assert!(start.elapsed() < Duration::from_secs(2));
     }
+}
+
+#[cfg(target_os = "macos")]
+#[path = "scanner_macos_process.rs"]
+mod macos;
+#[cfg(target_os = "macos")]
+pub use macos::owns_port;
+#[cfg(target_os = "macos")]
+pub fn spawn_scanner(
+    engine: &std::path::Path,
+    configuration: &std::path::Path,
+) -> Result<OwnedProcess, &'static str> {
+    macos::spawn(engine, configuration)
 }

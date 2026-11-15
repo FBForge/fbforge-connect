@@ -1,4 +1,4 @@
-//! Explicit Windows acceptance against the real optional component, never bundled with the app.
+//! Explicit native acceptance against the real optional component, never bundled with the app.
 use fbforge_connect_native_contracts::{scanner_process, scanner_runtime::Runtime};
 use std::{
     fs,
@@ -28,8 +28,25 @@ fn scan(port: u16, bytes: &[u8]) -> Result<String, Box<dyn std::error::Error>> {
     Err("scanner_acceptance_incomplete".into())
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if !cfg!(windows) {
-        return Err("windows_required".into());
+    #[cfg(target_os = "macos")]
+    {
+        let args: Vec<_> = std::env::args_os().collect();
+        if args
+            .get(1)
+            .is_some_and(|v| v == "--fbforge-scanner-guardian")
+        {
+            if args.len() != 4 {
+                return Err("invalid arguments".into());
+            }
+            return fbforge_connect_native_contracts::scanner_guardian::run(
+                std::path::Path::new(&args[2]),
+                std::path::Path::new(&args[3]),
+            )
+            .map_err(Into::into);
+        }
+    }
+    if !cfg!(any(windows, target_os = "macos")) {
+        return Err("platform unsupported".into());
     }
     let args: Vec<_> = std::env::args().collect();
     if args.len() != 3 {

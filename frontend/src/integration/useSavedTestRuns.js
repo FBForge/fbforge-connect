@@ -20,7 +20,7 @@ export function useSavedTestRuns() {
       .catch(() => {})
       .then(async () => {
         await invoke('test_library', { request: { action: 'run_save', id: run.id, document } });
-        status.value = 'Fortschritt für Ihr Windows-Benutzerkonto gespeichert';
+        status.value = 'Fortschritt für Ihr Benutzerkonto gespeichert';
         error.value = '';
         await refresh();
       })

@@ -104,3 +104,7 @@ mod network_trust_bundle;
 #[cfg(target_os = "macos")]
 #[path = "../src/scanner_macos_package.rs"]
 pub(crate) mod scanner_macos_package;
+
+#[cfg(target_os = "macos")]
+#[path = "../src/scanner_guardian.rs"]
+pub mod scanner_guardian;

@@ -70,7 +70,7 @@ export function scannerError(cause) {
     {
       content_cancelled: 'Vorgang abgebrochen. Ein gültiger vorheriger Bestand bleibt erhalten.',
       scanner_busy: 'Der lokale Scanner wird gerade eingerichtet oder aktualisiert. Bitte warten Sie kurz.',
-      scanner_unsupported: 'Der mitgelieferte lokale Scanner wird derzeit nur unter Windows x64 unterstützt.',
+      scanner_unsupported: 'Der lokale Scanner unterstützt Windows x64 und macOS auf Apple Silicon.',
       scanner_database_missing:
         'Virensignaturen fehlen. Bitte Signaturen herunterladen oder die offiziellen CVD-Dateien mit ihren .sign-Dateien importieren.',
       scanner_database_invalid:

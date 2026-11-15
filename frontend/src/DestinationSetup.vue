@@ -61,7 +61,7 @@ const {
     <h2 id="destination-setup-title">Eigene Destination anlegen</h2>
     <p>
       Eine Destination ist die Adresse Ihrer Testanwendung bei FIT-Connect. Sie benötigen ein Konto der
-      gewählten Umgebung mit Berechtigung für die Destination API und ein gespeichertes Windows-Profil.
+      gewählten Umgebung mit Berechtigung für die Destination API und ein gespeichertes Profil.
     </p>
     <p class="small-note">
       Die privaten Schlüssel werden lokal erzeugt und geschützt gesichert. Nur die öffentlichen Teile werden
@@ -381,8 +381,8 @@ const {
         Antwortkanal. Die Vorschau gilt zwei Minuten.
       </p>
       <p v-if="prepared.keys">
-        Die privaten Schlüssel sind im Windows-Profil gesichert. Es werden ausschließlich öffentliche
-        Schlüssel übertragen. Die Vorschau gilt zwei Minuten.
+        Die privaten Schlüssel sind im Profil gesichert. Es werden ausschließlich öffentliche Schlüssel
+        übertragen. Die Vorschau gilt zwei Minuten.
       </p>
       <details>
         <summary>Konfiguration für FIT-Connect</summary>

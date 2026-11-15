@@ -175,8 +175,8 @@ function use(row) {
       anschließend den Verschlüsselungsschlüssel um. Alte Schlüssel bleiben für frühere Nachrichten erhalten.
     </p>
     <p>
-      Die privaten Schlüssel werden im gespeicherten Profil geschützt auf diesem Windows-Benutzerkonto
-      aufbewahrt. Eine gespeicherte Sitzung ist erforderlich.
+      Die privaten Schlüssel werden im gespeicherten Profil geschützt auf diesem Benutzerkonto aufbewahrt.
+      Eine gespeicherte Sitzung ist erforderlich.
     </p>
     <p v-if="selected.some((row) => row.type === 'C')" role="status">
       Onlinedienst-Destinations vom Typ C haben keine Zertifikate. Wählen Sie für einen Schlüsselwechsel

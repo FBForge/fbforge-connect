@@ -68,6 +68,25 @@ use tauri::Manager;
 use write_policy::resource_action;
 
 fn main() {
+    #[cfg(target_os = "macos")]
+    {
+        let args: Vec<_> = std::env::args_os().collect();
+        if args
+            .get(1)
+            .is_some_and(|v| v == "--fbforge-scanner-guardian")
+        {
+            let result = if args.len() == 4 {
+                scanner_guardian::run(
+                    std::path::Path::new(&args[2]),
+                    std::path::Path::new(&args[3]),
+                )
+            } else {
+                Err("invalid_input")
+            };
+            std::process::exit(if result.is_ok() { 0 } else { 1 });
+        }
+    }
+
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(window) = app.get_webview_window("main") {
@@ -316,3 +335,6 @@ mod network_trust_bundle;
 
 #[cfg(target_os = "macos")]
 pub(crate) mod scanner_macos_package;
+
+#[cfg(target_os = "macos")]
+pub(crate) mod scanner_guardian;

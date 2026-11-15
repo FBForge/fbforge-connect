@@ -19,7 +19,7 @@ const labels = {
 <template>
   <section class="tool-section application-updates" aria-labelledby="updates-title">
     <h2 id="updates-title">Aktualisierungen</h2>
-    <p v-if="!state.supported">Integrierte Updates sind derzeit für Windows x64 verfügbar.</p>
+    <p v-if="!state.supported">Integrierte Updates unterstützen Windows x64 und macOS auf Apple Silicon.</p>
     <p v-else-if="!state.configured">
       Updates sind in diesem Build noch nicht eingerichtet. Nutzen Sie den manuellen Download auf GitHub.
     </p>

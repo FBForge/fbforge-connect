@@ -8,7 +8,7 @@ export async function prepareDesktop(
   { platform = process.platform, componentPath = component, stage = stageScanner } = {},
 ) {
   if (
-    platform !== 'win32' ||
+    !['win32', 'darwin'].includes(platform) ||
     args[0] !== 'build' ||
     args.some((arg) => ['--debug', '--help', '-h', '--version', '-V'].includes(arg))
   )

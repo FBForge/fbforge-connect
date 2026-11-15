@@ -22,7 +22,8 @@ export function useNativeNavigation(navigate) {
     if (!isTauri()) return;
     try {
       const unlisten = await listen('application-navigation', ({ payload }) => {
-        if (active && Object.hasOwn(destinations, payload)) void navigate(destinations[payload]);
+        if (active && typeof payload === 'string' && Object.hasOwn(destinations, payload))
+          void navigate(destinations[payload]);
       });
       if (active) remove = unlisten;
       else unlisten();

@@ -12,7 +12,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 use std::{
     io::Write,
     net::{Ipv4Addr, SocketAddrV4, TcpListener, TcpStream},
@@ -136,7 +136,7 @@ pub fn verify_databases(
             return Err("scanner_database_invalid");
         }
         scanner_process::output_with_cancel(
-            Command::new(engine.join(package::program("sigtool")))
+            package::command(&engine, "sigtool")
                 .current_dir(engine)
                 .arg("--verify")
                 .arg(&file)
@@ -264,17 +264,17 @@ impl Runtime {
         Ok(port)
     }
     pub fn start(&mut self) -> Result<u16, &'static str> {
-        #[cfg(not(windows))]
+        #[cfg(not(any(windows, target_os = "macos")))]
         {
             return Err("scanner_unsupported");
         }
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "macos"))]
         {
-            self.start_windows()
+            self.start_supported()
         }
     }
-    #[cfg(windows)]
-    fn start_windows(&mut self) -> Result<u16, &'static str> {
+    #[cfg(any(windows, target_os = "macos"))]
+    fn start_supported(&mut self) -> Result<u16, &'static str> {
         if let (Some(process), Some(port)) = (&mut self.process, self.port) {
             if process.running() && scanner_process::owns_port(process.id(), port) {
                 return Ok(port);
@@ -300,14 +300,17 @@ impl Runtime {
         )
         .map_err(failure)?;
         drop(listener);
-        let mut command = Command::new(engine.join(package::program("clamd")));
+        let mut command = package::command(&engine, "clamd");
         command
             .current_dir(&engine)
             .arg("--config-file")
             .arg(&configuration)
             .stdout(Stdio::null())
             .stderr(Stdio::null());
+        #[cfg(windows)]
         let mut process = OwnedProcess::spawn(&mut command)?;
+        #[cfg(target_os = "macos")]
+        let mut process = scanner_process::spawn_scanner(&engine, &configuration)?;
         let deadline = Instant::now() + Duration::from_secs(60);
         while Instant::now() < deadline {
             if self.cancel.load(std::sync::atomic::Ordering::SeqCst) {
@@ -326,7 +329,7 @@ impl Runtime {
         Err("scanner_start_failed")
     }
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 fn ping(port: u16) -> bool {
     (|| {
         let mut socket = TcpStream::connect_timeout(

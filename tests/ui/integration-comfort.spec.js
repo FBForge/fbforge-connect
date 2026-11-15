@@ -97,7 +97,7 @@ for (const api of ['v2', 'v3']) {
       page.getByRole('heading', { name: `Eingang prüfen: ${pack.cases[0].name}`, exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText('Fortschritt für Ihr Windows-Benutzerkonto gespeichert', { exact: true }),
+      page.getByText('Fortschritt für Ihr Benutzerkonto gespeichert', { exact: true }),
     ).toBeVisible();
     const saved = await page.evaluate(
       () => Object.values(JSON.parse(localStorage.getItem('fixture-test-runs')))[0],
@@ -216,7 +216,7 @@ test('assigned profiles and destinations persist with the run and context action
   await page.getByLabel('Empfangs-Destination', { exact: true }).fill(id(5));
   await button(page, 'Durchlauf starten').click();
   await expect(
-    page.getByText('Fortschritt für Ihr Windows-Benutzerkonto gespeichert', { exact: true }),
+    page.getByText('Fortschritt für Ihr Benutzerkonto gespeichert', { exact: true }),
   ).toBeVisible();
   await button(page, 'Zum Sender wechseln').click();
   const context = await page.evaluate(() => window.__integration.context);

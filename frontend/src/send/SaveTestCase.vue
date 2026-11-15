@@ -40,7 +40,7 @@ const name = ref('');
       </button>
     </div>
     <p class="small-note">
-      Die lokale Sammlung ist für Ihr Windows-Benutzerkonto verschlüsselt. Exportierte Testpakete sind
+      Die lokale Sammlung ist für Ihr Benutzerkonto verschlüsselt. Exportierte Testpakete sind
       unverschlüsselt.
     </p>
     <p v-if="pending" role="status">Testfall wird verarbeitet …</p>

@@ -139,7 +139,7 @@ export function useScenarioWorkspace(
       .then(async () => {
         await storage.saveRun(invoke, document);
         if (alive) {
-          notice.value = 'Durchlauf für Ihr Windows-Benutzerkonto gespeichert.';
+          notice.value = 'Durchlauf für Ihr Benutzerkonto gespeichert.';
           history.value = await storage.listRuns(invoke);
         }
       })
@@ -219,7 +219,7 @@ export function useScenarioWorkspace(
       if (!definition.value) return;
       await storage.saveScenario(invoke, definition.value);
       await refresh();
-      notice.value = 'Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.';
+      notice.value = 'Test dauerhaft für Ihr Benutzerkonto gespeichert.';
     });
   const launch = (source: Scenario, selectedVariant: string, context: Assignment) =>
     act(async (current) => {

@@ -16,7 +16,7 @@ fn freshclam_command(
     engine: &Path,
     configuration: &Path,
 ) -> Result<(Command, Option<crate::network_trust_bundle::TrustBundle>), &'static str> {
-    let mut command = Command::new(engine.join(package::program("freshclam")));
+    let mut command = package::command(&engine, "freshclam");
     // FreshClam's progress output can exceed the bounded helper pipe even on success.
     // The native operation state supplies UI progress, so retain only errors here.
     command
@@ -268,7 +268,8 @@ mod tests {
                 .as_nanos()
         ));
         fs::create_dir(&root).unwrap();
-        let executable = root.join("freshclam.exe");
+        let executable = root.join(package::program("freshclam"));
+        fs::create_dir_all(executable.parent().unwrap()).unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;

@@ -59,7 +59,7 @@ function save() {
     if (alive) {
       entries.value = result;
       choice.value = saved.id;
-      notice.value = `„${saved.name}“ wurde dauerhaft für Ihr Windows-Benutzerkonto gespeichert.`;
+      notice.value = `„${saved.name}“ wurde dauerhaft für Ihr Benutzerkonto gespeichert.`;
     }
   });
 }
@@ -95,8 +95,8 @@ async function close(removeEntry = false) {
   <section class="saved-test-flows" :aria-labelledby="`${id}-heading`">
     <h3 :id="`${id}-heading`">Gespeicherte Testabläufe</h3>
     <p class="small-note">
-      Abläufe mit Testdaten und Anlagen werden lokal für Ihr Windows-Benutzerkonto verschlüsselt gespeichert.
-      Sie bleiben nach einem Neustart verfügbar und sind unabhängig vom verbundenen FIT-Connect-Profil.
+      Abläufe mit Testdaten und Anlagen werden lokal für Ihr Benutzerkonto verschlüsselt gespeichert. Sie
+      bleiben nach einem Neustart verfügbar und sind unabhängig vom verbundenen FIT-Connect-Profil.
       Fortschritt eines Durchlaufs wird getrennt geschützt gespeichert. Frühere Ergebnisse bleiben als
       historische Prüfungen erkennbar.
     </p>

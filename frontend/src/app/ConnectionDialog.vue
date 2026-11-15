@@ -180,7 +180,7 @@ provide('profile-editor-context', {
         </div>
         <label class="checkbox-label">
           <input v-model="rememberProfile" type="checkbox" :disabled="busy" />
-          Zugangsdaten und Schlüssel auf diesem Windows-Benutzerkonto geschützt speichern
+          Zugangsdaten und Schlüssel auf diesem Benutzerkonto geschützt speichern
         </label>
         <label v-if="rememberProfile" for="profile-name">
           Profilname
@@ -195,7 +195,7 @@ provide('profile-editor-context', {
         </label>
         <p class="small-note">
           Ohne Speichern bleiben Zugangsdaten und Schlüssel nur für diese Sitzung erhalten. Gespeicherte
-          Profile schützt Windows für Ihr Benutzerkonto. Zugangstokens werden nicht gespeichert.
+          Profile schützt das Betriebssystem für Ihr Benutzerkonto. Zugangstokens werden nicht gespeichert.
         </p>
         <div class="client-actions connection-submit">
           <button class="button" type="submit" :disabled="busy || !clientId.trim() || !clientSecret.trim()">
@@ -231,9 +231,9 @@ provide('profile-editor-context', {
     <details class="profile-backup">
       <summary>Geschützte Profilsicherung importieren</summary>
       <p>
-        Eine Sicherung enthält Zugangsdaten und Schlüssel verschlüsselt mit Windows-Benutzerschutz. Sie ist
-        kein Passwort-Export für andere Benutzerkonten oder Rechner. Bereits vorhandene Profile werden beim
-        Import nicht überschrieben.
+        Eine Sicherung enthält Zugangsdaten und Schlüssel verschlüsselt mit Betriebssystemschutz. Sie ist kein
+        Passwort-Export für andere Benutzerkonten oder Rechner. Bereits vorhandene Profile werden beim Import
+        nicht überschrieben.
       </p>
       <button type="button" class="button secondary" :disabled="busy" @click="restoreProfileBackup">
         Geschützte Sicherung importieren
@@ -245,7 +245,7 @@ provide('profile-editor-context', {
         :disabled="busy"
         @files="restoreProfileBackup"
       >
-        Höchstens 8 MiB verschlüsselte Profildaten. Das ursprüngliche Windows-Benutzerkonto wird benötigt.
+        Höchstens 8 MiB verschlüsselte Profildaten. Das ursprüngliche Benutzerkonto wird benötigt.
       </FileDropInput>
     </details>
     <p v-if="profileNotice" role="status">{{ profileNotice }}</p>

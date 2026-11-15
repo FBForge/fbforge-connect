@@ -159,7 +159,7 @@ export function caseErrorMessage(cause) {
     vault_limit:
       'Die geschützte Vorgangsablage hat ihre Größen- oder Datensatzgrenze erreicht. Löschen Sie nicht mehr benötigte lokale Kopien.',
     vault_invalid:
-      'Diese lokale Kopie ist beschädigt oder kann mit diesem Windows-Benutzerkonto nicht gelesen werden. Andere Kopien bleiben erhalten.',
+      'Diese lokale Kopie ist beschädigt oder kann mit diesem Benutzerkonto nicht gelesen werden. Andere Kopien bleiben erhalten.',
     vault_unavailable:
       'Die geschützte Vorgangsablage ist nicht verfügbar. Prüfen Sie das Benutzerkonto, Dateizugriffsrechte und den freien Speicherplatz.',
   }[code];

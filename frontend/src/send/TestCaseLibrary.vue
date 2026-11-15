@@ -85,7 +85,7 @@ async function store(pack) {
   choice.value = `pack:${entry.id}`;
   await refresh();
   notice.value =
-    'Testfall geschützt auf diesem Windows-Benutzerkonto gespeichert. Er bleibt nach einem Neustart verfügbar.';
+    'Testfall geschützt auf diesem Benutzerkonto gespeichert. Er bleibt nach einem Neustart verfügbar.';
 }
 function saveDraft(name, exportOnly = false) {
   return act(async () => {
@@ -217,8 +217,8 @@ defineExpose({ saveDraft, saveNotice, saveError, pending });
     <details>
       <summary ref="managementSummary">Tests importieren, exportieren und löschen</summary>
       <p class="small-note">
-        Die lokale Sammlung ist für Ihr Windows-Benutzerkonto verschlüsselt. Exportierte Dateien sind
-        unverschlüsselt. Verwenden Sie fiktive Daten.
+        Die lokale Sammlung ist für Ihr Benutzerkonto verschlüsselt. Exportierte Dateien sind unverschlüsselt.
+        Verwenden Sie fiktive Daten.
       </p>
       <div v-if="entries.length" class="client-actions">
         <button

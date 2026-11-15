@@ -305,7 +305,7 @@ export function useConnections({
       const saved = await exportProfileBackup(invoke, profile.profileId);
       if (saved)
         profileNotice.value =
-          'Geschützte Sicherung gespeichert. Sie benötigt dasselbe Windows-Benutzerkonto und dessen Windows-Schutzschlüssel.';
+          'Geschützte Sicherung gespeichert. Sie benötigt dasselbe Benutzerkonto und dessen lokalen Schutzschlüssel.';
     } catch (cause) {
       profileError.value = errorMessage(cause);
     } finally {

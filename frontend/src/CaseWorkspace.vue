@@ -100,7 +100,7 @@ const {
           bleiben bis zum Löschen erhalten.
         </p>
         <p v-if="!canPersist" class="small-note">
-          Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Windows-Speicher.
+          Dauerhafte Aufbewahrung erfordert ein gespeichertes Profil und den geschützten Speicher.
         </p>
       </details>
       <div class="case-filters client-fields">

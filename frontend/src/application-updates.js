@@ -30,7 +30,7 @@ const messages = Object.freeze({
   update_not_ready: 'Das Update ist nicht mehr vorbereitet. Suchen Sie erneut nach Aktualisierungen.',
   update_not_configured:
     'Updates sind in diesem Build noch nicht eingerichtet. Verwenden Sie den manuellen Download.',
-  update_platform_unsupported: 'Integrierte Updates sind derzeit für Windows x64 verfügbar.',
+  update_platform_unsupported: 'Integrierte Updates unterstützen Windows x64 und macOS auf Apple Silicon.',
 });
 
 export function validateUpdateStatus(value) {

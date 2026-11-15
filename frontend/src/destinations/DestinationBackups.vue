@@ -71,7 +71,7 @@ watch(task, async (value) => {
       Für Zustellpunkt-Sicherungen bitte eine API-v3-Verbindung öffnen.
     </p>
     <p v-else-if="profileMissing" role="status">
-      Verbinden Sie ein gespeichertes Windows-Profil. Darin werden die Sicherungen geschützt und dauerhaft
+      Verbinden Sie ein gespeichertes Profil. Darin werden die Sicherungen geschützt und dauerhaft
       gespeichert.
     </p>
     <template v-else>

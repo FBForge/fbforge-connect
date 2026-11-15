@@ -13,7 +13,7 @@ for (const api of ['v2', 'v3']) {
       buffer: Buffer.from(JSON.stringify(pack)),
     });
     await button(page, 'Ablauf lokal speichern').click();
-    await expect(page.getByText(/wurde dauerhaft für Ihr Windows-Benutzerkonto gespeichert/)).toBeVisible();
+    await expect(page.getByText(/wurde dauerhaft für Ihr Benutzerkonto gespeichert/)).toBeVisible();
     expect(await page.evaluate(() => Object.keys(window.__integration.savedFlows).length)).toBe(1);
     await button(page, 'Gespeicherte Abläufe laden').click();
     await expect(page.getByText('1 gespeicherter Ablauf.', { exact: true })).toBeVisible();

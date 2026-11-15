@@ -62,8 +62,8 @@ function add() {
     <summary>Zusätzliche CA-Zertifikate für Firmennetzwerke ({{ roots.length }})</summary>
     <p class="small-note">
       Nur erforderlich, wenn Ihre IT HTTPS-Verbindungen mit einer eigenen Zertifizierungsstelle prüft. Die
-      Freigabe gilt ausschließlich für FBForge Connect und seine Downloads. Der Windows-Zertifikatsspeicher
-      und die Prüfung von Virensignaturen werden dadurch nicht geändert.
+      Freigabe gilt ausschließlich für FBForge Connect und seine Downloads. Der System-Zertifikatsspeicher und
+      die Prüfung von Virensignaturen werden dadurch nicht geändert.
     </p>
     <ul v-if="certificates.length" class="network-certificate-list">
       <li v-for="cert in certificates" :key="cert.der">

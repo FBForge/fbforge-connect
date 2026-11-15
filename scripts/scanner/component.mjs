@@ -5,7 +5,15 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 export const manifest = JSON.parse(
-  await readFile(new URL('../../desktop/scanner-component.json', import.meta.url), 'utf8'),
+  await readFile(
+    new URL(
+      process.platform === 'darwin'
+        ? '../../desktop/scanner-component.macos.json'
+        : '../../desktop/scanner-component.json',
+      import.meta.url,
+    ),
+    'utf8',
+  ),
 );
 // Git's GnuPG is an MSYS executable, not a native Gpg4win executable.
 // Explicit drive paths must use its /c/... form; backslashes become relative path characters.

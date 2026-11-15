@@ -88,9 +88,7 @@ async function savePack(desktop, fixture, pack) {
   await openStoredTest(page, 'pack', pack.name);
   await testReuse(page);
   await button(page, 'Test speichern').click();
-  await page
-    .getByText('Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.', { exact: true })
-    .waitFor();
+  await page.getByText('Test dauerhaft für Ihr Benutzerkonto gespeichert.', { exact: true }).waitFor();
 }
 async function flowReview(desktop, fixture, senders, pack) {
   let page = desktop.page;
@@ -110,7 +108,7 @@ async function flowReview(desktop, fixture, senders, pack) {
   await testTools(page);
   await checkTestStep(page);
   await page.getByRole('heading', { name: 'Eingang öffnen', exact: true }).waitFor();
-  await page.getByText('Durchlauf für Ihr Windows-Benutzerkonto gespeichert.', { exact: true }).waitFor();
+  await page.getByText('Durchlauf für Ihr Benutzerkonto gespeichert.', { exact: true }).waitFor();
   await testOverview(page);
   const runRow = page.locator('[data-run-id]').filter({ hasText: pack.name });
   check((await runRow.count()) === 1, 'live_ui_flow_run_ambiguous');

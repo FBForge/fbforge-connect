@@ -25,7 +25,7 @@ test('the native acceptance driver opens a converted test through one stable col
   await testReuse(page);
   await button(page, 'Test speichern').click();
   await expect(
-    page.getByText('Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.', { exact: true }),
+    page.getByText('Test dauerhaft für Ihr Benutzerkonto gespeichert.', { exact: true }),
   ).toBeVisible();
   await openStoredTest(page, 'test', pack.name);
   await expect(page.getByLabel('Testname', { exact: true })).toHaveValue(pack.name);

@@ -29,7 +29,7 @@ test('destination-setup with synthetic native fixtures', async ({ createPage }) 
     if (scenario === 'uncertain') await page.evaluate(() => (window.__creationFixture.uncertain = true));
     await page.getByRole('button', { name: 'Destination vorbereiten', exact: true }).click();
     if (scenario === 'profile-required') {
-      await page.getByRole('alert').filter({ hasText: 'gespeicherten Windows-Profil' }).waitFor();
+      await page.getByRole('alert').filter({ hasText: 'gespeicherten Profil' }).waitFor();
       assert.equal(await page.evaluate(() => window.__creationFixture.writes), 0);
       assert.equal(await page.locator('#setup-name').inputValue(), 'Bauamt TEST');
       assert.deepEqual(errors, []);

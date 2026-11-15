@@ -5,33 +5,36 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { prepareDesktop } from '../scripts/prepare-desktop.mjs';
 
-test('a missing Windows scanner is staged once for online and offline installer entry points', async () => {
-  for (const args of [
-    ['build'],
-    ['build', '--config', 'tauri.offline.conf.json'],
-    ['build', '--config', 'local-signing.json', '--', '--locked'],
-  ]) {
-    const root = await mkdtemp(join(tmpdir(), 'connect-prepare-'));
-    try {
-      const componentPath = join(root, 'component.zip');
-      let stages = 0;
-      const stage = async () => {
-        stages++;
-        await writeFile(componentPath, 'synthetic staged package');
-      };
-      await prepareDesktop(args, { platform: 'win32', componentPath, stage });
-      await prepareDesktop(args, { platform: 'win32', componentPath, stage });
-      assert.equal(stages, 1);
-    } finally {
-      await rm(root, { recursive: true, force: true });
+test('a missing Windows or macOS scanner is staged once for installer entry points', async () => {
+  for (const platform of ['win32', 'darwin'])
+    for (const args of [
+      ['build'],
+      ['build', '--config', 'tauri.offline.conf.json'],
+      ['build', '--config', 'local-signing.json', '--', '--locked'],
+    ]) {
+      const root = await mkdtemp(join(tmpdir(), 'connect-prepare-'));
+      try {
+        const componentPath = join(root, 'component.zip');
+        let stages = 0;
+        const stage = async () => {
+          stages++;
+          await writeFile(componentPath, 'synthetic staged package');
+        };
+        await prepareDesktop(args, { platform, componentPath, stage });
+        await prepareDesktop(args, { platform, componentPath, stage });
+        assert.equal(stages, 1);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
     }
-  }
 });
 test('development and unrelated commands never download a scanner', async () => {
   for (const [platform, args] of [
     ['linux', ['build']],
     ['win32', ['dev']],
     ['win32', ['build', '--debug']],
+    ['darwin', ['build', '--debug']],
+    ['darwin', ['dev']],
     ['win32', ['info']],
     ['win32', ['build', '--help']],
   ]) {

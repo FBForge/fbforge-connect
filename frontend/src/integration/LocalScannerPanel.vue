@@ -74,8 +74,8 @@ onBeforeUnmount(() => {
   <section class="tool-section" aria-labelledby="local-scanner-title">
     <h3 id="local-scanner-title">Lokaler ClamAV</h3>
     <p>
-      Optionale geprüfte Komponente für Windows x64. Der Scan läuft auf Ihrem Rechner. Die Engine und ihre
-      Virensignaturen werden getrennt von FIT-Connect-Zugängen verwaltet.
+      Optionale geprüfte Komponente für Windows x64 und macOS auf Apple Silicon. Der Scan läuft auf Ihrem
+      Rechner. Die Engine und ihre Virensignaturen werden getrennt von FIT-Connect-Zugängen verwaltet.
     </p>
     <p v-if="status" role="status">
       <span

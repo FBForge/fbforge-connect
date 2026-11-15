@@ -273,12 +273,12 @@ pub async fn install_local_scanner(
     app: tauri::AppHandle,
     online: bool,
 ) -> Result<View, &'static str> {
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = online;
         return Err("scanner_unsupported");
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         let paths = if online {
             approve(&app, crate::scanner_consent::download()).await?;
@@ -357,7 +357,7 @@ pub async fn stop_local_scanner(app: tauri::AppHandle) -> Result<View, &'static 
     view(&app.state::<LocalScanner>())
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 async fn download_step<T>(
     future: impl std::future::Future<Output = Result<T, reqwest::Error>>,
     state: &LocalScanner,
@@ -373,7 +373,7 @@ async fn download_step<T>(
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 async fn download_engine(target: &Path, state: &LocalScanner) -> Result<(), &'static str> {
     use std::io::Write;
     let spec = package::component()?;

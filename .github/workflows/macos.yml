@@ -106,6 +106,13 @@ jobs:
       - run: rustup toolchain install 1.99.0 --profile minimal
       - run: brew install gnupg
       - run: node scripts/scanner/probe-macos.mjs
+      - name: Stage and scan using the same signed vendor binaries and native guardian
+        run: |
+          npm run stage:scanner
+          component=$(find desktop/target/scanner-dist -name 'FBForge-Connect-ClamAV-*-macos-arm64.zip' -type f)
+          test -n "$component"
+          cargo +1.99.0 run --locked --manifest-path desktop/native-contracts/Cargo.toml --example scanner-runtime -- "$component" "$RUNNER_TEMP/fbforge-macos-scanner-acceptance"
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: macos-scanner-feasibility

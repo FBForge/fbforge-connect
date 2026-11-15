@@ -153,9 +153,7 @@ export async function reviewIntegrationAuthoring(desktop, fixture, senders) {
   );
   await testReuse(page);
   await button(page, 'Test speichern').click();
-  await page
-    .getByText('Test dauerhaft für Ihr Windows-Benutzerkonto gespeichert.', { exact: true })
-    .waitFor();
+  await page.getByText('Test dauerhaft für Ihr Benutzerkonto gespeichert.', { exact: true }).waitFor();
   await preparationPage(page, 'Verbindung');
   for (const api of ['v2', 'v3']) {
     await page

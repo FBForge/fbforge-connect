@@ -19,6 +19,26 @@ pub fn program(name: &str) -> PathBuf {
         PathBuf::from(format!("{name}.exe"))
     }
 }
+/// Only our verified component library directory enters the macOS dynamic loader path.
+pub fn command(engine: &Path, name: &str) -> std::process::Command {
+    let mut command = std::process::Command::new(engine.join(program(name)));
+    #[cfg(target_os = "macos")]
+    {
+        for key in [
+            "DYLD_LIBRARY_PATH",
+            "DYLD_FALLBACK_LIBRARY_PATH",
+            "DYLD_INSERT_LIBRARIES",
+            "DYLD_FRAMEWORK_PATH",
+            "DYLD_FALLBACK_FRAMEWORK_PATH",
+            "DYLD_ROOT_PATH",
+            "DYLD_IMAGE_SUFFIX",
+        ] {
+            command.env_remove(key);
+        }
+        command.env("DYLD_LIBRARY_PATH", engine.join("lib"));
+    }
+    command
+}
 pub const PACKAGE_LIMIT: u64 = 512 * 1024 * 1024;
 const DATABASE_LIMIT: u64 = 400 * 1024 * 1024;
 pub const DATABASES: [&str; 3] = ["main.cvd", "daily.cvd", "bytecode.cvd"];

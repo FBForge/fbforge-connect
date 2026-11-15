@@ -67,30 +67,60 @@ try {
     if (!result.stdout.includes(`[GNUPG:] VALIDSIG ${manifest.signerFingerprint} `))
       throw new Error('scanner_build_signature_invalid');
   }
-  const extracted = join(scratch, 'extracted');
-  await mkdir(extracted);
-  if (process.platform === 'win32')
-    run(
-      'powershell.exe',
-      [
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        'Expand-Archive -LiteralPath $env:FBFC_SCANNER_ARCHIVE -DestinationPath $env:FBFC_SCANNER_EXTRACT -Force',
-      ],
-      { env: { ...process.env, FBFC_SCANNER_ARCHIVE: archive, FBFC_SCANNER_EXTRACT: extracted } },
-    );
-  else run('unzip', ['-q', archive, '-d', extracted]);
   const engine = join(staging, 'engine');
-  await copyEngine(join(extracted, `clamav-${manifest.version}.win.x64`), engine);
+  if (process.platform === 'darwin') {
+    run(
+      'cargo',
+      [
+        '+1.99.0',
+        'run',
+        '--locked',
+        '--manifest-path',
+        join(root, 'desktop/native-contracts/Cargo.toml'),
+        '--example',
+        'scanner-engine-probe',
+        '--',
+        archive,
+        staging,
+        '--keep',
+      ],
+      { cwd: root },
+    );
+  } else {
+    const extracted = join(scratch, 'extracted');
+    await mkdir(extracted);
+    if (process.platform === 'win32')
+      run(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          'Expand-Archive -LiteralPath $env:FBFC_SCANNER_ARCHIVE -DestinationPath $env:FBFC_SCANNER_EXTRACT -Force',
+        ],
+        { env: { ...process.env, FBFC_SCANNER_ARCHIVE: archive, FBFC_SCANNER_EXTRACT: extracted } },
+      );
+    else run('unzip', ['-q', archive, '-d', extracted]);
+    await copyEngine(join(extracted, `clamav-${manifest.version}.win.x64`), engine);
+  }
+  const program = (name) =>
+    process.platform === 'darwin'
+      ? join(engine, name === 'clamd' ? 'sbin' : 'bin', name)
+      : join(engine, name + '.exe');
+  const options = {
+    cwd: engine,
+    ...(process.platform === 'darwin'
+      ? { env: { ...process.env, DYLD_LIBRARY_PATH: join(engine, 'lib') } }
+      : {}),
+  };
   const database = join(staging, 'database');
   await mkdir(database, { recursive: true });
-  const sigtool = sigtoolInput ? resolve(sigtoolInput) : join(engine, 'sigtool.exe');
+  const sigtool = sigtoolInput ? resolve(sigtoolInput) : program('sigtool');
   const verifyDatabase = async (directory) => {
     const names = await databaseFiles(directory);
     for (const name of names.filter((name) => name.endsWith('.cvd')))
       run(sigtool, ['--verify', join(directory, name), '--cvdcertsdir', join(engine, 'certs')], {
-        cwd: engine,
+        ...options,
       });
     return names;
   };
@@ -112,7 +142,8 @@ try {
     for (const name of await databaseFiles(resolve(databaseInput)))
       await copyFile(join(resolve(databaseInput), name), join(database, name));
   } else if (!currentCache) {
-    if (process.platform !== 'win32') throw new Error('scanner_build_database_directory_required');
+    if (!['win32', 'darwin'].includes(process.platform))
+      throw new Error('scanner_build_database_directory_required');
     const configuration = join(scratch, 'freshclam.conf');
     const quote = (path) => {
       if (/[\r\n"]/.test(path)) throw new Error('scanner_build_path_invalid');
@@ -122,7 +153,7 @@ try {
       configuration,
       `DatabaseDirectory ${quote(database)}\nCVDCertsDirectory ${quote(join(engine, 'certs'))}\nDatabaseMirror database.clamav.net\nScriptedUpdates no\nConnectTimeout 10\nReceiveTimeout 30\nMaxAttempts 2\n`,
     );
-    run(join(engine, 'freshclam.exe'), ['--config-file', configuration], { cwd: engine, timeout: 300000 });
+    run(program('freshclam'), ['--config-file', configuration], { ...options, timeout: 300000 });
   }
   const databases = await verifyDatabase(database);
   if (!databaseInput && !currentCache) {
@@ -132,7 +163,10 @@ try {
   }
   await verifyEngine(engine);
   await mkdir(dist, { recursive: true });
-  const packagePath = join(dist, `FBForge-Connect-ClamAV-${manifest.version}-windows-x64.zip`);
+  const packagePath = join(
+    dist,
+    `FBForge-Connect-ClamAV-${manifest.version}-${process.platform === 'darwin' ? 'macos-arm64' : 'windows-x64'}.zip`,
+  );
   await rm(packagePath, { force: true });
   run(
     'cargo',
@@ -163,7 +197,7 @@ try {
   }
   await writeFile(
     join(dist, 'SOURCE-NOTICE.txt'),
-    `Optional ClamAV ${manifest.version}, unmodified official Windows binaries.\nClamAV license and bundled-library notices accompany this package.\nMatching ClamAV source archive and its original Talos signature are included.\nUpstream Windows build instructions: https://github.com/Cisco-Talos/clamav/blob/clamav-${manifest.version}/INSTALL.md\nUpstream dependency build tooling: https://github.com/Cisco-Talos/clamav-mussels-cookbook\nEngine and per-file hashes: component-manifest.json\n`,
+    `Optional ClamAV ${manifest.version}, unmodified official ${process.platform === 'darwin' ? 'macOS' : 'Windows'} binaries.\nClamAV license and bundled-library notices accompany this package.\nMatching ClamAV source archive and its original Talos signature are included.\nUpstream Windows build instructions: https://github.com/Cisco-Talos/clamav/blob/clamav-${manifest.version}/INSTALL.md\nUpstream dependency build tooling: https://github.com/Cisco-Talos/clamav-mussels-cookbook\nEngine and per-file hashes: component-manifest.json\n`,
   );
   await writeFile(join(dist, 'component-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   const payload = join(scratch, 'payload');
