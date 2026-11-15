@@ -416,17 +416,93 @@ fn private_mutation_descriptor_rejects_foreign_read_access() {
 }
 
 #[test]
+fn reopening_a_volume_ancestor_preserves_identity_without_admitting_a_root_target() {
+    let fixture = Fixture::new();
+    let root = fixture.0.ancestors().last().unwrap();
+    let file = open_read_only(root, FILE_FLAG_BACKUP_SEMANTICS).unwrap();
+    assert!(final_path(&file).is_err());
+    let user = TrustedPrincipals::current().unwrap();
+    let reopened =
+        reopen_directory_anchor(&file, Scope::Ancestor, false, &user, &mut ScanBudget::new())
+            .unwrap();
+    assert_eq!(object_id(&file).unwrap(), object_id(&reopened).unwrap());
+    assert!(lock_directory(root, false, false).is_err());
+}
+
+#[test]
+fn reopened_private_directory_retains_the_held_object_identity() {
+    let fixture = Fixture::new();
+    let directory = create_private_directory(&fixture.0.join("directory")).unwrap();
+    let user = TrustedPrincipals::current().unwrap();
+    let mut budget = ScanBudget::new();
+    let reopened = reopen_directory(&directory.file, &user, &mut budget);
+    let native_error = std::io::Error::last_os_error();
+    let reopened = reopened.unwrap_or_else(|failure| {
+        panic!("same-object directory reopen failed: {failure:?}; native error: {native_error}")
+    });
+    assert_eq!(object_id(&reopened).unwrap(), directory.id().unwrap());
+}
+
+#[test]
+fn public_leaf_with_foreign_creation_rights_keeps_no_write_sharing() {
+    use windows_sys::Win32::Storage::FileSystem::{
+        FILE_ADD_FILE, FILE_FLAG_OPEN_REPARSE_POINT, FILE_SHARE_DELETE, FILE_SHARE_READ,
+        FILE_SHARE_WRITE,
+    };
+    let fixture = Fixture::new();
+    fixture.set_acl(&fixture.0, true, &format!("(A;;0x00000002;;;{OTHER})"));
+    let open_writer = || {
+        OpenOptions::new()
+            .access_mode(FILE_ADD_FILE)
+            .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
+            .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
+            .open(&fixture.0)
+    };
+    assert!(open_writer().is_ok());
+    let anchor = lock_directory(&fixture.0, false, false).unwrap();
+    assert!(open_writer().is_err());
+    drop(anchor);
+    assert!(open_writer().is_ok());
+}
+
+#[test]
+fn unsafe_descendant_acl_prevents_releasing_move_proofs() {
+    use std::io::Write;
+    let fixture = Fixture::new();
+    let root = fixture.0.join("target");
+    let child = root.join("nested");
+    drop(create_private_directory(&root).unwrap());
+    drop(create_private_directory(&child).unwrap());
+    create_private_file(&root.join("fixture.exe"))
+        .unwrap()
+        .write_all(b"unsigned fixture, never executed")
+        .unwrap();
+    let mut tree =
+        lock_mutation_tree(LockedPackageFile::open(&root.join("fixture.exe")).unwrap()).unwrap();
+    fixture.set_acl(&child, true, "(A;;FW;;;BU)");
+    assert_eq!(
+        tree.release_descendant_handles_for_move(),
+        Err(Failure::UnsafeInstallation)
+    );
+    assert!(!tree.files.is_empty());
+    assert!(!tree.directories.is_empty());
+    assert!(root.exists());
+}
+
+#[test]
 fn unsigned_filesystem_fixture_closes_files_then_swaps_whole_directories() {
     use std::io::Write;
-    use windows_sys::Win32::Storage::FileSystem::{MoveFileExW, MOVEFILE_WRITE_THROUGH};
     // Only permission/handle/rename behavior is exercised. These unsigned bytes
     // never pass a publisher verifier and no execution/installer proof is faked.
     let fixture = Fixture::new();
     let old = fixture.0.join("target");
-    let stage = fixture.0.join("staging");
-    let backup = fixture.0.join("backup");
+    let transaction = create_private_directory(&fixture.0.join("transaction")).unwrap();
+    let backup_parent = create_private_directory(&transaction.path().join("backup")).unwrap();
+    let stage = transaction.path().join("staging");
+    let backup = backup_parent.path().join("root");
     for path in [&old, &stage] {
         drop(create_private_directory(path).unwrap());
+        drop(create_private_directory(&path.join("nested")).unwrap());
         let mut file = create_private_file(&path.join("fixture.exe")).unwrap();
         file.write_all(b"unsigned fixture, never executed").unwrap();
     }
@@ -442,24 +518,42 @@ fn unsigned_filesystem_fixture_closes_files_then_swaps_whole_directories() {
     assert_eq!(old_tree.file_paths().len(), 2);
     let original = old_tree.id().unwrap();
     let staged = stage_tree.id().unwrap();
-    let rename = |from: &Path, to: &Path| {
-        let from: Vec<_> = from.as_os_str().encode_wide().chain(Some(0)).collect();
-        let to: Vec<_> = to.as_os_str().encode_wide().chain(Some(0)).collect();
-        // SAFETY: both terminated fixture-only paths remain live for the call.
-        unsafe { MoveFileExW(from.as_ptr(), to.as_ptr(), MOVEFILE_WRITE_THROUGH) }
-    };
+    // The target parent is an ancestor namespace, as in NativeTargetPlan;
+    // Fixture deliberately permits foreign read access at that outer level.
+    let parent = lock_directory(&fixture.0, false, false).unwrap();
     // Our file proofs retain a real no-write share until deliberately released.
     assert!(OpenOptions::new()
         .write(true)
         .open(old.join("fixture.exe"))
         .is_err());
-    old_tree.close_files();
-    stage_tree.close_files();
+    assert_eq!(
+        old_tree.rename_into(&backup_parent, std::ffi::OsStr::new("root")),
+        Err(Failure::UnsafeInstallation)
+    );
+    assert!(old.exists());
+    old_tree.release_descendant_handles_for_move().unwrap();
+    stage_tree.release_descendant_handles_for_move().unwrap();
     old_tree.recheck_directories().unwrap();
     stage_tree.recheck_directories().unwrap();
-    assert_ne!(rename(&old, &backup), 0);
+    for name in [
+        "..",
+        "../outside",
+        r"nested\child",
+        "C:outside",
+        "nul\0leaf",
+    ] {
+        assert_eq!(
+            old_tree.rename_into(&parent, std::ffi::OsStr::new(name)),
+            Err(Failure::UnsafeInstallation)
+        );
+    }
+    old_tree
+        .rename_into(&backup_parent, std::ffi::OsStr::new("root"))
+        .expect("old-directory rename failed");
     assert!(!old.exists());
-    assert_ne!(rename(&stage, &old), 0);
+    stage_tree
+        .rename_into(&parent, std::ffi::OsStr::new("target"))
+        .expect("staging-directory rename failed");
     assert_eq!(
         lock_directory(&old, true, false).unwrap().id().unwrap(),
         staged
@@ -473,7 +567,17 @@ fn unsigned_filesystem_fixture_closes_files_then_swaps_whole_directories() {
         b"retain the entire original tree"
     );
     // A second publication cannot replace an existing destination.
-    assert_eq!(rename(&backup, &old), 0);
+    assert!(old_tree
+        .rename_into(&parent, std::ffi::OsStr::new("target"))
+        .is_err());
+    assert_eq!(
+        lock_directory(&old, true, false).unwrap().id().unwrap(),
+        staged
+    );
+    assert_eq!(
+        lock_directory(&backup, true, false).unwrap().id().unwrap(),
+        original
+    );
 }
 
 #[test]

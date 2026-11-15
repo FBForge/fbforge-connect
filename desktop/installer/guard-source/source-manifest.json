@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "FBForge Suite",
-  "revision": "56456955edb52a00d7493283d95b44ead8176f6e",
+  "revision": "c92492a3129e8b8e32fe9a31e05a32a1149a0421",
   "license": "EUPL-1.2",
   "files": [
     {
@@ -66,13 +66,13 @@
     },
     {
       "path": "crates/suite-core/src/administration/mod.rs",
-      "size": 7762,
-      "sha256": "25b07aaa0a9bab90089725c0d1ae1a9303870979e97e066a203618147fa3fc63"
+      "size": 8205,
+      "sha256": "66bc2d504f0a9cc7f4cf1686dcb6445ee87d6c6a17fcaf59cfa30b17de0e41e7"
     },
     {
       "path": "crates/suite-core/src/administration/tests.rs",
-      "size": 9342,
-      "sha256": "8e3172af1e795fcd06655b53591c851ea7ac5e489b79856fbd6abda52753efcf"
+      "size": 10620,
+      "sha256": "03b061b8b822caa56c80052e9a177f1af8f51437c88d829495f79367b723d231"
     },
     {
       "path": "crates/suite-core/src/administration/windows.rs",
@@ -131,8 +131,8 @@
     },
     {
       "path": "crates/suite-core/src/authenticode/windows.rs",
-      "size": 31485,
-      "sha256": "7010131aef772b584bbdbbc5cf008af5b2b4843a953b156186301f15c5458a6d"
+      "size": 32346,
+      "sha256": "ad8867a6a92934fc9442469c8924a4ee37fe112c2d051a4653cb9263ce6e36e5"
     },
     {
       "path": "crates/suite-core/src/authenticode/windows/installer_targets_bridge.rs",
@@ -141,13 +141,13 @@
     },
     {
       "path": "crates/suite-core/src/authenticode/windows/program_tree.rs",
-      "size": 36982,
-      "sha256": "79d60d90249b132a914cd50c2561896ecfaf17f21363261ad92d2101a47dec7e"
+      "size": 42137,
+      "sha256": "88d561b44784cf9cacdb216f4233ea68dbba74556fc0c5bce0d51e822fecda6e"
     },
     {
       "path": "crates/suite-core/src/authenticode/windows/program_tree/tests.rs",
-      "size": 19185,
-      "sha256": "f1ab312a4030bcd7ef209bf7dee65e5aa5273d167c9f71aaa9d196987acb8f33"
+      "size": 23156,
+      "sha256": "f78e94c552797cd9bf4e1014dce158c265015ac80fea800afa07d3147156205b"
     },
     {
       "path": "crates/suite-core/src/bin/fbforge-metadata.rs",
@@ -211,8 +211,8 @@
     },
     {
       "path": "crates/suite-core/src/installer_targets/windows.rs",
-      "size": 26841,
-      "sha256": "7ae4586f0e80f34bcf87bc893c36f378ea5960ab1e6f06ed7c52c6d85fe5f216"
+      "size": 27183,
+      "sha256": "295ca5b510995b7659b255c32c4a8fdd75d9d725ef0b7740e96aac5162fbd688"
     },
     {
       "path": "crates/suite-core/src/installer_targets/windows/health.rs",
@@ -221,8 +221,8 @@
     },
     {
       "path": "crates/suite-core/src/installer_targets/windows/io.rs",
-      "size": 5432,
-      "sha256": "a651c06ce45cbbc2e019fb7cbfee1d063ff2967b82b71ef1dec8e1e31786376e"
+      "size": 4871,
+      "sha256": "42ec11593982c2d2105c34545d526b80906d12518d16f297ad34e0775694d2e3"
     },
     {
       "path": "crates/suite-core/src/installers/mod.rs",
@@ -301,8 +301,8 @@
     },
     {
       "path": "crates/suite-core/src/settings.rs",
-      "size": 6592,
-      "sha256": "ce02dc0539da58e0c1f1523914196b3d236af39a9eb566620df3644b7c6c6d53"
+      "size": 6873,
+      "sha256": "7a8cf4dcd3c4807c9295ddcb5f04785e79446e0044f89770f0a35f3a902547bd"
     },
     {
       "path": "crates/suite-core/src/storage/files.rs",
@@ -336,8 +336,8 @@
     },
     {
       "path": "crates/suite-core/src/storage/packages/windows.rs",
-      "size": 8890,
-      "sha256": "788ce78e45e831c18aed6617993b221dc259650c3e0e330dc53312fbc6e51781"
+      "size": 9017,
+      "sha256": "740ef87bf9575826dcba0f975473bb2a92555ebd2c143466e984e1d15e555172"
     },
     {
       "path": "crates/suite-core/src/storage/releases.rs",
@@ -551,8 +551,8 @@
     },
     {
       "path": "crates/suite-core/tests/user_settings.rs",
-      "size": 13250,
-      "sha256": "850b1209b2fdf9c63053caa24c4bd2be75d728dfb771713948305b0d5e4a54a1"
+      "size": 14615,
+      "sha256": "1b7520e4d3291019b68bc1754049167f4e90a35d17fd86c33d7a3db0646af74a"
     },
     {
       "path": "crates/suite-nsis-guard/Cargo.toml",

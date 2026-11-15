@@ -22,6 +22,35 @@ use std::{
 use support::{catalog_body, payload, sign, trust_store};
 
 #[test]
+fn background_preference_defaults_migrates_and_remains_a_strict_boolean() {
+    let mut settings = UserSettings::default();
+    assert!(!settings.run_in_background());
+    let mut legacy: serde_json::Value = serde_json::from_str(&settings.to_json().unwrap()).unwrap();
+    legacy.as_object_mut().unwrap().remove("runInBackground");
+    assert!(!UserSettings::from_json(&legacy.to_string())
+        .unwrap()
+        .run_in_background());
+    settings.set_run_in_background(true);
+    assert!(UserSettings::from_json(&settings.to_json().unwrap())
+        .unwrap()
+        .run_in_background());
+    for value in [json!(null), json!("true"), json!(1)] {
+        let mut invalid = legacy.clone();
+        invalid["runInBackground"] = value;
+        assert!(UserSettings::from_json(&invalid.to_string()).is_err());
+    }
+    let duplicate = settings.to_json().unwrap().replace(
+        "\"runInBackground\":true",
+        "\"runInBackground\":true,\"runInBackground\":false",
+    );
+    assert!(UserSettings::from_json(&duplicate).is_err());
+    let mut unrelated: serde_json::Value =
+        serde_json::from_str(&settings.to_json().unwrap()).unwrap();
+    unrelated["autostart"] = json!(true);
+    assert!(UserSettings::from_json(&unrelated.to_string()).is_err());
+}
+
+#[test]
 fn preferences_round_trip_without_turning_missing_overrides_into_false() {
     let mut settings = UserSettings::default();
     assert_eq!(settings.global_updates(), UpdatePreferences::default());
@@ -200,6 +229,7 @@ fn settings_are_committed_with_inventory_state_and_recovered_after_reopening() {
         install: false,
     });
     settings.set_search_interval_seconds(900).unwrap();
+    settings.set_run_in_background(true);
     {
         let mut store = StateStore::open(&root).unwrap();
         assert_eq!(
@@ -217,6 +247,7 @@ fn settings_are_committed_with_inventory_state_and_recovered_after_reopening() {
         let restored = store.load_settings().unwrap();
         assert_eq!(restored.global_updates(), settings.global_updates());
         assert_eq!(restored.search_interval_seconds(), 900);
+        assert!(restored.run_in_background());
     }
     fs::remove_dir_all(directory).unwrap();
 }

@@ -209,17 +209,19 @@ pub(super) fn publish(
     destination: &str,
 ) -> Result<(), PackageCacheError> {
     validate_file(file)?;
-    leaf(directory, destination)?;
-    let name: Vec<u16> = destination.encode_utf16().collect();
+    crate::storage::windows::require_private_handle(&directory.handle)
+        .map_err(|_| PackageCacheError::UnsafePath)?;
+    let name = wide(&leaf(directory, destination)?)?;
     let size = std::mem::offset_of!(FILE_RENAME_INFO, FileName) + name.len() * 2;
     let mut buffer = vec![0usize; size.div_ceil(std::mem::size_of::<usize>())];
     let info = buffer.as_mut_ptr().cast::<FILE_RENAME_INFO>();
     // SAFETY: usize storage aligns FILE_RENAME_INFO, the bounded allocation
-    // includes its variable UTF-16 tail. The directory handle anchors the leaf.
+    // includes its terminated UTF-16 tail. The held private directory and store
+    // root bind this full path; Win32 rejects the directory-relative form here.
     unsafe {
         (*info).Anonymous.ReplaceIfExists = 0;
-        (*info).RootDirectory = directory.handle.as_raw_handle() as HANDLE;
-        (*info).FileNameLength = (name.len() * 2) as u32;
+        (*info).RootDirectory = 0;
+        (*info).FileNameLength = ((name.len() - 1) * 2) as u32;
         ptr::copy_nonoverlapping(name.as_ptr(), (*info).FileName.as_mut_ptr(), name.len());
     }
     // SAFETY: live DELETE-capable source handle and fully initialized buffer.

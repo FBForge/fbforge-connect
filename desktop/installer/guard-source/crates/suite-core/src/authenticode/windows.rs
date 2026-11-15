@@ -151,6 +151,20 @@ fn file_information(file: &File) -> Result<BY_HANDLE_FILE_INFORMATION, Failure> 
 }
 
 fn final_path(file: &File) -> Result<Vec<u16>, Failure> {
+    final_path_for_object(file, false)
+}
+
+fn final_directory_path(file: &File) -> Result<Vec<u16>, Failure> {
+    let info = file_information(file)?;
+    if info.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)
+        != FILE_ATTRIBUTE_DIRECTORY
+    {
+        return Err(invalid(Invalid::UnsafeFile));
+    }
+    final_path_for_object(file, true)
+}
+
+fn final_path_for_object(file: &File, allows_volume_root: bool) -> Result<Vec<u16>, Failure> {
     let mut buffer = vec![0; 4097];
     // SAFETY: live file handle and output storage of the declared WCHAR count.
     let count = unsafe {
@@ -165,8 +179,17 @@ fn final_path(file: &File) -> Result<Vec<u16>, Failure> {
         return Err(unknown(Unknown::PackageUnavailable));
     }
     let path = String::from_utf16(&buffer[..count]).map_err(|_| invalid(Invalid::UnsafeFile))?;
-    validate_windows_location(path.strip_prefix(r"\\?\").unwrap_or(&path))
-        .map_err(|_| invalid(Invalid::UnsafeFile))?;
+    let plain = path.strip_prefix(r"\\?\").unwrap_or(&path);
+    let bytes = plain.as_bytes();
+    let is_volume_root = allows_volume_root
+        && bytes.len() == 3
+        && bytes[0].is_ascii_alphabetic()
+        && bytes[1..] == *b":\\";
+    // Drive roots are required only for held directory ancestors. They remain
+    // invalid installation/file targets in every ordinary final_path caller.
+    if !is_volume_root {
+        validate_windows_location(plain).map_err(|_| invalid(Invalid::UnsafeFile))?;
+    }
     buffer.truncate(count + 1);
     Ok(buffer)
 }

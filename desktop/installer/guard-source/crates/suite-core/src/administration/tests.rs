@@ -28,6 +28,43 @@ fn string(name: &str, value: &str) -> RegistryValue {
 fn schema() -> Vec<RegistryValue> {
     vec![dword("SchemaVersion", 1)]
 }
+
+#[test]
+fn background_policy_false_true_absent_and_full_schema_are_distinct() {
+    assert_eq!(
+        decode_values(None).unwrap().background_allowed_override(),
+        None
+    );
+    assert_eq!(read(&schema()).background_allowed_override(), None);
+    for allowed in [false, true] {
+        let mut values = schema();
+        values.push(dword("BackgroundAllowed", u32::from(allowed)));
+        assert_eq!(read(&values).background_allowed_override(), Some(allowed));
+    }
+    let values = [
+        dword("SchemaVersion", 1),
+        dword("UpdateAllowed", 1),
+        dword("AutomaticSearch", 1),
+        dword("AutomaticDownload", 0),
+        dword("AutomaticInstall", 0),
+        string("ProxyMode", "explicit"),
+        string("ProxyServer", "proxy.invalid:8080"),
+        dword("BackgroundAllowed", 0),
+    ];
+    assert_eq!(read(&values).background_allowed_override(), Some(false));
+    for value in [2, u32::MAX] {
+        invalid(&[dword("SchemaVersion", 1), dword("BackgroundAllowed", value)]);
+    }
+    invalid(&[
+        dword("SchemaVersion", 1),
+        string("BackgroundAllowed", "true"),
+    ]);
+    invalid(&[
+        dword("SchemaVersion", 1),
+        dword("BackgroundAllowed", 0),
+        dword("BACKGROUNDALLOWED", 1),
+    ]);
+}
 fn read(values: &[RegistryValue]) -> AdministrativePolicyState {
     decode_values(Some(values)).unwrap()
 }
@@ -284,7 +321,7 @@ fn observed_changes_and_incomplete_enumeration_never_return_a_snapshot() {
             ..before
         },
         KeyStamp {
-            values: 8,
+            values: MAX_VALUES as u32 + 1,
             ..before
         },
         KeyStamp {

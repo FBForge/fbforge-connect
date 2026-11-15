@@ -24,6 +24,8 @@ pub struct UserSettings {
     automatic_install_consent: AutomaticInstallConsent,
     search_interval_seconds: u64,
     network: NetworkConfig,
+    #[serde(default)]
+    run_in_background: bool,
 }
 
 impl Default for UserSettings {
@@ -35,6 +37,7 @@ impl Default for UserSettings {
             automatic_install_consent: AutomaticInstallConsent::NotGranted,
             search_interval_seconds: 6 * 60 * 60,
             network: NetworkConfig::default(),
+            run_in_background: false,
         }
     }
 }
@@ -124,6 +127,12 @@ impl UserSettings {
     }
     pub fn set_network(&mut self, network: NetworkConfig) {
         self.network = network;
+    }
+    pub fn run_in_background(&self) -> bool {
+        self.run_in_background
+    }
+    pub fn set_run_in_background(&mut self, enabled: bool) {
+        self.run_in_background = enabled;
     }
     pub fn effective_update_policy(
         &self,

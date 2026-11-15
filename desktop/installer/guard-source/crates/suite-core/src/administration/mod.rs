@@ -19,8 +19,16 @@ pub struct AdministrativePolicy {
     updates_allowed: Option<bool>,
     automatic: UpdateOverrides,
     network: Option<NetworkConfig>,
+    background_allowed: Option<bool>,
 }
 impl AdministrativePolicyState {
+    /// False restricts the user's background preference; true never enables it.
+    pub fn background_allowed_override(&self) -> Option<bool> {
+        match self {
+            Self::Unmanaged => None,
+            Self::Managed(policy) => policy.background_allowed,
+        }
+    }
     pub fn updates_allowed_override(&self) -> Option<bool> {
         match self {
             Self::Unmanaged => None,
@@ -74,7 +82,7 @@ pub fn read_administrative_policy() -> Result<AdministrativePolicyState, Adminis
 }
 
 #[cfg(any(all(windows, target_arch = "x86_64"), test))]
-const MAX_VALUES: usize = 7;
+const MAX_VALUES: usize = 8;
 #[cfg(any(all(windows, target_arch = "x86_64"), test))]
 const MAX_DATA_BYTES: usize = 642;
 #[cfg(any(all(windows, target_arch = "x86_64"), test))]
@@ -101,6 +109,7 @@ fn decode_values(
         updates_allowed: None,
         automatic: UpdateOverrides::default(),
         network: None,
+        background_allowed: None,
     };
     let mut mode = None;
     let mut server = None;
@@ -116,6 +125,7 @@ fn decode_values(
         match value.name.to_ascii_lowercase().as_str() {
             "schemaversion" => version = Some(read_dword(value)?),
             "updateallowed" => policy.updates_allowed = Some(read_bool(value)?),
+            "backgroundallowed" => policy.background_allowed = Some(read_bool(value)?),
             "automaticsearch" => policy.automatic.search = Some(read_bool(value)?),
             "automaticdownload" => policy.automatic.download = Some(read_bool(value)?),
             "automaticinstall" => policy.automatic.install = Some(read_bool(value)?),

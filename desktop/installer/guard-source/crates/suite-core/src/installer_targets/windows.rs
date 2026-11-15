@@ -313,12 +313,11 @@ impl NativeTargetPlan {
         }
         self.stage_health = Some(tree);
         self.save(Phase::Verified)?;
-        // All our file proofs, including the separately checked root EXE, are
-        // closed before the complete original-tree RM query. No self exclusions.
+        // All descendant proofs, including the separately checked root EXE,
+        // close before the original-tree RM query. Root/ancestors remain pinned.
         if let Some(original) = &mut self.original {
-            original.close_files();
             original
-                .recheck_directories()
+                .release_descendant_handles_for_move()
                 .map_err(proof::map_permission)?;
             let current_root = if layout == Layout::OriginalIntact {
                 self.target.clone()
@@ -331,9 +330,8 @@ impl NativeTargetPlan {
             .stage_health
             .as_mut()
             .ok_or(TargetError::RecoveryRequired)?;
-        stage_health.close_files();
         stage_health
-            .recheck_directories()
+            .release_descendant_handles_for_move()
             .map_err(proof::map_permission)?;
         if !self.old_resources.is_empty() {
             match inspect_resource_users(&self.old_resources) {
@@ -353,7 +351,11 @@ impl NativeTargetPlan {
         if layout == Layout::OriginalIntact && self.journal.original.is_some() {
             self.save(Phase::MoveOldIntent)?;
             require_current_time(inspected_at)?;
-            io::rename_directory(&self.target, &self.backup.path().join("root"))?;
+            self.original
+                .as_ref()
+                .ok_or(TargetError::RecoveryRequired)?
+                .rename_into(&self.backup, std::ffi::OsStr::new("root"))
+                .map_err(proof::map_permission)?;
             layout = self.layout()?;
             if layout != Layout::OriginalBackedUp {
                 return Err(TargetError::RecoveryRequired);
@@ -363,7 +365,14 @@ impl NativeTargetPlan {
         // This method is reached only through the live !Send Lease borrow and
         // native owner-thread check. There is no worker handoff between RM/swap.
         require_current_time(inspected_at)?;
-        io::rename_directory(&stage, &self.target)?;
+        self.stage_health
+            .as_ref()
+            .ok_or(TargetError::RecoveryRequired)?
+            .rename_into(
+                &self.parent,
+                self.target.file_name().ok_or(TargetError::UnsafeTarget)?,
+            )
+            .map_err(proof::map_permission)?;
         if self.layout()? != Layout::Published {
             return Err(TargetError::RecoveryRequired);
         }

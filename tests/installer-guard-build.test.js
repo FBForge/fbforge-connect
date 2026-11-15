@@ -12,7 +12,7 @@ const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 test('the public guard snapshot preserves the pinned Suite source bytes', async () => {
   const base = new URL('desktop/installer/guard-source/', root);
   const manifest = JSON.parse(await readFile(new URL('source-manifest.json', base), 'utf8'));
-  assert.equal(manifest.revision, '56456955edb52a00d7493283d95b44ead8176f6e');
+  assert.equal(manifest.revision, 'c92492a3129e8b8e32fe9a31e05a32a1149a0421');
   assert.equal(manifest.files.length, 117);
   for (const file of manifest.files) {
     const bytes = await readFile(new URL(file.path, base));

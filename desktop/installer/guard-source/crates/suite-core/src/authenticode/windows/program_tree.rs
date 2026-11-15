@@ -601,6 +601,94 @@ impl MutationTree {
     pub(crate) fn close_files(&mut self) {
         self.files.clear();
     }
+    pub(crate) fn release_descendant_handles_for_move(&mut self) -> Result<(), Failure> {
+        self.recheck_directories()?;
+        // Windows rejects cross-parent directory moves with open descendants,
+        // including directory handles that share deletion. Keep the private
+        // root and external ancestors pinned; release only its checked contents.
+        self.files.clear();
+        self.directories.clear();
+        Ok(())
+    }
+    pub(crate) fn rename_into(
+        &self,
+        destination: &DirectoryAnchor,
+        name: &std::ffi::OsStr,
+    ) -> Result<(), Failure> {
+        use std::os::windows::fs::OpenOptionsExt;
+        use windows_sys::Win32::Storage::FileSystem::{
+            FileRenameInfo, SetFileInformationByHandle, DELETE, FILE_FLAG_OPEN_REPARSE_POINT,
+            FILE_READ_ATTRIBUTES, FILE_RENAME_INFO, FILE_SHARE_DELETE, FILE_SHARE_READ,
+            READ_CONTROL,
+        };
+        let name = name.to_str().ok_or(Failure::UnsupportedInstallation)?;
+        if !self.files.is_empty()
+            || !self.directories.is_empty()
+            || name.is_empty()
+            || name.contains(['\0', '/', ':', '\\'])
+            || name == "."
+            || name == ".."
+        {
+            return Err(Failure::UnsafeInstallation);
+        }
+        if name.encode_utf16().count() > 255 {
+            return Err(Failure::UnsupportedInstallation);
+        }
+        self.recheck_directories()?;
+        let user = TrustedPrincipals::current()?;
+        let mut budget = ScanBudget::new();
+        inspect_security(&destination.file, Scope::Ancestor, &user, &mut budget)?;
+        for ancestor in &destination._ancestors {
+            inspect_security(ancestor, Scope::Ancestor, &user, &mut budget)?;
+        }
+        let expected = self.id()?;
+        if destination.id()?.volume != expected.volume {
+            return Err(Failure::UnsupportedInstallation);
+        }
+        // Request only rename/inspection access. MoveFileExW conflicts with our
+        // retained directory proof handles on native Windows.
+        // Retain all proof handles while binding this DELETE handle to the root.
+        let file = std::fs::OpenOptions::new()
+            .access_mode(DELETE | READ_CONTROL | FILE_READ_ATTRIBUTES)
+            .share_mode(FILE_SHARE_READ | FILE_SHARE_DELETE)
+            .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
+            .open(held_path(&self.root.file)?)
+            .map_err(|_| Failure::ProgramUnavailable)?;
+        if object_id(&file)? != expected {
+            return Err(Failure::UnsafeInstallation);
+        }
+        inspect_security(&file, Scope::PrivateTree, &user, &mut budget)?;
+        let path = mutation_wide(&destination.path().join(name))?;
+        let size = std::mem::offset_of!(FILE_RENAME_INFO, FileName) + path.len() * 2;
+        let mut buffer = vec![0usize; size.div_ceil(size_of::<usize>())];
+        let info = buffer.as_mut_ptr().cast::<FILE_RENAME_INFO>();
+        // SAFETY: aligned storage spans the bounded, terminated UTF-16 path.
+        // The held destination and its ancestors prevent namespace replacement.
+        unsafe {
+            (*info).Anonymous.ReplaceIfExists = 0;
+            (*info).RootDirectory = 0;
+            (*info).FileNameLength = ((path.len() - 1) * 2) as u32;
+            ptr::copy_nonoverlapping(path.as_ptr(), (*info).FileName.as_mut_ptr(), path.len());
+        }
+        // SAFETY: live same-object DELETE handle and initialized bounded buffer.
+        if unsafe {
+            SetFileInformationByHandle(
+                file.as_raw_handle() as HANDLE,
+                FileRenameInfo,
+                buffer.as_ptr().cast(),
+                size as u32,
+            )
+        } == 0
+        {
+            #[cfg(test)]
+            eprintln!(
+                "directory FileRenameInfo failed: {}",
+                std::io::Error::last_os_error()
+            );
+            return Err(Failure::ProgramUnavailable);
+        }
+        Ok(())
+    }
     pub(crate) fn recheck_directories(&self) -> Result<(), Failure> {
         let user = TrustedPrincipals::current()?;
         let mut budget = ScanBudget::new();
@@ -796,6 +884,18 @@ pub(super) fn lock_directory(
     let mut file = held.pop().ok_or(Failure::ProgramUnavailable)?;
     if private {
         inspect_security(&file, Scope::PrivateTree, &user, &mut budget)?;
+        file = reopen_directory_anchor(&file, Scope::PrivateTree, false, &user, &mut budget)?;
+    } else if inspect_security(&file, Scope::Temporary, &user, &mut budget).is_ok() {
+        // An empty public leaf can otherwise acquire a reparse point through
+        // CREATE_CHILD rights allowed by Ancestor. Share writes only after the
+        // stricter temporary-directory policy excludes foreign metadata writes.
+        file = reopen_directory_anchor(&file, Scope::Temporary, false, &user, &mut budget)?;
+    }
+    budget.check_time()?;
+    for ancestor in &mut held {
+        // The still-held next child prevents each ancestor becoming empty;
+        // its original handle remains until the replacement is identity-bound.
+        *ancestor = reopen_directory_anchor(ancestor, Scope::Ancestor, false, &user, &mut budget)?;
     }
     let canonical = mutation_path(&file)?;
     if renameable {
@@ -831,8 +931,8 @@ pub(super) fn lock_mutation_tree(mut program: LockedPackageFile) -> Result<Mutat
     if program._directories.len() > MAX_ANCESTORS {
         return Err(Failure::UnsupportedInstallation);
     }
-    for ancestor in &program._directories {
-        inspect_security(ancestor, Scope::Ancestor, &user, &mut budget)?;
+    for ancestor in &mut program._directories {
+        *ancestor = reopen_directory_anchor(ancestor, Scope::Ancestor, false, &user, &mut budget)?;
     }
     let mut pending = Vec::new();
     queue_children(&path, 1, &mut pending, &mut budget)?;
@@ -852,7 +952,7 @@ pub(super) fn lock_mutation_tree(mut program: LockedPackageFile) -> Result<Mutat
     }
     let root = reopen_directory_for_rename(root, &user, &mut budget)?;
     for directory in &mut directories {
-        // ReOpenFile first obtains an independently checked same-object handle;
+        // First obtain an independently checked same-object replacement handle;
         // only then is this original no-delete-share directory handle closed.
         let reopened = reopen_directory(directory, &user, &mut budget)?;
         *directory = reopened;
@@ -885,34 +985,39 @@ fn reopen_directory(
     user: &TrustedPrincipals,
     budget: &mut ScanBudget,
 ) -> Result<File, Failure> {
-    use std::os::windows::io::FromRawHandle;
-    use windows_sys::Win32::{
-        Foundation::INVALID_HANDLE_VALUE,
-        Storage::FileSystem::{
-            ReOpenFile, FILE_FLAG_OPEN_REPARSE_POINT, FILE_SHARE_DELETE, FILE_SHARE_READ,
-        },
+    reopen_directory_anchor(file, Scope::PrivateTree, true, user, budget)
+}
+fn reopen_directory_anchor(
+    file: &File,
+    scope: Scope,
+    share_delete: bool,
+    user: &TrustedPrincipals,
+    budget: &mut ScanBudget,
+) -> Result<File, Failure> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use windows_sys::Win32::Storage::FileSystem::{
+        FILE_FLAG_OPEN_REPARSE_POINT, FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE,
     };
     let expected = object_id(file)?;
-    // SDK ReOpenFile supports FILE_FLAG_BACKUP_SEMANTICS for directory objects.
-    // No DELETE access requested while the original no-delete share remains.
-    // SAFETY: the original live handle names the object; no pointer parameters.
-    let raw = unsafe {
-        ReOpenFile(
-            file.as_raw_handle() as HANDLE,
-            0x8000_0000,
-            FILE_SHARE_READ | FILE_SHARE_DELETE,
-            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+    // ReOpenFile rejects these directory handles on native Windows. Keep the
+    // original no-delete-share handle and checked ancestors alive while opening
+    // its canonical path, then verify identity and ACL before releasing it.
+    let native = super::final_directory_path(file).map_err(|_| Failure::ProgramUnavailable)?;
+    let path = String::from_utf16(&native[..native.len() - 1])
+        .map(PathBuf::from)
+        .map_err(|_| Failure::UnsupportedInstallation)?;
+    let reopened = std::fs::OpenOptions::new()
+        .read(true)
+        .share_mode(
+            FILE_SHARE_READ | FILE_SHARE_WRITE | if share_delete { FILE_SHARE_DELETE } else { 0 },
         )
-    };
-    if raw == INVALID_HANDLE_VALUE {
-        return Err(Failure::ProgramUnavailable);
-    }
-    // SAFETY: ReOpenFile returned a new independently owned handle.
-    let reopened = unsafe { File::from_raw_handle(raw as _) };
+        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
+        .open(path)
+        .map_err(|_| Failure::ProgramUnavailable)?;
     if object_id(&reopened)? != expected {
         return Err(Failure::UnsafeInstallation);
     }
-    inspect_security(&reopened, Scope::PrivateTree, user, budget)?;
+    inspect_security(&reopened, scope, user, budget)?;
     Ok(reopened)
 }
 

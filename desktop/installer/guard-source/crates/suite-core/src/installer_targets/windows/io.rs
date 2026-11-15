@@ -80,24 +80,6 @@ pub(super) fn replace_control(path: &Path, bytes: &[u8]) -> Result<(), TargetErr
     drop(proof::private_file(path)?);
     Ok(())
 }
-pub(super) fn rename_directory(from: &Path, to: &Path) -> Result<(), TargetError> {
-    if exists(to)? {
-        return Err(TargetError::RecoveryRequired);
-    }
-    // No REPLACE_EXISTING, COPY_ALLOWED, delay-until-reboot or fallback copy.
-    // SAFETY: both terminated native paths remain live for the duration of this call.
-    if unsafe {
-        MoveFileExW(
-            wide(from).as_ptr(),
-            wide(to).as_ptr(),
-            MOVEFILE_WRITE_THROUGH,
-        )
-    } == 0
-    {
-        return Err(TargetError::OperatingSystem);
-    }
-    Ok(())
-}
 pub(super) fn remove_private_file(path: &Path) -> Result<(), TargetError> {
     if !exists(path)? {
         return Ok(());
