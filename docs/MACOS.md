@@ -27,16 +27,30 @@ Windows bleibt unterstützt. Linux und Intel-Macs sind nicht Teil dieses Release
 
 ## Bisherige Nachweise
 
-Echte macOS-15-arm64-Runner prüfen die nativen Verträge einschließlich Schlüsselbund,
-geschütztem Profil über getrennte Prozesse und dem Fehlerfall eines entfernten
-Testschlüssels. Java-Reaktor, Engine-Smoke und vollständige Desktop-Rust-Tests
-wurden auf macOS erfolgreich ausgeführt. Das interne Debug-App-Bundle wurde gebaut.
-ClamAVs Programme starten aus einem verschobenen privaten Verzeichnis.
+Geprüfter Produktquellstand: `4a0f2cc6e478fd6ce10051f5e8ac96162ae5403b`.
+Die nachfolgende Dokumentation ändert diesen getesteten Produktstand nicht.
 
-Diese Einzelnachweise ersetzen noch keinen vollständig grünen Releasekandidaten.
-Die konkreten Läufe stehen in [macOS validation](https://github.com/FBForge/fbforge-connect/actions/workflows/macos.yml).
-Der Workflow lädt interne Pakete und Aufnahmen nur kurzzeitig als Actions-Artefakte
-hoch; er signiert und veröffentlicht keine Releases.
+| Prüfung | Ergebnis |
+| --- | --- |
+| macOS 15, native Apple-Silicon-App | Erfolgreich gebaut und gestartet, sichtbarer Inhalt zusätzlich per lokalem OCR geprüft, Aufnahme visuell angesehen |
+| Bundle-Inventar | 37 native Mach-O-Dateien, ausschließlich arm64, private Java-25-Laufzeit |
+| Schlüsselbund und Speicherung | Reale Keychain-Verträge, geschütztes Profil über getrennte Prozesse und sicherer Fehler nach Entfernen des Testschlüssels bestanden |
+| Mac Desktop-Rust | 155 Tests bestanden |
+| Java-Reaktor | 306 Tests bestanden |
+| FIT-Connect TEST | Sender und Subscriber für v2/v3 mit der tatsächlich gebündelten Laufzeit lesend geprüft |
+| Lokaler Scanner auf Mac | Upstream-/Datei-/Datenbanksignaturen, Offline-Import, eigener Prozess, saubere Datei, EICAR, normales Ende und Lease-Aufräumen nach erzwungenem Elternprozessende bestanden |
+| Gemeinsame Oberfläche | 334 Browser-/Produktregressionen in CI bestanden, Produktionseinstieg unter 500 kB |
+| Windows-Regression | Native Verträge, vollständige Desktop-Tests und Abdeckungsgates bestanden |
+| Website-Hilfe | 16 Kapitel und 66 Bilder auf separatem Doku-Branch, 180 Browser-Zugänglichkeitsprüfungen bestanden |
+
+Nachweise: [nativer Mac-Lauf](https://github.com/FBForge/fbforge-connect/actions/runs/43663398316)
+und [gemeinsame Checks](https://github.com/FBForge/fbforge-connect/actions/runs/43663398284).
+Interne Pakete und Aufnahmen bleiben nur kurzzeitig als Actions-Artefakte erhalten.
+Die versionierte Hilfe liegt auf `docs/connect-0.5.0` im Website-Repo. Sie ist
+noch nicht veröffentlicht. Kein Workflow signiert oder veröffentlicht einen Mac-Release.
+
+Diese Nachweise belegen den internen Kandidaten. Die folgenden Distributions-
+und manuellen Abnahmen sind weiterhin offen.
 
 ## Lokaler Ablauf
 
@@ -62,12 +76,9 @@ Das Werkzeug ersetzt keinen Signier- oder Notarisierungsprozess.
 
 ## Offene Freigabekriterien
 
-- Vollständig grüner nativer Paketlauf: Engine aus dem Bundle, App-Start und
-  tatsächlich betrachtete WKWebView-Aufnahmen. Alle gemeinsamen Browserregressionen.
-- ClamAV: signierte Datenbanken, Offline-Import, saubere Datei, EICAR, eigener
-  Loopback-Port, normales Ende und Beenden des Elternprozesses ohne Scannerreste.
-  Zusätzlich Online-Update, Proxy und Abbruch prüfen.
-- FIT-Connect-TEST-Abnahme mit beiden APIs auf macOS. Der CI-Lesetest verwendet die
+- ClamAV im installierten Client: Signaturupdate, Proxy, Abbruch und Quarantäne
+  zusätzlich zum bestandenen nativen Komponentenlauf abnehmen.
+- Schreibende FIT-Connect-TEST-Abnahme mit beiden APIs auf macOS. Der bestandene CI-Lesetest verwendet die
   vorhandenen Projekt-Secrets und gibt keine Zugangsdaten oder SDK-Antworten aus.
   Er sendet und bestätigt keine Einreichungen. Schreibende Ende-zu-Ende-Tests sind
   ein eigener Nachweis.
@@ -79,7 +90,9 @@ Das Werkzeug ersetzt keinen Signier- oder Notarisierungsprozess.
 - Nach Nutzerabnahme: Developer ID, Notarisierung und Gatekeeper auf einem frischen
   Mac; Installation nach `/Applications` und `~/Applications`; echtes signiertes
   Upgrade mit einer älteren Version und erhaltenen Profildaten.
-- Abschließender Security-Audit und Website-Hilfe mit echten Mac-Abbildungen.
+- Abschließende Sicherheitsfreigabe des Distributionspakets. Auditberichte und
+  offene Prüffragen bleiben wie vereinbart außerhalb des Repos. Signierung
+  und echte Upgrades benötigen eigene Nachweise.
 
 Diese Liste ist absichtlich offen. Ein interner Debug-Build wird weder als fertiger
 Installer noch als Nachweis für signierte Updates oder Gatekeeper bezeichnet.

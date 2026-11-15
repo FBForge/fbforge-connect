@@ -5,8 +5,10 @@ Noch kein freigegebenes Release. Apple-Silicon-Unterstützung wird auf
 
 Bereits umgesetzt: Schlüsselbund-Backend mit authentifizierter Verschlüsselung,
 Plattformfreigaben für dauerhafte Speicherung, native Menüführung und getrennte
-Windows-/macOS-Updateziele. Der lokale Mac-Scanner befindet sich noch in der
-Portierung. Signierung, Notarisierung und vollständige installierte Abnahme
+Windows-/macOS-Updateziele. Der lokale Mac-Scanner besteht die native Komponentenprüfung
+mit sauberen Dateien, EICAR und Prozessbereinigung. Die sichtbare Mac-App und ihre
+gebündelte Java-Laufzeit sind geprüft. [Nachweise und offene Kriterien](docs/MACOS.md).
+Signierung, Notarisierung und vollständige installierte Abnahme
 sind noch offen. Die versionierte 0.5-Hilfe mit echter Mac-Aufnahme wird auf einem eigenen
 Website-Dokumentationsbranch vorbereitet und vor Veröffentlichung geprüft.
 
