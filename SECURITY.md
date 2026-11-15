@@ -10,7 +10,7 @@ angeben. Keine Secrets, privaten Schlüssel oder echten Antragsdaten mitsenden.
 
 Zugänge und Schlüssel bleiben ohne gespeichertes Profil in der Sitzung.
 Gespeicherte Profile, Schlüssel, Vorgänge, Testpakete, Testabläufe, Integrationstests, Testserien, Durchläufe und
-Profil-Arbeitsdaten schützt Windows-DPAPI für das Benutzerkonto. Vorgänge
+Profil-Arbeitsdaten schützt das native Backend für das Benutzerkonto (Windows: DPAPI; macOS ab 0.5: Schlüsselbund und AES-256-GCM). Vorgänge
 gespeicherter Profile werden standardmäßig dauerhaft aufbewahrt. Die Auswahl
 lässt sich pro Profil und API abwählen. Tokens werden nicht gespeichert.
 Profilsicherungen enthalten weder Vorgänge noch Profil-Arbeitsdaten.
@@ -18,7 +18,7 @@ Profilsicherungen enthalten weder Vorgänge noch Profil-Arbeitsdaten.
 Zustellpunkt-Sicherungen enthalten ausschließlich die öffentliche Konfiguration
 und die öffentlichen Schlüssel aus der authentifizierten Destination API v3.
 Private Schlüssel, Profil-Zugangsdaten, Tokens und Antragsinhalte sind ausgeschlossen.
-Lokale Kopien bleiben an Profil und Umgebung gebunden und mit Windows-DPAPI geschützt.
+Lokale Kopien bleiben an Profil und Umgebung gebunden und mit dem nativen Plattformschutz verschlüsselt.
 Der portable JSON-Export im Format v2 benötigt kein Passwort. Importierte Dokumente
 werden größenbegrenzt und streng auf zulässige öffentliche Daten geprüft. Ein
 Import verändert keinen Zustellpunkt. Serveränderungen benötigen Vorschau und
@@ -32,7 +32,7 @@ werden nicht als öffentliche JSON-Konfiguration importiert.
 
 Inhaltsdownloads und exportierte Testpakete, Abläufe, Konfigurationsvorlagen und Berichte sind unverschlüsselt.
 Ergebnisexporte nehmen verglichene Feldwerte erst nach ausdrücklicher Auswahl auf.
-Sie bleiben beim Löschen eines Profils bestehen. DPAPI schützt nicht vor Schadsoftware
+Sie bleiben beim Löschen eines Profils bestehen. Der Plattformschutz schützt nicht vor Schadsoftware
 unter demselben Benutzerkonto. Die Vorgangsablage ist kein revisionssicheres Archiv.
 Löschen garantiert kein physisches Überschreiben. Abmelden widerruft ausgestellte Tokens nicht.
 
@@ -89,9 +89,9 @@ GitHub erhält bei der abschaltbaren Suche IP-Adresse und Updater-Kennung, keine
 FIT-Connect-Zugangsdaten oder Fachdaten. Fehlgeschlagene Suche gilt nicht als
 Aktualitätsnachweis. Der manuelle Download bleibt verfügbar.
 
-Nur neuere stabile Windows-x64-Pakete aus dem eigenen Repository werden angeboten:
+Nur neuere stabile Pakete für die nativ ermittelte Plattform aus dem eigenen Repository werden angeboten (Windows x64 beziehungsweise macOS arm64):
 HTTPS, begrenzte Downloads/Weiterleitungen und Paket-/Versionssignaturprüfung.
-Authenticode und unabhängige Release-Prüfung bleiben erforderlich. Installation
+Authenticode unter Windows beziehungsweise Developer ID und Notarisierung unter macOS sowie die unabhängige Release-Prüfung bleiben erforderlich. Die signierte Mac-Distributionsabnahme ist noch offen. Installation
 benötigt native Zustimmung. Laufende Kernaufrufe und offene Exporte blockieren sie.
 Gespeicherte Schlüssel werden vorher gesichert. Ungespeicherte Entwürfe und
 Sitzungsschlüssel müssen selbst gesichert werden.
@@ -121,3 +121,20 @@ gegen Sicherheitsmeldungen prüfen. JDK und WebView2 separat aktuell halten.
 - Linux-RustSec-Hinweise für `glib`, `proc-macro-error`, `zbus_names`, `zvariant` und
   `zvariant_derive` bleiben offen. Diese Pakete werden im Windows-Build nicht verwendet.
   Linux wird derzeit nicht unterstützt.
+
+
+## macOS-Schutzspeicher ab 0.5.0
+
+Der Speicherschlüssel liegt im lokalen Schlüsselbund und wird nicht über iCloud
+synchronisiert. AES-GCM schützt Vertraulichkeit und Integrität; zusätzliche
+Zweckbindung verhindert das Umdeuten geschützter Daten zwischen Speicherarten.
+Temporäre geschützte Dateien erhalten Benutzerrechte, dauerhafte Ersetzungen
+erfolgen atomar. Verlorener oder gesperrter Schlüsselbundzugriff ist ein sichtbarer
+Fehler. Ein neuer Schlüssel ersetzt keine vorhandene Ablage. Geschützte Profile
+sind kein portables Windows-/Mac-Transferformat. Ein kompromittiertes Benutzerkonto
+oder ein im entsperrten Prozess laufender Angreifer liegt außerhalb dieser Grenze.
+
+Ein Mac-Debug-Build ist kein signiertes Distributionspaket. Developer-ID-Identität,
+Hardened Runtime, Scanner-Vendorcode, Notarisierung, Gatekeeper und ein echtes
+Updater-Upgrade benötigen eigene Nachweise. Der [Mac-Prüfstatus](docs/MACOS.md)
+nennt offene Kriterien. Frühere Windows-Audits gelten nicht pauschal als Mac-Audit.

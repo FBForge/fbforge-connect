@@ -6,7 +6,9 @@
 
 Open-Source-Desktop-Client für FIT-Connect. Kein offizielles Produkt der FITKO.
 Die aktuelle Veröffentlichung ist **[0.3.0](https://github.com/FBForge/fbforge-connect/releases/tag/v0.3.0)**.
-Dieser Branch bereitet **0.4.0, noch nicht veröffentlicht** vor.
+Dieser Branch bereitet **0.5.0 mit nativer macOS-Unterstützung auf Apple Silicon** vor.
+0.4.0 und 0.5.0 sind noch nicht veröffentlicht. Für den Entwicklungs- und
+Abnahmestand siehe [Mac-Prüfstatus](docs/MACOS.md).
 
 Neu sind geführte Integrationstests mit externen Gegenstellen, Tests aus Vorgängen,
 variable Testdaten, Testserien für API v2/v3 und mehrere fachliche Antworten im selben
@@ -26,7 +28,8 @@ Einzelheiten stehen in den [Versionshinweisen](RELEASE_NOTES.md).
 - Bei Bedarf einen HTTP-Proxy und ausdrücklich freigegebene zusätzliche CA-Zertifikate unter „Einstellungen → Netzwerk und Proxy“ einrichten.
 - Neue stabile Versionen finden und signierte Updates nach Bestätigung installieren.
 
-Für **Windows x64 und FIT-Connect TEST, STAGE und PROD**. STAGE und PROD benötigen
+Veröffentlicht für **Windows x64**; macOS auf Apple Silicon wird für 0.5.0 vorbereitet.
+Unterstützt werden FIT-Connect TEST, STAGE und PROD. STAGE und PROD benötigen
 V-PKI-Zertifikate mit vollständiger Kette. PROD-Aktionen wirken auf echte Daten
 und werden zusätzlich bestätigt. Verwenden Sie für Tests fiktive Daten.
 

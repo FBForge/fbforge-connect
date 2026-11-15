@@ -112,9 +112,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             return Err(error.into());
         }
-        let port = runtime
-            .enable(true)?
-            .ok_or("scanner_acceptance_not_ready")?;
+        let port = match runtime.enable(true) {
+            Ok(Some(port)) => port,
+            result => {
+                // This isolated fixture contains no credentials or user files. Capture only
+                // its vendor startup output, with an owned process and a bounded lifetime.
+                let engine = runtime.current().join("engine");
+                let path = root.join("clamd-probe.log");
+                let output = fs::File::create(&path)?;
+                let mut command =
+                    fbforge_connect_native_contracts::scanner_package::command(&engine, "clamd");
+                command
+                    .arg("--config-file")
+                    .arg(root.join("clamd.conf"))
+                    .stdout(output.try_clone()?)
+                    .stderr(output);
+                if let Ok(mut child) = scanner_process::OwnedProcess::spawn(&mut command) {
+                    std::thread::sleep(Duration::from_secs(8));
+                    eprintln!("scanner_fixture_direct_daemon_running={}", child.running());
+                    drop(child);
+                }
+                let text = fs::read_to_string(path).unwrap_or_default();
+                eprintln!(
+                    "scanner_fixture_daemon_output={}",
+                    text.chars().take(4000).collect::<String>()
+                );
+                return Err(result
+                    .err()
+                    .unwrap_or("scanner_acceptance_not_ready")
+                    .into());
+            }
+        };
         assert!(runtime.status().ready);
         assert_eq!(
             scan(port, b"Fiktive saubere Integrations-Testdatei.")?,

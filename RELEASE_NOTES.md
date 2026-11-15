@@ -7,8 +7,8 @@ Bereits umgesetzt: Schlüsselbund-Backend mit authentifizierter Verschlüsselung
 Plattformfreigaben für dauerhafte Speicherung, native Menüführung und getrennte
 Windows-/macOS-Updateziele. Der lokale Mac-Scanner befindet sich noch in der
 Portierung. Signierung, Notarisierung und vollständige installierte Abnahme
-sind noch offen. Die bisherige 0.4-Anleitung bleibt für die gemeinsamen
-Fachabläufe verlinkt, bis die 0.5-Hilfe mit geprüften Mac-Aufnahmen bereitsteht.
+sind noch offen. Die versionierte 0.5-Hilfe mit echter Mac-Aufnahme wird auf einem eigenen
+Website-Dokumentationsbranch vorbereitet und vor Veröffentlichung geprüft.
 
 Die folgenden Hinweise beschreiben den bisherigen 0.4-Funktionsumfang.
 

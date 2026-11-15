@@ -1,12 +1,16 @@
 // Trusted test harness only. Never bundled or exposed to the renderer.
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolve as resolvePath } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 export const secretNames = ['SENDERID', 'SENDERSECRET', 'SENDERDEST', 'SUBSCRIBERID', 'SUBSCRIBERSECRET'];
 export class NativeEngine {
   constructor() {
-    const directory = fileURLToPath(new URL('../desktop/resources/engine/', import.meta.url));
+    const directory = resolvePath(
+      process.env.FBFORGE_ENGINE_DIRECTORY ||
+        fileURLToPath(new URL('../desktop/resources/engine/', import.meta.url)),
+    );
     const java = `${directory}/runtime/bin/java${process.platform === 'win32' ? '.exe' : ''}`;
     const env = { ...process.env };
     for (const key of [...secretNames, 'JAVA_TOOL_OPTIONS', '_JAVA_OPTIONS', 'JDK_JAVA_OPTIONS', 'CLASSPATH'])

@@ -64,6 +64,16 @@ jobs:
           test -x "$java"
           "$java" -version
           FBFORGE_ENGINE_DIRECTORY="$app/Contents/Resources/resources/engine" npm run test:engine
+          mkdir -p desktop/target/macos-probe
+          node scripts/macos/verify-bundle.mjs "$app" desktop/target/macos-probe/bundle-inventory.json
+      - name: Read-only FIT-Connect TEST checks with the actual bundled Java runtime
+        env:
+          SENDERID: ${{ secrets.SENDERID }}
+          SENDERSECRET: ${{ secrets.SENDERSECRET }}
+          SENDERDEST: ${{ secrets.SENDERDEST }}
+          SUBSCRIBERID: ${{ secrets.SUBSCRIBERID }}
+          SUBSCRIBERSECRET: ${{ secrets.SUBSCRIBERSECRET }}
+        run: FBFORGE_ENGINE_DIRECTORY="$PWD/desktop/target/debug/bundle/macos/FBForge Connect.app/Contents/Resources/resources/engine" node scripts/live-readonly.mjs
       - name: Start the bundled application and capture its actual Mac window
         run: |
           app='desktop/target/debug/bundle/macos/FBForge Connect.app'
@@ -81,7 +91,9 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: macos-window-capture
-          path: desktop/target/macos-probe/application.png
+          path: |
+            desktop/target/macos-probe/application.png
+            desktop/target/macos-probe/bundle-inventory.json
           if-no-files-found: ignore
           retention-days: 3
       - name: Preserve Unix executable bits in the candidate archive

@@ -1,6 +1,8 @@
 # Umsetzungsplan 0.5.0: macOS-Unterstützung
 
-Stand: 14. November 2026. Status: Plan zur Umsetzung, keine Implementierung.
+Stand: 15. November 2026. Status: Umsetzung auf `release/0.5.0` läuft.
+Der aktuelle Nachweis- und Abnahmestand steht in [MACOS.md](../MACOS.md).
+Die folgenden Kriterien beschreiben das Ziel; sie sind keine pauschale Erledigtmeldung.
 Geprüfte Ausgangsbasis: `ba26dba0b101fea1f096ac4fb40b4a4afab80a99`
 auf `release/0.4.0`. Planungsbranch: `docs/plan-0.5.0`.
 

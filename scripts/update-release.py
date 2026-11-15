@@ -21,6 +21,38 @@ def metadata(installer, version, signature, notes=''):
         'url': ROOT + 'v' + version + '/' + installer.replace(' ', '.'), 'signature': signature}}}
 
 
+
+def macos_metadata(package, version, signature, notes=''):
+    """Metadata only; native policy verifies the signed final package on install."""
+    expected = f'FBForge.Connect_{version}_aarch64.app.tar.gz'
+    # Reuse the strict stable version, bounded notes and signature checks.
+    metadata(f'FBForge Connect_{version}_x64-setup.exe', version, signature, notes)
+    if package != expected:
+        raise ValueError('update_macos_package_mismatch')
+    return {'version': version, 'notes': notes, 'platforms': {'darwin-aarch64': {
+        'url': ROOT + 'v' + version + '/' + package, 'signature': signature}}}
+
+
+def combined_metadata(windows, macos):
+    """Combine independently verified same-version inputs; never drop Windows."""
+    if windows.get('version') != macos.get('version'):
+        raise ValueError('update_platform_version_mismatch')
+    version = windows.get('version')
+    try:
+        win = windows['platforms']['windows-x86_64']
+        mac = macos['platforms']['darwin-aarch64']
+        expected_windows = metadata(f'FBForge Connect_{version}_x64-setup.exe', version,
+                                    win['signature'], windows.get('notes', ''))
+        expected_macos = macos_metadata(f'FBForge.Connect_{version}_aarch64.app.tar.gz', version,
+                                        mac['signature'], macos.get('notes', ''))
+    except (KeyError, TypeError) as error:
+        raise ValueError('update_platform_metadata_invalid') from error
+    if windows != expected_windows or macos != expected_macos:
+        raise ValueError('update_platform_metadata_invalid')
+    return {**expected_windows, 'platforms': {**expected_windows['platforms'],
+                                             **expected_macos['platforms']}}
+
+
 def validate(files, manifest):
     """The Rust verifier independently checks the signature before retaining the candidate."""
     installer, version = manifest['installer'], manifest['version']

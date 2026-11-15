@@ -15,7 +15,7 @@ test('test tools open one test workspace without overlapping package and flow na
   await expect(page.getByRole('heading', { name: 'Neuen Test vorbereiten', exact: true })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Anleitung (Website im Browser öffnen)', exact: true }),
-  ).toHaveAttribute('href', 'https://fbforge.de/connect/hilfe/0.4/tests');
+  ).toHaveAttribute('href', 'https://fbforge.de/connect/hilfe/0.5/tests');
   await expect(button(page, 'Testpakete')).toHaveCount(0);
   await expect(button(page, 'Testabläufe')).toHaveCount(0);
   await expect(button(page, 'Testfälle und Abläufe')).toHaveCount(0);

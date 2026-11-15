@@ -1,10 +1,10 @@
 //! Fixed URLs shared by the launcher and isolated native contract tests.
 pub fn documentation_url(topic: &str) -> Result<String, &'static str> {
     match topic {
-        "start" | "connection" | "send" | "receive" | "replies" | "cases" | "attachments"
-        | "processes" | "destinations" | "events" | "diagnostics" | "problems"
+        "start" | "macos" | "connection" | "send" | "receive" | "replies" | "cases"
+        | "attachments" | "processes" | "destinations" | "events" | "diagnostics" | "problems"
         | "accessibility" | "tools" | "tests" => {
-            Ok(format!("https://fbforge.de/connect/hilfe/0.4/{topic}"))
+            Ok(format!("https://fbforge.de/connect/hilfe/0.5/{topic}"))
         }
         _ => Err("invalid_input"),
     }
@@ -17,7 +17,7 @@ mod tests {
     fn only_known_chapters_can_be_opened() {
         assert_eq!(
             documentation_url("receive").unwrap(),
-            "https://fbforge.de/connect/hilfe/0.4/receive"
+            "https://fbforge.de/connect/hilfe/0.5/receive"
         );
         for invalid in [
             "https://example.org",

@@ -1,6 +1,7 @@
-export const documentationRoot = 'https://fbforge.de/connect/hilfe/0.4';
+export const documentationRoot = 'https://fbforge.de/connect/hilfe/0.5';
 export const documentationTopics = Object.freeze([
   { id: 'start', title: 'Schnellstart' },
+  { id: 'macos', title: 'macOS: Einrichtung und Bedienung' },
   { id: 'connection', title: 'Verbinden und Profile' },
   { id: 'send', title: 'Einreichung senden' },
   { id: 'receive', title: 'Antrag empfangen und prüfen' },

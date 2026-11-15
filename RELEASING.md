@@ -271,3 +271,28 @@ entfernen. Erfolgreiche Nachweise, Signierläufe und benötigte Upgrade-Paketque
 mit Logs und Artefakten erhalten. Aktive schreibende Live-Tests nicht unterbrechen.
 Main, veröffentlichte Tags und Releases bleiben erhalten. Veröffentlichung und
 Deployment benötigen weiterhin einen ausdrücklich beauftragten Release-Prozess.
+
+
+## macOS 0.5.0 vorbereiten
+
+Der Mac-Stand wird getrennt auf `release/0.5.0` vorbereitet. Der native Workflow
+`macOS validation` prüft Apple Silicon, echten Schlüsselbund, Java und das interne
+App-Bundle. Er veröffentlicht und signiert nichts. Der [Mac-Prüfstatus](docs/MACOS.md)
+nennt offene Freigabekriterien. Ein Debug-Artefakt erfüllt diese Kriterien nicht.
+
+Vor der ersten Mac-Veröffentlichung sind Developer-ID-Signierung aller benötigten
+Mach-O-Komponenten, möglichst enge Java-JIT-Entitlements, Notarisierung, Stapling
+und Gatekeeper auf einem frischen Mac abgenommen. Ein Apple-Zertifikat ersetzt
+nicht die bestehende Tauri-Updater-Signatur. Private Schlüssel und Passwörter
+gehören weder in das Repo noch in CI-Protokolle. Signierung erfolgt erst nach
+der ausdrücklichen Abnahme; dieses Entwicklungs-Setup führt sie nicht aus.
+
+Der Windows-Eintrag `windows-x86_64` und dessen bestehender Setup-Dateiname bleiben
+im gemeinsamen `latest.json` erhalten. macOS ergänzt `darwin-aarch64` mit
+`FBForge.Connect_<Version>_aarch64.app.tar.gz`. `macos_metadata` und
+`combined_metadata` in `scripts/update-release.py` binden beide Metadaten an dieselbe
+stabile Version und die festen Downloadziele. Erst unabhängig geprüfte und final
+signierte Pakete kombinieren. DMG und Updaterarchiv getrennt prüfen; keine Bytes
+nach der Updater-Signatur verändern. Ein echtes Upgrade benötigt zwei unterschiedliche
+Versionen und einen zusätzlichen installierten Nachweis. Der bisherige Windows-
+Veröffentlichungsablauf allein erzeugt noch keinen vollständigen Mac-Release.

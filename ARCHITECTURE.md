@@ -58,7 +58,7 @@ erneut verglichen. Lokale private Schlüssel werden nicht gelesen. Der private
 Engine-Befehl `export_destination_item` überträgt ausschließlich öffentliche Daten
 in begrenzten sequenziellen Teilen.
 
-Native Validierung und DPAPI-Ablage sind an Profil und Umgebung gebunden. Maximal
+Native Validierung und geschützte Ablage sind an Profil und Umgebung gebunden. Maximal
 20 Sicherungen mit je 4 MiB können gespeichert werden. JSON-Import und -Export
 verwenden Format v2 ohne Passwort. Private Felder werden abgewiesen. Vorhandene
 lokale v1-Sicherungen werden beim Lesen ohne private Kopien neu gespeichert.
@@ -76,7 +76,7 @@ Journal. Die Grundlage ist die
 - Der Renderer hat keine allgemeinen HTTP-, Shell- oder Dateisystemrechte. Private Archivbefehle (`export_session_item`, `restore_session_item`, `export_destination_item`) sind nur aus Rust erreichbar.
 - Schreibaktionen sind an Inhalt, Sitzung, API und Ziel gebunden und benötigen eine Bestätigung. Nach einem ungewissen Übertragungsausgang erfolgt kein automatischer Neuversand.
 - Annahme und Ablehnung benötigen aktuelle native Inhaltsnachweise. Historische Kopien und Event-Logs ersetzen diese nicht. Case-Logs können mehrere Nachrichten und quittierende Destinations enthalten. Jeder Aussteller wird anhand seines registrierten Schlüssels per SDK verifiziert; jedes Ereignis bleibt an die angefragte Case-ID gebunden.
-- Profile, private Schlüssel und Vorgangskopien werden getrennt und benutzergebunden mit Windows-DPAPI gespeichert. Vorgänge sind nach Profil und API isoliert und für gespeicherte Profile unter Windows standardmäßig dauerhaft aktiviert. Eine ausdrückliche Abwahl bleibt als verschlüsselte Einstellung erhalten. Tokens und alte Prüfnachweise werden nicht wiederhergestellt. Andere Plattformen haben keinen Klartext-Fallback.
+- Profile, private Schlüssel und Vorgangskopien werden getrennt und benutzergebunden mit dem Plattformschutz gespeichert. Vorgänge sind nach Profil und API isoliert und für gespeicherte Profile standardmäßig dauerhaft aktiviert. Eine ausdrückliche Abwahl bleibt als verschlüsselte Einstellung erhalten. Tokens und alte Prüfnachweise werden nicht wiederhergestellt. Andere Plattformen haben keinen Klartext-Fallback.
 - Profilsicherungen werden nativ entschlüsselt. Drag-and-drop reicht nur größenbegrenzte, verschlüsselte `.fctest-profile`-Dateien weiter und gibt Profilmetadaten zurück. Eine Profil-Sicherung enthält keine Vorgänge.
 - Antwortschlüssel werden vor dem Versand gesichert. Bei aktivierter Vorgangsaufbewahrung muss die Sicherung vor der Empfangsbestätigung gelingen. Ein Speicherfehler nach erfolgtem Versand darf keinen erneuten Versand auslösen.
 - Öffentliche Schemaquellen benötigen eine ausdrückliche Freigabe für die aktive Verbindung. Die Freigabe wird weder im Profil gespeichert noch auf eine andere Verbindung übertragen. Lokale Schemata benötigen sie nicht.
@@ -85,7 +85,7 @@ Journal. Die Grundlage ist die
 - Nachrichten-Downloads schreiben die entschlüsselten Originalbytes ohne zusätzliches Exportmanifest. Ein gewählter `FBForge-Connect-Export`-Ordner wird wiederverwendet. Nachrichten erhalten eigene, kollisionsfrei angelegte Unterordner. Teilfehler bereinigen ausschließlich selbst angelegte Dateien.
 - Leistungsnamen können gezielt aus dem öffentlichen FIM-Portal geladen werden. Der Renderer darf dafür ausschließlich die festgelegte HTTPS-Quelle verwenden; übertragen werden LeiKa-Kennungen, keine Zugangsdaten oder Fachdaten.
 - Einzeldownloads und generierte Dateien verwenden binäres IPC und einen nativen Speichern-Dialog mit dem Benutzer-Downloadordner als Vorschlag. Der Renderer liefert keinen Zielpfad. Größenbegrenzung, Originalbytes, atomarer Dateitausch und sichtbare Fehler gelten auch für technische Inhalte.
-- Gemeinsame Nachrichtendownloads benötigen eine native Ordnerfreigabe. Exportiert werden erfolgreich geprüfte Originalinhalte oder ausdrücklich gekennzeichnete historische Vorgangskopien. Downloads liegen unverschlüsselt außerhalb der DPAPI-Ablage. Annahmen mit gewähltem Download werden erst nach erfolgreichem Export gesendet. Technische Fehler im Sammeldurchlauf bleiben manuell; es gibt keine automatische Ablehnung.
+- Gemeinsame Nachrichtendownloads benötigen eine native Ordnerfreigabe. Exportiert werden erfolgreich geprüfte Originalinhalte oder ausdrücklich gekennzeichnete historische Vorgangskopien. Downloads liegen unverschlüsselt außerhalb der geschützten Ablage. Annahmen mit gewähltem Download werden erst nach erfolgreichem Export gesendet. Technische Fehler im Sammeldurchlauf bleiben manuell; es gibt keine automatische Ablehnung.
 
 JSON/XML-Fachdaten werden im nativen Kern gegen JSON Schema beziehungsweise XSD geprüft. Vor dem Versand ist die Prüfung standardmäßig aktiv. Bewusste Negativtests lassen sich ausdrücklich ohne Fachdatenprüfung vorbereiten. Die Bestätigung weist darauf hin.
 
@@ -98,7 +98,7 @@ weiterhin den bisherigen Prüfer, damit ihr Fortschritt erhalten bleibt.
 Testserien erhalten eine eigene Ansicht und halten ihre Definition fest.
 
 Tests und Schema-Vergleich arbeiten lokal. Die begrenzten Sammlungen werden
-benutzergebunden mit Windows-DPAPI gespeichert. Ablaufdefinitionen enthalten
+benutzergebunden mit dem Plattformschutz gespeichert. Ablaufdefinitionen enthalten
 Testdaten und Schrittfolge, keine Sitzung oder laufenden Testergebnisse.
 Pakete enthalten fiktive Nutzdaten, Anlagen, lokale Schemata und Erwartungen.
 Verbindungsdaten und private Schlüssel werden nicht übernommen. Erst die
@@ -188,7 +188,7 @@ Profilwechsel und Abbruch verwerfen verspätete Ergebnisse. Bereits laufende nat
 Leseaufrufe können innerhalb ihrer bestehenden Zeitgrenzen noch auslaufen.
 
 `scenario_library` validiert Definitionen und Durchläufe nochmals nativ. Getrennte
-Sammlungen unter `test-library/scenarios-v2`, `scenario-runs-v2` und `scenario-series-v1` sind mit Windows-DPAPI
+Sammlungen unter `test-library/scenarios-v2`, `scenario-runs-v2` und `scenario-series-v1` sind mit dem Plattformschutz
 für das Benutzerkonto geschützt, jeweils auf 32 Einträge und 64 MiB begrenzt.
 Einzelne Dokumente bleiben unter 8 MiB. Testdaten, Definitionskopie und Prüfverlauf
 zählen gemeinsam zur Durchlaufgröße. Referenzen erfordern vollständig nachgewiesene
@@ -201,7 +201,7 @@ Versand und Testwerkzeuge verwenden denselben Sammlungsadapter.
 
 Automatische Vorbereitungssicherungen liegen getrennt unter
 `test-library/preparations-v1/<environment>`. Je Umgebung gibt es einen begrenzten,
-DPAPI-geschützten Arbeitsstand, der auch unfertiges JSON/XML enthalten darf.
+geschützten Arbeitsstand, der auch unfertiges JSON/XML enthalten darf.
 Die vollständige Definition wird vor Speichern oder Teststart erneut geprüft.
 Eine Warteschlange sichert Änderungen nach kurzer Pause und beim normalen Beenden.
 Dateiimporte müssen vorher abgeschlossen sein. Eine unlesbare frühere Sicherung
@@ -215,7 +215,7 @@ Native Speicherung prüft Definition, Umgebung, Datensatz und Profilzuordnung de
 verknüpften Durchläufe. Fehlende oder abweichende Durchläufe liefern keinen Erfolg.
 Das Entfernen einer Serie entfernt keine Durchläufe und keine geschützten Referenzen.
 
-Profil-Arbeitsdaten (Destination-Vorlagen, Merkliste und lokale Konfigurationshistorie) liegen getrennt von Credentials und Vorgängen in Windows-DPAPI-Dateien. Zusätzliche Entropie bindet Profil, Umgebung und API. Nur native Engine-Ergebnisse erzeugen Historieneinträge. Vor dem Schreiben wird ein ungewisser Zustand dauerhaft hinterlegt; ein Fehler der abschließenden Speicherung darf einen tatsächlichen Servererfolg nicht als fehlgeschlagenen Versand umdeuten. Profilentfernung löscht auch diese Arbeitsdaten. Profil-Backups enthalten sie nicht.
+Profil-Arbeitsdaten (Destination-Vorlagen, Merkliste und lokale Konfigurationshistorie) liegen getrennt von Credentials und Vorgängen in plattformgeschützten Dateien. Zusätzliche Entropie bindet Profil, Umgebung und API. Nur native Engine-Ergebnisse erzeugen Historieneinträge. Vor dem Schreiben wird ein ungewisser Zustand dauerhaft hinterlegt; ein Fehler der abschließenden Speicherung darf einen tatsächlichen Servererfolg nicht als fehlgeschlagenen Versand umdeuten. Profilentfernung löscht auch diese Arbeitsdaten. Profil-Backups enthalten sie nicht.
 
 Der optionale Scanner ist im gemeinsamen Java-Host hinter beiden SDK-Adaptern angesiedelt. Er prüft nach Kryptografie und vor Inhaltsfreigabe; ausgehende unveränderliche Vorbereitungen werden vor dem tatsächlichen SDK-Schreibaufruf erneut geprüft. Jeder Scan hat ein Gesamtzeitlimit einschließlich DNS, Verbindung, Schreiben und Antwort. Nur ClamAV `stream: OK` oder ICAP 204 ohne Infektionsmeldung gelten als unauffällig. Eigene Gegenstellen werden nativ bestätigt und gelten für die Verbindung. Kein Callback-Dienst oder FBForge-Relay.
 
@@ -258,3 +258,34 @@ Ausdrücklich ausgewählte Dateien haben Vorrang. Temporär an den SDK-Kern übe
 Schemata werden nach der Prüfung freigegeben. Ein Bibliotheksfehler löst keinen
 stillen Abruf externer Quellen aus. Erfasste Schemafehler bleiben Prüfprobleme und
 werden durch diese Komfortfunktion nicht umgangen.
+
+
+## Plattformbackend ab 0.5.0
+
+`vault/protection.rs` wählt Windows-DPAPI oder das macOS-Backend
+`vault/macos.rs`. `supported()` steuert dieselbe Speicherfähigkeit für alle
+Aufrufer. macOS verwendet Security.framework statt eines Shell-Schlüsselbundaufrufs:
+Ein zufälliger, lokal gehaltener 256-Bit-Schlüssel schützt Dateien mit ring
+AES-256-GCM. `vault/payload.rs` bindet Formatversion, öffentliche Schlüsselidentität
+und Aufruferzweck als authentifizierte Zusatzdaten. Zufällige Nonces kommen aus
+dem Betriebssystem. Der öffentliche Identitätsmarker wird atomar angelegt.
+Fehlende Schlüssel bei vorhandenem Datenbestand führen zum Fehler, nicht zum
+Überschreiben der Ablage. Profilarchive bleiben lokal gebunden.
+
+`macos_menu.rs` sendet ausschließlich Navigations- und Schließereignisse an den
+vorhandenen Frontendpfad. Native Menüs führen keine Fach-Schreibaufrufe aus.
+Fensterschließen und App-Beenden verwenden denselben Checkpoint-Gate; nur macOS
+darf das Fenster anschließend ausblenden und über das Dock wiederherstellen.
+
+`update_policy.rs` ermittelt OS und CPU nativ und verlangt den dazu passenden
+Feed-Eintrag und festen Artefaktnamen. Die bisherigen unabhängigen Windows-
+Paketprüfer behalten ihre explizite Windows-Bindung. macOS verwendet ein signiertes
+Tauri-App-Archiv; der signierte installierte Upgrade-Nachweis ist noch offen.
+
+`scanner_macos_package.rs` extrahiert ausschließlich erlaubte und hashgeprüfte
+Dateien aus dem festgelegten Vendor-PKG in ein eigenes Arbeitsverzeichnis. Es
+startet weder Installer noch deren Skripte. Mac-Binaries erhalten ihre privaten
+Bibliotheks- und CVD-Zertifikatspfade. `scanner_guardian.rs` startet als interner
+Modus desselben App-Executables vor Tauri und hält eine Pipe-Lease des Elternprozesses.
+Der Wächter beendet ausschließlich seinen eigenen Scanner, sobald die Lease endet.
+Der [Mac-Prüfstatus](docs/MACOS.md) dokumentiert die noch ausstehende native Abnahme.

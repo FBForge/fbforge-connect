@@ -1,6 +1,6 @@
 # Lokal bauen
 
-Das Desktop-Paket wird auf Windows x64 gebaut. Frontend, Java-Engine und isolierte Rust-Module können auch unter Linux und macOS entwickelt und getestet werden. Desktop-Pakete für diese Systeme werden derzeit nicht ausgeliefert. Die geschützte Profilspeicherung benötigt Windows-DPAPI.
+Desktop-Pakete werden nativ auf Windows x64 und für die Entwicklung von 0.5.0 auf macOS Apple Silicon gebaut. Die veröffentlichte Version 0.3.0 ist nur für Windows verfügbar. Windows verwendet DPAPI; macOS verwendet einen lokalen Schlüsselbundschlüssel und AES-256-GCM für geschützte Dateien. Linux bleibt eine Umgebung für gemeinsame Tests. Der [Mac-Prüfstatus](docs/MACOS.md) unterscheidet implementierte Funktionen und offene Abnahmen.
 
 ## Voraussetzungen
 
@@ -83,7 +83,24 @@ Ohne veröffentlichte `latest.json` meldet die Updatesuche fehlende Update-Infor
 Die Einrichtung privater Schlüssel gehört ausschließlich zum
 [Release-Ablauf](RELEASING.md#update-signierung-einmalig-einrichten).
 
-## Linux und macOS
+## macOS auf Apple Silicon
+
+Voraussetzungen: macOS 15 oder neuer, native arm64-Werkzeuge, Xcode Command Line Tools (`xcode-select --install`), JDK 25, Node.js und rustup. Für den Scanner-Paketbau außerdem GnuPG. Anwender benötigen diese Werkzeuge später nicht. Zunächst die gemeinsamen Befehle im folgenden Abschnitt ausführen, anschließend:
+
+```sh
+npm run desktop:dev
+# Interne App ohne Scanner-Nachladen oder Veröffentlichung:
+npm run desktop:build -- --debug --bundles app
+```
+
+Das interne Paket liegt unter `desktop/target/debug/bundle/macos/FBForge Connect.app`.
+Es enthält eine private arm64-Java-Laufzeit. Ein Debug-Paket ist kein zur Weitergabe
+freigegebenes DMG. Ein Release-Build bereitet wie unter Windows die geprüfte
+Scannerkomponente vor. Developer-ID-Signierung, Notarisierung, Gatekeeper und
+ein echtes Update müssen vor Veröffentlichung gesondert abgenommen werden.
+Keine Quarantäne oder Systemschutzfunktionen als Installationsanleitung umgehen.
+
+## Gemeinsame Tests unter Linux und macOS
 
 JDK 25, Node.js und rustup installieren, dann im Repository ausführen:
 
@@ -231,7 +248,7 @@ Bei Fehlern nicht mit späteren Buildschritten fortfahren. Keine Zugangsdaten od
 ## Lokaler Scanner und echte Scan-Abnahme
 
 `stage:scanner` prüft ClamAV 1.5.4 anhand des festgelegten Talos-Schlüssels und der
-Hashes in `desktop/scanner-component.json`. GnuPG aus einer anderen Installation
+Hashes in `desktop/scanner-component.json` beziehungsweise `desktop/scanner-component.macos.json`. GnuPG aus einer anderen Installation
 kann mit `npm run stage:scanner -- --gpg C:/Pfad/gpg.exe` angegeben werden.
 Der öffentliche Schlüsselimport und die Signaturprüfung benötigen keinen
 GPG-Agenten. Die Paketvorbereitung verhindert dessen automatischen Start auch
@@ -247,7 +264,7 @@ Ergebnis: `desktop/resources/scanner/component.zip` für das Setup und
 `desktop/target/scanner-dist/` für die Weiterverteilung, einschließlich passendem
 Quellarchiv, offizieller Quellsignatur, Prüfschlüssel und Lizenzhinweisen.
 Diese Dateien gehören nicht ins Git. Ein Release-Build ohne Komponente bricht ab.
-Im Entwicklungsmodus ist sie optional; der echte lokale Scanner benötigt Windows.
+Im Entwicklungsmodus ist sie optional; der echte lokale Scanner benötigt Windows oder macOS. Der Mac-Abnahmestand steht in `docs/MACOS.md`.
 
 Eine vorbereitete Offline-Datenbank kann mit `--database-directory` übernommen
 werden: `main.cvd`, `daily.cvd`, `bytecode.cvd` und die drei zur Version gehörenden

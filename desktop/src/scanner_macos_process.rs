@@ -30,7 +30,9 @@ pub fn spawn(engine: &Path, configuration: &Path) -> Result<OwnedProcess, &'stat
             .filter(|pid| *pid > 1);
         let _ = send.send(result);
     });
-    match receive.recv_timeout(Duration::from_secs(10)).ok().flatten() {
+    // The guardian hashes the entire 250 MiB component before announcing its child.
+    // Debug builds and slower disks need the same bounded startup budget as clamd.
+    match receive.recv_timeout(Duration::from_secs(60)).ok().flatten() {
         Some(pid) => Ok(OwnedProcess {
             child,
             _lease: Some(lease),
