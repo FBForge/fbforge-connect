@@ -254,12 +254,43 @@ fn main() {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 use tauri::Emitter;
-                let _ = window.emit("application-close-requested", ());
+                let _ = window.emit(
+                    if cfg!(target_os = "macos") {
+                        "application-window-close-requested"
+                    } else {
+                        "application-close-requested"
+                    },
+                    (),
+                );
             }
         })
         .build(tauri::generate_context!())
         .expect("Desktop startup failed");
     app.run(|app, event| {
+        #[cfg(target_os = "macos")]
+        match &event {
+            tauri::RunEvent::Reopen { .. } => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            tauri::RunEvent::ExitRequested { api, .. }
+                if !app
+                    .state::<EngineState>()
+                    .updating
+                    .load(std::sync::atomic::Ordering::Acquire) =>
+            {
+                api.prevent_exit();
+                if let Some(window) = app.get_webview_window("main") {
+                    use tauri::Emitter;
+                    let _ = window.show();
+                    let _ = window.emit("application-close-requested", ());
+                }
+            }
+            _ => {}
+        }
+
         if matches!(event, tauri::RunEvent::Exit) {
             local_scanner::shutdown(app);
             let state = app.state::<EngineState>();
@@ -282,3 +313,6 @@ mod scanner_install;
 mod network_trust;
 #[path = "network_trust_bundle.rs"]
 mod network_trust_bundle;
+
+#[cfg(target_os = "macos")]
+pub(crate) mod scanner_macos_package;

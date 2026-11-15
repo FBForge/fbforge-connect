@@ -1,0 +1,118 @@
+{
+  "format": 1,
+  "version": "1.5.4",
+  "target": "darwin-aarch64",
+  "signerFingerprint": "5BADCA2665EF59DCF8A23D8B707F0DB480836771",
+  "archive": {
+    "url": "https://github.com/Cisco-Talos/clamav/releases/download/clamav-1.5.4/clamav-1.5.4.macos.universal.pkg",
+    "bytes": 166772489,
+    "sha256": "df7fa753e2f9f67f3bc99b2a40a3be7ef559088c68ad6bdf66b4b5764e965bd6"
+  },
+  "source": {
+    "url": "https://github.com/Cisco-Talos/clamav/releases/download/clamav-1.5.4/clamav-1.5.4.tar.gz",
+    "bytes": 63702396,
+    "sha256": "1af1117a228f1b5bc7fa91a0dabc37848a99e7d25188e9be8043332ce721dfd3"
+  },
+  "files": [
+    {
+      "path": "COPYING.txt",
+      "bytes": 18738,
+      "sha256": "0c4fd2fa9733fc9122503797648710851e4ee6d9e4969dd33fcbd8c63cd2f584"
+    },
+    {
+      "path": "lib/libclamav.12.1.0.dylib",
+      "bytes": 67813696,
+      "sha256": "021319020c8536331abe12237c9b468bfccf08dd5616a8292a97d33f743e5084"
+    },
+    {
+      "path": "lib/libclammspack.0.8.0.dylib",
+      "bytes": 303376,
+      "sha256": "06971e3445fe0d0bca0bceb0d637d6b5ca0e576f80694be664eaef340fa3268a"
+    },
+    {
+      "path": "lib/libclamunrar.12.1.0.dylib",
+      "bytes": 826640,
+      "sha256": "0647110dd525e3bab83b88976e01bed98873e32b68ae89b5e2e12a399352d79d"
+    },
+    {
+      "path": "lib/libclamunrar_iface.12.1.0.dylib",
+      "bytes": 119504,
+      "sha256": "edf30565095aa50a211179891426684cf2f6493f7699cfad68f10795bf28f7b6"
+    },
+    {
+      "path": "lib/libfreshclam.4.0.0.dylib",
+      "bytes": 13833664,
+      "sha256": "1333e378179328b107ad7d72749c527144d3acbd835eb9b97e63c7a13401e378"
+    },
+    {
+      "path": "bin/freshclam",
+      "bytes": 263936,
+      "sha256": "886c42760af3e5fac27e4bd4c1a1f45cd470ddd2572bd275026992a6543240ae"
+    },
+    {
+      "path": "bin/sigtool",
+      "bytes": 451152,
+      "sha256": "1b335a4bced7cbcfbcfe679140b235ab69ba116bf33ae28d418a92ff33daf6d1"
+    },
+    {
+      "path": "certs/clamav.crt",
+      "bytes": 1976,
+      "sha256": "60200e4b4b1b1b7257bb4550487aeb142034341f3300a8526e77a3134a940e9d"
+    },
+    {
+      "path": "sbin/clamd",
+      "bytes": 490080,
+      "sha256": "758c6a708738dbf55be9b988575e439093454dbc3fbd46f1a304b19183702e16"
+    },
+    {
+      "path": "lib/libclamav.12.dylib",
+      "bytes": 67813696,
+      "sha256": "021319020c8536331abe12237c9b468bfccf08dd5616a8292a97d33f743e5084"
+    },
+    {
+      "path": "lib/libclamav.dylib",
+      "bytes": 67813696,
+      "sha256": "021319020c8536331abe12237c9b468bfccf08dd5616a8292a97d33f743e5084"
+    },
+    {
+      "path": "lib/libclammspack.0.dylib",
+      "bytes": 303376,
+      "sha256": "06971e3445fe0d0bca0bceb0d637d6b5ca0e576f80694be664eaef340fa3268a"
+    },
+    {
+      "path": "lib/libclammspack.dylib",
+      "bytes": 303376,
+      "sha256": "06971e3445fe0d0bca0bceb0d637d6b5ca0e576f80694be664eaef340fa3268a"
+    },
+    {
+      "path": "lib/libclamunrar.12.dylib",
+      "bytes": 826640,
+      "sha256": "0647110dd525e3bab83b88976e01bed98873e32b68ae89b5e2e12a399352d79d"
+    },
+    {
+      "path": "lib/libclamunrar.dylib",
+      "bytes": 826640,
+      "sha256": "0647110dd525e3bab83b88976e01bed98873e32b68ae89b5e2e12a399352d79d"
+    },
+    {
+      "path": "lib/libclamunrar_iface.12.dylib",
+      "bytes": 119504,
+      "sha256": "edf30565095aa50a211179891426684cf2f6493f7699cfad68f10795bf28f7b6"
+    },
+    {
+      "path": "lib/libclamunrar_iface.dylib",
+      "bytes": 119504,
+      "sha256": "edf30565095aa50a211179891426684cf2f6493f7699cfad68f10795bf28f7b6"
+    },
+    {
+      "path": "lib/libfreshclam.4.dylib",
+      "bytes": 13833664,
+      "sha256": "1333e378179328b107ad7d72749c527144d3acbd835eb9b97e63c7a13401e378"
+    },
+    {
+      "path": "lib/libfreshclam.dylib",
+      "bytes": 13833664,
+      "sha256": "1333e378179328b107ad7d72749c527144d3acbd835eb9b97e63c7a13401e378"
+    }
+  ]
+}

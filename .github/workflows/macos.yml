@@ -103,6 +103,7 @@ jobs:
         with:
           node-version: 24.20.0
           package-manager-cache: false
+      - run: rustup toolchain install 1.99.0 --profile minimal
       - run: brew install gnupg
       - run: node scripts/scanner/probe-macos.mjs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

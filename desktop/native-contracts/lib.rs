@@ -100,3 +100,7 @@ pub mod scanner_download;
 mod network_trust;
 #[path = "../src/network_trust_bundle.rs"]
 mod network_trust_bundle;
+
+#[cfg(target_os = "macos")]
+#[path = "../src/scanner_macos_package.rs"]
+pub(crate) mod scanner_macos_package;

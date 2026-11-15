@@ -16,7 +16,7 @@ fn freshclam_command(
     engine: &Path,
     configuration: &Path,
 ) -> Result<(Command, Option<crate::network_trust_bundle::TrustBundle>), &'static str> {
-    let mut command = Command::new(engine.join("freshclam.exe"));
+    let mut command = Command::new(engine.join(package::program("freshclam")));
     // FreshClam's progress output can exceed the bounded helper pipe even on success.
     // The native operation state supplies UI progress, so retain only errors here.
     command
@@ -36,7 +36,13 @@ impl Runtime {
     }
     pub fn adopt_bundled(&mut self, source: &Path) -> Result<(), &'static str> {
         let archive = source.join("component.zip");
-        if self.current().join("engine/clamd.exe").is_file() || !archive.is_file() {
+        if self
+            .current()
+            .join("engine")
+            .join(package::program("clamd"))
+            .is_file()
+            || !archive.is_file()
+        {
             return Ok(());
         }
         self.install_offline(&archive)?;

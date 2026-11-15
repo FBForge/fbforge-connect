@@ -136,7 +136,7 @@ pub fn verify_databases(
             return Err("scanner_database_invalid");
         }
         scanner_process::output_with_cancel(
-            Command::new(engine.join("sigtool.exe"))
+            Command::new(engine.join(package::program("sigtool")))
                 .current_dir(engine)
                 .arg("--verify")
                 .arg(&file)
@@ -222,7 +222,10 @@ impl Runtime {
     }
     pub fn status(&mut self) -> Status {
         let current = self.current();
-        let installed = current.join("engine/clamd.exe").is_file();
+        let installed = current
+            .join("engine")
+            .join(package::program("clamd"))
+            .is_file();
         let ready = self.process.as_mut().is_some_and(|p| {
             p.running()
                 && self
@@ -297,7 +300,7 @@ impl Runtime {
         )
         .map_err(failure)?;
         drop(listener);
-        let mut command = Command::new(engine.join("clamd.exe"));
+        let mut command = Command::new(engine.join(package::program("clamd")));
         command
             .current_dir(&engine)
             .arg("--config-file")

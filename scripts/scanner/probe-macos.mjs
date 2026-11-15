@@ -83,10 +83,22 @@ try {
     const source = join(expanded, `clamav-1.5.4.macos.universal-${group}.pkg/Payload/usr/local/clamav`);
     await cp(source, relocated, { recursive: true, dereference: true });
   }
+  run('cargo', [
+    '+1.99.0',
+    'run',
+    '--locked',
+    '--manifest-path',
+    'desktop/native-contracts/Cargo.toml',
+    '--example',
+    'scanner-engine-probe',
+    '--',
+    archive,
+    join(root, 'native-extract'),
+  ]);
   const execution = {};
   for (const program of ['bin/freshclam', 'bin/sigtool', 'sbin/clamd']) {
     execution[program] = run(join(relocated, program), ['--version'], {
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['ignore', 'pipe', 'inherit'],
       encoding: 'utf8',
     }).stdout.trim();
   }

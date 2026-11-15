@@ -6,6 +6,7 @@ use tauri::{Manager, State};
 pub async fn close_application(
     app: tauri::AppHandle,
     engine: State<'_, EngineState>,
+    hide: Option<bool>,
 ) -> Result<(), &'static str> {
     if crate::test_library_command::busy()
         || engine.updating.load(Ordering::Acquire)
@@ -41,6 +42,16 @@ pub async fn close_application(
         || crate::local_scanner::busy(&app)
     {
         return Err("application_activity_pending");
+    }
+    if hide == Some(true) {
+        if !cfg!(target_os = "macos") {
+            return Err("invalid_input");
+        }
+        app.get_webview_window("main")
+            .ok_or("application_window_unavailable")?
+            .hide()
+            .map_err(|_| "application_window_unavailable")?;
+        return Ok(());
     }
     engine.updating.store(true, Ordering::Release);
     drop(_process);

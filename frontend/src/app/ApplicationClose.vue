@@ -8,9 +8,11 @@ const props = defineProps({ busy: Boolean, active: Boolean, receiveBrowser: Obje
 const dialog = ref(null),
   error = ref(''),
   closing = ref(false),
-  recoveryFailed = ref(false);
-let unlisten;
-async function requestClose() {
+  recoveryFailed = ref(false),
+  hiding = ref(false);
+let unlisten, unlistenWindow;
+async function requestClose(hideWindow = false) {
+  hiding.value = hideWindow === true;
   if (closing.value) return;
   error.value = props.busy
     ? 'Eine Aktion läuft noch. Warten Sie auf das Ergebnis, bevor Sie FBForge Connect beenden.'
@@ -25,7 +27,8 @@ async function close(withoutPreparation = false) {
   try {
     if (!withoutPreparation) await flushPreparations();
     preparationSaved = true;
-    await invoke('close_application');
+    await invoke('close_application', hiding.value ? { hide: true } : undefined);
+    if (hiding.value) dialog.value.close();
   } catch (cause) {
     const code = typeof cause === 'string' ? cause : cause?.message;
     recoveryFailed.value = !preparationSaved && code !== 'preparation_pending';
@@ -44,13 +47,17 @@ async function close(withoutPreparation = false) {
 onMounted(async () => {
   if (isTauri()) {
     try {
-      unlisten = await listen('application-close-requested', requestClose);
+      unlisten = await listen('application-close-requested', () => requestClose(false));
+      unlistenWindow = await listen('application-window-close-requested', () => requestClose(true));
     } catch {
       /* Browser fixtures have no native window event service. */
     }
   }
 });
-onBeforeUnmount(() => unlisten?.());
+onBeforeUnmount(() => {
+  unlisten?.();
+  unlistenWindow?.();
+});
 defineExpose({ requestClose });
 </script>
 <template>
@@ -60,7 +67,7 @@ defineExpose({ requestClose });
     aria-labelledby="application-close-title"
     @cancel.prevent="dialog.close()"
   >
-    <h2 id="application-close-title">FBForge Connect beenden?</h2>
+    <h2 id="application-close-title">{{ hiding ? 'Fenster schließen?' : 'FBForge Connect beenden?' }}</h2>
     <p>
       Gespeicherte Profile, Vorgänge und Testabläufe bleiben erhalten. Sichern Sie offene Entwürfe und nur für
       diese Sitzung geladene Schlüssel vor dem Beenden.
@@ -71,10 +78,10 @@ defineExpose({ requestClose });
         Zurück zur Anwendung
       </button>
       <button v-if="recoveryFailed" class="button secondary" :disabled="busy || closing" @click="close(true)">
-        Ohne Vorbereitungssicherung beenden
+        {{ hiding ? 'Ohne Vorbereitungssicherung schließen' : 'Ohne Vorbereitungssicherung beenden' }}
       </button>
       <button class="button" :disabled="busy || closing" @click="close()">
-        {{ closing ? 'Sitzung wird gesichert' : 'Anwendung beenden' }}
+        {{ closing ? 'Sitzung wird gesichert' : hiding ? 'Fenster schließen' : 'Anwendung beenden' }}
       </button>
     </div>
   </dialog>

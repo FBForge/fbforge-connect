@@ -21,6 +21,15 @@
         calls: [],
         busy: false,
         fail: false,
+        nativeWindowClose: () => {
+          const callback = listeners.get('application-window-close-requested');
+          if (!callback) throw new Error('window close listener missing');
+          callbacks.get(callback)({
+            event: 'application-window-close-requested',
+            id: callback,
+            payload: null,
+          });
+        },
         nativeNavigate: (payload) => {
           const callback = listeners.get('application-navigation');
           if (!callback) throw new Error('native navigation listener missing');

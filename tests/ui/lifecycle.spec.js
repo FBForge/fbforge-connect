@@ -121,3 +121,23 @@ test('native Mac navigation accepts known areas without executing writes or acce
     await page.evaluate(() => window.__lifecycle.calls.some((c) => c.command.startsWith('execute_'))),
   ).toBe(false);
 });
+
+test('Mac window close checkpoints through the same native gate and distinguishes Cmd+Q', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:1420/test-fixtures/lifecycle.html');
+  await page.evaluate(() => window.__lifecycle.nativeWindowClose());
+  const windowDialog = page.getByRole('dialog', { name: 'Fenster schließen?', exact: true });
+  await expect(windowDialog).toBeVisible();
+  await windowDialog.getByRole('button', { name: 'Fenster schließen', exact: true }).click();
+  await expect(windowDialog).toBeHidden();
+  expect(
+    await page.evaluate(
+      () => window.__lifecycle.calls.findLast((c) => c.command === 'close_application').args,
+    ),
+  ).toEqual({ hide: true });
+  await page.evaluate(() => window.__lifecycle.nativeClose());
+  const quitDialog = page.getByRole('dialog', { name: 'FBForge Connect beenden?', exact: true });
+  await expect(quitDialog).toBeVisible();
+  await quitDialog.getByRole('button', { name: 'Zurück zur Anwendung', exact: true }).click();
+});

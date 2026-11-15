@@ -1,5 +1,6 @@
 fn main() {
     println!("cargo:rerun-if-changed=scanner-component.json");
+    println!("cargo:rerun-if-changed=scanner-component.macos.json");
     println!("cargo:rerun-if-changed=resources/scanner/component.zip");
     if std::env::var("PROFILE").as_deref() == Ok("release")
         && !std::path::Path::new("resources/scanner/component.zip").is_file()
